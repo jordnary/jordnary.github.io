@@ -17,9 +17,7 @@ export function Projects() {
       title="项目以清晰的卡片方式呈现"
       description="用简洁的项目卡片展示方向、技术栈和成果入口，方便快速浏览重点。"
     >
-      <motion.div
-        className="grid gap-5 md:grid-cols-3"
-      >
+      <motion.div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project, index) => (
           <motion.article
             className="glass-card group flex h-full flex-col overflow-hidden transition-colors duration-300 hover:border-cyan-200/30 hover:shadow-cyan-500/10"
@@ -30,7 +28,7 @@ export function Projects() {
             whileInView={fadeUpVisible}
             whileHover={{ scale: 1.03, y: -6 }}
           >
-            <div className="relative min-h-44 overflow-hidden border-b border-white/10 bg-slate-900">
+            <div className="relative min-h-40 overflow-hidden border-b border-white/10 bg-slate-900 sm:min-h-44">
               <div className={`absolute inset-0 ${getProjectTint(index)}`} />
               <img
                 alt={project.imageAlt}
@@ -39,11 +37,13 @@ export function Projects() {
               />
             </div>
 
-            <div className="flex flex-1 flex-col p-6">
+            <div className="flex flex-1 flex-col p-5 sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
                 {project.meta}
               </p>
-              <h3 className="mt-3 text-xl font-semibold text-white">{project.title}</h3>
+              <h3 className="mt-3 text-lg font-semibold text-white sm:text-xl">
+                {project.title}
+              </h3>
               <p className="mt-3 flex-1 text-sm leading-6 text-slate-400">
                 {project.description}
               </p>

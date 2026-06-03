@@ -21,12 +21,10 @@ export function Timeline() {
           aria-hidden="true"
           className="absolute left-4 top-3 hidden h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-cyan-300/70 via-white/20 to-fuchsia-300/60 md:block"
         />
-        <motion.div
-          className="grid gap-5"
-        >
+        <motion.div className="grid gap-5">
           {timelineItems.map((item, index) => (
             <motion.article
-              className="glass-card relative grid gap-5 p-6 transition-colors hover:border-cyan-200/30 sm:p-7 md:grid-cols-[9rem_1fr]"
+              className="glass-card relative grid gap-4 p-5 transition-colors hover:border-cyan-200/30 sm:gap-5 sm:p-7 md:grid-cols-[8rem_1fr] lg:grid-cols-[9rem_1fr]"
               initial={fadeUpHidden}
               key={item.period}
               transition={getRevealTransition(index)}
@@ -47,7 +45,7 @@ export function Timeline() {
               </div>
 
               <div>
-                <h3 className="text-xl font-semibold text-white">{item.title}</h3>
+                <h3 className="text-lg font-semibold text-white sm:text-xl">{item.title}</h3>
                 <p className="mt-3 text-sm leading-7 text-slate-400 md:text-base">
                   {item.description}
                 </p>

@@ -16,12 +16,10 @@ export function Skills() {
       title="围绕构建体验的技能矩阵"
       description="从前端开发、界面体验、工具链到迭代方式，展示我构建项目时常用的能力组合。"
     >
-      <motion.div
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
+      <motion.div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {skillCategories.map((group, index) => (
           <motion.article
-            className="glass-card p-5"
+            className="glass-card p-5 sm:p-6 xl:p-5"
             initial={fadeUpHidden}
             key={group.title}
             transition={getRevealTransition(index)}

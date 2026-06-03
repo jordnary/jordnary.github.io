@@ -16,11 +16,9 @@ export function Contact() {
       title="保持简单直接的联系入口"
       description="把最重要的联系方式放在清晰的位置，方便快速建立上下文。"
     >
-      <motion.div
-        className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]"
-      >
+      <motion.div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <motion.article
-          className="glass-card p-6 sm:p-8"
+          className="glass-card p-5 sm:p-8"
           initial={fadeUpHidden}
           transition={getRevealTransition()}
           viewport={viewportOnce}
@@ -29,7 +27,7 @@ export function Contact() {
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
             {contactProfile.availability}
           </p>
-          <h3 className="mt-4 text-2xl font-semibold leading-snug text-white">
+          <h3 className="mt-4 text-xl font-semibold leading-snug text-white sm:text-2xl">
             {contactProfile.title}
           </h3>
           <p className="mt-4 text-sm leading-7 text-slate-400 md:text-base">
@@ -37,11 +35,11 @@ export function Contact() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a className="btn-primary" href={`mailto:${contactProfile.email}`}>
+            <a className="btn-primary w-full sm:w-auto" href={`mailto:${contactProfile.email}`}>
               Send email
             </a>
             <a
-              className="btn-secondary"
+              className="btn-secondary w-full sm:w-auto"
               href="https://github.com/jordnary"
               rel="noopener noreferrer"
               target="_blank"
@@ -66,12 +64,14 @@ export function Contact() {
               rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
               target={link.href.startsWith('http') ? '_blank' : undefined}
             >
-              <div className="flex items-start justify-between gap-5">
-                <div>
+              <div className="flex items-start justify-between gap-4 sm:gap-5">
+                <div className="min-w-0">
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
                     {link.title}
                   </p>
-                  <p className="mt-2 text-lg font-semibold text-white">{link.label}</p>
+                  <p className="mt-2 break-words text-base font-semibold text-white sm:text-lg">
+                    {link.label}
+                  </p>
                 </div>
                 <span
                   aria-hidden="true"
