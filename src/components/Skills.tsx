@@ -1,26 +1,46 @@
 import { PageSection } from './PageSection'
-
-const skillGroups = ['Frontend', 'Design Systems', 'Tooling', 'Workflow']
+import { skillCategories } from '../data/skills'
 
 export function Skills() {
   return (
     <PageSection
       id="skills"
       eyebrow="Skills"
-      title="技能矩阵基础网格"
-      description="这里预留技能分类布局，后续会接入 src/data 中的技能数据。"
+      title="围绕构建体验的技能矩阵"
+      description="从前端开发、界面体验、工具链到迭代方式，展示我构建项目时常用的能力组合。"
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {skillGroups.map((group) => (
-          <div className="glass-card p-5" key={group}>
-            <p className="text-base font-semibold text-white">{group}</p>
-            <div className="mt-5 space-y-3">
-              <div className="h-2 rounded-full bg-white/10">
-                <div className="h-2 w-2/3 rounded-full bg-cyan-300/70" />
-              </div>
-              <p className="text-sm text-slate-400">Skill list placeholder</p>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {skillCategories.map((group) => (
+          <article className="glass-card p-5" key={group.title}>
+            <div className="flex min-h-28 flex-col justify-between">
+              <h3 className="text-lg font-semibold text-white">{group.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-400">{group.description}</p>
             </div>
-          </div>
+
+            <div className="mt-6 space-y-5">
+              {group.items.map((skill) => (
+                <div key={skill.name}>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm font-medium text-slate-200">{skill.name}</p>
+                    <p className="text-xs text-slate-500">{skill.level}%</p>
+                  </div>
+                  <div
+                    aria-label={`${skill.name} proficiency ${skill.level}%`}
+                    aria-valuemax={100}
+                    aria-valuemin={0}
+                    aria-valuenow={skill.level}
+                    className="mt-2 h-2 rounded-full bg-white/10"
+                    role="progressbar"
+                  >
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_18px_rgba(103,232,249,0.24)]"
+                      style={{ width: `${skill.level}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
         ))}
       </div>
     </PageSection>
