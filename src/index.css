@@ -18,10 +18,12 @@
 }
 
 html {
+  background: #020617;
   scroll-behavior: smooth;
 }
 
 body {
+  background: #020617;
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
