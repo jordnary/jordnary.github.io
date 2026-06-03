@@ -1,5 +1,12 @@
+import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import { timelineItems } from '../data/timeline'
+import {
+  fadeUpHidden,
+  fadeUpVisible,
+  getRevealTransition,
+  viewportOnce,
+} from '../lib/animations'
 
 export function Timeline() {
   return (
@@ -14,11 +21,17 @@ export function Timeline() {
           aria-hidden="true"
           className="absolute left-4 top-3 hidden h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-cyan-300/70 via-white/20 to-fuchsia-300/60 md:block"
         />
-        <div className="grid gap-5">
+        <motion.div
+          className="grid gap-5"
+        >
           {timelineItems.map((item, index) => (
-            <article
-              className="glass-card relative grid gap-5 p-6 transition hover:-translate-y-1 hover:border-cyan-200/30 sm:p-7 md:grid-cols-[9rem_1fr]"
+            <motion.article
+              className="glass-card relative grid gap-5 p-6 transition-colors hover:border-cyan-200/30 sm:p-7 md:grid-cols-[9rem_1fr]"
+              initial={fadeUpHidden}
               key={item.period}
+              transition={getRevealTransition(index)}
+              viewport={viewportOnce}
+              whileInView={fadeUpVisible}
             >
               <div className="md:pl-8">
                 <span
@@ -49,9 +62,9 @@ export function Timeline() {
                   ))}
                 </div>
               </div>
-            </article>
+            </motion.article>
           ))}
-        </div>
+        </motion.div>
       </div>
     </PageSection>
   )

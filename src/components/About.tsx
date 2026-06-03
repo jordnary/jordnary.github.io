@@ -1,5 +1,12 @@
+import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import { aboutProfile } from '../data/profile'
+import {
+  fadeUpHidden,
+  fadeUpVisible,
+  getRevealTransition,
+  viewportOnce,
+} from '../lib/animations'
 
 export function About() {
   return (
@@ -9,8 +16,16 @@ export function About() {
       title="把想法整理成可以被使用的界面"
       description="关于我正在关注的方向、工作方式和这个网站的内容组织。"
     >
-      <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-        <article className="glass-card p-6 sm:p-8">
+      <motion.div
+        className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]"
+      >
+        <motion.article
+          className="glass-card p-6 sm:p-8"
+          initial={fadeUpHidden}
+          transition={getRevealTransition()}
+          viewport={viewportOnce}
+          whileInView={fadeUpVisible}
+        >
           <p className="text-lg leading-8 text-slate-200">{aboutProfile.intro}</p>
           <p className="mt-5 text-sm leading-7 text-slate-400 md:text-base">
             {aboutProfile.summary}
@@ -26,11 +41,18 @@ export function About() {
               </div>
             ))}
           </dl>
-        </article>
+        </motion.article>
 
         <div className="grid gap-4">
-          {aboutProfile.highlights.map((item) => (
-            <article className="glass-card p-5" key={item.label}>
+          {aboutProfile.highlights.map((item, index) => (
+            <motion.article
+              className="glass-card p-5"
+              initial={fadeUpHidden}
+              key={item.label}
+              transition={getRevealTransition(index, 0.08)}
+              viewport={viewportOnce}
+              whileInView={fadeUpVisible}
+            >
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
                 {item.label}
               </p>
@@ -38,10 +60,10 @@ export function About() {
               <p className="mt-3 text-sm leading-6 text-slate-400">
                 {item.description}
               </p>
-            </article>
+            </motion.article>
           ))}
         </div>
-      </div>
+      </motion.div>
     </PageSection>
   )
 }

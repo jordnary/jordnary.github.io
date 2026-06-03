@@ -1,6 +1,13 @@
+import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import heroImg from '../assets/hero.png'
 import { projects } from '../data/projects'
+import {
+  fadeUpHidden,
+  fadeUpVisible,
+  getRevealTransition,
+  viewportOnce,
+} from '../lib/animations'
 
 export function Projects() {
   return (
@@ -10,11 +17,18 @@ export function Projects() {
       title="项目以清晰的卡片方式呈现"
       description="用简洁的项目卡片展示方向、技术栈和成果入口，方便快速浏览重点。"
     >
-      <div className="grid gap-5 md:grid-cols-3">
+      <motion.div
+        className="grid gap-5 md:grid-cols-3"
+      >
         {projects.map((project, index) => (
-          <article
-            className="glass-card group flex h-full flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-cyan-200/30 hover:shadow-cyan-500/10"
+          <motion.article
+            className="glass-card group flex h-full flex-col overflow-hidden transition-colors duration-300 hover:border-cyan-200/30 hover:shadow-cyan-500/10"
+            initial={fadeUpHidden}
             key={project.title}
+            transition={getRevealTransition(index)}
+            viewport={viewportOnce}
+            whileInView={fadeUpVisible}
+            whileHover={{ scale: 1.03, y: -6 }}
           >
             <div className="relative min-h-44 overflow-hidden border-b border-white/10 bg-slate-900">
               <div className={`absolute inset-0 ${getProjectTint(index)}`} />
@@ -50,9 +64,9 @@ export function Projects() {
                 View detail
               </a>
             </div>
-          </article>
+          </motion.article>
         ))}
-      </div>
+      </motion.div>
     </PageSection>
   )
 }

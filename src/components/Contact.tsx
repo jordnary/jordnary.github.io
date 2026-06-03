@@ -1,5 +1,12 @@
+import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import { contactLinks, contactProfile } from '../data/contact'
+import {
+  fadeUpHidden,
+  fadeUpVisible,
+  getRevealTransition,
+  viewportOnce,
+} from '../lib/animations'
 
 export function Contact() {
   return (
@@ -9,8 +16,16 @@ export function Contact() {
       title="保持简单直接的联系入口"
       description="把最重要的联系方式放在清晰的位置，方便快速建立上下文。"
     >
-      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <article className="glass-card p-6 sm:p-8">
+      <motion.div
+        className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]"
+      >
+        <motion.article
+          className="glass-card p-6 sm:p-8"
+          initial={fadeUpHidden}
+          transition={getRevealTransition()}
+          viewport={viewportOnce}
+          whileInView={fadeUpVisible}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
             {contactProfile.availability}
           </p>
@@ -34,9 +49,15 @@ export function Contact() {
               View GitHub
             </a>
           </div>
-        </article>
+        </motion.article>
 
-        <div className="glass-card divide-y divide-white/10">
+        <motion.div
+          className="glass-card divide-y divide-white/10"
+          initial={fadeUpHidden}
+          transition={getRevealTransition(1)}
+          viewport={viewportOnce}
+          whileInView={fadeUpVisible}
+        >
           {contactLinks.map((link) => (
             <a
               className="group block p-5 transition hover:bg-white/[0.04] sm:p-6"
@@ -62,8 +83,8 @@ export function Contact() {
               <p className="mt-3 text-sm leading-6 text-slate-400">{link.description}</p>
             </a>
           ))}
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </PageSection>
   )
 }

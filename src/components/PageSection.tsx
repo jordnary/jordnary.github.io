@@ -1,4 +1,11 @@
 import type { ReactNode } from 'react'
+import { motion } from 'motion/react'
+import {
+  fadeUpHidden,
+  fadeUpVisible,
+  getRevealTransition,
+  viewportOnce,
+} from '../lib/animations'
 
 type PageSectionProps = {
   children: ReactNode
@@ -18,7 +25,13 @@ export function PageSection({
   return (
     <section className="scroll-mt-24 px-6 py-20 sm:py-24" id={id}>
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 max-w-3xl">
+        <motion.div
+          className="mb-10 max-w-3xl"
+          initial={fadeUpHidden}
+          transition={getRevealTransition()}
+          viewport={viewportOnce}
+          whileInView={fadeUpVisible}
+        >
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
             {eyebrow}
           </p>
@@ -26,7 +39,7 @@ export function PageSection({
             {title}
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-400">{description}</p>
-        </div>
+        </motion.div>
         {children}
       </div>
     </section>
