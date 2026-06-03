@@ -16,7 +16,7 @@ export function PageSection({
   title,
 }: PageSectionProps) {
   return (
-    <section className="px-6 py-20 sm:py-24" id={id}>
+    <section className="scroll-mt-24 px-6 py-20 sm:py-24" id={id}>
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
