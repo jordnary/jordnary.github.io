@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
-import { projects } from '../data/projects'
+import { projects, type ProjectPreview } from '../data/projects'
 import {
   fadeUpHidden,
   fadeUpVisible,
@@ -27,13 +27,13 @@ export function Projects() {
             whileHover={{ y: -6 }}
             whileInView={fadeUpVisible}
           >
-            <div className="project-media">
+            <div
+              aria-label={project.preview.description}
+              className="project-media"
+              role="img"
+            >
               <div className={getProjectTint(index)} />
-              <img
-                alt={project.preview.alt}
-                className="project-preview-image"
-                src={project.preview.image}
-              />
+              <ProjectPreviewMock variant={project.preview.variant} />
               <div className="project-preview-panel">
                 <span>{project.preview.label}</span>
                 <strong>{project.preview.metric}</strong>
@@ -109,4 +109,97 @@ function getProjectTint(index: number) {
   ]
 
   return tints[index % tints.length]
+}
+
+function ProjectPreviewMock({
+  variant,
+}: {
+  variant: ProjectPreview['variant']
+}) {
+  switch (variant) {
+    case 'personal':
+      return (
+        <div
+          aria-hidden="true"
+          className="project-preview-mock project-preview-personal"
+        >
+          <div className="mock-browser">
+            <div className="mock-browser-bar">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="mock-personal-hero">
+              <div className="mock-personal-avatar">J</div>
+              <div className="mock-personal-copy">
+                <span className="mock-line mock-line-wide" />
+                <span className="mock-line mock-line-short" />
+              </div>
+            </div>
+            <div className="mock-personal-tabs">
+              <span />
+              <span />
+              <span />
+            </div>
+          </div>
+          <div className="mock-floating-console">
+            <span>UI</span>
+            <strong>98%</strong>
+          </div>
+        </div>
+      )
+    case 'components':
+      return (
+        <div
+          aria-hidden="true"
+          className="project-preview-mock project-preview-components"
+        >
+          <div className="mock-component-grid">
+            <div className="mock-component-card mock-component-card-main">
+              <span />
+              <strong />
+              <small />
+            </div>
+            <div className="mock-component-card">
+              <span />
+              <strong />
+            </div>
+            <div className="mock-component-card">
+              <span />
+              <strong />
+            </div>
+          </div>
+          <div className="mock-component-rail">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="mock-code-chip">props</div>
+        </div>
+      )
+    case 'deploy':
+      return (
+        <div
+          aria-hidden="true"
+          className="project-preview-mock project-preview-deploy"
+        >
+          <div className="mock-pipeline">
+            <span>DEV</span>
+            <i />
+            <span>BUILD</span>
+            <i />
+            <span>LIVE</span>
+          </div>
+          <div className="mock-terminal-window">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="mock-deploy-badge">
+            <span />
+            ok
+          </div>
+        </div>
+      )
+  }
 }

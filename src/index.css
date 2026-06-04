@@ -2445,15 +2445,10 @@ a {
     background: rgb(110 231 183 / 0.1);
   }
 
-  .project-preview-image {
+  .project-preview-mock {
     position: absolute;
-    inset: 0;
+    inset: 1.25rem 1.35rem;
     z-index: 2;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    padding: 1.5rem;
-    opacity: 0.78;
     filter: drop-shadow(0 18px 28px rgb(2 6 23 / 0.36));
     transform: translate3d(0, 0, 0) scale(1);
     transition:
@@ -2461,9 +2456,254 @@ a {
       transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .project-card:hover .project-preview-image {
-    opacity: 0.9;
-    transform: translate3d(0, -0.2rem, 0) scale(1.04);
+  .project-card:hover .project-preview-mock {
+    transform: translate3d(0, -0.2rem, 0) scale(1.02);
+  }
+
+  .project-preview-personal {
+    display: grid;
+    place-items: center;
+  }
+
+  .mock-browser {
+    width: min(100%, 15rem);
+    overflow: hidden;
+    border: 1px solid rgb(103 232 249 / 0.22);
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.035)),
+      rgb(2 6 23 / 0.7);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 20px 44px -30px rgb(103 232 249 / 0.7);
+  }
+
+  .mock-browser-bar {
+    @apply flex gap-1.5 px-3 py-2;
+    border-bottom: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(2 6 23 / 0.46);
+  }
+
+  .mock-browser-bar span {
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: var(--radius-pill);
+    background: rgb(103 232 249 / 0.5);
+  }
+
+  .mock-browser-bar span:nth-child(2) {
+    background: rgb(196 181 253 / 0.5);
+  }
+
+  .mock-browser-bar span:nth-child(3) {
+    background: rgb(110 231 183 / 0.46);
+  }
+
+  .mock-personal-hero {
+    @apply grid items-center gap-3 p-3;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mock-personal-avatar {
+    @apply grid place-items-center text-sm font-semibold;
+    width: 2.6rem;
+    height: 2.6rem;
+    color: var(--color-bg);
+    border-radius: var(--radius-card);
+    background: linear-gradient(135deg, var(--color-primary-cyan), var(--color-secondary-violet));
+    box-shadow: 0 0 22px rgb(103 232 249 / 0.32);
+  }
+
+  .mock-personal-copy {
+    @apply grid gap-2;
+  }
+
+  .mock-line {
+    display: block;
+    height: 0.45rem;
+    border-radius: var(--radius-pill);
+    background: rgb(226 232 240 / 0.68);
+  }
+
+  .mock-line-wide {
+    width: 86%;
+  }
+
+  .mock-line-short {
+    width: 58%;
+    background: rgb(103 232 249 / 0.58);
+  }
+
+  .mock-personal-tabs {
+    @apply grid gap-2 px-3 pb-3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mock-personal-tabs span {
+    height: 1.6rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: var(--radius-card);
+    background: rgb(255 255 255 / 0.06);
+  }
+
+  .mock-floating-console {
+    @apply absolute right-2 top-2 grid gap-1 px-2.5 py-2 text-xs font-semibold;
+    border: 1px solid rgb(103 232 249 / 0.24);
+    border-radius: var(--radius-card);
+    color: var(--color-primary-cyan-text);
+    background: rgb(2 6 23 / 0.78);
+    box-shadow: 0 18px 34px -28px rgb(103 232 249 / 0.7);
+  }
+
+  .mock-floating-console strong {
+    color: var(--color-text);
+  }
+
+  .project-preview-components {
+    display: grid;
+    align-items: center;
+  }
+
+  .mock-component-grid {
+    @apply grid gap-2.5;
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+
+  .mock-component-card {
+    @apply grid gap-2 p-3;
+    min-height: 4.4rem;
+    border: 1px solid rgb(196 181 253 / 0.2);
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(145deg, rgb(196 181 253 / 0.12), rgb(255 255 255 / 0.035)),
+      rgb(2 6 23 / 0.62);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+
+  .mock-component-card-main {
+    grid-row: span 2;
+    min-height: 9rem;
+    border-color: rgb(103 232 249 / 0.24);
+    background:
+      linear-gradient(145deg, rgb(103 232 249 / 0.12), rgb(196 181 253 / 0.08)),
+      rgb(2 6 23 / 0.68);
+  }
+
+  .mock-component-card span,
+  .mock-component-card strong,
+  .mock-component-card small {
+    display: block;
+    border-radius: var(--radius-pill);
+    background: rgb(226 232 240 / 0.62);
+  }
+
+  .mock-component-card span {
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-card);
+    background: linear-gradient(135deg, rgb(103 232 249 / 0.76), rgb(196 181 253 / 0.72));
+  }
+
+  .mock-component-card strong {
+    width: 76%;
+    height: 0.42rem;
+  }
+
+  .mock-component-card small {
+    width: 48%;
+    height: 0.35rem;
+    background: rgb(196 181 253 / 0.54);
+  }
+
+  .mock-component-rail {
+    @apply absolute bottom-2 right-3 flex gap-1.5;
+  }
+
+  .mock-component-rail span {
+    width: 1.6rem;
+    height: 0.36rem;
+    border-radius: var(--radius-pill);
+    background: rgb(103 232 249 / 0.5);
+  }
+
+  .mock-code-chip {
+    @apply absolute left-3 top-3 px-2.5 py-1 text-xs font-semibold;
+    color: #ede9fe;
+    border: 1px solid rgb(196 181 253 / 0.22);
+    border-radius: var(--radius-card);
+    background: rgb(2 6 23 / 0.72);
+  }
+
+  .project-preview-deploy {
+    display: grid;
+    align-content: center;
+    gap: 0.75rem;
+  }
+
+  .mock-pipeline {
+    @apply grid items-center gap-2;
+    grid-template-columns: minmax(0, 1fr) 1.35rem minmax(0, 1fr) 1.35rem minmax(0, 1fr);
+  }
+
+  .mock-pipeline span {
+    @apply grid place-items-center text-xs font-semibold;
+    min-height: 3.1rem;
+    color: #d1fae5;
+    border: 1px solid rgb(110 231 183 / 0.24);
+    border-radius: var(--radius-card);
+    background:
+      radial-gradient(circle at 50% 0%, rgb(110 231 183 / 0.16), transparent 58%),
+      rgb(2 6 23 / 0.68);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+
+  .mock-pipeline i {
+    display: block;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, rgb(110 231 183 / 0.28), rgb(103 232 249 / 0.78));
+    box-shadow: 0 0 12px rgb(110 231 183 / 0.26);
+  }
+
+  .mock-terminal-window {
+    @apply grid gap-2 p-3;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: var(--radius-card);
+    background: rgb(2 6 23 / 0.72);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  .mock-terminal-window span {
+    display: block;
+    height: 0.38rem;
+    border-radius: var(--radius-pill);
+    background: rgb(110 231 183 / 0.6);
+  }
+
+  .mock-terminal-window span:nth-child(2) {
+    width: 72%;
+    background: rgb(103 232 249 / 0.55);
+  }
+
+  .mock-terminal-window span:nth-child(3) {
+    width: 46%;
+    background: rgb(226 232 240 / 0.5);
+  }
+
+  .mock-deploy-badge {
+    @apply absolute right-3 top-3 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold uppercase;
+    color: #d1fae5;
+    border: 1px solid rgb(110 231 183 / 0.28);
+    border-radius: var(--radius-pill);
+    background: rgb(2 6 23 / 0.76);
+  }
+
+  .mock-deploy-badge span {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: var(--radius-pill);
+    background: #6ee7b7;
+    box-shadow: 0 0 12px rgb(110 231 183 / 0.6);
   }
 
   .project-preview-panel {

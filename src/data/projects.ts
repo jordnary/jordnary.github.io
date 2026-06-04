@@ -1,5 +1,3 @@
-import heroPreview from '../assets/hero.png'
-
 export type Project = {
   highlights: string[]
   links: ProjectLink[]
@@ -18,10 +16,10 @@ export type ProjectLink = {
 }
 
 export type ProjectPreview = {
-  alt: string
-  image: string
+  description: string
   label: string
   metric: string
+  variant: 'personal' | 'components' | 'deploy'
 }
 
 export const projects: Project[] = [
@@ -38,10 +36,10 @@ export const projects: Project[] = [
       { href: '#contact', label: '联系交流', variant: 'secondary' },
     ],
     preview: {
-      alt: 'Personal website interface preview',
-      image: heroPreview,
+      description: 'Personal website preview with a hero console mock interface',
       label: 'Personal Console',
       metric: 'Static site',
+      variant: 'personal',
     },
   },
   {
@@ -57,10 +55,10 @@ export const projects: Project[] = [
       { href: '#about', label: '了解背景', variant: 'secondary' },
     ],
     preview: {
-      alt: 'Portfolio system module preview',
-      image: heroPreview,
+      description: 'Component system preview with reusable module cards',
       label: 'Content Modules',
       metric: 'Reusable blocks',
+      variant: 'components',
     },
   },
   {
@@ -76,10 +74,10 @@ export const projects: Project[] = [
       { href: '#timeline', label: '查看时间线', variant: 'secondary' },
     ],
     preview: {
-      alt: 'Static launch workflow preview',
-      image: heroPreview,
+      description: 'Deployment flow preview with build and launch pipeline steps',
       label: 'Launch Flow',
       metric: 'Build ready',
+      variant: 'deploy',
     },
   },
 ]
