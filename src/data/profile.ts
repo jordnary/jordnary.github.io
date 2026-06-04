@@ -1,37 +1,37 @@
 export const aboutProfile = {
   intro:
-    '我关注前端工程、视觉表达和稳定交付之间的平衡，喜欢把复杂信息整理成清晰、可维护、响应迅速的界面体验。',
+    '我是一名持续打磨前端能力的学生开发者，喜欢把想法做成真正能点、能看、能维护的界面。',
   summary:
-    '这个个人主页会持续收纳我的项目、技能栈、学习记录和联系方式，让访问者能快速理解我正在构建什么、擅长什么、以及如何联系我。',
+    '现在我主要关注前端工程、视觉表达和稳定交付之间的平衡：一边补齐 React、TypeScript 和工程化基础，一边把学习记录、项目沉淀和阶段性作品放在这里，方便自己复盘，也让来访者更快了解我正在做什么。',
   highlights: [
     {
       label: 'Focus',
       value: 'Frontend Engineering',
-      description: 'React、TypeScript、组件化开发与静态站点体验。',
+      description: '围绕 React、TypeScript、组件化和静态站点构建，练习把页面拆得清楚、写得稳一点。',
     },
     {
       label: 'Style',
-      value: 'Clean Tech UI',
-      description: '深色界面、毛玻璃层次、可读性和响应式细节。',
+      value: 'Visual Expression',
+      description: '不只做“能用”的页面，也会琢磨层次、动效、可读性和响应式细节，让界面更有辨识度。',
     },
     {
       label: 'Workflow',
-      value: 'Ship Iteratively',
-      description: '按阶段实现、验证和提交，保持变更清晰可回滚。',
+      value: 'Stable Delivery',
+      description: '习惯按阶段实现、验证和提交，把每次改动控制在可理解、可回滚、可继续迭代的范围内。',
     },
   ],
   stats: [
     {
-      label: 'Sections',
-      value: '8',
+      label: 'Identity',
+      value: 'Student',
     },
     {
-      label: 'Stack',
-      value: 'Static',
+      label: 'Record',
+      value: 'Learning',
     },
     {
-      label: 'Mode',
-      value: 'Dark',
+      label: 'Output',
+      value: 'Projects',
     },
   ],
 }

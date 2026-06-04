@@ -13,8 +13,8 @@ export function About() {
     <PageSection
       id="about"
       eyebrow="About"
-      title="把想法整理成可以被使用的界面"
-      description="关于我正在关注的方向、工作方式和这个网站的内容组织。"
+      title="在学习和项目里打磨前端表达"
+      description="关于我现在关注的方向、做项目的习惯，以及这个网站会持续记录的内容。"
     >
       <motion.div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
         <motion.article
