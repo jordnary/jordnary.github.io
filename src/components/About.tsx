@@ -38,6 +38,20 @@ export function About() {
               </p>
             ))}
           </div>
+
+          <ul
+            aria-label="About keywords"
+            className="about-keyword-list mt-7"
+          >
+            {aboutProfile.keywords.map((keyword) => (
+              <li
+                className="about-keyword-chip"
+                key={keyword}
+              >
+                {keyword}
+              </li>
+            ))}
+          </ul>
         </motion.article>
 
         <div className="grid gap-4">
