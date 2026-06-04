@@ -2366,15 +2366,26 @@ a {
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.042)),
       var(--color-card);
+    box-shadow:
+      var(--shadow-card),
+      0 0 0 rgb(103 232 249 / 0);
+    transition:
+      background 260ms ease,
+      border-color 260ms ease,
+      box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .project-card::before {
+  .project-card::before,
+  .project-card::after {
     content: "";
     pointer-events: none;
     position: absolute;
+  }
+
+  .project-card::before {
     inset-inline: 1rem;
     top: 0;
-    z-index: 2;
+    z-index: 3;
     height: 1px;
     opacity: 0.68;
     background: linear-gradient(
@@ -2384,6 +2395,46 @@ a {
       rgb(196 181 253 / 0.42),
       transparent
     );
+  }
+
+  .project-card::after {
+    inset: 0;
+    z-index: 4;
+    padding: 1px;
+    border-radius: inherit;
+    opacity: 0;
+    background: linear-gradient(
+      135deg,
+      rgb(103 232 249 / 0.86),
+      rgb(196 181 253 / 0.72),
+      rgb(103 232 249 / 0.34)
+    );
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    transition: opacity 260ms ease;
+  }
+
+  .project-card:hover {
+    border-color: transparent;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgb(103 232 249 / 0.14), transparent 58%),
+      radial-gradient(ellipse at 88% 22%, rgb(196 181 253 / 0.12), transparent 54%),
+      linear-gradient(180deg, rgb(255 255 255 / 0.095), rgb(255 255 255 / 0.052)),
+      var(--color-card-hover);
+    box-shadow:
+      0 28px 72px -36px rgb(103 232 249 / 0.78),
+      0 20px 56px -42px rgb(196 181 253 / 0.7),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .project-card:hover::after {
+    opacity: 1;
   }
 
   .project-media {
@@ -2417,6 +2468,10 @@ a {
       rgb(0 0 0 / 0.82),
       transparent 74%
     );
+  }
+
+  .project-card:hover .project-media::before {
+    opacity: 0.44;
   }
 
   .project-media::after {
@@ -2457,7 +2512,7 @@ a {
   }
 
   .project-card:hover .project-preview-mock {
-    transform: translate3d(0, -0.2rem, 0) scale(1.02);
+    transform: translate3d(0, -0.24rem, 0) scale(1.05);
   }
 
   .project-preview-personal {
