@@ -136,6 +136,19 @@ export function Hero() {
 
   return (
     <section className="site-container page-gutter hero-section" id="home">
+      <div className="hero-decor" aria-hidden="true">
+        <span className="hero-decor-grid hero-decor-grid-left" />
+        <span className="hero-decor-grid hero-decor-grid-right" />
+        <span className="hero-decor-line hero-decor-line-a" />
+        <span className="hero-decor-line hero-decor-line-b" />
+        <span className="hero-decor-dot hero-decor-dot-a" />
+        <span className="hero-decor-dot hero-decor-dot-b" />
+        <span className="hero-decor-dot hero-decor-dot-c" />
+        <span className="hero-code-tag hero-code-tag-a">&lt;React /&gt;</span>
+        <span className="hero-code-tag hero-code-tag-b">const flow = clean</span>
+        <span className="hero-code-tag hero-code-tag-c">AI.web.explore()</span>
+      </div>
+
       <div className="hero-copy">
         <motion.div
           animate={fadeUpVisible}
