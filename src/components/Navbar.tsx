@@ -1,12 +1,12 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 
 const navItems = [
-  { href: '#home', id: 'home', label: 'Home' },
-  { href: '#about', id: 'about', label: 'About' },
-  { href: '#skills', id: 'skills', label: 'Skills' },
-  { href: '#projects', id: 'projects', label: 'Projects' },
-  { href: '#timeline', id: 'timeline', label: 'Timeline' },
-  { href: '#contact', id: 'contact', label: 'Contact' },
+  { href: '#home', id: 'home', label: '首页' },
+  { href: '#about', id: 'about', label: '关于' },
+  { href: '#skills', id: 'skills', label: '技能' },
+  { href: '#projects', id: 'projects', label: '项目' },
+  { href: '#timeline', id: 'timeline', label: '路径' },
+  { href: '#contact', id: 'contact', label: '联系' },
 ] as const
 
 type SectionId = (typeof navItems)[number]['id']
