@@ -139,11 +139,57 @@ export function Projects() {
           ))}
         </motion.div>
       ) : (
-        <div className="project-empty-state glass-card">
-          No projects match this filter.
-        </div>
+        <ProjectEmptyState
+          activeFilter={activeFilter}
+          onReset={() => setActiveFilter('All')}
+        />
       )}
     </PageSection>
+  )
+}
+
+function ProjectEmptyState({
+  activeFilter,
+  onReset,
+}: {
+  activeFilter: ProjectFilter
+  onReset: () => void
+}) {
+  const emptyTitle =
+    activeFilter === 'All'
+      ? '暂无项目内容'
+      : `暂无 ${activeFilter} 项目`
+
+  return (
+    <motion.div
+      animate={fadeUpVisible}
+      className="project-empty-state glass-card"
+      initial={fadeUpHidden}
+      transition={getRevealTransition(0)}
+    >
+      <div className="project-empty-visual" aria-hidden="true">
+        <span className="project-empty-orbit" />
+        <span className="project-empty-dot project-empty-dot-a" />
+        <span className="project-empty-dot project-empty-dot-b" />
+      </div>
+      <div className="project-empty-copy">
+        <p className="meta-label-muted">No matches</p>
+        <h3>{emptyTitle}</h3>
+        <p>
+          这个分类暂时还在整理中，之后会把合适的作品补充进来。
+        </p>
+      </div>
+      {activeFilter !== 'All' && (
+        <button
+          className="project-empty-action"
+          onClick={onReset}
+          type="button"
+        >
+          <span>Show all projects</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
+    </motion.div>
   )
 }
 
