@@ -28,8 +28,13 @@ export function Skills() {
             whileHover={{ y: -6 }}
           >
             <header className="skill-card-header">
-              <div className="skill-card-kicker">
-                {String(index + 1).padStart(2, '0')}
+              <div className="skill-card-header-row">
+                <div className="skill-card-icon" aria-hidden="true">
+                  {getSkillIcon(group.title)}
+                </div>
+                <div className="skill-card-kicker">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
               </div>
               <h3 className="card-title text-lg sm:text-xl">
                 {group.title}
@@ -83,4 +88,59 @@ export function Skills() {
       </motion.div>
     </PageSection>
   )
+}
+
+function getSkillIcon(title: string) {
+  const iconProps = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    strokeWidth: 1.8,
+    viewBox: '0 0 24 24',
+  } as const
+
+  switch (title) {
+    case 'Frontend':
+      return (
+        <svg {...iconProps}>
+          <path d="m8.5 8-4 4 4 4" />
+          <path d="m15.5 8 4 4-4 4" />
+          <path d="m13 6-2 12" />
+        </svg>
+      )
+    case 'Interface':
+      return (
+        <svg {...iconProps}>
+          <rect height="6" rx="1.4" width="7" x="4" y="5" />
+          <rect height="6" rx="1.4" width="7" x="13" y="5" />
+          <rect height="7" rx="1.4" width="16" x="4" y="14" />
+        </svg>
+      )
+    case 'Tooling':
+      return (
+        <svg {...iconProps}>
+          <path d="M14.7 6.3a4 4 0 0 0-5.1 5.1l-4.7 4.7a2.1 2.1 0 0 0 3 3l4.7-4.7a4 4 0 0 0 5.1-5.1l-2.6 2.6-3-3z" />
+          <path d="m6.4 17.6.01.01" />
+        </svg>
+      )
+    case 'Workflow':
+      return (
+        <svg {...iconProps}>
+          <circle cx="6" cy="7" r="2.2" />
+          <circle cx="18" cy="7" r="2.2" />
+          <circle cx="12" cy="17" r="2.2" />
+          <path d="M8.2 8.7 10.8 15" />
+          <path d="M15.8 8.7 13.2 15" />
+          <path d="M8.4 7h7.2" />
+        </svg>
+      )
+    default:
+      return (
+        <svg {...iconProps}>
+          <path d="M5 12h14" />
+          <path d="M12 5v14" />
+        </svg>
+      )
+  }
 }
