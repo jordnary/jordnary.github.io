@@ -2013,10 +2013,97 @@ a {
     color: var(--color-primary-cyan-text);
   }
 
+  .skill-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 25rem;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.04)),
+      var(--color-card);
+    transform: translateY(0);
+    transition:
+      border-color 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .skill-card::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 1rem;
+    top: 0;
+    height: 1px;
+    opacity: 0.68;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(165 243 252 / 0.64),
+      rgb(196 181 253 / 0.42),
+      transparent
+    );
+  }
+
+  .skill-card:hover {
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.095), rgb(255 255 255 / 0.052)),
+      var(--color-card-hover);
+  }
+
+  .skill-card-header {
+    @apply pb-5;
+    min-height: 9.5rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .skill-card-kicker {
+    @apply mb-4 inline-flex h-8 w-8 items-center justify-center text-xs font-semibold;
+    color: var(--color-primary-cyan-text);
+    border: 1px solid rgb(103 232 249 / 0.22);
+    border-radius: var(--radius-card);
+    background:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.18), transparent 42%),
+      linear-gradient(135deg, rgb(103 232 249 / 0.16), rgb(196 181 253 / 0.1));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 12px 28px -20px rgb(103 232 249 / 0.8);
+  }
+
+  .skill-card-body {
+    @apply flex flex-1 flex-col justify-center gap-5 py-6;
+  }
+
+  .skill-row {
+    min-width: 0;
+  }
+
+  .skill-card-footer {
+    @apply flex flex-wrap gap-2 pt-4;
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .skill-tool-tag {
+    @apply inline-flex items-center text-xs font-semibold;
+    min-height: 1.65rem;
+    padding: 0.35rem 0.65rem;
+    color: var(--color-text-soft);
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: var(--radius-pill);
+    background: rgb(15 23 42 / 0.58);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  .skill-card:hover .skill-tool-tag {
+    border-color: rgb(103 232 249 / 0.22);
+    background: rgb(103 232 249 / 0.08);
+  }
+
   .progress-track {
     @apply mt-2 h-2 overflow-hidden;
     border-radius: var(--radius-pill);
-    background: var(--color-border);
+    background: rgb(255 255 255 / 0.1);
+    box-shadow: inset 0 1px 1px rgb(2 6 23 / 0.32);
   }
 
   .progress-fill {

@@ -19,25 +19,29 @@ export function Skills() {
       <motion.div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {skillCategories.map((group, index) => (
           <motion.article
-            className="glass-card p-5 sm:p-6 xl:p-5"
+            className="skill-card glass-card interactive-card group flex h-full flex-col p-5 sm:p-6 xl:p-5"
             initial={fadeUpHidden}
             key={group.title}
             transition={getRevealTransition(index)}
             viewport={viewportOnce}
             whileInView={fadeUpVisible}
+            whileHover={{ y: -6 }}
           >
-            <div className="flex min-h-28 flex-col justify-between">
-              <h3 className="card-title text-lg">
+            <header className="skill-card-header">
+              <div className="skill-card-kicker">
+                {String(index + 1).padStart(2, '0')}
+              </div>
+              <h3 className="card-title text-lg sm:text-xl">
                 {group.title}
               </h3>
               <p className="card-copy mt-3 text-sm leading-6">
                 {group.description}
               </p>
-            </div>
+            </header>
 
-            <div className="mt-6 space-y-5">
+            <div className="skill-card-body">
               {group.items.map((skill) => (
-                <div key={skill.name}>
+                <div className="skill-row" key={skill.name}>
                   <div className="flex items-center justify-between gap-4">
                     <p className="body-copy text-sm font-medium">
                       {skill.name}
@@ -63,6 +67,17 @@ export function Skills() {
                 </div>
               ))}
             </div>
+
+            <footer className="skill-card-footer">
+              {group.items.map((skill) => (
+                <span
+                  className="skill-tool-tag"
+                  key={skill.name}
+                >
+                  {skill.name}
+                </span>
+              ))}
+            </footer>
           </motion.article>
         ))}
       </motion.div>
