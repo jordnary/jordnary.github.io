@@ -17,26 +17,23 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/75 px-4 backdrop-blur-xl sm:px-6">
+    <header className="nav-shell page-gutter">
       <nav
         aria-label="Primary navigation"
-        className="mx-auto flex h-20 max-w-6xl items-center justify-between"
+        className="site-container nav-content"
       >
         <a
-          className="group inline-flex items-center gap-3 text-lg font-semibold tracking-tight text-white"
+          className="nav-brand"
           href="#home"
           onClick={closeMenu}
         >
-          <span
-            aria-hidden="true"
-            className="grid h-9 w-9 place-items-center rounded-lg border border-cyan-300/25 bg-cyan-300/10 text-sm text-cyan-100 shadow-lg shadow-cyan-950/30 transition before:content-['J'] group-hover:border-cyan-200/60 group-hover:bg-cyan-300/20"
-          />
+          <span aria-hidden="true" className="brand-mark" />
           <span>Jordnary</span>
         </a>
         <div className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
             <a
-              className="rounded-full px-4 py-2 text-sm text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+              className="nav-link"
               href={item.href}
               key={item.href}
             >
@@ -51,7 +48,7 @@ export function Navbar() {
           aria-controls="mobile-navigation"
           aria-expanded={isOpen}
           aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
-          className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-slate-100 transition hover:border-cyan-200/50 hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200 lg:hidden"
+          className="icon-button lg:hidden"
           onClick={() => setIsOpen((current) => !current)}
           type="button"
         >
@@ -76,15 +73,15 @@ export function Navbar() {
       </nav>
 
       <div
-        className={`mx-auto max-w-6xl overflow-hidden transition-[max-height,opacity] duration-300 lg:hidden ${
+        className={`site-container mobile-nav-panel lg:hidden ${
           isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
         id="mobile-navigation"
       >
-        <div className="grid gap-2 border-t border-white/10 py-4">
+        <div className="mobile-nav-list">
           {navItems.map((item) => (
             <a
-              className="rounded-xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+              className="mobile-nav-link"
               href={item.href}
               key={item.href}
               onClick={closeMenu}

@@ -20,7 +20,7 @@ export function Projects() {
       <motion.div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project, index) => (
           <motion.article
-            className="glass-card group flex h-full flex-col overflow-hidden transition-colors duration-300 hover:border-cyan-200/30 hover:shadow-cyan-500/10"
+            className="glass-card interactive-card group flex h-full flex-col overflow-hidden"
             initial={fadeUpHidden}
             key={project.title}
             transition={getRevealTransition(index)}
@@ -28,8 +28,8 @@ export function Projects() {
             whileInView={fadeUpVisible}
             whileHover={{ scale: 1.03, y: -6 }}
           >
-            <div className="relative min-h-40 overflow-hidden border-b border-white/10 bg-slate-900 sm:min-h-44">
-              <div className={`absolute inset-0 ${getProjectTint(index)}`} />
+            <div className="project-media">
+              <div className={getProjectTint(index)} />
               <img
                 alt={project.imageAlt}
                 className="absolute inset-0 h-full w-full object-contain p-8 opacity-80 transition duration-300 group-hover:scale-105"
@@ -38,19 +38,19 @@ export function Projects() {
             </div>
 
             <div className="flex flex-1 flex-col p-5 sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
+              <p className="meta-label">
                 {project.meta}
               </p>
-              <h3 className="mt-3 text-lg font-semibold text-white sm:text-xl">
+              <h3 className="card-title mt-3 text-lg sm:text-xl">
                 {project.title}
               </h3>
-              <p className="mt-3 flex-1 text-sm leading-6 text-slate-400">
+              <p className="card-copy mt-3 flex-1 text-sm leading-6">
                 {project.description}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {project.tags.map((tag) => (
                   <span
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300"
+                    className="tag-pill"
                     key={tag}
                   >
                     {tag}
@@ -58,7 +58,7 @@ export function Projects() {
                 ))}
               </div>
               <a
-                className="mt-6 inline-flex text-sm font-semibold text-cyan-200 transition hover:text-white"
+                className="accent-link mt-6"
                 href={project.href}
               >
                 View detail
@@ -72,7 +72,11 @@ export function Projects() {
 }
 
 function getProjectTint(index: number) {
-  const tints = ['bg-cyan-300/10', 'bg-fuchsia-300/10', 'bg-emerald-300/10']
+  const tints = [
+    'project-tint-cyan',
+    'project-tint-violet',
+    'project-tint-emerald',
+  ]
 
   return tints[index % tints.length]
 }

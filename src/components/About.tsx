@@ -24,20 +24,20 @@ export function About() {
           viewport={viewportOnce}
           whileInView={fadeUpVisible}
         >
-          <p className="text-base leading-8 text-slate-200 sm:text-lg">
+          <p className="body-copy text-base leading-8 sm:text-lg">
             {aboutProfile.intro}
           </p>
-          <p className="mt-5 text-sm leading-7 text-slate-400 md:text-base">
+          <p className="muted-copy mt-5 text-sm leading-7 md:text-base">
             {aboutProfile.summary}
           </p>
 
           <dl className="mt-8 grid gap-3 sm:grid-cols-3">
             {aboutProfile.stats.map((stat) => (
-              <div className="border-t border-white/10 pt-4" key={stat.label}>
-                <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              <div className="border-t border-subtle pt-4" key={stat.label}>
+                <dt className="meta-label-muted">
                   {stat.label}
                 </dt>
-                <dd className="mt-2 text-2xl font-semibold text-white">
+                <dd className="card-title mt-2 text-2xl">
                   {stat.value}
                 </dd>
               </div>
@@ -55,13 +55,13 @@ export function About() {
               viewport={viewportOnce}
               whileInView={fadeUpVisible}
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">
+              <p className="meta-label">
                 {item.label}
               </p>
-              <h3 className="mt-3 text-lg font-semibold text-white sm:text-xl">
+              <h3 className="card-title mt-3 text-lg sm:text-xl">
                 {item.value}
               </h3>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
+              <p className="card-copy mt-3 text-sm leading-6">
                 {item.description}
               </p>
             </motion.article>

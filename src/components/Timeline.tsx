@@ -19,12 +19,12 @@ export function Timeline() {
       <div className="relative">
         <div
           aria-hidden="true"
-          className="absolute left-4 top-3 hidden h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-cyan-300/70 via-white/20 to-fuchsia-300/60 md:block"
+          className="timeline-line"
         />
         <motion.div className="grid gap-5">
           {timelineItems.map((item, index) => (
             <motion.article
-              className="glass-card relative grid gap-4 p-5 transition-colors hover:border-cyan-200/30 sm:gap-5 sm:p-7 md:grid-cols-[8rem_1fr] lg:grid-cols-[9rem_1fr]"
+              className="glass-card interactive-card relative grid gap-4 p-5 sm:gap-5 sm:p-7 md:grid-cols-[8rem_1fr] lg:grid-cols-[9rem_1fr]"
               initial={fadeUpHidden}
               key={item.period}
               transition={getRevealTransition(index)}
@@ -34,27 +34,27 @@ export function Timeline() {
               <div className="md:pl-8">
                 <span
                   aria-hidden="true"
-                  className="absolute left-[11px] top-8 hidden h-3 w-3 rounded-full border border-cyan-100 bg-slate-950 shadow-[0_0_18px_rgba(103,232,249,0.65)] md:block"
+                  className="timeline-dot"
                 />
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300">
+                <p className="meta-label">
                   {item.period}
                 </p>
-                <p className="mt-3 text-sm text-slate-500">
+                <p className="subtle-copy mt-3 text-sm">
                   {String(index + 1).padStart(2, '0')}
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-white sm:text-xl">
+                <h3 className="card-title text-lg sm:text-xl">
                   {item.title}
                 </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-400 md:text-base">
+                <p className="card-copy mt-3 text-sm leading-7 md:text-base">
                   {item.description}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {item.points.map((point) => (
                     <span
-                      className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300"
+                      className="tag-pill"
                       key={point}
                     >
                       {point}

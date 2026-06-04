@@ -24,13 +24,13 @@ export function Contact() {
           viewport={viewportOnce}
           whileInView={fadeUpVisible}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">
+          <p className="meta-label">
             {contactProfile.availability}
           </p>
-          <h3 className="mt-4 text-xl font-semibold leading-snug text-white sm:text-2xl">
+          <h3 className="card-title mt-4 text-xl leading-snug sm:text-2xl">
             {contactProfile.title}
           </h3>
-          <p className="mt-4 text-sm leading-7 text-slate-400 md:text-base">
+          <p className="card-copy mt-4 text-sm leading-7 md:text-base">
             {contactProfile.description}
           </p>
 
@@ -53,7 +53,7 @@ export function Contact() {
         </motion.article>
 
         <motion.div
-          className="glass-card divide-y divide-white/10"
+          className="glass-card divide-y divide-subtle"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
           viewport={viewportOnce}
@@ -61,7 +61,7 @@ export function Contact() {
         >
           {contactLinks.map((link) => (
             <a
-              className="group block p-5 transition hover:bg-white/[0.04] sm:p-6"
+              className="contact-link"
               href={link.href}
               key={link.title}
               rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
@@ -69,21 +69,21 @@ export function Contact() {
             >
               <div className="flex items-start justify-between gap-4 sm:gap-5">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                  <p className="meta-label">
                     {link.title}
                   </p>
-                  <p className="mt-2 break-words text-base font-semibold text-white sm:text-lg">
+                  <p className="card-title mt-2 break-words text-base sm:text-lg">
                     {link.label}
                   </p>
                 </div>
                 <span
                   aria-hidden="true"
-                  className="mt-1 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-200 transition group-hover:-translate-y-0.5 group-hover:border-cyan-200/40 group-hover:bg-cyan-300/10"
+                  className="contact-arrow"
                 >
                   ↗
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
+              <p className="card-copy mt-3 text-sm leading-6">
                 {link.description}
               </p>
             </a>

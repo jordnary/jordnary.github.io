@@ -1,7 +1,7 @@
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 px-4 py-8 sm:px-6">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+    <footer className="footer-shell">
+      <div className="site-container footer-content">
         <p>© 2026 Jordnary. All rights reserved.</p>
         <p>Built with React, TypeScript, Vite, and Tailwind CSS.</p>
       </div>

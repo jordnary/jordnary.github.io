@@ -27,10 +27,10 @@ export function Skills() {
             whileInView={fadeUpVisible}
           >
             <div className="flex min-h-28 flex-col justify-between">
-              <h3 className="text-lg font-semibold text-white">
+              <h3 className="card-title text-lg">
                 {group.title}
               </h3>
-              <p className="mt-3 text-sm leading-6 text-slate-400">
+              <p className="card-copy mt-3 text-sm leading-6">
                 {group.description}
               </p>
             </div>
@@ -39,21 +39,21 @@ export function Skills() {
               {group.items.map((skill) => (
                 <div key={skill.name}>
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-slate-200">
+                    <p className="body-copy text-sm font-medium">
                       {skill.name}
                     </p>
-                    <p className="text-xs text-slate-500">{skill.level}%</p>
+                    <p className="subtle-copy text-xs">{skill.level}%</p>
                   </div>
                   <div
                     aria-label={`${skill.name} proficiency ${skill.level}%`}
                     aria-valuemax={100}
                     aria-valuemin={0}
                     aria-valuenow={skill.level}
-                    className="mt-2 h-2 rounded-full bg-white/10"
+                    className="progress-track"
                     role="progressbar"
                   >
                     <motion.div
-                      className="h-2 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_18px_rgba(103,232,249,0.24)]"
+                      className="progress-fill"
                       initial={{ width: 0 }}
                       transition={{ duration: 0.7, ease: 'easeOut' }}
                       viewport={viewportOnce}

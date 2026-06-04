@@ -31,34 +31,31 @@ const techTags = [
 
 export function Hero() {
   return (
-    <section
-      className="mx-auto grid min-h-[calc(100svh-5rem)] max-w-6xl items-center gap-10 px-4 pb-16 pt-28 sm:px-6 sm:pb-20 sm:pt-32 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14"
-      id="home"
-    >
+    <section className="site-container page-gutter hero-section" id="home">
       <div className="max-w-2xl">
         <motion.div
           animate={fadeUpVisible}
-          className="inline-flex max-w-full items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100 shadow-lg shadow-cyan-950/30 backdrop-blur sm:px-4 sm:text-sm"
+          className="highlight-pill"
           initial={fadeUpHidden}
           transition={getRevealTransition(0)}
         >
-          <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.85)]" />
+          <span className="glow-dot" />
           <span className="min-w-0">Building thoughtful digital experiences</span>
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
-          className="mt-6 text-3xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl"
+          className="hero-title"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
         >
           你好，我是 Jordnary，
-          <span className="block bg-gradient-to-r from-cyan-200 via-white to-fuchsia-200 bg-clip-text text-transparent">
+          <span className="gradient-text block">
             打造清爽而有质感的 Web 体验。
           </span>
         </motion.h1>
         <motion.p
           animate={fadeUpVisible}
-          className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg"
+          className="lead-copy mt-6 max-w-xl"
           initial={fadeUpHidden}
           transition={getRevealTransition(2)}
         >
@@ -86,7 +83,7 @@ export function Hero() {
         >
           {techTags.map((tag) => (
             <span
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-300"
+              className="tag-pill py-1.5 text-sm"
               key={tag}
             >
               {tag}
@@ -102,13 +99,13 @@ export function Hero() {
         transition={getRevealTransition(0, 0.22)}
       >
         <div className="glass-card relative overflow-hidden p-4 sm:p-6">
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/70 to-transparent" />
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div className="accent-line" />
+          <div className="flex items-center justify-between border-b border-subtle pb-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-300">
+              <p className="meta-label">
                 Live Preview
               </p>
-              <p className="mt-1 text-base font-semibold text-white sm:text-lg">
+              <p className="card-title mt-1 text-base sm:text-lg">
                 Personal console
               </p>
             </div>
@@ -120,10 +117,10 @@ export function Hero() {
           </div>
 
           <div className="grid gap-5 py-6 sm:py-7 md:grid-cols-[0.95fr_1.05fr] lg:grid-cols-1 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="flex min-h-44 items-center justify-center bg-gradient-to-br from-cyan-300/10 via-slate-900/40 to-fuchsia-300/10 p-4 sm:min-h-52">
+            <div className="hero-preview-media">
               <img
                 alt=""
-                className="max-h-56 w-full object-contain opacity-90 drop-shadow-[0_24px_60px_rgba(56,189,248,0.24)]"
+                className="hero-preview-image"
                 src={heroImg}
               />
             </div>
@@ -131,14 +128,14 @@ export function Hero() {
             <div className="grid content-center">
               {heroHighlights.map((item) => (
                 <div
-                  className="border-b border-white/10 px-1 py-4 last:border-b-0"
+                  className="border-b border-subtle px-1 py-4 last:border-b-0"
                   key={item.label}
                 >
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.22em]">
+                    <p className="meta-label-muted">
                       {item.label}
                     </p>
-                    <p className="text-sm font-semibold text-slate-100">
+                    <p className="body-copy text-sm font-semibold">
                       {item.value}
                     </p>
                   </div>
@@ -147,7 +144,7 @@ export function Hero() {
             </div>
           </div>
 
-          <div className="border-t border-cyan-300/15 pt-4 text-sm text-cyan-100">
+          <div className="border-t border-accent-subtle pt-4 text-sm text-accent">
             静态优先，结构可维护，轻量动效已接入。
           </div>
         </div>
