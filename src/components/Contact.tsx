@@ -35,7 +35,10 @@ export function Contact() {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a className="btn-primary w-full sm:w-auto" href={`mailto:${contactProfile.email}`}>
+            <a
+              className="btn-primary w-full sm:w-auto"
+              href={`mailto:${contactProfile.email}`}
+            >
               Send email
             </a>
             <a
@@ -80,7 +83,9 @@ export function Contact() {
                   ↗
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-400">{link.description}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                {link.description}
+              </p>
             </a>
           ))}
         </motion.div>

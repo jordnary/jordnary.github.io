@@ -7,12 +7,27 @@ import {
 } from '../lib/animations'
 
 const heroHighlights = [
-  { label: 'Frontend', value: 'React + TypeScript' },
-  { label: 'Style', value: 'Tailwind CSS' },
-  { label: 'Deploy', value: 'GitHub Pages' },
+  {
+    label: 'Frontend',
+    value: 'React + TypeScript',
+  },
+  {
+    label: 'Style',
+    value: 'Tailwind CSS',
+  },
+  {
+    label: 'Deploy',
+    value: 'GitHub Pages',
+  },
 ]
 
-const techTags = ['React', 'TypeScript', 'Tailwind CSS', 'Vite', 'Motion']
+const techTags = [
+  'React',
+  'TypeScript',
+  'Tailwind CSS',
+  'Vite',
+  'Motion',
+]
 
 export function Hero() {
   return (
@@ -115,7 +130,10 @@ export function Hero() {
 
             <div className="grid content-center">
               {heroHighlights.map((item) => (
-                <div className="border-b border-white/10 px-1 py-4 last:border-b-0" key={item.label}>
+                <div
+                  className="border-b border-white/10 px-1 py-4 last:border-b-0"
+                  key={item.label}
+                >
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500 sm:tracking-[0.22em]">
                       {item.label}

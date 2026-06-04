@@ -45,7 +45,9 @@ export function Timeline() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-white sm:text-xl">{item.title}</h3>
+                <h3 className="text-lg font-semibold text-white sm:text-xl">
+                  {item.title}
+                </h3>
                 <p className="mt-3 text-sm leading-7 text-slate-400 md:text-base">
                   {item.description}
                 </p>

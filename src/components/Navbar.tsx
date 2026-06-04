@@ -92,7 +92,11 @@ export function Navbar() {
               {item.label}
             </a>
           ))}
-          <a className="btn-primary mt-2 w-full" href="#contact" onClick={closeMenu}>
+          <a
+            className="btn-primary mt-2 w-full"
+            href="#contact"
+            onClick={closeMenu}
+          >
             Let&apos;s talk
           </a>
         </div>

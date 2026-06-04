@@ -11,7 +11,11 @@ export const timelineItems: TimelineItem[] = [
     title: '构建个人主页与作品展示系统',
     description:
       '围绕 GitHub Pages 静态部署，搭建深色科技风的个人主页，把内容拆成可维护的数据和组件。',
-    points: ['React component architecture', 'Tailwind responsive UI', 'Static deployment friendly'],
+    points: [
+      'React component architecture',
+      'Tailwind responsive UI',
+      'Static deployment friendly',
+    ],
   },
   {
     period: 'Recently',

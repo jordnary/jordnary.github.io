@@ -37,7 +37,9 @@ export function About() {
                 <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">
                   {stat.label}
                 </dt>
-                <dd className="mt-2 text-2xl font-semibold text-white">{stat.value}</dd>
+                <dd className="mt-2 text-2xl font-semibold text-white">
+                  {stat.value}
+                </dd>
               </div>
             ))}
           </dl>

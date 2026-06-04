@@ -21,8 +21,17 @@ export const aboutProfile = {
     },
   ],
   stats: [
-    { label: 'Sections', value: '8' },
-    { label: 'Stack', value: 'Static' },
-    { label: 'Mode', value: 'Dark' },
+    {
+      label: 'Sections',
+      value: '8',
+    },
+    {
+      label: 'Stack',
+      value: 'Static',
+    },
+    {
+      label: 'Mode',
+      value: 'Dark',
+    },
   ],
 }

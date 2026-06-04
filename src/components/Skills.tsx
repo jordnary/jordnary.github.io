@@ -27,15 +27,21 @@ export function Skills() {
             whileInView={fadeUpVisible}
           >
             <div className="flex min-h-28 flex-col justify-between">
-              <h3 className="text-lg font-semibold text-white">{group.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-400">{group.description}</p>
+              <h3 className="text-lg font-semibold text-white">
+                {group.title}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-slate-400">
+                {group.description}
+              </p>
             </div>
 
             <div className="mt-6 space-y-5">
               {group.items.map((skill) => (
                 <div key={skill.name}>
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-medium text-slate-200">{skill.name}</p>
+                    <p className="text-sm font-medium text-slate-200">
+                      {skill.name}
+                    </p>
                     <p className="text-xs text-slate-500">{skill.level}%</p>
                   </div>
                   <div
