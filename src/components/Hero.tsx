@@ -200,11 +200,13 @@ export function Hero() {
           initial={fadeUpHidden}
           transition={getRevealTransition(5)}
         >
-          <a className="btn-primary w-full sm:w-auto" href="#projects">
-            查看项目
+          <a className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto" href="#projects">
+            <span className="hero-cta-label">查看项目</span>
+            <span className="hero-cta-arrow" aria-hidden="true">→</span>
           </a>
-          <a className="btn-secondary w-full sm:w-auto" href="#contact">
-            联系我
+          <a className="btn-secondary hero-cta hero-cta-secondary w-full sm:w-auto" href="#contact">
+            <span className="hero-cta-label">联系我</span>
+            <span className="hero-cta-arrow" aria-hidden="true">→</span>
           </a>
         </motion.div>
       </div>
