@@ -9,16 +9,19 @@ import {
 
 const consoleMetrics = [
   {
-    label: 'Focus',
-    value: 'Frontend',
-  },
-  {
-    label: 'Stack',
+    icon: '<>',
+    label: 'Frontend',
     value: 'React TS',
   },
   {
-    label: 'Mode',
-    value: 'Static',
+    icon: 'UI',
+    label: 'Style',
+    value: 'Glass Motion',
+  },
+  {
+    icon: 'GH',
+    label: 'Deploy',
+    value: 'GH Pages',
   },
 ]
 
@@ -259,15 +262,20 @@ export function Hero() {
             <div className="console-metrics">
               {consoleMetrics.map((item) => (
                 <div
-                  className="console-metric"
+                  className="console-stat-card"
                   key={item.label}
                 >
-                  <p className="meta-label-muted">
-                    {item.label}
-                  </p>
-                  <p className="body-copy text-sm font-semibold">
-                    {item.value}
-                  </p>
+                  <span className="console-stat-icon" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="console-stat-label">
+                      {item.label}
+                    </p>
+                    <p className="console-stat-value">
+                      {item.value}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

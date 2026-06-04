@@ -1139,14 +1139,97 @@ a {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .console-metric {
-    @apply min-w-0 border px-3 py-3;
-    border-color: rgb(255 255 255 / 0.1);
+  .console-stat-card {
+    @apply grid min-w-0 items-center gap-2 px-3 py-2.5;
+    position: relative;
+    overflow: hidden;
+    grid-template-columns: auto minmax(0, 1fr);
+    border: 1px solid transparent;
     border-radius: var(--radius-card);
-    background: rgb(255 255 255 / 0.045);
+    background:
+      linear-gradient(
+        145deg,
+        rgb(15 23 42 / 0.72),
+        rgb(2 6 23 / 0.62)
+      )
+      padding-box,
+      linear-gradient(
+        135deg,
+        rgb(103 232 249 / 0.56),
+        rgb(196 181 253 / 0.42),
+        rgb(255 255 255 / 0.12)
+      )
+      border-box;
+    box-shadow:
+      0 14px 34px -28px rgb(103 232 249 / 0.46),
+      inset 0 1px 0 rgb(255 255 255 / 0.06);
+    transform: translateY(0);
+    transition:
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 180ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .console-metric p {
+  .console-stat-card::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset-inline: 0.6rem;
+    top: 0;
+    height: 1px;
+    opacity: 0.72;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(165 243 252 / 0.72),
+      transparent
+    );
+  }
+
+  .console-stat-card:hover {
+    box-shadow:
+      0 18px 40px -28px rgb(103 232 249 / 0.66),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+    transform: translateY(-0.16rem);
+  }
+
+  .console-stat-icon {
+    @apply grid shrink-0 place-items-center text-xs font-bold;
+    width: 1.9rem;
+    height: 1.9rem;
+    color: var(--color-primary-cyan-text);
+    border: 1px solid rgb(103 232 249 / 0.22);
+    border-radius: var(--radius-card);
+    background:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.22), transparent 42%),
+      linear-gradient(
+        135deg,
+        rgb(103 232 249 / 0.18),
+        rgb(196 181 253 / 0.12)
+      );
+    box-shadow:
+      0 0 18px rgb(103 232 249 / 0.16),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+  }
+
+  .console-stat-label {
+    @apply text-xs font-semibold uppercase;
+    margin: 0;
+    color: var(--color-text-subtle);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .console-stat-value {
+    @apply mt-1 text-sm font-semibold leading-tight;
+    margin-bottom: 0;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+  }
+
+  .console-stat-card p {
+    margin-block: 0;
     overflow-wrap: anywhere;
   }
 
@@ -1368,6 +1451,27 @@ a {
     .console-modules {
       gap: 0.5rem;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .console-stat-card {
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 0.35rem;
+      padding: 0.6rem 0.5rem;
+    }
+
+    .console-stat-icon {
+      width: 1.45rem;
+      height: 1.45rem;
+      font-size: 0.58rem;
+    }
+
+    .console-stat-label {
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+    }
+
+    .console-stat-value {
+      font-size: 0.68rem;
     }
 
     .console-module {
