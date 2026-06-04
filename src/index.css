@@ -169,6 +169,24 @@ a {
     mix-blend-mode: screen;
   }
 
+  .scroll-progress {
+    pointer-events: none;
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 70;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--color-primary-cyan),
+      var(--color-secondary-violet)
+    );
+    box-shadow: 0 0 14px rgb(103 232 249 / 0.35);
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform;
+  }
+
   .ambient-bg,
   .grid-bg,
   .cursor-glow {
