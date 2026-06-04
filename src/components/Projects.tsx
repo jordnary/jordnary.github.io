@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { SmartLink } from './SmartLink'
 import { projects, type ProjectPreview, type ProjectStatus } from '../data/projects'
 import {
   fadeUpHidden,
@@ -81,7 +82,7 @@ export function Projects() {
 
               <div className="project-actions">
                 {project.links.map((link) => (
-                  <a
+                  <SmartLink
                     className={`project-link ${
                       link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
                     }`}
@@ -90,7 +91,7 @@ export function Projects() {
                   >
                     <span>{link.label}</span>
                     <span aria-hidden="true">→</span>
-                  </a>
+                  </SmartLink>
                 ))}
               </div>
             </div>
