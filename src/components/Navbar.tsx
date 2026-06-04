@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
 
 const navItems = [
-  { href: '#home', label: 'Home' },
-  { href: '#about', label: 'About' },
-  { href: '#skills', label: 'Skills' },
-  { href: '#projects', label: 'Projects' },
-  { href: '#timeline', label: 'Timeline' },
-  { href: '#contact', label: 'Contact' },
-]
+  { href: '#home', id: 'home', label: 'Home' },
+  { href: '#about', id: 'about', label: 'About' },
+  { href: '#skills', id: 'skills', label: 'Skills' },
+  { href: '#projects', id: 'projects', label: 'Projects' },
+  { href: '#timeline', id: 'timeline', label: 'Timeline' },
+  { href: '#contact', id: 'contact', label: 'Contact' },
+] as const
+
+type SectionId = (typeof navItems)[number]['id']
+
+const observerThresholds = Array.from({ length: 21 }, (_, index) => index / 20)
 
 export function Navbar() {
+  const [activeSection, setActiveSection] = useState<SectionId>('home')
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -39,12 +44,70 @@ export function Navbar() {
     }
   }, [])
 
+  useEffect(() => {
+    const sections = navItems
+      .map((item) => document.getElementById(item.id))
+      .filter((section): section is HTMLElement => Boolean(section))
+
+    if (sections.length === 0) {
+      return
+    }
+
+    const getCurrentSection = () => {
+      const viewportAnchor = window.innerHeight * 0.42
+      let currentSection = sections[0].id as SectionId
+
+      for (const section of sections) {
+        const rect = section.getBoundingClientRect()
+
+        if (rect.top <= viewportAnchor && rect.bottom > viewportAnchor) {
+          currentSection = section.id as SectionId
+          break
+        }
+
+        if (rect.top < viewportAnchor) {
+          currentSection = section.id as SectionId
+        }
+      }
+
+      return currentSection
+    }
+
+    const updateActiveSection = () => {
+      const nextSection = getCurrentSection()
+
+      setActiveSection((current) =>
+        current === nextSection ? current : nextSection,
+      )
+    }
+
+    const observer = new IntersectionObserver(updateActiveSection, {
+      root: null,
+      rootMargin: '-30% 0px -45% 0px',
+      threshold: observerThresholds,
+    })
+
+    sections.forEach((section) => observer.observe(section))
+    updateActiveSection()
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   const closeMenu = () => {
     setIsOpen(false)
   }
 
+  const handleNavItemClick = (sectionId: SectionId) => {
+    setActiveSection(sectionId)
+    closeMenu()
+  }
+
   return (
-    <header className={`nav-shell page-gutter ${isScrolled ? 'is-scrolled' : ''}`}>
+    <header
+      className={`nav-shell page-gutter ${isScrolled ? 'is-scrolled' : ''}`}
+    >
       <nav
         aria-label="Primary navigation"
         className="site-container nav-content"
@@ -52,23 +115,33 @@ export function Navbar() {
         <a
           className="nav-brand"
           href="#home"
-          onClick={closeMenu}
+          onClick={() => handleNavItemClick('home')}
         >
           <span aria-hidden="true" className="brand-mark" />
           <span>Jordnary</span>
         </a>
         <div className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => (
-            <a
-              className="nav-link"
-              href={item.href}
-              key={item.href}
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id
+
+            return (
+              <a
+                aria-current={isActive ? 'page' : undefined}
+                className={`nav-link ${isActive ? 'is-active' : ''}`}
+                href={item.href}
+                key={item.href}
+                onClick={() => handleNavItemClick(item.id)}
+              >
+                {item.label}
+              </a>
+            )
+          })}
         </div>
-        <a className="btn-secondary hidden lg:inline-flex" href="#contact">
+        <a
+          className="btn-secondary hidden lg:inline-flex"
+          href="#contact"
+          onClick={() => handleNavItemClick('contact')}
+        >
           Let&apos;s talk
         </a>
         <button
@@ -96,20 +169,25 @@ export function Navbar() {
         id="mobile-navigation"
       >
         <div className="mobile-nav-list">
-          {navItems.map((item) => (
-            <a
-              className="mobile-nav-link"
-              href={item.href}
-              key={item.href}
-              onClick={closeMenu}
-            >
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id
+
+            return (
+              <a
+                aria-current={isActive ? 'page' : undefined}
+                className={`mobile-nav-link ${isActive ? 'is-active' : ''}`}
+                href={item.href}
+                key={item.href}
+                onClick={() => handleNavItemClick(item.id)}
+              >
+                {item.label}
+              </a>
+            )
+          })}
           <a
             className="btn-primary mt-2 w-full"
             href="#contact"
-            onClick={closeMenu}
+            onClick={() => handleNavItemClick('contact')}
           >
             Let&apos;s talk
           </a>
