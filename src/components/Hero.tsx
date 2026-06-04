@@ -305,6 +305,18 @@ export function Hero() {
           </div>
         </div>
       </motion.div>
+
+      <a
+        aria-label="Scroll to explore the next section"
+        className="hero-scroll-cue"
+        href="#about"
+      >
+        <span className="scroll-mouse" aria-hidden="true">
+          <span className="scroll-wheel" />
+        </span>
+        <span className="scroll-cue-text">Scroll to explore</span>
+        <span className="scroll-cue-arrow" aria-hidden="true">↓</span>
+      </a>
     </section>
   )
 }
