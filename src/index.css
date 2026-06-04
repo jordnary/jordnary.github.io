@@ -2748,19 +2748,19 @@ a {
     white-space: nowrap;
   }
 
-  .project-status-cyan {
+  .project-status-building {
     color: var(--color-primary-cyan-text);
     border-color: rgb(103 232 249 / 0.28);
     background: rgb(103 232 249 / 0.09);
   }
 
-  .project-status-violet {
+  .project-status-polishing {
     color: #ede9fe;
     border-color: rgb(196 181 253 / 0.28);
     background: rgb(196 181 253 / 0.1);
   }
 
-  .project-status-emerald {
+  .project-status-planned {
     color: #d1fae5;
     border-color: rgb(110 231 183 / 0.28);
     background: rgb(110 231 183 / 0.1);

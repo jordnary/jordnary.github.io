@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
-import { projects, type ProjectPreview } from '../data/projects'
+import { projects, type ProjectPreview, type ProjectStatus } from '../data/projects'
 import {
   fadeUpHidden,
   fadeUpVisible,
@@ -45,7 +45,7 @@ export function Projects() {
                 <h3 className="card-title text-lg sm:text-xl">
                   {project.title}
                 </h3>
-                <span className={`project-status project-status-${project.statusTone}`}>
+                <span className={`project-status ${getProjectStatusClass(project.status)}`}>
                   {project.status}
                 </span>
               </header>
@@ -109,6 +109,17 @@ function getProjectTint(index: number) {
   ]
 
   return tints[index % tints.length]
+}
+
+function getProjectStatusClass(status: ProjectStatus) {
+  switch (status) {
+    case 'Building':
+      return 'project-status-building'
+    case 'Polishing':
+      return 'project-status-polishing'
+    case 'Planned':
+      return 'project-status-planned'
+  }
 }
 
 function ProjectPreviewMock({

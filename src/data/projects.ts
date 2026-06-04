@@ -3,11 +3,12 @@ export type Project = {
   links: ProjectLink[]
   preview: ProjectPreview
   description: string
-  status: string
-  statusTone: 'cyan' | 'emerald' | 'violet'
+  status: ProjectStatus
   techStack: string[]
   title: string
 }
+
+export type ProjectStatus = 'Building' | 'Polishing' | 'Planned'
 
 export type ProjectLink = {
   href: string
@@ -27,8 +28,7 @@ export const projects: Project[] = [
     title: 'Personal Website',
     description:
       '一个可静态部署的个人主页，围绕首屏表达、模块化内容和 GitHub Pages 发布流程搭建。',
-    status: 'Live',
-    statusTone: 'cyan',
+    status: 'Polishing',
     techStack: ['React', 'TypeScript', 'Tailwind CSS', 'Vite'],
     highlights: ['响应式首屏控制台', '数据驱动内容模块', 'GitHub Pages 静态发布'],
     links: [
@@ -46,8 +46,7 @@ export const projects: Project[] = [
     title: 'Portfolio System',
     description:
       '把技能、项目和时间线拆成数据驱动模块，便于持续补充内容和替换视觉呈现。',
-    status: 'Iterating',
-    statusTone: 'violet',
+    status: 'Building',
     techStack: ['React Components', 'Typed Data', 'Motion', 'Responsive UI'],
     highlights: ['集中维护内容数据', '复用 section 与卡片模式', '动效节奏统一'],
     links: [
@@ -65,8 +64,7 @@ export const projects: Project[] = [
     title: 'Static Launch Kit',
     description:
       '保留纯前端架构，不引入后端或数据库，适合快速构建、检查和部署个人网站。',
-    status: 'Deployable',
-    statusTone: 'emerald',
+    status: 'Planned',
     techStack: ['Vite Build', 'GitHub Pages', 'ESLint', 'Static Assets'],
     highlights: ['零后端部署路径', '构建与检查脚本清晰', '适合快速迭代发布'],
     links: [
