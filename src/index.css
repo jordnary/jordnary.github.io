@@ -337,9 +337,17 @@ a {
   .hero-decor {
     pointer-events: none;
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
     z-index: 0;
     overflow: hidden;
+    background:
+      radial-gradient(ellipse 46rem 28rem at 6% 22%, rgb(34 211 238 / 0.16), transparent 66%),
+      radial-gradient(ellipse 48rem 30rem at 88% 12%, rgb(124 58 237 / 0.14), transparent 68%),
+      radial-gradient(ellipse 36rem 24rem at 58% 92%, rgb(6 182 212 / 0.1), transparent 72%);
+    transform: translateX(-50%);
   }
 
   .hero-decor::before,
@@ -347,66 +355,67 @@ a {
     content: "";
     position: absolute;
     pointer-events: none;
-    opacity: 0.46;
   }
 
   .hero-decor::before {
-    top: 5%;
-    right: -18%;
-    width: 45rem;
-    height: 24rem;
-    background:
-      radial-gradient(ellipse at 70% 40%, rgb(103 232 249 / 0.28), transparent 56%),
-      linear-gradient(112deg, transparent 15%, rgb(103 232 249 / 0.2) 42%, transparent 68%);
-    filter: blur(0.3rem);
-    transform: rotate(-10deg);
+    inset: -12% -8% 8%;
+    opacity: 0.22;
+    background-image:
+      linear-gradient(rgb(103 232 249 / 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(103 232 249 / 0.1) 1px, transparent 1px);
+    background-size: 3.25rem 3.25rem;
+    mask-image: radial-gradient(
+      ellipse at 50% 28%,
+      rgb(0 0 0 / 0.78),
+      transparent 72%
+    );
+    transform: rotate(-3deg) scale(1.08);
   }
 
   .hero-decor::after {
-    left: -16%;
-    bottom: -8%;
-    width: 42rem;
-    height: 24rem;
+    inset: -14% -12%;
+    opacity: 0.42;
     background:
-      radial-gradient(ellipse at 28% 56%, rgb(124 58 237 / 0.34), transparent 62%),
-      linear-gradient(28deg, transparent 18%, rgb(196 181 253 / 0.2) 46%, transparent 70%);
-    filter: blur(0.45rem);
-    transform: rotate(8deg);
+      radial-gradient(ellipse at 16% 72%, rgb(103 232 249 / 0.2), transparent 58%),
+      radial-gradient(ellipse at 84% 26%, rgb(196 181 253 / 0.18), transparent 58%),
+      linear-gradient(118deg, transparent 20%, rgb(103 232 249 / 0.13) 42%, transparent 64%);
+    filter: blur(1.2rem);
+    mix-blend-mode: screen;
   }
 
   .hero-decor-glow {
     position: absolute;
     border-radius: var(--radius-pill);
-    opacity: 0.42;
-    filter: blur(2.25rem);
+    opacity: 0.34;
+    filter: blur(3rem);
     transform: translate3d(0, 0, 0);
   }
 
   .hero-decor-glow-left {
-    left: max(-16rem, -18vw);
+    left: max(-10rem, -9vw);
     bottom: 2%;
-    width: 28rem;
-    height: 28rem;
-    background: radial-gradient(circle, rgb(34 211 238 / 0.55), transparent 68%);
+    width: 30rem;
+    height: 30rem;
+    background: radial-gradient(circle, rgb(34 211 238 / 0.46), transparent 70%);
   }
 
   .hero-decor-glow-right {
     top: 5%;
-    right: max(-17rem, -19vw);
-    width: 30rem;
-    height: 30rem;
-    background: radial-gradient(circle, rgb(124 58 237 / 0.48), transparent 70%);
+    right: max(-10rem, -10vw);
+    width: 32rem;
+    height: 32rem;
+    background: radial-gradient(circle, rgb(124 58 237 / 0.42), transparent 72%);
   }
 
   .hero-decor-grid {
     position: absolute;
     top: 6%;
-    left: max(-8rem, -10vw);
-    width: 18rem;
-    height: 15rem;
-    border: 1px solid rgb(103 232 249 / 0.14);
+    left: max(-5rem, -4vw);
+    width: 20rem;
+    height: 16rem;
+    border: 1px solid rgb(103 232 249 / 0.1);
     border-radius: var(--radius-card);
-    opacity: 0.5;
+    opacity: 0.36;
     background-image:
       linear-gradient(rgb(103 232 249 / 0.12) 1px, transparent 1px),
       linear-gradient(90deg, rgb(103 232 249 / 0.12) 1px, transparent 1px);
@@ -424,7 +433,7 @@ a {
   .hero-decor-line {
     position: absolute;
     height: 2px;
-    opacity: 0.58;
+    opacity: 0.42;
     background: linear-gradient(
       90deg,
       transparent,
@@ -437,22 +446,22 @@ a {
 
   .hero-decor-line-a {
     top: 11%;
-    right: 10%;
-    width: 15rem;
+    right: 5%;
+    width: 18rem;
     transform: rotate(-15deg);
   }
 
   .hero-decor-line-b {
-    left: -1rem;
+    left: 2%;
     bottom: 12%;
-    width: 12rem;
+    width: 15rem;
     transform: rotate(18deg);
   }
 
   .hero-decor-line-c {
-    right: -1rem;
+    right: 3%;
     bottom: 18%;
-    width: 13rem;
+    width: 15rem;
     transform: rotate(-24deg);
   }
 
