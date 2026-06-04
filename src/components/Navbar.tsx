@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 
 const navItems = [
   { href: '#home', id: 'home', label: 'Home' },
@@ -12,6 +12,9 @@ const navItems = [
 type SectionId = (typeof navItems)[number]['id']
 
 const observerThresholds = Array.from({ length: 21 }, (_, index) => index / 20)
+
+const getStaggerStyle = (index: number) =>
+  ({ '--stagger-delay': `${60 + index * 42}ms` } as CSSProperties)
 
 export function Navbar() {
   const [activeSection, setActiveSection] = useState<SectionId>('home')
@@ -169,25 +172,29 @@ export function Navbar() {
         id="mobile-navigation"
       >
         <div className="mobile-nav-list">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const isActive = activeSection === item.id
 
             return (
               <a
                 aria-current={isActive ? 'page' : undefined}
-                className={`mobile-nav-link ${isActive ? 'is-active' : ''}`}
+                className={`mobile-nav-link mobile-nav-item ${
+                  isActive ? 'is-active' : ''
+                }`}
                 href={item.href}
                 key={item.href}
                 onClick={() => handleNavItemClick(item.id)}
+                style={getStaggerStyle(index)}
               >
                 <span className="nav-link-label">{item.label}</span>
               </a>
             )
           })}
           <a
-            className="btn-primary mt-2 w-full"
+            className="btn-primary mobile-nav-item mt-2 w-full"
             href="#contact"
             onClick={() => handleNavItemClick('contact')}
+            style={getStaggerStyle(navItems.length)}
           >
             Let&apos;s talk
           </a>
