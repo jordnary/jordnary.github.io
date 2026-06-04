@@ -80,4 +80,26 @@ export const skillCategories: SkillCategory[] = [
       },
     ],
   },
+  {
+    title: 'Learning',
+    description: '近期在学习把 AI 工具、提示词整理、GitHub 协作流程和计算机基础知识用到日常项目练习中。',
+    items: [
+      {
+        name: 'AI Tools',
+        level: 64,
+      },
+      {
+        name: 'Prompt Engineering',
+        level: 58,
+      },
+      {
+        name: 'GitHub Workflow',
+        level: 66,
+      },
+      {
+        name: 'Computer Science Basics',
+        level: 52,
+      },
+    ],
+  },
 ]

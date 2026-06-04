@@ -2302,26 +2302,32 @@ a {
   }
 
   .skills-radar-node-1 {
-    top: 20%;
+    top: 18%;
     left: 50%;
   }
 
   .skills-radar-node-2 {
-    top: 48%;
-    left: 83%;
+    top: 39%;
+    left: 82%;
     animation-delay: 0.45s;
   }
 
   .skills-radar-node-3 {
-    top: 78%;
-    left: 55%;
+    top: 76%;
+    left: 72%;
     animation-delay: 0.9s;
   }
 
   .skills-radar-node-4 {
-    top: 48%;
-    left: 17%;
+    top: 76%;
+    left: 28%;
     animation-delay: 1.35s;
+  }
+
+  .skills-radar-node-5 {
+    top: 39%;
+    left: 18%;
+    animation-delay: 1.8s;
   }
 
   .skills-radar-readouts {

@@ -174,6 +174,15 @@ function getSkillIcon(title: string) {
           <path d="M8.4 7h7.2" />
         </svg>
       )
+    case 'Learning':
+      return (
+        <svg {...iconProps}>
+          <path d="M7 5.5h7.2a3.8 3.8 0 0 1 3.8 3.8v8.2H9.8A2.8 2.8 0 0 0 7 20.3z" />
+          <path d="M7 5.5a2.8 2.8 0 0 0-2 2.7v8.7a2.8 2.8 0 0 1 2-1h2.8" />
+          <path d="M10.5 10h4.4" />
+          <path d="M10.5 13h3.2" />
+        </svg>
+      )
     default:
       return (
         <svg {...iconProps}>
