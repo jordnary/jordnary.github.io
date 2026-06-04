@@ -1,6 +1,5 @@
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
-import heroImg from '../assets/hero.png'
 import { projects } from '../data/projects'
 import {
   fadeUpHidden,
@@ -20,49 +19,80 @@ export function Projects() {
       <motion.div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project, index) => (
           <motion.article
-            className="glass-card interactive-card group flex h-full flex-col overflow-hidden"
+            className="project-card glass-card interactive-card group flex h-full flex-col overflow-hidden"
             initial={fadeUpHidden}
             key={project.title}
             transition={getRevealTransition(index)}
             viewport={viewportOnce}
+            whileHover={{ y: -6 }}
             whileInView={fadeUpVisible}
-            whileHover={{ scale: 1.03, y: -6 }}
           >
             <div className="project-media">
               <div className={getProjectTint(index)} />
               <img
-                alt={project.imageAlt}
-                className="absolute inset-0 h-full w-full object-contain p-8 opacity-80 transition duration-300 group-hover:scale-105"
-                src={heroImg}
+                alt={project.preview.alt}
+                className="project-preview-image"
+                src={project.preview.image}
               />
+              <div className="project-preview-panel">
+                <span>{project.preview.label}</span>
+                <strong>{project.preview.metric}</strong>
+              </div>
             </div>
 
             <div className="flex flex-1 flex-col p-5 sm:p-6">
-              <p className="meta-label">
-                {project.meta}
-              </p>
-              <h3 className="card-title mt-3 text-lg sm:text-xl">
-                {project.title}
-              </h3>
+              <header className="project-card-header">
+                <h3 className="card-title text-lg sm:text-xl">
+                  {project.title}
+                </h3>
+                <span className={`project-status project-status-${project.statusTone}`}>
+                  {project.status}
+                </span>
+              </header>
+
               <p className="card-copy mt-3 flex-1 text-sm leading-6">
                 {project.description}
               </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {project.tags.map((tag) => (
-                  <span
-                    className="tag-pill"
-                    key={tag}
+
+              <div className="project-detail-block">
+                <p className="meta-label-muted">Stack</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {project.techStack.map((tech) => (
+                    <span
+                      className="tag-pill project-tech-tag"
+                      key={tech}
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="project-detail-block">
+                <p className="meta-label-muted">Highlights</p>
+                <ul className="project-highlight-list">
+                  {project.highlights.map((highlight) => (
+                    <li key={highlight}>
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="project-actions">
+                {project.links.map((link) => (
+                  <a
+                    className={`project-link ${
+                      link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
+                    }`}
+                    href={link.href}
+                    key={link.href}
                   >
-                    {tag}
-                  </span>
+                    <span>{link.label}</span>
+                    <span aria-hidden="true">→</span>
+                  </a>
                 ))}
               </div>
-              <a
-                className="accent-link mt-6"
-                href={project.href}
-              >
-                View detail
-              </a>
             </div>
           </motion.article>
         ))}
