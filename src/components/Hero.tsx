@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
-import heroImg from '../assets/hero.png'
 import {
   fadeUpHidden,
   fadeUpVisible,
@@ -244,11 +243,6 @@ export function Hero() {
                 </div>
               </div>
               <span className="console-orbit-tag">AI + Web</span>
-              <img
-                alt=""
-                className="console-core-image"
-                src={heroImg}
-              />
               <div className="console-scanline" aria-hidden="true" />
               <div className="console-readout">
                 <span>Focus</span>
