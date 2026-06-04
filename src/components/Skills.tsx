@@ -16,76 +16,115 @@ export function Skills() {
       title="围绕构建体验的技能矩阵"
       description="从前端开发、界面体验、工具链到迭代方式，展示我构建项目时常用的能力组合。"
     >
-      <motion.div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {skillCategories.map((group, index) => (
-          <motion.article
-            className="skill-card glass-card interactive-card group flex h-full flex-col p-5 sm:p-6 xl:p-5"
-            initial={fadeUpHidden}
-            key={group.title}
-            transition={getRevealTransition(index)}
-            viewport={viewportOnce}
-            whileInView={fadeUpVisible}
-            whileHover={{ y: -6 }}
-          >
-            <header className="skill-card-header">
-              <div className="skill-card-header-row">
-                <div className="skill-card-icon" aria-hidden="true">
-                  {getSkillIcon(group.title)}
+      <div className="skills-layout">
+        <motion.div className="skills-card-grid">
+          {skillCategories.map((group, index) => (
+            <motion.article
+              className="skill-card glass-card interactive-card group flex h-full flex-col p-5 sm:p-6 xl:p-5"
+              initial={fadeUpHidden}
+              key={group.title}
+              transition={getRevealTransition(index)}
+              viewport={viewportOnce}
+              whileHover={{ y: -6 }}
+              whileInView={fadeUpVisible}
+            >
+              <header className="skill-card-header">
+                <div className="skill-card-header-row">
+                  <div className="skill-card-icon" aria-hidden="true">
+                    {getSkillIcon(group.title)}
+                  </div>
+                  <div className="skill-card-kicker">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
                 </div>
-                <div className="skill-card-kicker">
-                  {String(index + 1).padStart(2, '0')}
-                </div>
+                <h3 className="card-title text-lg sm:text-xl">
+                  {group.title}
+                </h3>
+                <p className="card-copy mt-3 text-sm leading-6">
+                  {group.description}
+                </p>
+              </header>
+
+              <div className="skill-card-body">
+                {group.items.map((skill) => (
+                  <div className="skill-row" key={skill.name}>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="body-copy text-sm font-medium">
+                        {skill.name}
+                      </p>
+                      <p className="subtle-copy text-xs">{skill.level}%</p>
+                    </div>
+                    <div
+                      aria-label={`${skill.name} proficiency ${skill.level}%`}
+                      aria-valuemax={100}
+                      aria-valuemin={0}
+                      aria-valuenow={skill.level}
+                      className="progress-track"
+                      role="progressbar"
+                    >
+                      <motion.div
+                        className="progress-fill"
+                        initial={{ width: '0%' }}
+                        transition={{ duration: 0.7, ease: 'easeOut' }}
+                        viewport={viewportOnce}
+                        whileInView={{ width: `${skill.level}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-              <h3 className="card-title text-lg sm:text-xl">
-                {group.title}
-              </h3>
-              <p className="card-copy mt-3 text-sm leading-6">
-                {group.description}
-              </p>
-            </header>
 
-            <div className="skill-card-body">
-              {group.items.map((skill) => (
-                <div className="skill-row" key={skill.name}>
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="body-copy text-sm font-medium">
-                      {skill.name}
-                    </p>
-                    <p className="subtle-copy text-xs">{skill.level}%</p>
-                  </div>
-                  <div
-                    aria-label={`${skill.name} proficiency ${skill.level}%`}
-                    aria-valuemax={100}
-                    aria-valuemin={0}
-                    aria-valuenow={skill.level}
-                    className="progress-track"
-                    role="progressbar"
+              <footer className="skill-card-footer">
+                {group.items.map((skill) => (
+                  <span
+                    className="skill-tool-tag"
+                    key={skill.name}
                   >
-                    <motion.div
-                      className="progress-fill"
-                      initial={{ width: '0%' }}
-                      transition={{ duration: 0.7, ease: 'easeOut' }}
-                      viewport={viewportOnce}
-                      whileInView={{ width: `${skill.level}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                    {skill.name}
+                  </span>
+                ))}
+              </footer>
+            </motion.article>
+          ))}
+        </motion.div>
 
-            <footer className="skill-card-footer">
-              {group.items.map((skill) => (
-                <span
-                  className="skill-tool-tag"
-                  key={skill.name}
-                >
-                  {skill.name}
-                </span>
-              ))}
-            </footer>
-          </motion.article>
-        ))}
-      </motion.div>
+        <motion.aside
+          aria-label="技能雷达视觉装饰"
+          className="skills-radar-panel glass-card"
+          initial={fadeUpHidden}
+          transition={getRevealTransition(1, 0.12)}
+          viewport={viewportOnce}
+          whileInView={fadeUpVisible}
+        >
+          <div className="skills-radar-heading">
+            <span>Skill Orbit</span>
+            <strong>Capability Map</strong>
+          </div>
+
+          <div className="skills-radar" aria-hidden="true">
+            <div className="skills-radar-sweep" />
+            <div className="skills-radar-cross skills-radar-cross-x" />
+            <div className="skills-radar-cross skills-radar-cross-y" />
+            <div className="skills-radar-core">
+              <span>CORE</span>
+            </div>
+            {skillCategories.map((group, index) => (
+              <span
+                className={`skills-radar-node skills-radar-node-${index + 1}`}
+                key={group.title}
+              >
+                {group.title}
+              </span>
+            ))}
+          </div>
+
+          <div className="skills-radar-readouts">
+            {skillCategories.map((group) => (
+              <span key={group.title}>{group.items[0].name}</span>
+            ))}
+          </div>
+        </motion.aside>
+      </div>
     </PageSection>
   )
 }
