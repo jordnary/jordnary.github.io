@@ -1,7 +1,14 @@
+import { useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import { SmartLink } from './SmartLink'
-import { projects, type ProjectPreview, type ProjectStatus } from '../data/projects'
+import {
+  projectFilters,
+  projects,
+  type ProjectFilter,
+  type ProjectPreview,
+  type ProjectStatus,
+} from '../data/projects'
 import {
   fadeUpHidden,
   fadeUpVisible,
@@ -10,6 +17,16 @@ import {
 } from '../lib/animations'
 
 export function Projects() {
+  const [activeFilter, setActiveFilter] = useState<ProjectFilter>('All')
+
+  const filteredProjects = useMemo(() => {
+    if (activeFilter === 'All') {
+      return projects
+    }
+
+    return projects.filter((project) => project.category.includes(activeFilter))
+  }, [activeFilter])
+
   return (
     <PageSection
       id="projects"
@@ -17,87 +34,115 @@ export function Projects() {
       title="项目以清晰的卡片方式呈现"
       description="用简洁的项目卡片展示方向、技术栈和成果入口，方便快速浏览重点。"
     >
-      <motion.div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {projects.map((project, index) => (
-          <motion.article
-            className="project-card glass-card interactive-card group flex h-full flex-col overflow-hidden"
-            initial={fadeUpHidden}
-            key={project.title}
-            transition={getRevealTransition(index)}
-            viewport={viewportOnce}
-            whileHover={{ y: -6 }}
-            whileInView={fadeUpVisible}
+      <div className="project-filter-bar" aria-label="Project filters">
+        {projectFilters.map((filter) => (
+          <button
+            aria-pressed={activeFilter === filter}
+            className={`project-filter-button ${
+              activeFilter === filter ? 'is-active' : ''
+            }`}
+            key={filter}
+            onClick={() => setActiveFilter(filter)}
+            type="button"
           >
-            <div
-              aria-label={project.preview.description}
-              className="project-media"
-              role="img"
+            {filter}
+          </button>
+        ))}
+      </div>
+
+      {filteredProjects.length > 0 ? (
+        <motion.div
+          animate={fadeUpVisible}
+          className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+          initial={fadeUpHidden}
+          key={activeFilter}
+          transition={getRevealTransition(0)}
+        >
+          {filteredProjects.map((project, index) => (
+            <motion.article
+              className="project-card glass-card interactive-card group flex h-full flex-col overflow-hidden"
+              initial={fadeUpHidden}
+              key={project.title}
+              transition={getRevealTransition(index)}
+              viewport={viewportOnce}
+              whileHover={{ y: -6 }}
+              whileInView={fadeUpVisible}
             >
-              <div className={getProjectTint(index)} />
-              <ProjectPreviewMock variant={project.preview.variant} />
-              <div className="project-preview-panel">
-                <span>{project.preview.label}</span>
-                <strong>{project.preview.metric}</strong>
-              </div>
-            </div>
-
-            <div className="flex flex-1 flex-col p-5 sm:p-6">
-              <header className="project-card-header">
-                <h3 className="card-title text-lg sm:text-xl">
-                  {project.title}
-                </h3>
-                <span className={`project-status ${getProjectStatusClass(project.status)}`}>
-                  {project.status}
-                </span>
-              </header>
-
-              <p className="card-copy mt-3 flex-1 text-sm leading-6">
-                {project.description}
-              </p>
-
-              <div className="project-detail-block">
-                <p className="meta-label-muted">Stack</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {project.techStack.map((tech) => (
-                    <span
-                      className="tag-pill project-tech-tag"
-                      key={tech}
-                    >
-                      {tech}
-                    </span>
-                  ))}
+              <div
+                aria-label={project.preview.description}
+                className="project-media"
+                role="img"
+              >
+                <div className={getProjectTint(index)} />
+                <ProjectPreviewMock variant={project.preview.variant} />
+                <div className="project-preview-panel">
+                  <span>{project.preview.label}</span>
+                  <strong>{project.preview.metric}</strong>
                 </div>
               </div>
 
-              <div className="project-detail-block">
-                <p className="meta-label-muted">Highlights</p>
-                <ul className="project-highlight-list">
-                  {project.highlights.map((highlight) => (
-                    <li key={highlight}>
-                      {highlight}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
+                <header className="project-card-header">
+                  <h3 className="card-title text-lg sm:text-xl">
+                    {project.title}
+                  </h3>
+                  <span className={`project-status ${getProjectStatusClass(project.status)}`}>
+                    {project.status}
+                  </span>
+                </header>
 
-              <div className="project-actions">
-                {project.links.map((link) => (
-                  <SmartLink
-                    className={`project-link ${
-                      link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
-                    }`}
-                    href={link.href}
-                    key={link.href}
-                  >
-                    <span>{link.label}</span>
-                    <span aria-hidden="true">→</span>
-                  </SmartLink>
-                ))}
+                <p className="card-copy mt-3 flex-1 text-sm leading-6">
+                  {project.description}
+                </p>
+
+                <div className="project-detail-block">
+                  <p className="meta-label-muted">Stack</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {project.techStack.map((tech) => (
+                      <span
+                        className="tag-pill project-tech-tag"
+                        key={tech}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="project-detail-block">
+                  <p className="meta-label-muted">Highlights</p>
+                  <ul className="project-highlight-list">
+                    {project.highlights.map((highlight) => (
+                      <li key={highlight}>
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="project-actions">
+                  {project.links.map((link) => (
+                    <SmartLink
+                      className={`project-link ${
+                        link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
+                      }`}
+                      href={link.href}
+                      key={link.href}
+                    >
+                      <span>{link.label}</span>
+                      <span aria-hidden="true">→</span>
+                    </SmartLink>
+                  ))}
+                </div>
               </div>
-            </div>
-          </motion.article>
-        ))}
-      </motion.div>
+            </motion.article>
+          ))}
+        </motion.div>
+      ) : (
+        <div className="project-empty-state glass-card">
+          No projects match this filter.
+        </div>
+      )}
     </PageSection>
   )
 }

@@ -1,4 +1,10 @@
+export const projectFilters = ['All', 'Frontend', 'Design', 'Static', 'Learning'] as const
+
+export type ProjectFilter = (typeof projectFilters)[number]
+export type ProjectCategory = Exclude<ProjectFilter, 'All'>
+
 export type Project = {
+  category: ProjectCategory[]
   highlights: string[]
   links: ProjectLink[]
   preview: ProjectPreview
@@ -26,6 +32,7 @@ export type ProjectPreview = {
 export const projects: Project[] = [
   {
     title: 'Personal Website',
+    category: ['Frontend', 'Design', 'Static'],
     description:
       '一个可静态部署的个人主页，围绕首屏表达、模块化内容和 GitHub Pages 发布流程搭建。',
     status: 'Polishing',
@@ -44,6 +51,7 @@ export const projects: Project[] = [
   },
   {
     title: 'Portfolio System',
+    category: ['Frontend', 'Design', 'Learning'],
     description:
       '把技能、项目和时间线拆成数据驱动模块，便于持续补充内容和替换视觉呈现。',
     status: 'Building',
@@ -62,6 +70,7 @@ export const projects: Project[] = [
   },
   {
     title: 'Static Launch Kit',
+    category: ['Static', 'Learning'],
     description:
       '保留纯前端架构，不引入后端或数据库，适合快速构建、检查和部署个人网站。',
     status: 'Planned',
