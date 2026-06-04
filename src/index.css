@@ -2795,7 +2795,7 @@ a {
     left: 0;
     width: 0.38rem;
     height: 0.38rem;
-    border-radius: 2px;
+    border-radius: var(--radius-pill);
     background: var(--color-primary-cyan);
     box-shadow: 0 0 12px rgb(103 232 249 / 0.45);
   }
