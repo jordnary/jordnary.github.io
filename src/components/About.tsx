@@ -39,6 +39,25 @@ export function About() {
             ))}
           </div>
 
+          <dl className="about-stat-grid mt-8">
+            {aboutProfile.stats.map((stat) => (
+              <div
+                className="about-stat-card"
+                key={stat.label}
+              >
+                <dt className="about-stat-label">
+                  {stat.label}
+                </dt>
+                <dd className="about-stat-value">
+                  {stat.value}
+                </dd>
+                <p className="about-stat-description">
+                  {stat.description}
+                </p>
+              </div>
+            ))}
+          </dl>
+
           <ul
             aria-label="About keywords"
             className="about-keyword-list mt-7"
