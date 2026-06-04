@@ -143,7 +143,7 @@ a {
     position: relative;
     isolation: isolate;
     min-height: 100vh;
-    overflow: hidden;
+    overflow-x: clip;
     color: var(--color-text-soft);
     background: var(--color-bg);
   }
@@ -461,9 +461,34 @@ a {
   }
 
   .nav-shell {
-    @apply fixed inset-x-0 top-0 z-50 border-b backdrop-blur-xl;
-    border-color: var(--color-border);
-    background: rgb(2 6 23 / 0.75);
+    @apply sticky inset-x-0 top-0 z-50 border-b backdrop-blur-xl;
+    border-color: rgb(255 255 255 / 0.08);
+    background:
+      linear-gradient(
+        180deg,
+        rgb(2 6 23 / 0.86),
+        rgb(2 6 23 / 0.66)
+      );
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.03);
+    transition:
+      background 220ms ease,
+      border-color 220ms ease,
+      box-shadow 220ms ease;
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+
+  .nav-shell.is-scrolled {
+    border-color: rgb(103 232 249 / 0.18);
+    background:
+      linear-gradient(
+        180deg,
+        rgb(2 6 23 / 0.92),
+        rgb(2 6 23 / 0.78)
+      );
+    box-shadow:
+      0 18px 48px -32px rgb(0 0 0 / 0.95),
+      0 12px 32px -28px rgb(103 232 249 / 0.55);
   }
 
   .nav-content {
@@ -517,6 +542,15 @@ a {
 
   .mobile-nav-panel {
     @apply overflow-hidden transition-[max-height,opacity] duration-300;
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .mobile-nav-panel.is-open {
+    max-height: 24rem;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .mobile-nav-list {
@@ -535,6 +569,34 @@ a {
   .icon-button:hover {
     border-color: var(--color-border-hover);
     background: var(--color-card-hover);
+  }
+
+  .menu-line {
+    @apply absolute left-0 h-0.5 w-5 rounded-full bg-current transition;
+  }
+
+  .menu-line-top {
+    top: 0;
+  }
+
+  .menu-line-middle {
+    top: 7px;
+  }
+
+  .menu-line-bottom {
+    top: 14px;
+  }
+
+  .nav-menu-button.is-open .menu-line-top {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  .nav-menu-button.is-open .menu-line-middle {
+    opacity: 0;
+  }
+
+  .nav-menu-button.is-open .menu-line-bottom {
+    transform: translateY(-7px) rotate(-45deg);
   }
 
   .highlight-pill {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const navItems = [
   { href: '#home', label: 'Home' },
@@ -11,13 +11,40 @@ const navItems = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+
+  useEffect(() => {
+    let frameId = 0
+
+    const updateScrollState = () => {
+      frameId = 0
+      setIsScrolled(window.scrollY > 12)
+    }
+
+    const scheduleUpdate = () => {
+      if (frameId === 0) {
+        frameId = window.requestAnimationFrame(updateScrollState)
+      }
+    }
+
+    scheduleUpdate()
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', scheduleUpdate)
+
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+  }, [])
 
   const closeMenu = () => {
     setIsOpen(false)
   }
 
   return (
-    <header className="nav-shell page-gutter">
+    <header className={`nav-shell page-gutter ${isScrolled ? 'is-scrolled' : ''}`}>
       <nav
         aria-label="Primary navigation"
         className="site-container nav-content"
@@ -48,33 +75,23 @@ export function Navbar() {
           aria-controls="mobile-navigation"
           aria-expanded={isOpen}
           aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
-          className="icon-button lg:hidden"
+          className={`icon-button nav-menu-button lg:hidden ${
+            isOpen ? 'is-open' : ''
+          }`}
           onClick={() => setIsOpen((current) => !current)}
           type="button"
         >
           <span className="relative h-4 w-5" aria-hidden="true">
-            <span
-              className={`absolute left-0 top-0 h-0.5 w-5 rounded-full bg-current transition ${
-                isOpen ? 'translate-y-[7px] rotate-45' : ''
-              }`}
-            />
-            <span
-              className={`absolute left-0 top-[7px] h-0.5 w-5 rounded-full bg-current transition ${
-                isOpen ? 'opacity-0' : ''
-              }`}
-            />
-            <span
-              className={`absolute left-0 top-[14px] h-0.5 w-5 rounded-full bg-current transition ${
-                isOpen ? '-translate-y-[7px] -rotate-45' : ''
-              }`}
-            />
+            <span className="menu-line menu-line-top" />
+            <span className="menu-line menu-line-middle" />
+            <span className="menu-line menu-line-bottom" />
           </span>
         </button>
       </nav>
 
       <div
         className={`site-container mobile-nav-panel lg:hidden ${
-          isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'is-open' : ''
         }`}
         id="mobile-navigation"
       >
