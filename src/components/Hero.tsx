@@ -33,29 +33,7 @@ const keywordTags = [
   'GitHub Pages',
 ]
 
-const consoleModules = [
-  {
-    index: '01',
-    label: 'Interface',
-    value: 'Clean UI systems',
-  },
-  {
-    index: '02',
-    label: 'Delivery',
-    value: 'Static builds',
-  },
-  {
-    index: '03',
-    label: 'Motion',
-    value: 'Subtle motion',
-  },
-]
-
-const consoleLogs = [
-  'init profile.system',
-  'sync projects.catalog',
-  'render responsive.hero',
-]
+const consoleFlow = ['Plan', 'Build', 'Polish']
 
 const typewriterLabels = [
   'Frontend Learner',
@@ -262,6 +240,7 @@ export function Hero() {
                   <p className="console-avatar-role">Digital Builder</p>
                 </div>
               </div>
+              <span className="console-orbit-tag">AI + Web</span>
               <img
                 alt=""
                 className="console-core-image"
@@ -269,8 +248,11 @@ export function Hero() {
               />
               <div className="console-scanline" aria-hidden="true" />
               <div className="console-readout">
-                <span>Build Pulse</span>
-                <strong>98%</strong>
+                <span>Focus</span>
+                <strong>Clean UI</strong>
+                <span className="console-readout-meter" aria-hidden="true">
+                  <span />
+                </span>
               </div>
             </div>
 
@@ -295,25 +277,21 @@ export function Hero() {
               ))}
             </div>
 
-            <div className="console-modules">
-              {consoleModules.map((item) => (
-                <div className="console-module" key={item.index}>
-                  <span className="console-module-index">{item.index}</span>
-                  <div className="min-w-0">
-                    <p className="card-title text-sm">{item.label}</p>
-                    <p className="card-copy text-sm">{item.value}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="console-terminal" aria-label="Console activity">
-              {consoleLogs.map((line) => (
-                <p key={line}>
+            <div className="console-footer">
+              <div className="console-flow" aria-label="Control deck workflow">
+                {consoleFlow.map((item, index) => (
+                  <span className="console-flow-step" key={item}>
+                    <span>{String(index + 1).padStart(2, '0')}</span>
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <div className="console-terminal" aria-label="Console activity">
+                <p>
                   <span>$</span>
-                  {line}
+                  refine hero.control-deck
                 </p>
-              ))}
+              </div>
             </div>
           </div>
         </div>
