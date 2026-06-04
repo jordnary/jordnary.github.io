@@ -232,6 +232,18 @@ export function Hero() {
           <div className="console-body">
             <div className="console-display">
               <div className="console-grid-lines" aria-hidden="true" />
+              <div
+                aria-label="Jordnary 的字母头像标识"
+                className="console-avatar-card"
+              >
+                <div className="console-avatar" aria-hidden="true">
+                  <span>J</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="console-avatar-name">Jordnary</p>
+                  <p className="console-avatar-role">Digital Builder</p>
+                </div>
+              </div>
               <img
                 alt=""
                 className="console-core-image"
