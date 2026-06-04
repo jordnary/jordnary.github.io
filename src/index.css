@@ -521,8 +521,16 @@ a {
 
   .nav-link,
   .mobile-nav-link {
-    @apply text-sm transition;
+    @apply text-sm;
+    position: relative;
+    isolation: isolate;
     color: var(--color-text-muted);
+    transform: translateY(0);
+    transition:
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .nav-link {
@@ -534,10 +542,77 @@ a {
     border-radius: var(--radius-soft);
   }
 
+  .nav-link::after,
+  .mobile-nav-link::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0.35rem;
+    z-index: 0;
+    width: 1.35rem;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    opacity: 0;
+    background: linear-gradient(
+      90deg,
+      var(--color-primary-cyan),
+      var(--color-secondary-violet)
+    );
+    box-shadow: 0 0 12px rgb(103 232 249 / 0.35);
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    transition:
+      opacity 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .mobile-nav-link::after {
+    bottom: 0.55rem;
+    left: 1rem;
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+
+  .nav-link-label {
+    position: relative;
+    z-index: 1;
+    background-image: linear-gradient(
+      90deg,
+      var(--color-primary-cyan-text),
+      var(--color-text),
+      var(--color-secondary-violet)
+    );
+    background-clip: text;
+    background-position: 0% 50%;
+    background-size: 180% 100%;
+    -webkit-background-clip: text;
+    transition:
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-position 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   .nav-link:hover,
   .mobile-nav-link:hover {
-    color: var(--color-text);
     background: var(--color-card-hover);
+    transform: translateY(-0.125rem);
+  }
+
+  .nav-link:hover::after,
+  .nav-link.is-active::after {
+    opacity: 1;
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .mobile-nav-link:hover::after,
+  .mobile-nav-link.is-active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .nav-link:hover .nav-link-label,
+  .mobile-nav-link:hover .nav-link-label {
+    background-position: 100% 50%;
+    color: transparent;
   }
 
   .nav-link.is-active,
@@ -549,8 +624,12 @@ a {
 
   .nav-link.is-active:hover,
   .mobile-nav-link.is-active:hover {
-    color: var(--color-text);
     background: rgb(103 232 249 / 0.16);
+  }
+
+  .nav-link.is-active .nav-link-label,
+  .mobile-nav-link.is-active .nav-link-label {
+    color: transparent;
   }
 
   .mobile-nav-panel {

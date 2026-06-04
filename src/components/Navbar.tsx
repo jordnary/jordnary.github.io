@@ -132,7 +132,7 @@ export function Navbar() {
                 key={item.href}
                 onClick={() => handleNavItemClick(item.id)}
               >
-                {item.label}
+                <span className="nav-link-label">{item.label}</span>
               </a>
             )
           })}
@@ -180,7 +180,7 @@ export function Navbar() {
                 key={item.href}
                 onClick={() => handleNavItemClick(item.id)}
               >
-                {item.label}
+                <span className="nav-link-label">{item.label}</span>
               </a>
             )
           })}
