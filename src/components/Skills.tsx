@@ -54,11 +54,10 @@ export function Skills() {
                   >
                     <motion.div
                       className="progress-fill"
-                      initial={{ width: 0 }}
+                      initial={{ width: '0%' }}
                       transition={{ duration: 0.7, ease: 'easeOut' }}
                       viewport={viewportOnce}
                       whileInView={{ width: `${skill.level}%` }}
-                      style={{ width: `${skill.level}%` }}
                     />
                   </div>
                 </div>

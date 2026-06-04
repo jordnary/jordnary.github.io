@@ -2014,7 +2014,7 @@ a {
   }
 
   .progress-track {
-    @apply mt-2 h-2;
+    @apply mt-2 h-2 overflow-hidden;
     border-radius: var(--radius-pill);
     background: var(--color-border);
   }
