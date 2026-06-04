@@ -68,13 +68,14 @@ export function Hero() {
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
+          aria-label="你好，我是 Jordnary。用代码、设计与结构感，构建清爽的数字体验。"
           className="hero-title"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
         >
-          Jordnary
+          <span className="block">你好，我是 Jordnary</span>
           <span className="gradient-text block">
-            前端工程师，构建清爽的 Web 体验。
+            用代码、设计与结构感，构建清爽的数字体验。
           </span>
         </motion.h1>
         <motion.p

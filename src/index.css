@@ -794,7 +794,7 @@ a {
   }
 
   .hero-title {
-    @apply mt-6 text-3xl font-semibold leading-tight sm:text-5xl lg:text-6xl;
+    @apply mt-6 text-3xl font-semibold leading-tight sm:text-5xl;
     color: var(--color-text);
   }
 
