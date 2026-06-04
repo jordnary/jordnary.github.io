@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import heroImg from '../assets/hero.png'
 import {
@@ -53,7 +54,83 @@ const consoleLogs = [
   'render responsive.hero',
 ]
 
+const typewriterLabels = [
+  'Frontend Learner',
+  'React Developer',
+  'Design-minded Builder',
+  'AI & Web Explorer',
+]
+
+const typewriterIntervalMs = 85
+
+type TypewriterState = {
+  charIndex: number
+  isDeleting: boolean
+  pauseTicks: number
+  wordIndex: number
+}
+
 export function Hero() {
+  const [typewriter, setTypewriter] = useState<TypewriterState>({
+    charIndex: 0,
+    isDeleting: false,
+    pauseTicks: 0,
+    wordIndex: 0,
+  })
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setTypewriter((current) => {
+        const activeLabel = typewriterLabels[current.wordIndex]
+
+        if (current.pauseTicks > 0) {
+          return {
+            ...current,
+            pauseTicks: current.pauseTicks - 1,
+          }
+        }
+
+        if (!current.isDeleting) {
+          if (current.charIndex < activeLabel.length) {
+            return {
+              ...current,
+              charIndex: current.charIndex + 1,
+            }
+          }
+
+          return {
+            ...current,
+            isDeleting: true,
+            pauseTicks: 12,
+          }
+        }
+
+        if (current.charIndex > 0) {
+          return {
+            ...current,
+            charIndex: current.charIndex - 1,
+          }
+        }
+
+        return {
+          charIndex: 0,
+          isDeleting: false,
+          pauseTicks: 3,
+          wordIndex: (current.wordIndex + 1) % typewriterLabels.length,
+        }
+      })
+    }, typewriterIntervalMs)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const activeTypewriterLabel = typewriterLabels[typewriter.wordIndex].slice(
+    0,
+    typewriter.charIndex,
+  )
+
   return (
     <section className="site-container page-gutter hero-section" id="home">
       <div className="hero-copy">
@@ -78,11 +155,24 @@ export function Hero() {
             用代码、设计与结构感，构建清爽的数字体验。
           </span>
         </motion.h1>
+        <motion.div
+          animate={fadeUpVisible}
+          aria-label="角色标签循环展示：Frontend Learner、React Developer、Design-minded Builder、AI & Web Explorer。"
+          className="hero-typewriter"
+          initial={fadeUpHidden}
+          transition={getRevealTransition(2)}
+        >
+          <span className="typewriter-prefix">Currently</span>
+          <span className="typewriter-text" aria-hidden="true">
+            {activeTypewriterLabel}
+            <span className="typewriter-cursor" />
+          </span>
+        </motion.div>
         <motion.p
           animate={fadeUpVisible}
           className="hero-role"
           initial={fadeUpHidden}
-          transition={getRevealTransition(2)}
+          transition={getRevealTransition(3)}
         >
           专注 React、TypeScript 与可维护界面，把复杂信息整理成有质感、响应迅速的数字体验。
         </motion.p>
@@ -90,7 +180,7 @@ export function Hero() {
           animate={fadeUpVisible}
           className="hero-keywords"
           initial={fadeUpHidden}
-          transition={getRevealTransition(3)}
+          transition={getRevealTransition(4)}
         >
           {keywordTags.map((tag) => (
             <span
@@ -105,7 +195,7 @@ export function Hero() {
           animate={fadeUpVisible}
           className="hero-actions"
           initial={fadeUpHidden}
-          transition={getRevealTransition(4)}
+          transition={getRevealTransition(5)}
         >
           <a className="btn-primary w-full sm:w-auto" href="#projects">
             查看项目
