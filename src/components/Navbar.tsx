@@ -157,7 +157,7 @@ export function Navbar() {
           onClick={() => setIsOpen((current) => !current)}
           type="button"
         >
-          <span className="relative h-4 w-5" aria-hidden="true">
+          <span className="menu-icon" aria-hidden="true">
             <span className="menu-line menu-line-top" />
             <span className="menu-line menu-line-middle" />
             <span className="menu-line menu-line-bottom" />
