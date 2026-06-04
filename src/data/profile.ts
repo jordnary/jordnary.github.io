@@ -15,6 +15,25 @@ export const aboutProfile = {
     '设计审美',
     '持续迭代',
   ],
+  focusTitle: '我关注什么',
+  focusAreas: [
+    {
+      label: '清晰表达',
+      icon: 'message',
+    },
+    {
+      label: '稳定结构',
+      icon: 'structure',
+    },
+    {
+      label: '响应式体验',
+      icon: 'responsive',
+    },
+    {
+      label: '可持续迭代',
+      icon: 'iteration',
+    },
+  ],
   highlights: [
     {
       label: 'Focus',
