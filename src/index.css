@@ -337,16 +337,32 @@ a {
   .hero-decor {
     pointer-events: none;
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: -7rem;
+    bottom: -13rem;
     left: 50%;
     width: 100vw;
     z-index: 0;
-    overflow: hidden;
+    overflow: visible;
     background:
-      radial-gradient(ellipse 46rem 28rem at 6% 22%, rgb(34 211 238 / 0.16), transparent 66%),
-      radial-gradient(ellipse 48rem 30rem at 88% 12%, rgb(124 58 237 / 0.14), transparent 68%),
-      radial-gradient(ellipse 36rem 24rem at 58% 92%, rgb(6 182 212 / 0.1), transparent 72%);
+      radial-gradient(ellipse 52rem 30rem at 3% 28%, rgb(34 211 238 / 0.11), transparent 70%),
+      radial-gradient(ellipse 54rem 32rem at 92% 18%, rgb(124 58 237 / 0.11), transparent 72%),
+      radial-gradient(ellipse 42rem 24rem at 56% 72%, rgb(6 182 212 / 0.075), transparent 76%);
+    mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgb(0 0 0 / 0.36) 12%,
+      rgb(0 0 0 / 0.9) 28%,
+      rgb(0 0 0 / 0.82) 64%,
+      transparent 100%
+    );
+    -webkit-mask-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgb(0 0 0 / 0.36) 12%,
+      rgb(0 0 0 / 0.9) 28%,
+      rgb(0 0 0 / 0.82) 64%,
+      transparent 100%
+    );
     transform: translateX(-50%);
   }
 
@@ -358,8 +374,8 @@ a {
   }
 
   .hero-decor::before {
-    inset: -12% -8% 8%;
-    opacity: 0.22;
+    inset: 4rem -8% 14rem;
+    opacity: 0.16;
     background-image:
       linear-gradient(rgb(103 232 249 / 0.1) 1px, transparent 1px),
       linear-gradient(90deg, rgb(103 232 249 / 0.1) 1px, transparent 1px);
@@ -373,8 +389,8 @@ a {
   }
 
   .hero-decor::after {
-    inset: -14% -12%;
-    opacity: 0.42;
+    inset: 2rem -12% 7rem;
+    opacity: 0.32;
     background:
       radial-gradient(ellipse at 16% 72%, rgb(103 232 249 / 0.2), transparent 58%),
       radial-gradient(ellipse at 84% 26%, rgb(196 181 253 / 0.18), transparent 58%),
@@ -386,21 +402,21 @@ a {
   .hero-decor-glow {
     position: absolute;
     border-radius: var(--radius-pill);
-    opacity: 0.34;
+    opacity: 0.28;
     filter: blur(3rem);
     transform: translate3d(0, 0, 0);
   }
 
   .hero-decor-glow-left {
     left: max(-10rem, -9vw);
-    bottom: 2%;
+    bottom: 12%;
     width: 30rem;
     height: 30rem;
     background: radial-gradient(circle, rgb(34 211 238 / 0.46), transparent 70%);
   }
 
   .hero-decor-glow-right {
-    top: 5%;
+    top: 12%;
     right: max(-10rem, -10vw);
     width: 32rem;
     height: 32rem;
