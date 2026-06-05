@@ -10,7 +10,7 @@ export const contactProfile = {
   description:
     '如果你想交流项目、前端工程、界面设计或个人网站搭建，可以通过邮箱或 GitHub 找到我。',
   email: 'jordnary@gmail.com',
-  availability: 'Open to thoughtful conversations',
+  availability: 'Available for thoughtful conversations',
 }
 
 export const contactLinks: ContactLink[] = [

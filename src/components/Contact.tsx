@@ -37,9 +37,12 @@ export function Contact() {
         whileInView={fadeUpVisible}
       >
         <article className="contact-panel-copy">
-          <p className="meta-label">
-            {contactProfile.availability}
-          </p>
+          <div className="contact-status">
+            <span className="contact-status-dot" aria-hidden="true" />
+            <span className="contact-status-text">
+              {contactProfile.availability}
+            </span>
+          </div>
           <h3 className="contact-panel-title">
             {contactProfile.title}
           </h3>
