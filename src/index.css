@@ -3165,9 +3165,11 @@ a {
       background: linear-gradient(
         180deg,
         transparent,
-        rgb(103 232 249 / 0.78) 18%,
-        rgb(255 255 255 / 0.28) 52%,
-        rgb(196 181 253 / 0.72) 84%,
+        rgb(103 232 249 / 0.72) 12%,
+        rgb(34 211 238 / 0.86) 28%,
+        rgb(255 255 255 / 0.28) 50%,
+        rgb(196 181 253 / 0.8) 72%,
+        rgb(110 231 183 / 0.5) 88%,
         transparent
       );
       box-shadow:
@@ -3190,6 +3192,36 @@ a {
       grid-template-columns: var(--timeline-time-column) var(--timeline-node-column) minmax(0, 1fr);
       gap: 0;
       align-items: start;
+    }
+
+    .timeline-row::before {
+      content: "";
+      pointer-events: none;
+      position: absolute;
+      top: 0.8rem;
+      bottom: 0.8rem;
+      left: calc(var(--timeline-time-column) + (var(--timeline-node-column) / 2));
+      z-index: 1;
+      width: 4px;
+      border-radius: var(--radius-pill);
+      opacity: 0;
+      background: linear-gradient(
+        180deg,
+        transparent,
+        rgb(103 232 249 / 0.94) 24%,
+        rgb(196 181 253 / 0.9) 64%,
+        transparent
+      );
+      box-shadow:
+        0 0 18px rgb(103 232 249 / 0.58),
+        0 0 38px rgb(196 181 253 / 0.3);
+      filter: blur(0.08rem);
+      transform: translateX(-50%);
+      transition: opacity 220ms ease;
+    }
+
+    .timeline-row:hover::before {
+      opacity: 1;
     }
 
     .timeline-time {
@@ -3233,6 +3265,36 @@ a {
       inset: -0.85rem;
       border-color: rgb(196 181 253 / 0.16);
       filter: blur(0.1rem);
+    }
+
+    .timeline-row:hover .timeline-dot {
+      border-color: #ffffff;
+      background:
+        radial-gradient(circle, #ffffff 0 22%, var(--color-primary-cyan) 23% 58%, rgb(2 6 23 / 0.86) 59% 100%);
+      filter:
+        drop-shadow(0 0 10px rgb(103 232 249 / 0.82))
+        drop-shadow(0 0 24px rgb(196 181 253 / 0.42));
+    }
+
+    .timeline-row:hover .timeline-dot::before {
+      border-color: rgb(165 243 252 / 0.52);
+    }
+
+    .timeline-row:hover .timeline-dot::after {
+      border-color: rgb(196 181 253 / 0.34);
+    }
+
+    .timeline-row:hover .timeline-time .meta-label {
+      color: var(--color-primary-cyan-text);
+      text-shadow: 0 0 16px rgb(103 232 249 / 0.42);
+    }
+
+    .timeline-row:hover .timeline-index {
+      color: #c4b5fd;
+    }
+
+    .timeline-row:hover .timeline-card {
+      border-color: rgb(103 232 249 / 0.34);
     }
   }
 
