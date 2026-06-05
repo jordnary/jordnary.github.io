@@ -2626,6 +2626,7 @@ a {
     border-color: transparent;
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.042)) padding-box,
+      linear-gradient(145deg, rgb(15 23 42 / 0.9), rgb(8 13 30 / 0.86)) padding-box,
       linear-gradient(
         135deg,
         rgb(255 255 255 / 0.1),
@@ -2669,6 +2670,7 @@ a {
       radial-gradient(ellipse at 50% 0%, rgb(103 232 249 / 0.14), transparent 58%) padding-box,
       radial-gradient(ellipse at 88% 22%, rgb(196 181 253 / 0.12), transparent 54%) padding-box,
       linear-gradient(180deg, rgb(255 255 255 / 0.095), rgb(255 255 255 / 0.052)) padding-box,
+      linear-gradient(145deg, rgb(15 23 42 / 0.92), rgb(8 13 30 / 0.88)) padding-box,
       linear-gradient(
         135deg,
         rgb(103 232 249 / 0.86),
