@@ -3202,10 +3202,10 @@ a {
       background:
         radial-gradient(circle, #ffffff 0 18%, var(--color-primary-cyan) 19% 52%, rgb(2 6 23 / 0.92) 53% 100%);
       box-shadow:
-        0 0 0 0.34rem rgb(103 232 249 / 0.11),
-        0 0 18px rgb(103 232 249 / 0.78),
-        0 0 34px rgb(196 181 253 / 0.28);
-      animation: timeline-node-pulse 3.6s ease-in-out infinite;
+        0 0 0 0.28rem rgb(103 232 249 / 0.1),
+        0 0 16px rgb(103 232 249 / 0.66),
+        0 0 28px rgb(196 181 253 / 0.22);
+      animation: timeline-node-pulse 4.8s ease-in-out infinite;
     }
 
     .timeline-dot::before,
@@ -3433,18 +3433,18 @@ a {
     0%,
     100% {
       box-shadow:
-        0 0 0 0.34rem rgb(103 232 249 / 0.1),
-        0 0 18px rgb(103 232 249 / 0.68),
-        0 0 34px rgb(196 181 253 / 0.24);
+        0 0 0 0.28rem rgb(103 232 249 / 0.09),
+        0 0 16px rgb(103 232 249 / 0.62),
+        0 0 28px rgb(196 181 253 / 0.2);
       transform: scale(1);
     }
 
     50% {
       box-shadow:
-        0 0 0 0.52rem rgb(103 232 249 / 0.15),
-        0 0 24px rgb(103 232 249 / 0.86),
-        0 0 42px rgb(196 181 253 / 0.34);
-      transform: scale(1.08);
+        0 0 0 0.38rem rgb(103 232 249 / 0.13),
+        0 0 20px rgb(103 232 249 / 0.72),
+        0 0 34px rgb(196 181 253 / 0.26);
+      transform: scale(1.04);
     }
   }
 
