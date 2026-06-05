@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { Toast } from './Toast'
 import { contactLinks, contactProfile } from '../data/contact'
 import {
   fadeUpHidden,
@@ -12,19 +13,9 @@ import {
 export function Contact() {
   const [copyToastId, setCopyToastId] = useState(0)
 
-  useEffect(() => {
-    if (copyToastId === 0) {
-      return
-    }
-
-    const timeout = window.setTimeout(() => {
-      setCopyToastId(0)
-    }, 1800)
-
-    return () => {
-      window.clearTimeout(timeout)
-    }
-  }, [copyToastId])
+  const handleToastClose = useCallback(() => {
+    setCopyToastId(0)
+  }, [])
 
   async function handleCopyEmail() {
     await copyToClipboard(contactProfile.email)
@@ -107,11 +98,12 @@ export function Contact() {
             </a>
           ))}
         </div>
-        {copyToastId > 0 && (
-          <div className="contact-toast" role="status">
-            已复制邮箱
-          </div>
-        )}
+        <Toast
+          message="已复制邮箱"
+          onClose={handleToastClose}
+          open={copyToastId > 0}
+          resetKey={copyToastId}
+        />
       </motion.div>
     </PageSection>
   )
