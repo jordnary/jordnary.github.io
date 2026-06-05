@@ -88,6 +88,16 @@ export function Timeline() {
                   <h3 className="card-title text-lg sm:text-xl">
                     {item.title}
                   </h3>
+                  <div className="timeline-tag-list">
+                    {item.tags.map((tag) => (
+                      <span
+                        className="timeline-tag"
+                        key={tag}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                   <p className="card-copy mt-3 text-sm leading-7 md:text-base">
                     {item.description}
                   </p>
