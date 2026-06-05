@@ -16,35 +16,36 @@ export function Timeline() {
       title="按阶段推进的成长与构建记录"
       description="用阶段化的方式记录当前重点、近期整理和下一步计划。"
     >
-      <div className="relative">
+      <div className="timeline-shell">
         <div
           aria-hidden="true"
           className="timeline-line"
         />
-        <motion.div className="grid gap-5">
+        <motion.ol className="timeline-list">
           {timelineItems.map((item, index) => (
-            <motion.article
-              className="glass-card interactive-card relative grid gap-4 p-5 sm:gap-5 sm:p-7 md:grid-cols-[8rem_1fr] lg:grid-cols-[9rem_1fr]"
+            <motion.li
+              className="timeline-row"
               initial={fadeUpHidden}
               key={item.period}
               transition={getRevealTransition(index)}
               viewport={viewportOnce}
               whileInView={fadeUpVisible}
             >
-              <div className="md:pl-8">
-                <span
-                  aria-hidden="true"
-                  className="timeline-dot"
-                />
+              <div className="timeline-time">
                 <p className="meta-label">
                   {item.period}
                 </p>
-                <p className="subtle-copy mt-3 text-sm">
+                <p className="timeline-index">
                   {String(index + 1).padStart(2, '0')}
                 </p>
               </div>
 
-              <div>
+              <span
+                aria-hidden="true"
+                className="timeline-dot"
+              />
+
+              <article className="timeline-card glass-card interactive-card">
                 <h3 className="card-title text-lg sm:text-xl">
                   {item.title}
                 </h3>
@@ -61,10 +62,10 @@ export function Timeline() {
                     </span>
                   ))}
                 </div>
-              </div>
-            </motion.article>
+              </article>
+            </motion.li>
           ))}
-        </motion.div>
+        </motion.ol>
       </div>
     </PageSection>
   )
