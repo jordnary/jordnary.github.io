@@ -947,6 +947,9 @@ a {
   .btn-secondary:focus-visible,
   .nav-link:focus-visible,
   .mobile-nav-link:focus-visible,
+  .footer-brand-link:focus-visible,
+  .footer-link:focus-visible,
+  .footer-github-link:focus-visible,
   .icon-button:focus-visible,
   .project-filter-button:focus-visible,
   .project-empty-action:focus-visible,
@@ -3757,14 +3760,76 @@ a {
   }
 
   .footer-shell {
-    @apply border-t py-8;
+    @apply border-t py-5 sm:py-6;
     border-color: var(--color-border);
     padding-inline: var(--page-gutter);
+    background: linear-gradient(180deg, transparent, rgb(2 6 23 / 0.36));
   }
 
   .footer-content {
-    @apply flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-3 text-sm sm:gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-5;
     color: var(--color-text-subtle);
+  }
+
+  .footer-brand {
+    @apply flex flex-col gap-1;
+    max-width: 24rem;
+  }
+
+  .footer-brand-link {
+    @apply inline-flex w-fit items-center text-base font-semibold transition;
+    color: var(--color-text);
+  }
+
+  .footer-brand-link:hover {
+    color: var(--color-primary-cyan-text);
+  }
+
+  .footer-description {
+    @apply text-xs leading-5 sm:text-sm;
+    color: var(--color-text-muted);
+  }
+
+  .footer-nav {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-1.5;
+  }
+
+  .footer-link {
+    @apply rounded-full px-2 py-1 text-xs font-medium transition sm:text-sm;
+    color: var(--color-text-muted);
+  }
+
+  .footer-link:hover {
+    color: var(--color-primary-cyan-text);
+    background: var(--color-primary-cyan-soft);
+  }
+
+  .footer-meta {
+    @apply flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs;
+    color: var(--color-text-subtle);
+  }
+
+  .footer-github-link {
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-medium transition;
+    color: var(--color-text-soft);
+    border-color: rgb(255 255 255 / 0.14);
+    background: rgb(255 255 255 / 0.04);
+  }
+
+  .footer-github-link:hover {
+    color: var(--color-primary-cyan-text);
+    border-color: var(--color-border-hover);
+    background: var(--color-card-hover);
+    transform: translateY(-0.075rem);
+  }
+
+  .footer-github-link svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .footer-copyright {
+    white-space: nowrap;
   }
 
   @media (min-width: 640px) {
