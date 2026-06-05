@@ -25,7 +25,6 @@ export function Skills() {
               key={group.title}
               transition={getRevealTransition(index)}
               viewport={viewportOnce}
-              whileHover={{ y: -6 }}
               whileInView={fadeUpVisible}
             >
               <header className="skill-card-header">
