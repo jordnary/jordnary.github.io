@@ -952,7 +952,8 @@ a {
   .project-empty-action:focus-visible,
   .hero-scroll-cue:focus-visible,
   .accent-link:focus-visible,
-  .contact-link-card:focus-visible {
+  .contact-link-card:focus-visible,
+  .contact-copy-button:focus-visible {
     outline: 2px solid var(--color-primary-cyan);
     outline-offset: 2px;
   }
@@ -3394,24 +3395,98 @@ a {
   }
 
   .contact-panel-note {
-    display: grid;
-    gap: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.95rem;
     max-width: 28rem;
     margin-top: 2rem;
     padding-left: 1rem;
     border-left: 2px solid rgb(103 232 249 / 0.44);
   }
 
-  .contact-panel-note span {
+  .contact-panel-note > div {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .contact-panel-note > div span {
     @apply text-xs font-semibold uppercase;
     color: var(--color-text-subtle);
     letter-spacing: 0.2em;
   }
 
-  .contact-panel-note strong {
+  .contact-panel-note > div strong {
     @apply text-sm font-semibold sm:text-base;
     overflow-wrap: anywhere;
     color: var(--color-primary-cyan-text);
+  }
+
+  .contact-copy-button {
+    @apply inline-flex items-center justify-center gap-2 text-sm font-semibold;
+    min-height: 2.75rem;
+    padding: 0.7rem 1rem;
+    color: var(--color-primary-cyan-text);
+    border: 1px solid rgb(103 232 249 / 0.22);
+    border-radius: var(--radius-pill);
+    background:
+      linear-gradient(
+        145deg,
+        rgb(103 232 249 / 0.13),
+        rgb(196 181 253 / 0.08)
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 14px 34px -24px rgb(34 211 238 / 0.62);
+    transition:
+      border-color 180ms ease,
+      background 180ms ease,
+      color 180ms ease,
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .contact-copy-button:hover {
+    color: #ffffff;
+    border-color: var(--color-border-hover);
+    background:
+      linear-gradient(
+        145deg,
+        rgb(103 232 249 / 0.2),
+        rgb(196 181 253 / 0.12)
+      );
+    transform: translateY(-0.12rem);
+  }
+
+  .contact-copy-icon {
+    display: grid;
+    width: 1rem;
+    height: 1rem;
+    place-items: center;
+    color: currentColor;
+  }
+
+  .contact-copy-icon svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .contact-toast {
+    @apply text-sm font-semibold;
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    z-index: 80;
+    padding: 0.85rem 1rem;
+    color: var(--color-bg);
+    border: 1px solid rgb(255 255 255 / 0.42);
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-cyan);
+    box-shadow:
+      0 18px 42px -20px rgb(34 211 238 / 0.76),
+      0 0 28px rgb(103 232 249 / 0.2);
+    transform: translateX(-50%);
+    animation: contact-toast-rise 1800ms ease both;
   }
 
   .contact-link-grid {
@@ -3573,6 +3648,12 @@ a {
   @media (min-width: 640px) {
     .contact-panel {
       padding: 2rem;
+    }
+
+    .contact-panel-note {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
     }
 
     .contact-link-grid {
@@ -3796,10 +3877,29 @@ a {
     }
   }
 
+  @keyframes contact-toast-rise {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 0.65rem);
+    }
+
+    12%,
+    82% {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -0.45rem);
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .skills-radar-sweep,
     .skills-radar-node,
-    .timeline-dot {
+    .timeline-dot,
+    .contact-toast {
       animation: none;
     }
   }

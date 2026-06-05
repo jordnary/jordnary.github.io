@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
 import { contactLinks, contactProfile } from '../data/contact'
@@ -9,6 +10,27 @@ import {
 } from '../lib/animations'
 
 export function Contact() {
+  const [copyToastId, setCopyToastId] = useState(0)
+
+  useEffect(() => {
+    if (copyToastId === 0) {
+      return
+    }
+
+    const timeout = window.setTimeout(() => {
+      setCopyToastId(0)
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [copyToastId])
+
+  async function handleCopyEmail() {
+    await copyToClipboard(contactProfile.email)
+    setCopyToastId((currentId) => currentId + 1)
+  }
+
   return (
     <PageSection
       id="contact"
@@ -35,8 +57,21 @@ export function Contact() {
           </p>
 
           <div className="contact-panel-note">
-            <span>Preferred channel</span>
-            <strong>{contactProfile.email}</strong>
+            <div>
+              <span>Preferred channel</span>
+              <strong>{contactProfile.email}</strong>
+            </div>
+            <button
+              aria-label={`复制邮箱 ${contactProfile.email}`}
+              className="contact-copy-button"
+              onClick={handleCopyEmail}
+              type="button"
+            >
+              <span className="contact-copy-icon" aria-hidden="true">
+                <CopyIcon />
+              </span>
+              <span>复制邮箱</span>
+            </button>
           </div>
         </article>
 
@@ -72,9 +107,35 @@ export function Contact() {
             </a>
           ))}
         </div>
+        {copyToastId > 0 && (
+          <div className="contact-toast" role="status">
+            已复制邮箱
+          </div>
+        )}
       </motion.div>
     </PageSection>
   )
+}
+
+async function copyToClipboard(value: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value)
+      return
+    }
+  } catch {
+    // Fall through to the textarea fallback.
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = value
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand('copy')
+  document.body.removeChild(textarea)
 }
 
 function ContactIcon({ title }: { title: string }) {
@@ -112,4 +173,22 @@ function ContactIcon({ title }: { title: string }) {
         </svg>
       )
   }
+}
+
+function CopyIcon() {
+  const iconProps = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    strokeWidth: 1.8,
+    viewBox: '0 0 24 24',
+  } as const
+
+  return (
+    <svg {...iconProps}>
+      <rect height="13" rx="2" width="13" x="8" y="8" />
+      <path d="M5 16V5.8C5 5.4 5.4 5 5.8 5H16" />
+    </svg>
+  )
 }
