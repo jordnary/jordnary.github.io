@@ -2623,9 +2623,16 @@ a {
 
   .project-card {
     position: relative;
+    border-color: transparent;
     background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.042)),
-      var(--color-card);
+      linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.042)) padding-box,
+      linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.1),
+        rgb(103 232 249 / 0.18),
+        rgb(196 181 253 / 0.13)
+      )
+      border-box;
     box-shadow:
       var(--shadow-card),
       0 0 0 rgb(103 232 249 / 0);
@@ -2635,8 +2642,7 @@ a {
       box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .project-card::before,
-  .project-card::after {
+  .project-card::before {
     content: "";
     pointer-events: none;
     position: absolute;
@@ -2657,44 +2663,23 @@ a {
     );
   }
 
-  .project-card::after {
-    inset: 0;
-    z-index: 4;
-    padding: 1px;
-    border-radius: inherit;
-    opacity: 0;
-    background: linear-gradient(
-      135deg,
-      rgb(103 232 249 / 0.86),
-      rgb(196 181 253 / 0.72),
-      rgb(103 232 249 / 0.34)
-    );
-    mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    transition: opacity 260ms ease;
-  }
-
   .project-card:hover {
     border-color: transparent;
     background:
-      radial-gradient(ellipse at 50% 0%, rgb(103 232 249 / 0.14), transparent 58%),
-      radial-gradient(ellipse at 88% 22%, rgb(196 181 253 / 0.12), transparent 54%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.095), rgb(255 255 255 / 0.052)),
-      var(--color-card-hover);
+      radial-gradient(ellipse at 50% 0%, rgb(103 232 249 / 0.14), transparent 58%) padding-box,
+      radial-gradient(ellipse at 88% 22%, rgb(196 181 253 / 0.12), transparent 54%) padding-box,
+      linear-gradient(180deg, rgb(255 255 255 / 0.095), rgb(255 255 255 / 0.052)) padding-box,
+      linear-gradient(
+        135deg,
+        rgb(103 232 249 / 0.86),
+        rgb(196 181 253 / 0.72),
+        rgb(103 232 249 / 0.34)
+      )
+      border-box;
     box-shadow:
       0 28px 72px -36px rgb(103 232 249 / 0.78),
       0 20px 56px -42px rgb(196 181 253 / 0.7),
       inset 0 1px 0 rgb(255 255 255 / 0.08);
-  }
-
-  .project-card:hover::after {
-    opacity: 1;
   }
 
   .project-media {
