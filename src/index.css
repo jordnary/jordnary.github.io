@@ -3821,9 +3821,26 @@ a {
 
   .footer-shell {
     @apply border-t py-5 sm:py-6;
+    position: relative;
     border-color: var(--color-border);
     padding-inline: var(--page-gutter);
     background: linear-gradient(180deg, transparent, rgb(2 6 23 / 0.36));
+  }
+
+  .footer-shell::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    width: min(100%, var(--max-page-width));
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(103 232 249 / 0.72),
+      transparent
+    );
+    transform: translateX(-50%);
   }
 
   .footer-content {
