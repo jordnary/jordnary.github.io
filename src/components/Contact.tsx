@@ -16,66 +16,43 @@ export function Contact() {
       title="保持简单直接的联系入口"
       description="把最重要的联系方式放在清晰的位置，方便快速建立上下文。"
     >
-      <motion.div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <motion.article
-          className="glass-card p-5 sm:p-8"
-          initial={fadeUpHidden}
-          transition={getRevealTransition()}
-          viewport={viewportOnce}
-          whileInView={fadeUpVisible}
-        >
+      <motion.div
+        className="contact-panel"
+        initial={fadeUpHidden}
+        transition={getRevealTransition()}
+        viewport={viewportOnce}
+        whileInView={fadeUpVisible}
+      >
+        <article className="contact-panel-copy">
           <p className="meta-label">
             {contactProfile.availability}
           </p>
-          <h3 className="card-title mt-4 text-xl leading-snug sm:text-2xl">
+          <h3 className="contact-panel-title">
             {contactProfile.title}
           </h3>
-          <p className="card-copy mt-4 text-sm leading-7 md:text-base">
+          <p className="contact-panel-description">
             {contactProfile.description}
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <a
-              className="btn-primary w-full sm:w-auto"
-              href={`mailto:${contactProfile.email}`}
-            >
-              Send email
-            </a>
-            <a
-              className="btn-secondary w-full sm:w-auto"
-              href="https://github.com/jordnary"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              View GitHub
-            </a>
+          <div className="contact-panel-note">
+            <span>Preferred channel</span>
+            <strong>{contactProfile.email}</strong>
           </div>
-        </motion.article>
+        </article>
 
-        <motion.div
-          className="glass-card divide-y divide-subtle"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(1)}
-          viewport={viewportOnce}
-          whileInView={fadeUpVisible}
-        >
+        <div className="contact-link-grid" aria-label="Contact links">
           {contactLinks.map((link) => (
             <a
-              className="contact-link"
+              className="contact-link-card"
               href={link.href}
               key={link.title}
               rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
               target={link.href.startsWith('http') ? '_blank' : undefined}
             >
-              <div className="flex items-start justify-between gap-4 sm:gap-5">
-                <div className="min-w-0">
-                  <p className="meta-label">
-                    {link.title}
-                  </p>
-                  <p className="card-title mt-2 break-words text-base sm:text-lg">
-                    {link.label}
-                  </p>
-                </div>
+              <div className="contact-link-header">
+                <span className="contact-link-icon" aria-hidden="true">
+                  <ContactIcon title={link.title} />
+                </span>
                 <span
                   aria-hidden="true"
                   className="contact-arrow"
@@ -83,13 +60,56 @@ export function Contact() {
                   ↗
                 </span>
               </div>
-              <p className="card-copy mt-3 text-sm leading-6">
+              <p className="meta-label contact-link-kicker">
+                {link.title}
+              </p>
+              <p className="contact-link-label">
+                {link.label}
+              </p>
+              <p className="contact-link-description">
                 {link.description}
               </p>
             </a>
           ))}
-        </motion.div>
+        </div>
       </motion.div>
     </PageSection>
   )
+}
+
+function ContactIcon({ title }: { title: string }) {
+  const iconProps = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    strokeWidth: 1.8,
+    viewBox: '0 0 24 24',
+  } as const
+
+  switch (title) {
+    case 'Email':
+      return (
+        <svg {...iconProps}>
+          <rect height="14" rx="2.4" width="18" x="3" y="5" />
+          <path d="m4.5 7.5 7.5 5.2 7.5-5.2" />
+        </svg>
+      )
+    case 'GitHub':
+      return (
+        <svg {...iconProps}>
+          <path d="M8.8 19.5c-3.2 1-3.2-1.6-4.5-2" />
+          <path d="M15.2 22v-3.1a2.7 2.7 0 0 0-.8-2.1c2.7-.3 5.6-1.3 5.6-6a4.7 4.7 0 0 0-1.3-3.3 4.4 4.4 0 0 0-.1-3.3s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 3.9 5.6 4.2 5.6 4.2a4.4 4.4 0 0 0-.1 3.3A4.7 4.7 0 0 0 4.2 11c0 4.6 2.9 5.7 5.6 6a2.7 2.7 0 0 0-.8 2.1V22" />
+        </svg>
+      )
+    default:
+      return (
+        <svg {...iconProps}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3.6 12h16.8" />
+          <path d="M12 3a13.5 13.5 0 0 1 0 18" />
+          <path d="M12 3a13.5 13.5 0 0 0 0 18" />
+        </svg>
+      )
+  }
 }
