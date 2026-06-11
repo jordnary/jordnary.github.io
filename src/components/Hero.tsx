@@ -37,9 +37,9 @@ const consoleFlow = ['Learn', 'Build', 'Record']
 
 const typewriterLabels = [
   'CS Undergrad',
-  'CS Fundamentals',
-  'AI Learning Notes',
-  'AI & Web Explorer',
+  'CS Basics',
+  'AI Notes',
+  'Web Explorer',
 ]
 
 const typewriterIntervalMs = 85
@@ -142,19 +142,19 @@ export function Hero() {
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
-          aria-label="你好，我是 Jordnary，一名正在探索 AI 与 Web 开发的学生。"
+          aria-label="你好，我是 Jordnary，探索 AI 与 Web。"
           className="hero-title"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
         >
           <span className="block">你好，我是 Jordnary</span>
           <span className="gradient-text block">
-            一名正在探索 AI 与 Web 开发的学生。
+            探索 AI 与 Web。
           </span>
         </motion.h1>
         <motion.div
           animate={fadeUpVisible}
-          aria-label="角色标签循环展示：CS Undergrad、CS Fundamentals、AI Learning Notes、AI & Web Explorer。"
+          aria-label="角色标签循环展示：CS Undergrad、CS Basics、AI Notes、Web Explorer。"
           className="hero-typewriter"
           initial={fadeUpHidden}
           transition={getRevealTransition(2)}
@@ -171,7 +171,7 @@ export function Hero() {
           initial={fadeUpHidden}
           transition={getRevealTransition(3)}
         >
-          这里记录我的学习路径、项目实践、技术笔记与阶段性作品。我正在系统学习计算机基础、数据库、机器学习、深度学习和大模型相关知识，也会用 React、TypeScript 和 GitHub Pages 搭建自己的展示空间。
+          记录学习、项目与技术笔记，用 React、TypeScript 和 GitHub Pages 持续构建个人展示空间。
         </motion.p>
         <motion.div
           animate={fadeUpVisible}
