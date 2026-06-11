@@ -803,7 +803,13 @@ a {
   }
 
   .about-stat-value {
-    @apply mt-3 text-3xl font-semibold leading-none sm:text-4xl;
+    @apply mt-3 font-semibold;
+    display: block;
+    max-width: 100%;
+    font-size: clamp(1.45rem, 1.85vw, 1.625rem);
+    line-height: 1.08;
+    letter-spacing: 0;
+    white-space: nowrap;
     color: transparent;
     background-image: linear-gradient(
       135deg,
@@ -2357,8 +2363,9 @@ a {
   .skills-radar-node {
     @apply inline-flex items-center justify-center text-xs font-semibold;
     position: absolute;
-    min-width: 5.8rem;
+    min-width: 4.6rem;
     padding: 0.45rem 0.72rem;
+    white-space: nowrap;
     color: var(--color-primary-cyan-text);
     border: 1px solid rgb(103 232 249 / 0.18);
     border-radius: var(--radius-pill);

@@ -9,7 +9,7 @@ export const aboutProfile = {
   stats: [
     {
       label: 'Stage',
-      value: 'Undergraduate',
+      value: 'Undergrad',
       description: '本科阶段学习中',
     },
     {

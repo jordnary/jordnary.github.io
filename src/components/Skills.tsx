@@ -114,7 +114,7 @@ export function Skills() {
                 className={`skills-radar-node skills-radar-node-${index + 1}`}
                 key={group.title}
               >
-                {group.title}
+                {getSkillRadarLabel(group.title)}
               </span>
             ))}
           </div>
@@ -128,6 +128,21 @@ export function Skills() {
       </div>
     </PageSection>
   )
+}
+
+function getSkillRadarLabel(title: string) {
+  switch (title) {
+    case 'Computer Science':
+      return 'CS'
+    case 'AI & Machine Learning':
+      return 'AI / ML'
+    case 'Web Development':
+      return 'Web'
+    case 'Tools & Workflow':
+      return 'Tools'
+    default:
+      return title
+  }
 }
 
 function getSkillIcon(title: string) {
