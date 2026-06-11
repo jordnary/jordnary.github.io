@@ -1317,14 +1317,18 @@ a {
   .gradient-text {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
-      92deg,
-      #cffafe 0%,
-      #67e8f9 34%,
-      #ffffff 58%,
-      #c4b5fd 100%
+      96deg,
+      #f8feff 0%,
+      #a5f3fc 22%,
+      #67e8f9 42%,
+      #38bdf8 58%,
+      #818cf8 78%,
+      #e9d5ff 100%
     );
     background-size: 100% 100%;
-    text-shadow: 0 0 26px rgb(103 232 249 / 0.12);
+    text-shadow:
+      0 0 22px rgb(103 232 249 / 0.18),
+      0 0 42px rgb(196 181 253 / 0.08);
   }
 
   .hero-typewriter {

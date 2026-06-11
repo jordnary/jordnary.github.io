@@ -138,7 +138,7 @@ export function Hero() {
           transition={getRevealTransition(0)}
         >
           <span className="glow-dot" />
-          <span className="min-w-0">Learning Computer Science, AI and Web Development</span>
+          <span className="min-w-0">Learning CS, AI and Web Development</span>
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
