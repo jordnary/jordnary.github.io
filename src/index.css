@@ -1747,18 +1747,18 @@ a {
   .console-display::before {
     z-index: 0;
     background-image: url("/images/control-deck-bg.png");
-    background-position: center;
-    background-size: cover;
-    filter: saturate(1.12) brightness(1.08) contrast(1.04);
-    transform: scale(1.015);
+    background-position: 0% 45%;
+    background-size: 126% auto;
+    filter: saturate(1.22) brightness(1.24) contrast(1.05);
+    transform: scale(1.02);
   }
 
   .console-display::after {
     z-index: 1;
     background:
-      radial-gradient(circle at 26% 28%, rgb(103 232 249 / 0.12), transparent 34%),
-      linear-gradient(180deg, rgb(2 6 23 / 0.18), rgb(2 6 23 / 0.54)),
-      linear-gradient(90deg, rgb(2 6 23 / 0.42), transparent 45%, rgb(2 6 23 / 0.38));
+      radial-gradient(circle at 26% 28%, rgb(103 232 249 / 0.1), transparent 34%),
+      linear-gradient(180deg, rgb(2 6 23 / 0.08), rgb(2 6 23 / 0.32)),
+      linear-gradient(90deg, rgb(2 6 23 / 0.24), transparent 45%, rgb(2 6 23 / 0.2));
   }
 
   .console-grid-lines {

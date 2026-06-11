@@ -36,7 +36,7 @@ const keywordTags = [
 const consoleFlow = ['Learn', 'Build', 'Record']
 
 const typewriterLabels = [
-  'Undergraduate Learner',
+  'CS Undergrad',
   'CS Fundamentals',
   'AI Learning Notes',
   'AI & Web Explorer',
@@ -154,7 +154,7 @@ export function Hero() {
         </motion.h1>
         <motion.div
           animate={fadeUpVisible}
-          aria-label="角色标签循环展示：Undergraduate Learner、CS Fundamentals、AI Learning Notes、AI & Web Explorer。"
+          aria-label="角色标签循环展示：CS Undergrad、CS Fundamentals、AI Learning Notes、AI & Web Explorer。"
           className="hero-typewriter"
           initial={fadeUpHidden}
           transition={getRevealTransition(2)}
@@ -240,7 +240,7 @@ export function Hero() {
                 </div>
                 <div className="min-w-0">
                   <p className="console-avatar-name">Jordnary</p>
-                  <p className="console-avatar-role">Undergraduate Learner</p>
+                  <p className="console-avatar-role">CS Undergrad</p>
                 </div>
               </div>
               <span className="console-orbit-tag">AI + CS</span>
