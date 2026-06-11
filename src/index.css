@@ -3310,6 +3310,7 @@ a {
   .timeline-index {
     @apply shrink-0 text-sm font-semibold;
     color: var(--color-text-subtle);
+    font-variant-numeric: tabular-nums;
   }
 
   .timeline-card {
@@ -3435,6 +3436,8 @@ a {
 
     .timeline-time {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      width: 100%;
       justify-items: end;
       gap: 0.65rem;
       padding-top: 1.35rem;
