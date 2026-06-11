@@ -4011,6 +4011,12 @@ a {
     color: var(--color-text-muted);
   }
 
+  @media (min-width: 640px) {
+    .footer-description {
+      white-space: nowrap;
+    }
+  }
+
   .footer-nav {
     @apply flex flex-wrap items-center gap-x-3 gap-y-1.5;
   }
