@@ -1,7 +1,6 @@
 import { About } from './components/About'
 import { BackToTop } from './components/BackToTop'
 import { Contact } from './components/Contact'
-import { CursorGlow } from './components/CursorGlow'
 import { Footer } from './components/Footer'
 import { Hero } from './components/Hero'
 import { Navbar } from './components/Navbar'
@@ -15,7 +14,6 @@ function App() {
     <div className="app-shell" id="top">
       <div className="ambient-bg" />
       <div className="grid-bg" />
-      <CursorGlow />
       <ScrollProgress />
       <BackToTop />
 
