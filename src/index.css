@@ -1357,11 +1357,14 @@ a {
   .gradient-text {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(
-      90deg,
-      var(--color-primary-cyan-text),
-      var(--color-text),
-      var(--color-secondary-violet)
+      92deg,
+      #cffafe 0%,
+      #67e8f9 34%,
+      #ffffff 58%,
+      #c4b5fd 100%
     );
+    background-size: 100% 100%;
+    text-shadow: 0 0 26px rgb(103 232 249 / 0.12);
   }
 
   .hero-typewriter {
@@ -1726,7 +1729,8 @@ a {
   .console-display {
     position: relative;
     isolation: isolate;
-    min-height: 13.25rem;
+    aspect-ratio: 2 / 1;
+    min-height: 11.5rem;
     overflow: hidden;
     border: 1px solid rgb(103 232 249 / 0.13);
     border-radius: var(--radius-card);
@@ -1747,10 +1751,10 @@ a {
   .console-display::before {
     z-index: 0;
     background-image: url("/images/control-deck-bg.png");
-    background-position: 0% 45%;
-    background-size: 126% auto;
-    filter: saturate(1.22) brightness(1.24) contrast(1.05);
-    transform: scale(1.02);
+    background-position: center center;
+    background-size: cover;
+    filter: saturate(1.12) brightness(1.04) contrast(1.02);
+    transform: scale(1.01);
   }
 
   .console-display::after {
@@ -2029,10 +2033,6 @@ a {
     overflow-wrap: anywhere;
   }
 
-  .console-footer {
-    @apply grid gap-2;
-  }
-
   .console-flow {
     @apply grid gap-1.5 border p-1.5;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2054,32 +2054,6 @@ a {
     color: var(--color-primary-cyan-text);
     font-size: 0.62rem;
     letter-spacing: 0.08em;
-  }
-
-  .console-terminal {
-    @apply border px-3 py-2;
-    overflow: hidden;
-    border-color: rgb(103 232 249 / 0.14);
-    border-radius: var(--radius-card);
-    background: rgb(2 6 23 / 0.62);
-    font-family:
-      "SFMono-Regular",
-      Consolas,
-      "Liberation Mono",
-      monospace;
-  }
-
-  .console-terminal p {
-    @apply flex gap-2 text-xs leading-5;
-    margin: 0;
-    color: var(--color-text-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .console-terminal span {
-    color: var(--color-primary-cyan);
   }
 
   .text-accent {
@@ -4126,11 +4100,6 @@ a {
 
     .console-display {
       min-height: 13.75rem;
-    }
-
-    .console-footer {
-      grid-template-columns: minmax(0, 1.12fr) minmax(10rem, 0.88fr);
-      align-items: stretch;
     }
 
     .page-section {

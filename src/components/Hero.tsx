@@ -142,14 +142,14 @@ export function Hero() {
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
-          aria-label="你好，我是 Jordnary，探索 AI 与 Web。"
+          aria-label="你好，我是 Jordnary，正在探索AI与Web"
           className="hero-title"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
         >
           <span className="block">你好，我是 Jordnary</span>
           <span className="gradient-text block">
-            探索 AI 与 Web。
+            正在探索AI与Web
           </span>
         </motion.h1>
         <motion.div
@@ -275,21 +275,13 @@ export function Hero() {
               ))}
             </div>
 
-            <div className="console-footer">
-              <div className="console-flow" aria-label="Control deck workflow">
-                {consoleFlow.map((item, index) => (
-                  <span className="console-flow-step" key={item}>
-                    <span>{String(index + 1).padStart(2, '0')}</span>
-                    {item}
-                  </span>
-                ))}
-              </div>
-              <div className="console-terminal" aria-label="Console activity">
-                <p>
-                  <span>$</span>
-                  持续学习，持续构建，持续记录。
-                </p>
-              </div>
+            <div className="console-flow" aria-label="Control deck workflow">
+              {consoleFlow.map((item, index) => (
+                <span className="console-flow-step" key={item}>
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  {item}
+                </span>
+              ))}
             </div>
           </div>
         </div>
