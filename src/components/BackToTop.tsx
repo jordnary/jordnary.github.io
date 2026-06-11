@@ -1,6 +1,21 @@
 import { useEffect, useState } from 'react'
 
-const visibilityThreshold = 400
+const fallbackVisibilityThreshold = 720
+const viewportVisibilityRatio = 0.9
+
+const getVisibilityThreshold = () => {
+  const viewportThreshold = Math.max(
+    fallbackVisibilityThreshold,
+    window.innerHeight * viewportVisibilityRatio,
+  )
+  const heroElement = document.getElementById('home')
+
+  if (!heroElement) {
+    return viewportThreshold
+  }
+
+  return Math.max(viewportThreshold, heroElement.offsetTop + heroElement.offsetHeight)
+}
 
 export function BackToTop() {
   const [isVisible, setIsVisible] = useState(false)
@@ -11,7 +26,7 @@ export function BackToTop() {
     const updateVisibility = () => {
       frameId = 0
       setIsVisible((current) => {
-        const shouldShow = window.scrollY > visibilityThreshold
+        const shouldShow = window.scrollY > getVisibilityThreshold()
 
         return current === shouldShow ? current : shouldShow
       })
@@ -25,9 +40,11 @@ export function BackToTop() {
 
     scheduleUpdate()
     window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
 
     return () => {
       window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
 
       if (frameId !== 0) {
         window.cancelAnimationFrame(frameId)
