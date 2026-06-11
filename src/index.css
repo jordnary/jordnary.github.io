@@ -1348,11 +1348,25 @@ a {
 
   .typewriter-text {
     @apply inline-flex items-center font-semibold;
-    flex: 0 1 auto;
+    position: relative;
+    flex: 0 0 auto;
     min-width: 0;
     min-height: 1.25rem;
     overflow: hidden;
     white-space: nowrap;
+  }
+
+  .typewriter-measure {
+    visibility: hidden;
+    padding-right: 0.3rem;
+  }
+
+  .typewriter-current {
+    position: absolute;
+    inset: 0;
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
   }
 
   .typewriter-cursor {

@@ -42,6 +42,10 @@ const typewriterLabels = [
   'Web Explorer',
 ]
 
+const longestTypewriterLabel = typewriterLabels.reduce((longest, label) =>
+  label.length > longest.length ? label : longest,
+)
+
 const typewriterIntervalMs = 85
 
 type TypewriterState = {
@@ -161,8 +165,13 @@ export function Hero() {
         >
           <span className="typewriter-prefix">Currently</span>
           <span className="typewriter-text" aria-hidden="true">
-            {activeTypewriterLabel}
-            <span className="typewriter-cursor" />
+            <span className="typewriter-measure">
+              {longestTypewriterLabel}
+            </span>
+            <span className="typewriter-current">
+              {activeTypewriterLabel}
+              <span className="typewriter-cursor" />
+            </span>
           </span>
         </motion.div>
         <motion.p
