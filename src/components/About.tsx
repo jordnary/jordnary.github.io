@@ -17,6 +17,20 @@ const aboutColumnVariants = {
   visible: fadeUpVisible,
 } as const
 
+const aboutHighlightListVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.08,
+    },
+  },
+} as const
+
+const aboutHighlightCardVariants = {
+  hidden: fadeUpHidden,
+  visible: fadeUpVisible,
+} as const
+
 export function About() {
   return (
     <PageSection
@@ -106,13 +120,14 @@ export function About() {
 
         <motion.div
           className="grid gap-4"
-          variants={aboutColumnVariants}
-          transition={getRevealTransition()}
+          variants={aboutHighlightListVariants}
         >
           {aboutProfile.highlights.map((item) => (
             <motion.article
               className="about-highlight-card group p-5 sm:p-6 lg:p-5"
               key={item.label}
+              variants={aboutHighlightCardVariants}
+              transition={getRevealTransition()}
               whileHover={{ scale: 1.02, y: -6 }}
             >
               <p className="meta-label">
