@@ -32,8 +32,8 @@ export function Timeline() {
     <PageSection
       id="timeline"
       eyebrow="Timeline"
-      title="按阶段推进的成长与构建记录"
-      description="用阶段化的方式记录当前重点、近期整理和下一步计划。"
+      title="学习成长时间线"
+      description="用 Now、Recently、Next 记录当前重点、近期实践和下一步探索。"
     >
       <div className="timeline-shell">
         <div

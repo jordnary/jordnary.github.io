@@ -9,96 +9,74 @@ export type SkillCategory = {
 
 export const skillCategories: SkillCategory[] = [
   {
-    title: 'Frontend',
-    description: '在个人项目中练习用 React 组织组件、用 TypeScript 约束数据，并用 Tailwind CSS 落地响应式样式。',
+    title: 'Computer Science',
+    description: '系统补齐计算机基础知识，把课程内容、练习题和项目里的问题放在同一条学习线上理解。',
     items: [
       {
-        name: 'React',
-        level: 88,
+        name: 'Database',
+        level: 68,
       },
       {
-        name: 'TypeScript',
-        level: 84,
-      },
-      {
-        name: 'Tailwind CSS',
-        level: 86,
-      },
-    ],
-  },
-  {
-    title: 'Interface',
-    description: '持续练习把布局间距、交互状态、响应式断点和基础可访问性检查落实到页面细节。',
-    items: [
-      {
-        name: 'Responsive UI',
-        level: 90,
-      },
-      {
-        name: 'Design Systems',
-        level: 78,
-      },
-      {
-        name: 'Accessibility',
-        level: 74,
-      },
-    ],
-  },
-  {
-    title: 'Tooling',
-    description: '在 Vite 项目里实践本地开发、ESLint 质量检查、构建验证和 GitHub Pages 静态部署流程。',
-    items: [
-      {
-        name: 'Vite',
-        level: 82,
-      },
-      {
-        name: 'ESLint',
-        level: 76,
-      },
-      {
-        name: 'GitHub Pages',
-        level: 80,
-      },
-    ],
-  },
-  {
-    title: 'Workflow',
-    description: '通过拆分组件、记录实现取舍和小步提交，练习从想法到可验证页面的迭代节奏。',
-    items: [
-      {
-        name: 'Componentization',
-        level: 86,
-      },
-      {
-        name: 'Documentation',
-        level: 72,
-      },
-      {
-        name: 'Iteration',
-        level: 88,
-      },
-    ],
-  },
-  {
-    title: 'Learning',
-    description: '近期在学习把 AI 工具、提示词整理、GitHub 协作流程和计算机基础知识用到日常项目练习中。',
-    items: [
-      {
-        name: 'AI Tools',
+        name: 'Data Structure',
         level: 64,
       },
       {
-        name: 'Prompt Engineering',
+        name: 'Numerical Methods',
         level: 58,
       },
+    ],
+  },
+  {
+    title: 'AI & Machine Learning',
+    description: '从机器学习和深度学习基础开始，逐步理解 LLM、Prompt 和常见 AI 工具背后的概念。',
+    items: [
       {
-        name: 'GitHub Workflow',
+        name: 'Machine Learning',
         level: 66,
       },
       {
-        name: 'Computer Science Basics',
-        level: 52,
+        name: 'Deep Learning',
+        level: 60,
+      },
+      {
+        name: 'LLM Basics',
+        level: 57,
+      },
+    ],
+  },
+  {
+    title: 'Web Development',
+    description: '用个人网站和小项目练习前端工程基础，理解组件、类型、构建和静态部署流程。',
+    items: [
+      {
+        name: 'React',
+        level: 74,
+      },
+      {
+        name: 'TypeScript',
+        level: 70,
+      },
+      {
+        name: 'Vite',
+        level: 68,
+      },
+    ],
+  },
+  {
+    title: 'Tools & Workflow',
+    description: '把 GitHub、Markdown 和学习笔记结合起来，记录项目修改、知识梳理和阶段性复盘。',
+    items: [
+      {
+        name: 'GitHub',
+        level: 72,
+      },
+      {
+        name: 'Markdown',
+        level: 76,
+      },
+      {
+        name: 'Learning Notes',
+        level: 74,
       },
     ],
   },

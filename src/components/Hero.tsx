@@ -9,35 +9,36 @@ import {
 const consoleMetrics = [
   {
     icon: '<>',
-    label: 'Frontend',
-    value: 'React TS',
+    label: 'Focus',
+    value: 'AI & CS Learning',
   },
   {
-    icon: 'UI',
-    label: 'Style',
-    value: 'Glass Motion',
+    icon: 'TS',
+    label: 'Stack',
+    value: 'React + TypeScript',
   },
   {
     icon: 'GH',
-    label: 'Deploy',
-    value: 'GH Pages',
+    label: 'Goal',
+    value: 'Build and Learn',
   },
 ]
 
 const keywordTags = [
-  'Frontend Engineering',
+  'Computer Science',
+  'Database',
+  'Machine Learning',
+  'LLM Basics',
+  'Web Development',
   'TypeScript',
-  'React',
-  'Clean Tech UI',
-  'GitHub Pages',
 ]
 
-const consoleFlow = ['Plan', 'Build', 'Polish']
+const consoleFlow = ['Learn', 'Build', 'Record']
 
 const typewriterLabels = [
-  'Frontend Learner',
-  'React Developer',
-  'Design-minded Builder',
+  'Undergraduate Learner',
+  'CS Fundamentals',
+  'AI Learning Notes',
   'AI & Web Explorer',
 ]
 
@@ -137,23 +138,23 @@ export function Hero() {
           transition={getRevealTransition(0)}
         >
           <span className="glow-dot" />
-          <span className="min-w-0">Jordnary / Personal Web Console</span>
+          <span className="min-w-0">Learning Computer Science, AI and Web Development</span>
         </motion.div>
         <motion.h1
           animate={fadeUpVisible}
-          aria-label="你好，我是 Jordnary。用代码、设计与结构感，构建清爽的数字体验。"
+          aria-label="你好，我是 Jordnary，一名正在探索 AI 与 Web 开发的学生。"
           className="hero-title"
           initial={fadeUpHidden}
           transition={getRevealTransition(1)}
         >
           <span className="block">你好，我是 Jordnary</span>
           <span className="gradient-text block">
-            用代码、设计与结构感，构建清爽的数字体验。
+            一名正在探索 AI 与 Web 开发的学生。
           </span>
         </motion.h1>
         <motion.div
           animate={fadeUpVisible}
-          aria-label="角色标签循环展示：Frontend Learner、React Developer、Design-minded Builder、AI & Web Explorer。"
+          aria-label="角色标签循环展示：Undergraduate Learner、CS Fundamentals、AI Learning Notes、AI & Web Explorer。"
           className="hero-typewriter"
           initial={fadeUpHidden}
           transition={getRevealTransition(2)}
@@ -170,7 +171,7 @@ export function Hero() {
           initial={fadeUpHidden}
           transition={getRevealTransition(3)}
         >
-          专注 React、TypeScript 与可维护界面，把复杂信息整理成有质感、响应迅速的数字体验。
+          这里记录我的学习路径、项目实践、技术笔记与阶段性作品。我正在系统学习计算机基础、数据库、机器学习、深度学习和大模型相关知识，也会用 React、TypeScript 和 GitHub Pages 搭建自己的展示空间。
         </motion.p>
         <motion.div
           animate={fadeUpVisible}
@@ -215,10 +216,10 @@ export function Hero() {
           <div className="console-header">
             <div>
               <p className="meta-label">
-                Personal Console
+                Learning Console
               </p>
               <p className="card-title mt-1 text-lg sm:text-xl">
-                Jordnary Control Deck
+                Jordnary Study Deck
               </p>
             </div>
             <span className="console-status">
@@ -239,14 +240,14 @@ export function Hero() {
                 </div>
                 <div className="min-w-0">
                   <p className="console-avatar-name">Jordnary</p>
-                  <p className="console-avatar-role">Digital Builder</p>
+                  <p className="console-avatar-role">Undergraduate Learner</p>
                 </div>
               </div>
-              <span className="console-orbit-tag">AI + Web</span>
+              <span className="console-orbit-tag">AI + CS</span>
               <div className="console-scanline" aria-hidden="true" />
               <div className="console-readout">
                 <span>Focus</span>
-                <strong>Clean UI</strong>
+                <strong>AI & CS Learning</strong>
                 <span className="console-readout-meter" aria-hidden="true">
                   <span />
                 </span>
@@ -286,7 +287,7 @@ export function Hero() {
               <div className="console-terminal" aria-label="Console activity">
                 <p>
                   <span>$</span>
-                  refine hero.control-deck
+                  持续学习，持续构建，持续记录。
                 </p>
               </div>
             </div>

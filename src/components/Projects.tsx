@@ -31,8 +31,8 @@ export function Projects() {
     <PageSection
       id="projects"
       eyebrow="Projects"
-      title="项目以清晰的卡片方式呈现"
-      description="用简洁的项目卡片展示方向、技术栈和成果入口，方便快速浏览重点。"
+      title="项目实践与学习记录"
+      description="这里更像一个持续更新的练习册，记录个人网站、学习笔记和 AI 方向的小实验。"
     >
       <div className="project-filter-bar" aria-label="Project filters">
         {projectFilters.map((filter) => (
@@ -246,8 +246,8 @@ function ProjectPreviewMock({
             </div>
           </div>
           <div className="mock-floating-console">
-            <span>UI</span>
-            <strong>98%</strong>
+            <span>LOG</span>
+            <strong>WIP</strong>
           </div>
         </div>
       )

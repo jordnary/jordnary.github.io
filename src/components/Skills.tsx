@@ -13,8 +13,8 @@ export function Skills() {
     <PageSection
       id="skills"
       eyebrow="Skills"
-      title="围绕构建体验的技能矩阵"
-      description="从前端开发、界面体验、工具链到迭代方式，展示我构建项目时常用的能力组合。"
+      title="学习中的能力模块"
+      description="这些不是完成态的技能标签，而是我正在系统学习、练习和记录的方向。"
     >
       <div className="skills-layout">
         <motion.div className="skills-card-grid">
@@ -141,7 +141,28 @@ function getSkillIcon(title: string) {
   } as const
 
   switch (title) {
-    case 'Frontend':
+    case 'Computer Science':
+      return (
+        <svg {...iconProps}>
+          <path d="M5 4.8h10.5a3.5 3.5 0 0 1 3.5 3.5v10.9H8.5A3.5 3.5 0 0 0 5 22z" />
+          <path d="M5 4.8A3.5 3.5 0 0 0 2 8.2v11A3.5 3.5 0 0 1 5.5 17H19" />
+          <path d="M8.5 9h6" />
+          <path d="M8.5 12h4.5" />
+        </svg>
+      )
+    case 'AI & Machine Learning':
+      return (
+        <svg {...iconProps}>
+          <circle cx="12" cy="12" r="3" />
+          <path d="M12 3v3" />
+          <path d="M12 18v3" />
+          <path d="m4.2 7.5 2.6 1.5" />
+          <path d="m17.2 15 2.6 1.5" />
+          <path d="m19.8 7.5-2.6 1.5" />
+          <path d="m6.8 15-2.6 1.5" />
+        </svg>
+      )
+    case 'Web Development':
       return (
         <svg {...iconProps}>
           <path d="m8.5 8-4 4 4 4" />
@@ -149,22 +170,7 @@ function getSkillIcon(title: string) {
           <path d="m13 6-2 12" />
         </svg>
       )
-    case 'Interface':
-      return (
-        <svg {...iconProps}>
-          <rect height="6" rx="1.4" width="7" x="4" y="5" />
-          <rect height="6" rx="1.4" width="7" x="13" y="5" />
-          <rect height="7" rx="1.4" width="16" x="4" y="14" />
-        </svg>
-      )
-    case 'Tooling':
-      return (
-        <svg {...iconProps}>
-          <path d="M14.7 6.3a4 4 0 0 0-5.1 5.1l-4.7 4.7a2.1 2.1 0 0 0 3 3l4.7-4.7a4 4 0 0 0 5.1-5.1l-2.6 2.6-3-3z" />
-          <path d="m6.4 17.6.01.01" />
-        </svg>
-      )
-    case 'Workflow':
+    case 'Tools & Workflow':
       return (
         <svg {...iconProps}>
           <circle cx="6" cy="7" r="2.2" />

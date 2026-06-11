@@ -1,4 +1,4 @@
-export const projectFilters = ['All', 'Frontend', 'Design', 'Static', 'Learning'] as const
+export const projectFilters = ['All', 'Web', 'Notes', 'AI', 'Learning'] as const
 
 export type ProjectFilter = (typeof projectFilters)[number]
 export type ProjectCategory = Exclude<ProjectFilter, 'All'>
@@ -32,58 +32,58 @@ export type ProjectPreview = {
 export const projects: Project[] = [
   {
     title: 'Personal Website',
-    category: ['Frontend', 'Design', 'Static'],
+    category: ['Web', 'Learning'],
     description:
-      '一个可静态部署的个人主页，围绕首屏表达、模块化内容和 GitHub Pages 发布流程搭建。',
+      '用 Vite、React 和 TypeScript 搭建的个人主页，用来整理学习记录、项目实践和个人技术成长。',
     status: 'Polishing',
-    techStack: ['React', 'TypeScript', 'Tailwind CSS', 'Vite'],
-    highlights: ['响应式首屏控制台', '数据驱动内容模块', 'GitHub Pages 静态发布'],
+    techStack: ['React', 'TypeScript', 'GitHub Pages'],
+    highlights: ['学习记录入口', '数据驱动内容模块', 'GitHub Pages 静态部署'],
     links: [
       { href: '#home', label: '查看首页', variant: 'primary' },
       { href: '#contact', label: '联系交流', variant: 'secondary' },
     ],
     preview: {
-      description: 'Personal website preview with a hero console mock interface',
-      label: 'Personal Console',
-      metric: 'Static site',
+      description: 'Personal website preview for study notes and project records',
+      label: 'Personal Website',
+      metric: 'Study home',
       variant: 'personal',
     },
   },
   {
-    title: 'Portfolio System',
-    category: ['Frontend', 'Design', 'Learning'],
+    title: 'Learning Notes System',
+    category: ['Notes', 'Learning'],
     description:
-      '把技能、项目和时间线拆成数据驱动模块，便于持续补充内容和替换视觉呈现。',
+      '持续整理数据库、机器学习、大模型基础等课程与自学内容，把知识点沉淀为结构化笔记。',
     status: 'Building',
-    techStack: ['React Components', 'Typed Data', 'Motion', 'Responsive UI'],
-    highlights: ['集中维护内容数据', '复用 section 与卡片模式', '动效节奏统一'],
+    techStack: ['Markdown', 'Database', 'AI'],
+    highlights: ['课程知识点整理', 'Database 与关系模型笔记', 'AI 基础学习记录'],
     links: [
-      { href: '#skills', label: '查看技能', variant: 'primary' },
-      { href: '#about', label: '了解背景', variant: 'secondary' },
+      { href: '#skills', label: '查看方向', variant: 'primary' },
+      { href: '#timeline', label: '学习路径', variant: 'secondary' },
     ],
     preview: {
-      description: 'Component system preview with reusable module cards',
-      label: 'Content Modules',
-      metric: 'Reusable blocks',
+      description: 'Learning notes preview with structured study modules',
+      label: 'Study Notes',
+      metric: 'CS / AI notes',
       variant: 'components',
     },
   },
   {
-    title: 'Static Launch Kit',
-    category: ['Static', 'Learning'],
+    title: 'AI Learning Playground',
+    category: ['AI', 'Learning'],
     description:
-      '保留纯前端架构，不引入后端或数据库，适合快速构建、检查和部署个人网站。',
+      '记录我对 Prompt Engineering、LLM、RLHF、LoRA、多模态模型等方向的学习与小实验。',
     status: 'Planned',
-    techStack: ['Vite Build', 'GitHub Pages', 'ESLint', 'Static Assets'],
-    highlights: ['零后端部署路径', '构建与检查脚本清晰', '适合快速迭代发布'],
+    techStack: ['LLM', 'Prompt', 'AI Tools'],
+    highlights: ['Prompt 学习记录', 'LLM 概念梳理', '小实验与工具尝试'],
     links: [
-      { href: '#contact', label: '讨论项目', variant: 'primary' },
+      { href: '#contact', label: '交流想法', variant: 'primary' },
       { href: '#timeline', label: '查看时间线', variant: 'secondary' },
     ],
     preview: {
-      description: 'Deployment flow preview with build and launch pipeline steps',
-      label: 'Launch Flow',
-      metric: 'Build ready',
+      description: 'AI learning playground preview with experiment pipeline steps',
+      label: 'AI Playground',
+      metric: 'LLM / Prompt',
       variant: 'deploy',
     },
   },

@@ -19,7 +19,7 @@ export function Footer() {
             Jordnary
           </SmartLink>
           <p className="footer-description">
-            学生开发者的前端作品、学习路径与项目沉淀入口。
+            记录计算机基础、AI 学习、Web 实践和个人成长的学习主页。
           </p>
         </div>
 

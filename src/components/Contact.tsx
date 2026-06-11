@@ -26,8 +26,8 @@ export function Contact() {
     <PageSection
       id="contact"
       eyebrow="Contact"
-      title="保持简单直接的联系入口"
-      description="把最重要的联系方式放在清晰的位置，方便快速建立上下文。"
+      title="保持简单直接的交流入口"
+      description="如果你想聊学习、项目实践或个人网站搭建，可以从这里找到我。"
     >
       <motion.div
         className="contact-panel"

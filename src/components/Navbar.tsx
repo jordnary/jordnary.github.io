@@ -145,7 +145,7 @@ export function Navbar() {
           href="#contact"
           onClick={() => handleNavItemClick('contact')}
         >
-          Let&apos;s talk
+          联系我
         </a>
         <button
           aria-controls="mobile-navigation"
@@ -196,7 +196,7 @@ export function Navbar() {
             onClick={() => handleNavItemClick('contact')}
             style={getStaggerStyle(navItems.length)}
           >
-            Let&apos;s talk
+            联系我
           </a>
         </div>
       </div>
