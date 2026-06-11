@@ -5,6 +5,7 @@ import {
   fadeUpHidden,
   fadeUpVisible,
   getRevealTransition,
+  viewportOnce,
 } from '../lib/animations'
 
 const aboutContentViewport = {
@@ -13,20 +14,6 @@ const aboutContentViewport = {
 } as const
 
 const aboutColumnVariants = {
-  hidden: fadeUpHidden,
-  visible: fadeUpVisible,
-} as const
-
-const aboutHighlightListVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-} as const
-
-const aboutHighlightCardVariants = {
   hidden: fadeUpHidden,
   visible: fadeUpVisible,
 } as const
@@ -118,30 +105,41 @@ export function About() {
           </div>
         </motion.article>
 
-        <motion.div
-          className="grid gap-4"
-          variants={aboutHighlightListVariants}
-        >
-          {aboutProfile.highlights.map((item) => (
-            <motion.article
-              className="about-highlight-card group p-5 sm:p-6 lg:p-5"
-              key={item.label}
-              variants={aboutHighlightCardVariants}
-              transition={getRevealTransition()}
-              whileHover={{ scale: 1.02, y: -6 }}
-            >
-              <p className="meta-label">
-                {item.label}
-              </p>
-              <h3 className="card-title mt-3 text-lg sm:text-xl">
-                {item.value}
-              </h3>
-              <p className="card-copy mt-3 text-sm leading-6">
-                {item.description}
-              </p>
-            </motion.article>
-          ))}
-        </motion.div>
+        <div className="grid gap-4">
+          {aboutProfile.highlights.map((item, index) => {
+            const revealProps =
+              index === 0
+                ? {
+                    transition: getRevealTransition(),
+                    variants: aboutColumnVariants,
+                  }
+                : {
+                    initial: fadeUpHidden,
+                    transition: getRevealTransition(),
+                    viewport: viewportOnce,
+                    whileInView: fadeUpVisible,
+                  }
+
+            return (
+              <motion.article
+                className="about-highlight-card group p-5 sm:p-6 lg:p-5"
+                key={item.label}
+                whileHover={{ scale: 1.02, y: -6 }}
+                {...revealProps}
+              >
+                <p className="meta-label">
+                  {item.label}
+                </p>
+                <h3 className="card-title mt-3 text-lg sm:text-xl">
+                  {item.value}
+                </h3>
+                <p className="card-copy mt-3 text-sm leading-6">
+                  {item.description}
+                </p>
+              </motion.article>
+            )
+          })}
+        </div>
       </motion.div>
     </PageSection>
   )
