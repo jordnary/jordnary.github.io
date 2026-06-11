@@ -3820,6 +3820,7 @@ a {
 
   .contact-link-card {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
     display: flex;
     min-height: 9rem;
@@ -3856,18 +3857,19 @@ a {
     pointer-events: none;
     position: absolute;
     inset: 0;
+    z-index: 0;
     opacity: 0;
     background:
       radial-gradient(
-        circle at 18% 0%,
-        rgb(103 232 249 / 0.28),
-        transparent 56%
+        circle at 10% 0%,
+        rgb(103 232 249 / 0.14),
+        transparent 48%
       ),
       linear-gradient(
         135deg,
-        rgb(103 232 249 / 0.12),
-        transparent 48%,
-        rgb(196 181 253 / 0.1)
+        rgb(103 232 249 / 0.08),
+        transparent 42%,
+        rgb(196 181 253 / 0.06)
       );
     transition: opacity 200ms ease;
   }
@@ -3879,37 +3881,29 @@ a {
 
   .contact-link-card:hover {
     background:
-      radial-gradient(
-        circle at 12% 0%,
-        rgb(103 232 249 / 0.2),
-        transparent 44%
-      )
-      padding-box,
       linear-gradient(
         145deg,
-        rgb(255 255 255 / 0.14),
-        rgb(103 232 249 / 0.08) 46%,
-        rgb(196 181 253 / 0.08)
+        rgb(255 255 255 / 0.09),
+        rgb(255 255 255 / 0.045)
       )
       padding-box,
       linear-gradient(
         135deg,
-        rgb(165 243 252 / 0.82),
-        rgb(196 181 253 / 0.56),
-        rgb(52 211 153 / 0.34)
+        rgb(165 243 252 / 0.56),
+        rgb(196 181 253 / 0.34),
+        rgb(52 211 153 / 0.22)
       )
       border-box;
     box-shadow:
-      0 0 0 1px rgb(103 232 249 / 0.2),
-      0 0 24px rgb(103 232 249 / 0.18),
-      0 18px 46px -30px rgb(196 181 253 / 0.5),
-      0 24px 56px -34px rgb(34 211 238 / 0.82),
-      inset 0 1px 0 rgb(255 255 255 / 0.14);
-    transform: translateY(-0.22rem);
+      0 0 0 1px rgb(103 232 249 / 0.12),
+      0 14px 36px -30px rgb(196 181 253 / 0.42),
+      0 18px 42px -34px rgb(34 211 238 / 0.58),
+      inset 0 1px 0 rgb(255 255 255 / 0.12);
+    transform: translateY(-0.12rem);
   }
 
   .contact-link-card:hover::before {
-    opacity: 1;
+    opacity: 0.55;
   }
 
   .contact-link-header {
@@ -3976,6 +3970,10 @@ a {
       );
     box-shadow: 0 0 18px rgb(103 232 249 / 0.24);
     transform: translate(0.22rem, -0.22rem);
+  }
+
+  .contact-link-card:hover .contact-link-description {
+    color: var(--color-text-soft);
   }
 
   .contact-link-kicker {
