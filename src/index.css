@@ -2943,76 +2943,282 @@ a {
     background: rgb(2 6 23 / 0.72);
   }
 
-  .project-preview-deploy {
-    display: grid;
-    align-content: center;
-    gap: 0.75rem;
-  }
-
-  .mock-pipeline {
-    @apply grid items-center gap-2;
-    grid-template-columns: minmax(0, 1fr) 1.35rem minmax(0, 1fr) 1.35rem minmax(0, 1fr);
-  }
-
-  .mock-pipeline span {
-    @apply grid place-items-center text-xs font-semibold;
-    min-height: 3.1rem;
-    color: #d1fae5;
-    border: 1px solid rgb(110 231 183 / 0.24);
+  .project-preview-ai-playground {
+    @apply grid gap-3;
+    grid-template-columns: minmax(0, 1.4fr) minmax(5.4rem, 0.8fr);
+    overflow: hidden;
+    border: 1px solid rgb(103 232 249 / 0.18);
     border-radius: var(--radius-card);
     background:
-      radial-gradient(circle at 50% 0%, rgb(110 231 183 / 0.16), transparent 58%),
-      rgb(2 6 23 / 0.68);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+      radial-gradient(circle at 18% 30%, rgb(103 232 249 / 0.24), transparent 25%),
+      radial-gradient(circle at 78% 18%, rgb(196 181 253 / 0.2), transparent 28%),
+      radial-gradient(circle at 72% 88%, rgb(110 231 183 / 0.18), transparent 30%),
+      linear-gradient(135deg, rgb(15 23 42 / 0.88), rgb(2 6 23 / 0.76) 68%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      inset 0 -28px 52px rgb(2 6 23 / 0.34);
   }
 
-  .mock-pipeline i {
-    display: block;
-    height: 2px;
+  .project-preview-ai-playground::before,
+  .project-preview-ai-playground::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  .project-preview-ai-playground::before {
+    opacity: 0.34;
+    background-image:
+      linear-gradient(rgb(103 232 249 / 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(103 232 249 / 0.12) 1px, transparent 1px);
+    background-size: 1.2rem 1.2rem;
+    mask-image: radial-gradient(circle at 55% 42%, rgb(0 0 0 / 0.86), transparent 72%);
+  }
+
+  .project-preview-ai-playground::after {
+    background:
+      linear-gradient(90deg, rgb(2 6 23 / 0.54), transparent 34%),
+      linear-gradient(180deg, transparent 56%, rgb(2 6 23 / 0.5));
+  }
+
+  .mock-ai-node-field,
+  .mock-ai-workspace,
+  .mock-ai-side-stack {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mock-ai-node-field {
+    position: absolute;
+    inset: 0;
+  }
+
+  .mock-ai-node {
+    position: absolute;
+    width: 0.54rem;
+    height: 0.54rem;
     border-radius: var(--radius-pill);
-    background: linear-gradient(90deg, rgb(110 231 183 / 0.28), rgb(103 232 249 / 0.78));
-    box-shadow: 0 0 12px rgb(110 231 183 / 0.26);
+    background: var(--color-primary-cyan);
+    box-shadow: 0 0 18px rgb(103 232 249 / 0.68);
   }
 
-  .mock-terminal-window {
-    @apply grid gap-2 p-3;
-    border: 1px solid rgb(255 255 255 / 0.1);
-    border-radius: var(--radius-card);
-    background: rgb(2 6 23 / 0.72);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
-  }
-
-  .mock-terminal-window span {
-    display: block;
-    height: 0.38rem;
-    border-radius: var(--radius-pill);
-    background: rgb(110 231 183 / 0.6);
-  }
-
-  .mock-terminal-window span:nth-child(2) {
-    width: 72%;
-    background: rgb(103 232 249 / 0.55);
-  }
-
-  .mock-terminal-window span:nth-child(3) {
-    width: 46%;
-    background: rgb(226 232 240 / 0.5);
-  }
-
-  .mock-deploy-badge {
-    @apply absolute right-3 top-3 inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold uppercase;
-    color: #d1fae5;
-    border: 1px solid rgb(110 231 183 / 0.28);
-    border-radius: var(--radius-pill);
-    background: rgb(2 6 23 / 0.76);
-  }
-
-  .mock-deploy-badge span {
-    width: 0.42rem;
-    height: 0.42rem;
-    border-radius: var(--radius-pill);
+  .mock-ai-node-main {
+    left: 22%;
+    top: 34%;
+    width: 1.1rem;
+    height: 1.1rem;
     background: #6ee7b7;
-    box-shadow: 0 0 12px rgb(110 231 183 / 0.6);
+    box-shadow: 0 0 28px rgb(110 231 183 / 0.72);
+  }
+
+  .mock-ai-node-a {
+    left: 12%;
+    top: 22%;
+    background: rgb(196 181 253);
+  }
+
+  .mock-ai-node-b {
+    left: 32%;
+    top: 18%;
+  }
+
+  .mock-ai-node-c {
+    left: 35%;
+    top: 48%;
+    background: rgb(125 211 252);
+  }
+
+  .mock-ai-link {
+    position: absolute;
+    left: 17%;
+    top: 34%;
+    width: 5.6rem;
+    height: 1px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, rgb(103 232 249 / 0.72), rgb(110 231 183 / 0.26));
+    transform-origin: left center;
+    box-shadow: 0 0 12px rgb(103 232 249 / 0.28);
+  }
+
+  .mock-ai-link-a {
+    transform: rotate(-24deg);
+  }
+
+  .mock-ai-link-b {
+    transform: rotate(14deg);
+  }
+
+  .mock-ai-link-c {
+    top: 41%;
+    width: 4.4rem;
+    transform: rotate(38deg);
+  }
+
+  .mock-ai-workspace {
+    @apply grid gap-2.5 p-3;
+    align-self: center;
+    min-height: 8.6rem;
+    border: 1px solid rgb(103 232 249 / 0.2);
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.025)),
+      rgb(2 6 23 / 0.68);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 22px 46px -34px rgb(103 232 249 / 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .mock-ai-window-bar {
+    @apply flex gap-1.5;
+  }
+
+  .mock-ai-window-bar span {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: var(--radius-pill);
+    background: rgb(103 232 249 / 0.58);
+  }
+
+  .mock-ai-window-bar span:nth-child(2) {
+    background: rgb(196 181 253 / 0.56);
+  }
+
+  .mock-ai-window-bar span:nth-child(3) {
+    background: rgb(110 231 183 / 0.56);
+  }
+
+  .mock-ai-prompt-card,
+  .mock-ai-response-card,
+  .mock-ai-model-card,
+  .mock-ai-meter-card {
+    border: 1px solid rgb(255 255 255 / 0.09);
+    border-radius: var(--radius-card);
+    background: rgb(15 23 42 / 0.5);
+  }
+
+  .mock-ai-prompt-card {
+    @apply grid gap-1.5 p-2.5;
+  }
+
+  .mock-ai-chip {
+    display: block;
+    width: 2.4rem;
+    height: 0.58rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, rgb(196 181 253 / 0.78), rgb(103 232 249 / 0.7));
+  }
+
+  .mock-ai-line {
+    display: block;
+    height: 0.34rem;
+    border-radius: var(--radius-pill);
+    background: rgb(226 232 240 / 0.56);
+  }
+
+  .mock-ai-line-wide {
+    width: 88%;
+    background: rgb(103 232 249 / 0.58);
+  }
+
+  .mock-ai-line-mid {
+    width: 68%;
+  }
+
+  .mock-ai-line-short {
+    width: 44%;
+    background: rgb(110 231 183 / 0.54);
+  }
+
+  .mock-ai-response-card {
+    @apply grid gap-1.5 p-2.5;
+  }
+
+  .mock-ai-response-card span {
+    display: block;
+    height: 0.34rem;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, rgb(110 231 183 / 0.64), rgb(103 232 249 / 0.24));
+  }
+
+  .mock-ai-response-card span:nth-child(2) {
+    width: 72%;
+  }
+
+  .mock-ai-response-card span:nth-child(3) {
+    width: 52%;
+    background: rgb(226 232 240 / 0.42);
+  }
+
+  .mock-ai-side-stack {
+    @apply grid gap-2.5 py-3 pr-3;
+    align-self: center;
+  }
+
+  .mock-ai-model-card {
+    @apply grid gap-1.5 p-2.5;
+    min-height: 4.8rem;
+    background:
+      radial-gradient(circle at 72% 20%, rgb(196 181 253 / 0.18), transparent 52%),
+      rgb(2 6 23 / 0.58);
+  }
+
+  .mock-ai-model-card span {
+    display: block;
+    height: 0.36rem;
+    border-radius: var(--radius-pill);
+    background: rgb(103 232 249 / 0.5);
+  }
+
+  .mock-ai-model-card span:first-child {
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: var(--radius-card);
+    background:
+      linear-gradient(135deg, rgb(103 232 249 / 0.78), rgb(196 181 253 / 0.74)),
+      rgb(15 23 42);
+  }
+
+  .mock-ai-model-card span:nth-child(3) {
+    width: 72%;
+    background: rgb(226 232 240 / 0.44);
+  }
+
+  .mock-ai-model-card span:nth-child(4) {
+    width: 48%;
+    background: rgb(110 231 183 / 0.5);
+  }
+
+  .mock-ai-meter-card {
+    @apply grid gap-1.5 p-2.5;
+  }
+
+  .mock-ai-meter-card span {
+    display: block;
+    height: 0.32rem;
+    border-radius: var(--radius-pill);
+    background: rgb(103 232 249 / 0.42);
+  }
+
+  .mock-ai-meter-card span:first-child {
+    width: 90%;
+    background: rgb(110 231 183 / 0.62);
+  }
+
+  .mock-ai-meter-card span:nth-child(2) {
+    width: 64%;
+  }
+
+  .mock-ai-meter-card span:nth-child(3) {
+    width: 78%;
+    background: rgb(196 181 253 / 0.46);
+  }
+
+  .mock-ai-meter-card span:nth-child(4) {
+    width: 46%;
+    background: rgb(226 232 240 / 0.38);
   }
 
   .project-preview-panel {

@@ -284,23 +284,50 @@ function ProjectPreviewMock({
       return (
         <div
           aria-hidden="true"
-          className="project-preview-mock project-preview-deploy"
+          className="project-preview-mock project-preview-ai-playground"
         >
-          <div className="mock-pipeline">
-            <span>DEV</span>
-            <i />
-            <span>BUILD</span>
-            <i />
-            <span>LIVE</span>
+          <div className="mock-ai-node-field">
+            <span className="mock-ai-node mock-ai-node-main" />
+            <span className="mock-ai-node mock-ai-node-a" />
+            <span className="mock-ai-node mock-ai-node-b" />
+            <span className="mock-ai-node mock-ai-node-c" />
+            <span className="mock-ai-link mock-ai-link-a" />
+            <span className="mock-ai-link mock-ai-link-b" />
+            <span className="mock-ai-link mock-ai-link-c" />
           </div>
-          <div className="mock-terminal-window">
-            <span />
-            <span />
-            <span />
+
+          <div className="mock-ai-workspace">
+            <div className="mock-ai-window-bar">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="mock-ai-prompt-card">
+              <span className="mock-ai-chip" />
+              <span className="mock-ai-line mock-ai-line-wide" />
+              <span className="mock-ai-line mock-ai-line-mid" />
+              <span className="mock-ai-line mock-ai-line-short" />
+            </div>
+            <div className="mock-ai-response-card">
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
-          <div className="mock-deploy-badge">
-            <span />
-            ok
+
+          <div className="mock-ai-side-stack">
+            <div className="mock-ai-model-card">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="mock-ai-meter-card">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
           </div>
         </div>
       )

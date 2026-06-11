@@ -81,7 +81,7 @@ export const projects: Project[] = [
       { href: '#timeline', label: '查看时间线', variant: 'secondary' },
     ],
     preview: {
-      description: 'AI learning playground preview with experiment pipeline steps',
+      description: 'AI learning playground preview with layered prompt dashboards',
       label: 'AI Playground',
       metric: 'LLM / Prompt',
       variant: 'deploy',
