@@ -5,8 +5,17 @@ import {
   fadeUpHidden,
   fadeUpVisible,
   getRevealTransition,
-  viewportOnce,
 } from '../lib/animations'
+
+const aboutContentViewport = {
+  amount: 0.16,
+  once: true,
+} as const
+
+const aboutColumnVariants = {
+  hidden: fadeUpHidden,
+  visible: fadeUpVisible,
+} as const
 
 export function About() {
   return (
@@ -16,13 +25,16 @@ export function About() {
       title="关于这个学习主页"
       description="记录我目前的学习阶段、关注方向，以及这个网站会持续沉淀的内容。"
     >
-      <motion.div className="grid items-start gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+      <motion.div
+        className="grid items-start gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8"
+        initial="hidden"
+        viewport={aboutContentViewport}
+        whileInView="visible"
+      >
         <motion.article
           className="lg:pr-6"
-          initial={fadeUpHidden}
+          variants={aboutColumnVariants}
           transition={getRevealTransition()}
-          viewport={viewportOnce}
-          whileInView={fadeUpVisible}
         >
           <p className="body-copy text-lg leading-8 sm:text-xl sm:leading-9">
             {aboutProfile.intro}
@@ -92,15 +104,15 @@ export function About() {
           </div>
         </motion.article>
 
-        <div className="grid gap-4">
-          {aboutProfile.highlights.map((item, index) => (
+        <motion.div
+          className="grid gap-4"
+          variants={aboutColumnVariants}
+          transition={getRevealTransition()}
+        >
+          {aboutProfile.highlights.map((item) => (
             <motion.article
               className="about-highlight-card group p-5 sm:p-6 lg:p-5"
-              initial={fadeUpHidden}
               key={item.label}
-              transition={getRevealTransition(index, 0.08)}
-              viewport={viewportOnce}
-              whileInView={fadeUpVisible}
               whileHover={{ scale: 1.02, y: -6 }}
             >
               <p className="meta-label">
@@ -114,7 +126,7 @@ export function About() {
               </p>
             </motion.article>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
     </PageSection>
   )
