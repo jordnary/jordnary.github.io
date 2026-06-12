@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-CN" class="dark">
+<html lang="zh-CN" class="dark" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="supported-color-schemes" content="dark" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
     <meta name="theme-color" content="#020617" />
     <meta name="application-name" content="Jordnary" />
     <meta
@@ -25,7 +25,7 @@
     <meta property="og:title" content="Jordnary | Personal Website" />
     <meta
       property="og:description"
-      content="React、TypeScript 和 Tailwind CSS 构建的深色科技风个人主页。"
+      content="React、TypeScript 和 Tailwind CSS 构建的科技风个人主页。"
     />
     <meta property="og:url" content="https://jordnary.github.io/" />
     <meta property="og:image" content="https://jordnary.github.io/og-image.png" />
@@ -38,7 +38,7 @@
     <meta name="twitter:title" content="Jordnary | Personal Website" />
     <meta
       name="twitter:description"
-      content="React、TypeScript 和 Tailwind CSS 构建的深色科技风个人主页。"
+      content="React、TypeScript 和 Tailwind CSS 构建的科技风个人主页。"
     />
     <meta name="twitter:image" content="https://jordnary.github.io/og-image.png" />
     <meta name="twitter:image:alt" content="Jordnary personal website preview" />
@@ -52,6 +52,38 @@
         "sameAs": ["https://github.com/jordnary"],
         "knowsAbout": ["React", "TypeScript", "Tailwind CSS", "Frontend Engineering"]
       }
+    </script>
+    <script>
+      (() => {
+        const storageKey = 'jordnary-theme'
+        const root = document.documentElement
+        const themeColorMeta = document.querySelector('meta[name="theme-color"]')
+        const getStoredTheme = () => {
+          try {
+            const storedTheme = window.localStorage.getItem(storageKey)
+
+            return storedTheme === 'light' || storedTheme === 'dark'
+              ? storedTheme
+              : null
+          } catch {
+            return null
+          }
+        }
+        const theme =
+          getStoredTheme() ??
+          (window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light'
+            : 'dark')
+
+        root.dataset.theme = theme
+        root.classList.toggle('dark', theme === 'dark')
+        root.classList.toggle('light', theme === 'light')
+        root.style.colorScheme = theme
+
+        if (themeColorMeta) {
+          themeColorMeta.content = theme === 'light' ? '#f8fafc' : '#020617'
+        }
+      })()
     </script>
   </head>
   <body>

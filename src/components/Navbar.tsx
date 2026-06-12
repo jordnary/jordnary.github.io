@@ -1,4 +1,12 @@
 import { useEffect, useState, type CSSProperties } from 'react'
+import {
+  applyTheme,
+  getInitialTheme,
+  getStoredTheme,
+  getSystemTheme,
+  storeTheme,
+  type Theme,
+} from '../lib/theme'
 
 const navItems = [
   { href: '#home', id: 'home', label: '首页' },
@@ -20,6 +28,26 @@ export function Navbar() {
   const [activeSection, setActiveSection] = useState<SectionId>('home')
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [theme, setTheme] = useState<Theme>(getInitialTheme)
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemThemeChange = () => {
+      if (getStoredTheme() === null) {
+        setTheme(getSystemTheme())
+      }
+    }
+
+    mediaQuery.addEventListener('change', handleSystemThemeChange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange)
+    }
+  }, [])
 
   useEffect(() => {
     let frameId = 0
@@ -107,6 +135,19 @@ export function Navbar() {
     closeMenu()
   }
 
+  const handleThemeToggle = () => {
+    setTheme((currentTheme) => {
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark'
+
+      storeTheme(nextTheme)
+
+      return nextTheme
+    })
+  }
+
+  const themeToggleLabel =
+    theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'
+
   return (
     <header
       className={`nav-shell page-gutter ${isScrolled ? 'is-scrolled' : ''}`}
@@ -140,29 +181,64 @@ export function Navbar() {
             )
           })}
         </div>
-        <a
-          className="btn-secondary hidden lg:inline-flex"
-          href="#contact"
-          onClick={() => handleNavItemClick('contact')}
-        >
-          联系我
-        </a>
-        <button
-          aria-controls="mobile-navigation"
-          aria-expanded={isOpen}
-          aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
-          className={`icon-button nav-menu-button lg:hidden ${
-            isOpen ? 'is-open' : ''
-          }`}
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          <span className="menu-icon" aria-hidden="true">
-            <span className="menu-line menu-line-top" />
-            <span className="menu-line menu-line-middle" />
-            <span className="menu-line menu-line-bottom" />
-          </span>
-        </button>
+        <div className="nav-actions">
+          <button
+            aria-label={themeToggleLabel}
+            aria-pressed={theme === 'dark'}
+            className="icon-button theme-toggle-button"
+            onClick={handleThemeToggle}
+            title={themeToggleLabel}
+            type="button"
+          >
+            <span aria-hidden="true" className="theme-toggle-icon">
+              <svg
+                className="theme-icon theme-icon-sun"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2.8v2.4" />
+                <path d="M12 18.8v2.4" />
+                <path d="m4.2 4.2 1.7 1.7" />
+                <path d="m18.1 18.1 1.7 1.7" />
+                <path d="M2.8 12h2.4" />
+                <path d="M18.8 12h2.4" />
+                <path d="m4.2 19.8 1.7-1.7" />
+                <path d="m18.1 5.9 1.7-1.7" />
+              </svg>
+              <svg
+                className="theme-icon theme-icon-moon"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20.2 14.2A7.7 7.7 0 0 1 9.8 3.8a8.5 8.5 0 1 0 10.4 10.4Z" />
+              </svg>
+            </span>
+          </button>
+          <a
+            className="btn-secondary hidden lg:inline-flex"
+            href="#contact"
+            onClick={() => handleNavItemClick('contact')}
+          >
+            联系我
+          </a>
+          <button
+            aria-controls="mobile-navigation"
+            aria-expanded={isOpen}
+            aria-label={isOpen ? 'Close navigation' : 'Open navigation'}
+            className={`icon-button nav-menu-button lg:hidden ${
+              isOpen ? 'is-open' : ''
+            }`}
+            onClick={() => setIsOpen((current) => !current)}
+            type="button"
+          >
+            <span className="menu-icon" aria-hidden="true">
+              <span className="menu-line menu-line-top" />
+              <span className="menu-line menu-line-middle" />
+              <span className="menu-line menu-line-bottom" />
+            </span>
+          </button>
+        </div>
       </nav>
 
       <div
