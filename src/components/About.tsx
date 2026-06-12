@@ -16,22 +16,22 @@ export function About() {
       title="关于这个学习主页"
       description="记录我目前的学习阶段、关注方向，以及这个网站会持续沉淀的内容。"
     >
-      <motion.div className="grid items-start gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+      <motion.div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-8">
         <motion.article
-          className="lg:pr-6"
+          className="about-narrative-card"
           initial={fadeUpHidden}
           transition={getRevealTransition()}
           viewport={viewportOnce}
           whileInView={fadeUpVisible}
         >
-          <p className="body-copy text-lg leading-8 sm:text-xl sm:leading-9">
+          <p className="about-narrative-intro">
             {aboutProfile.intro}
           </p>
 
-          <div className="mt-6 space-y-5">
+          <div className="about-narrative-copy mt-6 space-y-5">
             {aboutProfile.paragraphs.map((paragraph) => (
               <p
-                className="muted-copy text-sm leading-7 md:text-base md:leading-8"
+                className="text-sm leading-7 md:text-base md:leading-8"
                 key={paragraph}
               >
                 {paragraph}
@@ -39,7 +39,29 @@ export function About() {
             ))}
           </div>
 
-          <dl className="about-stat-grid mt-8">
+          <ul
+            aria-label="About keywords"
+            className="about-keyword-list about-narrative-keywords"
+          >
+            {aboutProfile.keywords.map((keyword) => (
+              <li
+                className="about-keyword-chip"
+                key={keyword}
+              >
+                {keyword}
+              </li>
+            ))}
+          </ul>
+        </motion.article>
+
+        <div className="about-info-stack">
+          <motion.dl
+            className="about-stat-grid"
+            initial={fadeUpHidden}
+            transition={getRevealTransition(1, 0.04)}
+            viewport={viewportOnce}
+            whileInView={fadeUpVisible}
+          >
             {aboutProfile.stats.map((stat) => (
               <div
                 className="about-stat-card"
@@ -56,23 +78,39 @@ export function About() {
                 </p>
               </div>
             ))}
-          </dl>
+          </motion.dl>
 
-          <ul
-            aria-label="About keywords"
-            className="about-keyword-list mt-7"
-          >
-            {aboutProfile.keywords.map((keyword) => (
-              <li
-                className="about-keyword-chip"
-                key={keyword}
+          <div className="about-highlight-stack">
+            {aboutProfile.highlights.map((item, index) => (
+              <motion.article
+                className="about-highlight-card group p-5 sm:p-6 lg:p-5"
+                initial={fadeUpHidden}
+                key={item.label}
+                transition={getRevealTransition(index + 2, 0.04)}
+                viewport={viewportOnce}
+                whileInView={fadeUpVisible}
+                whileHover={{ scale: 1.02, y: -6 }}
               >
-                {keyword}
-              </li>
+                <p className="meta-label">
+                  {item.label}
+                </p>
+                <h3 className="card-title mt-3 text-lg sm:text-xl">
+                  {item.value}
+                </h3>
+                <p className="card-copy mt-3 text-sm leading-6">
+                  {item.description}
+                </p>
+              </motion.article>
             ))}
-          </ul>
+          </div>
 
-          <div className="about-focus-panel mt-8">
+          <motion.div
+            className="about-focus-panel"
+            initial={fadeUpHidden}
+            transition={getRevealTransition(5, 0.04)}
+            viewport={viewportOnce}
+            whileInView={fadeUpVisible}
+          >
             <p className="meta-label">
               {aboutProfile.focusTitle}
             </p>
@@ -89,31 +127,7 @@ export function About() {
                 </li>
               ))}
             </ul>
-          </div>
-        </motion.article>
-
-        <div className="grid gap-4">
-          {aboutProfile.highlights.map((item, index) => (
-            <motion.article
-              className="about-highlight-card group p-5 sm:p-6 lg:p-5"
-              initial={fadeUpHidden}
-              key={item.label}
-              transition={getRevealTransition(index, 0.08)}
-              viewport={viewportOnce}
-              whileInView={fadeUpVisible}
-              whileHover={{ scale: 1.02, y: -6 }}
-            >
-              <p className="meta-label">
-                {item.label}
-              </p>
-              <h3 className="card-title mt-3 text-lg sm:text-xl">
-                {item.value}
-              </h3>
-              <p className="card-copy mt-3 text-sm leading-6">
-                {item.description}
-              </p>
-            </motion.article>
-          ))}
+          </motion.div>
         </div>
       </motion.div>
     </PageSection>
