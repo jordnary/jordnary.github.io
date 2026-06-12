@@ -713,6 +713,103 @@
         rgb(124 58 237 / 0.08)
       );
   }
+
+  :root[data-theme="light"] .contact-arrow {
+    color: #0e7490;
+    --surface-icon-color: #0e7490;
+    --surface-icon-border: rgb(8 145 178 / 0.36);
+    --surface-icon-bg:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.96), transparent 42%),
+      linear-gradient(
+        135deg,
+        rgb(8 145 178 / 0.18),
+        rgb(124 58 237 / 0.1)
+      );
+    --surface-icon-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.92),
+      0 14px 30px -20px rgb(8 145 178 / 0.48);
+  }
+
+  :root[data-theme="light"] .contact-link-card:hover .contact-arrow {
+    color: #155e75;
+    --surface-icon-color: #155e75;
+    --surface-icon-border: rgb(8 145 178 / 0.62);
+    --surface-icon-bg:
+      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.98), transparent 40%),
+      linear-gradient(
+        135deg,
+        rgb(8 145 178 / 0.26),
+        rgb(124 58 237 / 0.14)
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 0 0 3px rgb(8 145 178 / 0.1),
+      0 16px 32px -20px rgb(8 145 178 / 0.5);
+  }
+
+  :root[data-theme="light"] .btn-primary {
+    color: #ffffff;
+    background:
+      linear-gradient(
+        135deg,
+        #0e7490,
+        #0891b2
+      );
+    box-shadow:
+      0 16px 34px -20px rgb(8 145 178 / 0.58),
+      inset 0 1px 0 rgb(255 255 255 / 0.22);
+  }
+
+  :root[data-theme="light"] .btn-primary:hover {
+    color: #ffffff;
+    background:
+      linear-gradient(
+        135deg,
+        #155e75,
+        #0e7490
+      );
+    box-shadow:
+      0 18px 38px -20px rgb(8 145 178 / 0.62),
+      inset 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+
+  :root[data-theme="light"] .project-link.btn-secondary {
+    color: #1e293b;
+    border-color: rgb(15 23 42 / 0.16);
+    background:
+      linear-gradient(
+        135deg,
+        rgb(255 255 255 / 0.88),
+        rgb(240 249 255 / 0.72)
+      );
+  }
+
+  :root[data-theme="light"] .project-link.btn-secondary:hover {
+    color: #0f172a;
+    border-color: rgb(8 145 178 / 0.46);
+    background:
+      linear-gradient(
+        135deg,
+        rgb(236 254 255 / 0.9),
+        rgb(255 255 255 / 0.78)
+      );
+  }
+
+  :root[data-theme="light"] .project-link.btn-primary span:last-child {
+    color: #ffffff;
+    background: rgb(255 255 255 / 0.22);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
+  }
+
+  :root[data-theme="light"] .project-link.btn-secondary span:last-child {
+    color: #0e7490;
+    background: rgb(8 145 178 / 0.12);
+  }
+
+  :root[data-theme="light"] .project-link.btn-secondary:hover span:last-child {
+    color: #155e75;
+    background: rgb(8 145 178 / 0.16);
+  }
 }
 
 * {
