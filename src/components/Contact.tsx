@@ -1,14 +1,9 @@
 import { useCallback, useState } from 'react'
-import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { Reveal } from './Reveal'
 import { Toast } from './Toast'
+import { ContactIcon, CopyIcon } from './icons'
 import { contactLinks, contactProfile } from '../data/contact'
-import {
-  fadeUpHidden,
-  fadeUpVisible,
-  getRevealTransition,
-  viewportOnce,
-} from '../lib/animations'
 
 export function Contact() {
   const [copyToastId, setCopyToastId] = useState(0)
@@ -29,13 +24,7 @@ export function Contact() {
       title="保持简单直接的交流入口"
       description="如果你想聊学习、项目实践或个人网站搭建，可以从这里找到我。"
     >
-      <motion.div
-        className="contact-panel"
-        initial={fadeUpHidden}
-        transition={getRevealTransition()}
-        viewport={viewportOnce}
-        whileInView={fadeUpVisible}
-      >
+      <Reveal className="contact-panel">
         <article className="contact-panel-copy">
           <div className="contact-status">
             <span className="contact-status-dot" aria-hidden="true" />
@@ -107,7 +96,7 @@ export function Contact() {
           open={copyToastId > 0}
           resetKey={copyToastId}
         />
-      </motion.div>
+      </Reveal>
     </PageSection>
   )
 }
@@ -131,59 +120,4 @@ async function copyToClipboard(value: string) {
   textarea.select()
   document.execCommand('copy')
   document.body.removeChild(textarea)
-}
-
-function ContactIcon({ title }: { title: string }) {
-  const iconProps = {
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    strokeWidth: 1.8,
-    viewBox: '0 0 24 24',
-  } as const
-
-  switch (title) {
-    case 'Email':
-      return (
-        <svg {...iconProps}>
-          <rect height="14" rx="2.4" width="18" x="3" y="5" />
-          <path d="m4.5 7.5 7.5 5.2 7.5-5.2" />
-        </svg>
-      )
-    case 'GitHub':
-      return (
-        <svg {...iconProps}>
-          <path d="M8.8 19.5c-3.2 1-3.2-1.6-4.5-2" />
-          <path d="M15.2 22v-3.1a2.7 2.7 0 0 0-.8-2.1c2.7-.3 5.6-1.3 5.6-6a4.7 4.7 0 0 0-1.3-3.3 4.4 4.4 0 0 0-.1-3.3s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 3.9 5.6 4.2 5.6 4.2a4.4 4.4 0 0 0-.1 3.3A4.7 4.7 0 0 0 4.2 11c0 4.6 2.9 5.7 5.6 6a2.7 2.7 0 0 0-.8 2.1V22" />
-        </svg>
-      )
-    default:
-      return (
-        <svg {...iconProps}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3.6 12h16.8" />
-          <path d="M12 3a13.5 13.5 0 0 1 0 18" />
-          <path d="M12 3a13.5 13.5 0 0 0 0 18" />
-        </svg>
-      )
-  }
-}
-
-function CopyIcon() {
-  const iconProps = {
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    strokeWidth: 1.8,
-    viewBox: '0 0 24 24',
-  } as const
-
-  return (
-    <svg {...iconProps}>
-      <rect height="13" rx="2" width="13" x="8" y="8" />
-      <path d="M5 16V5.8C5 5.4 5.4 5 5.8 5H16" />
-    </svg>
-  )
 }

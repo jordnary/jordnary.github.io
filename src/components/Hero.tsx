@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
-import {
-  fadeUpHidden,
-  fadeUpVisible,
-  getRevealTransition,
-} from '../lib/animations'
+import { Reveal } from './Reveal'
 
 const consoleMetrics = [
   {
@@ -135,33 +130,30 @@ export function Hero() {
       </div>
 
       <div className="hero-copy">
-        <motion.div
-          animate={fadeUpVisible}
+        <Reveal
           className="highlight-pill"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(0)}
+          immediate
         >
           <span className="glow-dot" />
           <span className="min-w-0">Learning CS, AI and Web Development</span>
-        </motion.div>
-        <motion.h1
-          animate={fadeUpVisible}
-          aria-label="你好，我是 Jordnary，正在探索AI与Web"
+        </Reveal>
+        <Reveal
+          ariaLabel="你好，我是 Jordnary，正在探索AI与Web"
+          as="h1"
           className="hero-title"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(1)}
+          immediate
+          index={1}
         >
           <span className="block">你好，我是 Jordnary</span>
           <span className="gradient-text block">
             正在探索AI与Web
           </span>
-        </motion.h1>
-        <motion.div
-          animate={fadeUpVisible}
-          aria-label="角色标签循环展示：CS Undergrad、CS Basics、AI Notes、Web Explorer。"
+        </Reveal>
+        <Reveal
+          ariaLabel="角色标签循环展示：CS Undergrad、CS Basics、AI Notes、Web Explorer。"
           className="hero-typewriter"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(2)}
+          immediate
+          index={2}
         >
           <span className="typewriter-prefix">Currently</span>
           <span className="typewriter-text" aria-hidden="true">
@@ -173,20 +165,19 @@ export function Hero() {
               <span className="typewriter-cursor" />
             </span>
           </span>
-        </motion.div>
-        <motion.p
-          animate={fadeUpVisible}
+        </Reveal>
+        <Reveal
+          as="p"
           className="hero-role"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(3)}
+          immediate
+          index={3}
         >
           记录学习、项目与技术笔记，用 React、TypeScript 和 GitHub Pages 持续构建个人展示空间。
-        </motion.p>
-        <motion.div
-          animate={fadeUpVisible}
+        </Reveal>
+        <Reveal
           className="hero-keywords"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(4)}
+          immediate
+          index={4}
         >
           {keywordTags.map((tag) => (
             <span
@@ -196,12 +187,11 @@ export function Hero() {
               {tag}
             </span>
           ))}
-        </motion.div>
-        <motion.div
-          animate={fadeUpVisible}
+        </Reveal>
+        <Reveal
           className="hero-actions"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(5)}
+          immediate
+          index={5}
         >
           <a className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto" href="#projects">
             <span className="hero-cta-label">查看项目</span>
@@ -211,14 +201,13 @@ export function Hero() {
             <span className="hero-cta-label">联系我</span>
             <span className="hero-cta-arrow" aria-hidden="true">→</span>
           </a>
-        </motion.div>
+        </Reveal>
       </div>
 
-      <motion.div
-        animate={fadeUpVisible}
+      <Reveal
         className="hero-visual"
-        initial={fadeUpHidden}
-        transition={getRevealTransition(0, 0.22)}
+        baseDelay={0.22}
+        immediate
       >
         <div className="glass-card hero-console">
           <div className="accent-line" />
@@ -294,7 +283,7 @@ export function Hero() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </Reveal>
 
       <a
         aria-label="Scroll to explore the next section"

@@ -1,12 +1,9 @@
 import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { Reveal } from './Reveal'
+import { SkillIcon } from './icons'
 import { skillCategories } from '../data/skills'
-import {
-  fadeUpHidden,
-  fadeUpVisible,
-  getRevealTransition,
-  viewportOnce,
-} from '../lib/animations'
+import { viewportOnce } from '../lib/animations'
 
 export function Skills() {
   return (
@@ -17,21 +14,19 @@ export function Skills() {
       description="这些不是完成态的技能标签，而是我正在系统学习、练习和记录的方向。"
     >
       <div className="skills-layout">
-        <motion.div className="skills-card-grid">
+        <div className="skills-card-grid">
           {skillCategories.map((group, index) => (
-            <motion.article
+            <Reveal
+              as="article"
               className="skill-card group h-full"
-              initial={fadeUpHidden}
+              index={index}
               key={group.title}
-              transition={getRevealTransition(index)}
-              viewport={viewportOnce}
-              whileInView={fadeUpVisible}
             >
               <div className="skill-card-surface glass-card flex h-full flex-col p-5 sm:p-6 xl:p-5">
                 <header className="skill-card-header">
                   <div className="skill-card-header-row">
                     <div className="skill-card-icon" aria-hidden="true">
-                      {getSkillIcon(group.title)}
+                      <SkillIcon title={group.title} />
                     </div>
                     <div className="skill-card-kicker">
                       {String(index + 1).padStart(2, '0')}
@@ -85,17 +80,16 @@ export function Skills() {
                   ))}
                 </footer>
               </div>
-            </motion.article>
+            </Reveal>
           ))}
-        </motion.div>
+        </div>
 
-        <motion.aside
-          aria-label="技能雷达视觉装饰"
+        <Reveal
+          ariaLabel="技能雷达视觉装饰"
+          as="aside"
           className="skills-radar-panel glass-card"
-          initial={fadeUpHidden}
-          transition={getRevealTransition(1, 0.12)}
-          viewport={viewportOnce}
-          whileInView={fadeUpVisible}
+          baseDelay={0.12}
+          index={1}
         >
           <div className="skills-radar-heading">
             <span>Skill Orbit</span>
@@ -124,7 +118,7 @@ export function Skills() {
               <span key={group.title}>{group.items[0].name}</span>
             ))}
           </div>
-        </motion.aside>
+        </Reveal>
       </div>
     </PageSection>
   )
@@ -142,75 +136,5 @@ function getSkillRadarLabel(title: string) {
       return 'Tools'
     default:
       return title
-  }
-}
-
-function getSkillIcon(title: string) {
-  const iconProps = {
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    strokeWidth: 1.8,
-    viewBox: '0 0 24 24',
-  } as const
-
-  switch (title) {
-    case 'Computer Science':
-      return (
-        <svg {...iconProps}>
-          <path d="M5 4.8h10.5a3.5 3.5 0 0 1 3.5 3.5v10.9H8.5A3.5 3.5 0 0 0 5 22z" />
-          <path d="M5 4.8A3.5 3.5 0 0 0 2 8.2v11A3.5 3.5 0 0 1 5.5 17H19" />
-          <path d="M8.5 9h6" />
-          <path d="M8.5 12h4.5" />
-        </svg>
-      )
-    case 'AI & Machine Learning':
-      return (
-        <svg {...iconProps}>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 3v3" />
-          <path d="M12 18v3" />
-          <path d="m4.2 7.5 2.6 1.5" />
-          <path d="m17.2 15 2.6 1.5" />
-          <path d="m19.8 7.5-2.6 1.5" />
-          <path d="m6.8 15-2.6 1.5" />
-        </svg>
-      )
-    case 'Web Development':
-      return (
-        <svg {...iconProps}>
-          <path d="m8.5 8-4 4 4 4" />
-          <path d="m15.5 8 4 4-4 4" />
-          <path d="m13 6-2 12" />
-        </svg>
-      )
-    case 'Tools & Workflow':
-      return (
-        <svg {...iconProps}>
-          <circle cx="6" cy="7" r="2.2" />
-          <circle cx="18" cy="7" r="2.2" />
-          <circle cx="12" cy="17" r="2.2" />
-          <path d="M8.2 8.7 10.8 15" />
-          <path d="M15.8 8.7 13.2 15" />
-          <path d="M8.4 7h7.2" />
-        </svg>
-      )
-    case 'Learning':
-      return (
-        <svg {...iconProps}>
-          <path d="M7 5.5h7.2a3.8 3.8 0 0 1 3.8 3.8v8.2H9.8A2.8 2.8 0 0 0 7 20.3z" />
-          <path d="M7 5.5a2.8 2.8 0 0 0-2 2.7v8.7a2.8 2.8 0 0 1 2-1h2.8" />
-          <path d="M10.5 10h4.4" />
-          <path d="M10.5 13h3.2" />
-        </svg>
-      )
-    default:
-      return (
-        <svg {...iconProps}>
-          <path d="M5 12h14" />
-          <path d="M12 5v14" />
-        </svg>
-      )
   }
 }

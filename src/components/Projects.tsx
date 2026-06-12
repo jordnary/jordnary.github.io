@@ -1,20 +1,14 @@
 import { useMemo, useState } from 'react'
-import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { ProjectPreviewMock } from './ProjectPreview'
+import { Reveal } from './Reveal'
 import { SmartLink } from './SmartLink'
 import {
   projectFilters,
   projects,
   type ProjectFilter,
-  type ProjectPreview,
   type ProjectStatus,
 } from '../data/projects'
-import {
-  fadeUpHidden,
-  fadeUpVisible,
-  getRevealTransition,
-  viewportOnce,
-} from '../lib/animations'
 
 export function Projects() {
   const [activeFilter, setActiveFilter] = useState<ProjectFilter>('All')
@@ -51,22 +45,18 @@ export function Projects() {
       </div>
 
       {filteredProjects.length > 0 ? (
-        <motion.div
-          animate={fadeUpVisible}
+        <Reveal
           className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-          initial={fadeUpHidden}
+          immediate
           key={activeFilter}
-          transition={getRevealTransition(0)}
         >
           {filteredProjects.map((project, index) => (
-            <motion.article
+            <Reveal
+              as="article"
               className="project-card glass-card interactive-card group flex h-full flex-col overflow-hidden"
-              initial={fadeUpHidden}
+              index={index}
               key={project.title}
-              transition={getRevealTransition(index)}
-              viewport={viewportOnce}
               whileHover={{ y: -6 }}
-              whileInView={fadeUpVisible}
             >
               <div
                 aria-label={project.preview.description}
@@ -135,9 +125,9 @@ export function Projects() {
                   ))}
                 </div>
               </div>
-            </motion.article>
+            </Reveal>
           ))}
-        </motion.div>
+        </Reveal>
       ) : (
         <ProjectEmptyState
           activeFilter={activeFilter}
@@ -161,11 +151,9 @@ function ProjectEmptyState({
       : `暂无 ${activeFilter} 项目`
 
   return (
-    <motion.div
-      animate={fadeUpVisible}
+    <Reveal
       className="project-empty-state glass-card"
-      initial={fadeUpHidden}
-      transition={getRevealTransition(0)}
+      immediate
     >
       <div className="project-empty-visual" aria-hidden="true">
         <span className="project-empty-orbit" />
@@ -189,7 +177,7 @@ function ProjectEmptyState({
           <span aria-hidden="true">→</span>
         </button>
       )}
-    </motion.div>
+    </Reveal>
   )
 }
 
@@ -211,125 +199,5 @@ function getProjectStatusClass(status: ProjectStatus) {
       return 'project-status-polishing'
     case 'Planned':
       return 'project-status-planned'
-  }
-}
-
-function ProjectPreviewMock({
-  variant,
-}: {
-  variant: ProjectPreview['variant']
-}) {
-  switch (variant) {
-    case 'personal':
-      return (
-        <div
-          aria-hidden="true"
-          className="project-preview-mock project-preview-personal"
-        >
-          <div className="mock-browser">
-            <div className="mock-browser-bar">
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="mock-personal-hero">
-              <div className="mock-personal-avatar">J</div>
-              <div className="mock-personal-copy">
-                <span className="mock-line mock-line-wide" />
-                <span className="mock-line mock-line-short" />
-              </div>
-            </div>
-            <div className="mock-personal-tabs">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-          <div className="mock-floating-console">
-            <span>LOG</span>
-            <strong>WIP</strong>
-          </div>
-        </div>
-      )
-    case 'components':
-      return (
-        <div
-          aria-hidden="true"
-          className="project-preview-mock project-preview-components"
-        >
-          <div className="mock-component-grid">
-            <div className="mock-component-card mock-component-card-main">
-              <span />
-              <strong />
-              <small />
-            </div>
-            <div className="mock-component-card">
-              <span />
-              <strong />
-            </div>
-            <div className="mock-component-card">
-              <span />
-              <strong />
-            </div>
-          </div>
-          <div className="mock-component-rail">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div className="mock-code-chip">props</div>
-        </div>
-      )
-    case 'deploy':
-      return (
-        <div
-          aria-hidden="true"
-          className="project-preview-mock project-preview-ai-playground"
-        >
-          <div className="mock-ai-node-field">
-            <span className="mock-ai-node mock-ai-node-main" />
-            <span className="mock-ai-node mock-ai-node-a" />
-            <span className="mock-ai-node mock-ai-node-b" />
-            <span className="mock-ai-node mock-ai-node-c" />
-            <span className="mock-ai-link mock-ai-link-a" />
-            <span className="mock-ai-link mock-ai-link-b" />
-            <span className="mock-ai-link mock-ai-link-c" />
-          </div>
-
-          <div className="mock-ai-workspace">
-            <div className="mock-ai-window-bar">
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="mock-ai-prompt-card">
-              <span className="mock-ai-chip" />
-              <span className="mock-ai-line mock-ai-line-wide" />
-              <span className="mock-ai-line mock-ai-line-mid" />
-              <span className="mock-ai-line mock-ai-line-short" />
-            </div>
-            <div className="mock-ai-response-card">
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-
-          <div className="mock-ai-side-stack">
-            <div className="mock-ai-model-card">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="mock-ai-meter-card">
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-        </div>
-      )
   }
 }

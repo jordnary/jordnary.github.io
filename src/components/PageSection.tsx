@@ -1,11 +1,5 @@
 import type { ReactNode } from 'react'
-import { motion } from 'motion/react'
-import {
-  fadeUpHidden,
-  fadeUpVisible,
-  getRevealTransition,
-  viewportOnce,
-} from '../lib/animations'
+import { Reveal } from './Reveal'
 
 type PageSectionProps = {
   children: ReactNode
@@ -25,17 +19,11 @@ export function PageSection({
   return (
     <section className="page-section" id={id}>
       <div className="site-container">
-        <motion.div
-          className="section-heading"
-          initial={fadeUpHidden}
-          transition={getRevealTransition()}
-          viewport={viewportOnce}
-          whileInView={fadeUpVisible}
-        >
+        <Reveal className="section-heading">
           <p className="section-eyebrow">{eyebrow}</p>
           <h2 className="section-title">{title}</h2>
           <p className="section-description">{description}</p>
-        </motion.div>
+        </Reveal>
         {children}
       </div>
     </section>
