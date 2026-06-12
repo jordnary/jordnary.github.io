@@ -11,14 +11,6 @@ const timelineRowVisible = {
   y: 0,
 } as const
 
-const timelineFadeHidden = {
-  opacity: 0,
-} as const
-
-const timelineFadeVisible = {
-  opacity: 1,
-} as const
-
 function getTimelineTransition(index = 0, duration = 0.42) {
   return {
     delay: index * 0.06,
@@ -43,7 +35,6 @@ export function Timeline() {
         <motion.ol className="timeline-list">
           {timelineItems.map((item, index) => {
             const rowTransition = getTimelineTransition(index)
-            const fadeTransition = getTimelineTransition(index, 0.36)
 
             return (
               <motion.li
@@ -54,37 +45,21 @@ export function Timeline() {
                 viewport={viewportOnce}
                 whileInView={timelineRowVisible}
               >
-                <motion.div
-                  className="timeline-time"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
-                >
+                <div className="timeline-time">
                   <p className="meta-label">
                     {item.period}
                   </p>
                   <p className="timeline-index">
                     {String(index + 1).padStart(2, '0')}
                   </p>
-                </motion.div>
+                </div>
 
-                <motion.span
+                <span
                   aria-hidden="true"
                   className="timeline-dot"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
                 />
 
-                <motion.article
-                  className="timeline-card glass-card interactive-card"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
-                >
+                <article className="timeline-card glass-card interactive-card">
                   <h3 className="card-title text-lg sm:text-xl">
                     {item.title}
                   </h3>
@@ -111,7 +86,7 @@ export function Timeline() {
                       </span>
                     ))}
                   </div>
-                </motion.article>
+                </article>
               </motion.li>
             )
           })}

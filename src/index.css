@@ -3902,6 +3902,9 @@ a {
       radial-gradient(ellipse at 100% 18%, rgb(196 181 253 / 0.1), transparent 48%),
       linear-gradient(145deg, rgb(15 23 42 / 0.72), rgb(2 6 23 / 0.5)),
       var(--color-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
     --surface-line-bg: linear-gradient(
         90deg,
         transparent,
