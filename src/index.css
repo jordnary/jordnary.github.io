@@ -487,7 +487,7 @@
 
   :root[data-theme="light"] .about-highlight-card:hover::before {
     opacity: 0.78;
-    transform: translateX(150%) rotate(8deg);
+    transform: translateX(209.3%) rotate(8deg);
   }
 
   :root[data-theme="light"] .about-highlight-card:hover::after {
