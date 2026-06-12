@@ -166,7 +166,7 @@ export function Navbar() {
       </nav>
 
       <div
-        className={`site-container mobile-nav-panel lg:hidden ${
+        className={`mobile-nav-panel lg:hidden ${
           isOpen ? 'is-open' : ''
         }`}
         id="mobile-navigation"
