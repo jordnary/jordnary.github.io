@@ -113,22 +113,6 @@ export function Hero() {
 
   return (
     <section className="site-container page-gutter hero-section" id="home">
-      <div className="hero-decor" aria-hidden="true">
-        <span className="hero-decor-glow hero-decor-glow-left" />
-        <span className="hero-decor-glow hero-decor-glow-right" />
-        <span className="hero-decor-grid" />
-        <span className="hero-decor-line hero-decor-line-a" />
-        <span className="hero-decor-line hero-decor-line-b" />
-        <span className="hero-decor-line hero-decor-line-c" />
-        <span className="hero-decor-dot hero-decor-dot-a" />
-        <span className="hero-decor-dot hero-decor-dot-b" />
-        <span className="hero-decor-dot hero-decor-dot-c" />
-        <span className="hero-decor-dot hero-decor-dot-d" />
-        <span className="hero-decor-dot hero-decor-dot-e" />
-        <span className="hero-decor-mark hero-decor-mark-a" />
-        <span className="hero-decor-mark hero-decor-mark-b" />
-      </div>
-
       <div className="hero-copy">
         <Reveal
           className="highlight-pill"
