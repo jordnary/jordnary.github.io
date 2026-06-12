@@ -1304,11 +1304,6 @@ a {
     background-position: 0 0, 50% 50%;
     background-blend-mode: soft-light, normal;
     -webkit-text-stroke: 0.012em rgb(207 250 254 / 0.08);
-    filter: drop-shadow(0 0 0.36rem rgb(103 232 249 / 0.16));
-    text-shadow:
-      0 0 18px rgb(103 232 249 / 0.24),
-      0 0 44px rgb(56 189 248 / 0.13),
-      0 0 58px rgb(196 181 253 / 0.1);
   }
 
   .hero-typewriter {
