@@ -28,7 +28,11 @@ export function Projects() {
       title="项目实践与学习记录"
       description="这里更像一个持续更新的练习册，记录个人网站、学习笔记和 AI 方向的小实验。"
     >
-      <div className="project-filter-bar" aria-label="Project filters">
+      <Reveal
+        ariaLabel="Project filters"
+        className="project-filter-bar"
+        baseDelay={0.08}
+      >
         {projectFilters.map((filter) => (
           <button
             aria-pressed={activeFilter === filter}
@@ -42,7 +46,7 @@ export function Projects() {
             {filter}
           </button>
         ))}
-      </div>
+      </Reveal>
 
       {filteredProjects.length > 0 ? (
         <Reveal
