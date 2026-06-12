@@ -1934,7 +1934,13 @@ a {
 
   .console-display::before {
     z-index: 0;
-    background-image: url("/images/control-deck-bg.png");
+    background-image: url("/images/control-deck-bg-720.jpg");
+    background-image: image-set(
+      url("/images/control-deck-bg-720.webp") type("image/webp") 1x,
+      url("/images/control-deck-bg-1080.webp") type("image/webp") 2x,
+      url("/images/control-deck-bg-720.jpg") type("image/jpeg") 1x,
+      url("/images/control-deck-bg-1080.jpg") type("image/jpeg") 2x
+    );
     background-position: center center;
     background-size: cover;
     filter: saturate(1.12) brightness(1.04) contrast(1.02);
