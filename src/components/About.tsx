@@ -18,7 +18,7 @@ export function About() {
     >
       <motion.div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-8">
         <motion.article
-          className="about-narrative-card"
+          className="about-narrative-card self-start"
           initial={fadeUpHidden}
           transition={getRevealTransition()}
           viewport={viewportOnce}
@@ -83,7 +83,7 @@ export function About() {
           <div className="about-highlight-stack">
             {aboutProfile.highlights.map((item, index) => (
               <motion.article
-                className="about-highlight-card group p-5 sm:p-6 lg:p-5"
+                className="about-highlight-card group p-5"
                 initial={fadeUpHidden}
                 key={item.label}
                 transition={getRevealTransition(index + 2, 0.04)}
@@ -94,10 +94,10 @@ export function About() {
                 <p className="meta-label">
                   {item.label}
                 </p>
-                <h3 className="card-title mt-3 text-lg sm:text-xl">
+                <h3 className="card-title mt-2 text-lg sm:text-xl">
                   {item.value}
                 </h3>
-                <p className="card-copy mt-3 text-sm leading-6">
+                <p className="card-copy mt-2 text-sm leading-6">
                   {item.description}
                 </p>
               </motion.article>
