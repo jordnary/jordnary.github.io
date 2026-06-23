@@ -17,7 +17,7 @@ Jordnary 的个人网站，用于整理个人简介、计算机与 AI 学习记�
 
 这是一个基于 React、TypeScript、Tailwind CSS 和 Vite 构建的静态个人网站。当前内容围绕“计算机基础、人工智能学习、Web 项目实践、持续记录”展开，并使用 Vite 多页面构建生成可直接访问的独立页面：
 
-- `/`：首页，展示个人定位和各内容页面的入口。
+- `/`：首页，展示个人定位、各内容页面入口，以及 GitHub 与 RSS 动态。
 - `/about/`：说明当前学习阶段、关注主题和成长记录方式。
 - `/learning/`：按 Computer Science、AI & Machine Learning、Web Development、Tools & Workflow 组织学习方向，并记录学习时间线。
 - `/projects/`：展示个人网站、学习笔记系统、AI Learning Playground 等项目与计划。
@@ -57,7 +57,15 @@ http://localhost:5173
 | `npm run dev` | 启动 Vite 本地开发服务器。 |
 | `npm run lint` | 运行 ESLint 检查。 |
 | `npm run build` | 执行 TypeScript 构建检查并生成生产产物。 |
+| `npm run sync:feeds` | 拉取 RSS 源并生成供页面读取的静态数据。 |
 | `npm run preview` | 本地预览 `dist` 生产构建结果。 |
+
+## 站内搜索与动态内容
+
+- 在任意页面点击导航栏“搜索”，或按 `Ctrl/⌘ + K`，即可搜索项目、学习方向、时间线与站内页面。搜索索引来自 `src/data`，完全在浏览器本地运行，不依赖第三方搜索服务。
+- 首页的 GitHub Pulse 使用 GitHub 公共 REST API 读取 `jordnary` 的公开仓库和资料，并在浏览器中缓存 5 分钟，降低接口请求频率。
+- RSS 阅读流由 `scripts/sync-rss.mjs` 在 `dev` 与 `build` 前自动同步；生成的 `public/data/rss.json` 会被忽略，不会提交到仓库。这样 GitHub Pages 的访客始终读取同源静态 JSON，不受浏览器跨域限制。
+- 默认 RSS 源为 GitHub Blog 与 Hacker News。可在 `scripts/sync-rss.mjs` 的 `feedSources` 中增删来源；脚本会在单个来源失败时继续生成其余内容，并在所有来源暂时不可用时保留上一份成功数据。
 
 ## 内容维护
 

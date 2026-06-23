@@ -1,4 +1,5 @@
 import { Hero } from '../components/Hero'
+import { LiveUpdates } from '../components/LiveUpdates'
 import { PageSection } from '../components/PageSection'
 import { Reveal } from '../components/Reveal'
 import { SmartLink } from '../components/SmartLink'
@@ -41,6 +42,7 @@ export function HomePage() {
           ))}
         </div>
       </PageSection>
+      <LiveUpdates />
     </>
   )
 }

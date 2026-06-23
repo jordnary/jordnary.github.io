@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run sync:feeds",
+    "prebuild": "npm run sync:feeds",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "sync:feeds": "node scripts/sync-rss.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
