@@ -21,18 +21,13 @@ export function getStoredTheme() {
   }
 }
 
-export function getSystemTheme(): Theme {
-  if (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: light)').matches
-  ) {
-    return 'light'
+export function getInitialTheme(): Theme {
+  const storedTheme = getStoredTheme()
+
+  if (storedTheme) {
+    return storedTheme
   }
 
-  return 'dark'
-}
-
-export function getInitialTheme(): Theme {
   if (typeof document !== 'undefined') {
     const currentTheme = document.documentElement.dataset.theme
 
@@ -41,7 +36,7 @@ export function getInitialTheme(): Theme {
     }
   }
 
-  return getStoredTheme() ?? getSystemTheme()
+  return 'light'
 }
 
 export function applyTheme(theme: Theme) {

@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-CN" class="dark" data-theme="dark">
+<html lang="zh-CN" class="light" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <meta name="supported-color-schemes" content="light dark" />
-    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" content="#f8fafc" />
     <meta name="application-name" content="Jordnary" />
     <meta
       name="description"
@@ -53,38 +53,7 @@
         "knowsAbout": ["React", "TypeScript", "Tailwind CSS", "Frontend Engineering"]
       }
     </script>
-    <script>
-      (() => {
-        const storageKey = 'jordnary-theme'
-        const root = document.documentElement
-        const themeColorMeta = document.querySelector('meta[name="theme-color"]')
-        const getStoredTheme = () => {
-          try {
-            const storedTheme = window.localStorage.getItem(storageKey)
-
-            return storedTheme === 'light' || storedTheme === 'dark'
-              ? storedTheme
-              : null
-          } catch {
-            return null
-          }
-        }
-        const theme =
-          getStoredTheme() ??
-          (window.matchMedia('(prefers-color-scheme: light)').matches
-            ? 'light'
-            : 'dark')
-
-        root.dataset.theme = theme
-        root.classList.toggle('dark', theme === 'dark')
-        root.classList.toggle('light', theme === 'light')
-        root.style.colorScheme = theme
-
-        if (themeColorMeta) {
-          themeColorMeta.content = theme === 'light' ? '#f8fafc' : '#020617'
-        }
-      })()
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body data-page="home">
     <div id="root"></div>

@@ -11,10 +11,10 @@ export function HomePage() {
     <>
       <Hero />
       <PageSection
-        description="内容按主题拆分为独立页面；以后增加新的笔记、项目或专题时，只需新增页面与导航配置。"
-        eyebrow="Explore"
+        description="这是我的个人主页：介绍当下的自己，沉淀学习与思考，记录正在打磨的项目，也留一个方便交流的入口。"
+        eyebrow="Personal Space"
         id="explore"
-        title="从这里开始浏览"
+        title="欢迎来到我的数字空间"
       >
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {explorePages.map((page, index) => (

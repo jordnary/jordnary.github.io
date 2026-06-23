@@ -2,8 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import {
   applyTheme,
   getInitialTheme,
-  getStoredTheme,
-  getSystemTheme,
   storeTheme,
   type Theme,
 } from '../lib/theme'
@@ -20,21 +18,6 @@ export function Navbar({ activePage }: { activePage: SitePage }) {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleSystemThemeChange = () => {
-      if (getStoredTheme() === null) {
-        setTheme(getSystemTheme())
-      }
-    }
-
-    mediaQuery.addEventListener('change', handleSystemThemeChange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleSystemThemeChange)
-    }
-  }, [])
 
   useEffect(() => {
     let frameId = 0
