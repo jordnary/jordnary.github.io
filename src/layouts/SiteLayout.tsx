@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { BackToTop } from '../components/BackToTop'
 import { Footer } from '../components/Footer'
 import { Navbar } from '../components/Navbar'
 import { ScrollProgress } from '../components/ScrollProgress'
+import { SiteSearch } from '../components/SiteSearch'
 import type { SitePage } from '../lib/routes'
 
 type SiteLayoutProps = {
@@ -11,6 +12,8 @@ type SiteLayoutProps = {
 }
 
 export function SiteLayout({ children, page }: SiteLayoutProps) {
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
   return (
     <div className="app-shell" id="top">
       <div className="ambient-bg" />
@@ -18,11 +21,16 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
       <ScrollProgress />
       <BackToTop />
 
-      <Navbar activePage={page} />
+      <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />
 
       <main>{children}</main>
 
       <Footer />
+      <SiteSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onOpen={() => setIsSearchOpen(true)}
+      />
     </div>
   )
 }

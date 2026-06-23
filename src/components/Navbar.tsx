@@ -10,7 +10,12 @@ import { getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/route
 const getStaggerStyle = (index: number) =>
   ({ '--stagger-delay': `${60 + index * 42}ms` } as CSSProperties)
 
-export function Navbar({ activePage }: { activePage: SitePage }) {
+type NavbarProps = {
+  activePage: SitePage
+  onSearchOpen: () => void
+}
+
+export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
@@ -87,6 +92,20 @@ export function Navbar({ activePage }: { activePage: SitePage }) {
           ))}
         </div>
         <div className="nav-actions">
+          <button
+            aria-haspopup="dialog"
+            aria-label="搜索站内内容"
+            className="nav-search-button"
+            onClick={() => {
+              closeMenu()
+              onSearchOpen()
+            }}
+            type="button"
+          >
+            <SearchIcon />
+            <span className="nav-search-label">搜索</span>
+            <kbd className="nav-search-shortcut">⌘ K</kbd>
+          </button>
           <button
             aria-label={themeToggleLabel}
             aria-pressed={theme === 'dark'}
@@ -172,5 +191,14 @@ export function Navbar({ activePage }: { activePage: SitePage }) {
         </div>
       </div>
     </header>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <circle cx="10.8" cy="10.8" r="6.3" />
+      <path d="m16 16 4.2 4.2" />
+    </svg>
   )
 }
