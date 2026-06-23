@@ -89,13 +89,13 @@ export function LiveUpdates() {
 
   return (
     <PageSection
-      description="GitHub 区块直接读取公开数据；阅读流在每次构建时聚合 RSS，所以它既有外部内容，也保持 GitHub Pages 的稳定与快速。"
-      eyebrow="Live Signals"
+      description="这里汇集我公开的代码动态与最近在读的内容，记录持续学习、动手实践和整理思考的日常足迹。"
+      eyebrow="Now & Notes"
       id="live"
-      title="正在发生的更新"
+      title="最近在做什么"
     >
       <div className="live-updates-toolbar">
-        <p>公开数据源 · 无需登录</p>
+        <p>来自我的公开足迹 · 无需登录</p>
         <button
           className="live-refresh-button"
           disabled={isRefreshing}
@@ -103,7 +103,7 @@ export function LiveUpdates() {
           type="button"
         >
           <RefreshIcon />
-          <span>{isRefreshing ? '同步中…' : '刷新 GitHub 数据'}</span>
+          <span>{isRefreshing ? '更新中…' : '刷新动态'}</span>
         </button>
       </div>
 
@@ -111,9 +111,9 @@ export function LiveUpdates() {
         <Reveal as="article" className="live-panel glass-card" whileHover={{ y: -5 }}>
           <PanelHeader
             actionHref={githubProfileUrl}
-            actionLabel="查看主页"
-            eyebrow="GitHub Pulse"
-            title="最近维护的仓库"
+            actionLabel="前往 GitHub"
+            eyebrow="Code Activity"
+            title="我最近在维护"
           />
           {githubState.status === 'ready' && githubState.data ? (
             <GitHubContent snapshot={githubState.data} />
@@ -134,9 +134,9 @@ export function LiveUpdates() {
         >
           <PanelHeader
             actionHref="#rss-sources"
-            actionLabel="查看来源"
-            eyebrow="Reading Stream"
-            title="RSS 阅读流"
+            actionLabel="查看订阅源"
+            eyebrow="Reading Notes"
+            title="我最近在关注"
           />
           {feedState.status === 'ready' && feedState.data ? (
             <RssContent feed={feedState.data} />
@@ -197,8 +197,8 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
           <dd>{formatNumber(snapshot.profile.followers)}</dd>
         </div>
         <div>
-          <dt>更新状态</dt>
-          <dd className="github-live-status"><span />Live</dd>
+          <dt>最近状态</dt>
+          <dd className="github-live-status"><span />持续更新</dd>
         </div>
       </dl>
 
@@ -214,7 +214,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
               >
                 <span className="github-repository-main">
                   <strong>{repository.name}</strong>
-                  <span>{repository.description || '暂无仓库描述。'}</span>
+                  <span>{repository.description || '这个项目暂时还没有简介。'}</span>
                 </span>
                 <span className="github-repository-meta">
                   <span>{repository.language || 'Code'}</span>
@@ -226,9 +226,9 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
           ))}
         </ul>
       ) : (
-        <p className="live-inline-note">暂时没有可展示的公开仓库。</p>
+        <p className="live-inline-note">暂时还没有可展示的公开项目。</p>
       )}
-      <p className="live-sync-note">上次读取：{formatTime(snapshot.fetchedAt)}</p>
+      <p className="live-sync-note">更新于：{formatTime(snapshot.fetchedAt)}</p>
     </>
   )
 }
@@ -271,7 +271,7 @@ function RssContent({ feed }: { feed: RssFeed }) {
           ),
         )}
       </div>
-      <p className="live-sync-note">构建同步：{formatTime(feed.generatedAt)}</p>
+      <p className="live-sync-note">整理于：{formatTime(feed.generatedAt)}</p>
     </>
   )
 }
@@ -281,15 +281,15 @@ function LiveState({ kind, source }: { kind: 'error' | 'loading'; source: string
     return (
       <div className="live-state" role="status">
         <span className="live-state-orbit" />
-        <p>正在同步 {source}…</p>
+        <p>正在获取我的 {source}…</p>
       </div>
     )
   }
 
   return (
     <div className="live-state live-state-error">
-      <p>{source} 暂时不可用。</p>
-      <span>这不会影响其他页面内容；稍后可再次刷新。</span>
+      <p>暂时无法获取{source}。</p>
+      <span>其他页面内容不受影响，可以稍后再试。</span>
     </div>
   )
 }
