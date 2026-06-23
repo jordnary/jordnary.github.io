@@ -39,8 +39,8 @@ export const projects: Project[] = [
     techStack: ['React', 'TypeScript', 'GitHub Pages'],
     highlights: ['学习记录入口', '数据驱动内容模块', 'GitHub Pages 静态部署'],
     links: [
-      { href: '#home', label: '查看首页', variant: 'primary' },
-      { href: '#contact', label: '联系交流', variant: 'secondary' },
+      { href: getRouteHref('home'), label: '查看首页', variant: 'primary' },
+      { href: getRouteHref('contact'), label: '联系交流', variant: 'secondary' },
     ],
     preview: {
       description: 'Personal website preview for study notes and project records',
@@ -58,8 +58,8 @@ export const projects: Project[] = [
     techStack: ['Markdown', 'Database', 'AI'],
     highlights: ['课程知识点整理', 'Database 与关系模型笔记', 'AI 基础学习记录'],
     links: [
-      { href: '#skills', label: '查看方向', variant: 'primary' },
-      { href: '#timeline', label: '学习路径', variant: 'secondary' },
+      { href: getRouteHref('learning'), label: '查看方向', variant: 'primary' },
+      { href: getRouteHref('learning'), label: '学习路径', variant: 'secondary' },
     ],
     preview: {
       description: 'Learning notes preview with structured study modules',
@@ -77,8 +77,8 @@ export const projects: Project[] = [
     techStack: ['LLM', 'Prompt', 'AI Tools'],
     highlights: ['Prompt 学习记录', 'LLM 概念梳理', '小实验与工具尝试'],
     links: [
-      { href: '#contact', label: '交流想法', variant: 'primary' },
-      { href: '#timeline', label: '查看时间线', variant: 'secondary' },
+      { href: getRouteHref('contact'), label: '交流想法', variant: 'primary' },
+      { href: getRouteHref('learning'), label: '查看时间线', variant: 'secondary' },
     ],
     preview: {
       description: 'AI learning playground preview with layered prompt dashboards',
@@ -88,3 +88,4 @@ export const projects: Project[] = [
     },
   },
 ]
+import { getRouteHref } from '../lib/routes'

@@ -15,16 +15,15 @@ Jordnary 的个人网站，用于整理个人简介、计算机与 AI 学习记�
 
 ## 项目概览
 
-这是一个基于 React、TypeScript、Tailwind CSS 和 Vite 构建的静态个人主页。当前内容围绕“计算机基础、人工智能学习、Web 项目实践、持续记录”展开，页面包含：
+这是一个基于 React、TypeScript、Tailwind CSS 和 Vite 构建的静态个人网站。当前内容围绕“计算机基础、人工智能学习、Web 项目实践、持续记录”展开，并使用 Vite 多页面构建生成可直接访问的独立页面：
 
-- 首页 Hero：展示个人定位、学习方向和主要入口。
-- About：说明当前学习阶段、关注主题和成长记录方式。
-- Skills：按 Computer Science、AI & Machine Learning、Web Development、Tools & Workflow 组织技能方向。
-- Projects：展示个人网站、学习笔记系统、AI Learning Playground 等项目与计划。
-- Timeline：记录当前、近期和下一阶段的学习路径。
-- Contact：提供邮箱、GitHub 和网站入口。
+- `/`：首页，展示个人定位和各内容页面的入口。
+- `/about/`：说明当前学习阶段、关注主题和成长记录方式。
+- `/learning/`：按 Computer Science、AI & Machine Learning、Web Development、Tools & Workflow 组织学习方向，并记录学习时间线。
+- `/projects/`：展示个人网站、学习笔记系统、AI Learning Playground 等项目与计划。
+- `/contact/`：提供邮箱、GitHub 和网站入口。
 
-项目采用数据驱动的内容结构。个人简介、技能、项目、时间线和联系方式集中维护在 `src/data`，页面展示逻辑集中在 `src/components`，便于后续持续补充内容和迭代视觉效果。
+项目采用数据驱动的内容结构。个人简介、技能、项目、时间线和联系方式集中维护在 `src/data`；跨页导航与页面元信息集中维护在 `src/lib/routes.ts`；每个页面组合在 `src/pages`。这让新增专题时不必再把所有内容堆到首页。
 
 ## 技术栈
 
@@ -72,6 +71,14 @@ http://localhost:5173
 | `src/data/timeline.ts` | 维护学习时间线与阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
 
+页面路由、导航标签和客户端标题集中维护在 `src/lib/routes.ts`。要增加一个新页面：
+
+1. 在 `src/pages` 新增页面组件，并在 `src/App.tsx` 中注册它。
+2. 在 `src/lib/routes.ts` 的 `sitePages` 与 `siteRoutes` 中添加页面标识和元信息。
+3. 新增对应的 `<页面名>/index.html`，并在 `vite.config.ts` 的 `rollupOptions.input` 中加入入口。
+
+这样生成的页面会保留目录形式的 URL，例如 `/notes/`，可被 GitHub Pages 直接服务，无需依赖单页应用的路由回退。
+
 如果需要调整页面布局、交互或视觉样式，主要关注：
 
 - `src/components`：页面区块、导航、项目卡片、时间线、Toast 等组件。
@@ -116,10 +123,16 @@ GitHub Pages 部署流程配置在 `.github/workflows/deploy.yml` 中：
 ├── src/
 │   ├── components/             # 页面区块、导航、项目卡片、时间线等 React 组件
 │   ├── data/                   # 个人简介、技能、项目、时间线、联系方式等内容数据
-│   ├── lib/                    # 动效与通用辅助逻辑
-│   ├── App.tsx                 # 页面组合入口
+│   ├── layouts/                # 全站共享布局
+│   ├── lib/                    # 动效、主题与跨页路由配置
+│   ├── pages/                  # 首页及各独立页面的组合入口
+│   ├── App.tsx                 # 根据页面入口渲染对应内容
 │   ├── index.css               # 全局样式与 Tailwind 样式入口
 │   └── main.tsx                # React 挂载入口
+├── about/                      # /about/ 的静态 HTML 入口
+├── contact/                    # /contact/ 的静态 HTML 入口
+├── learning/                   # /learning/ 的静态 HTML 入口
+├── projects/                   # /projects/ 的静态 HTML 入口
 ├── index.html                  # Vite HTML 入口与站点 meta 信息
 ├── package.json                # 项目脚本与依赖声明
 ├── tsconfig*.json              # TypeScript 配置

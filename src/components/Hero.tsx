@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { getRouteHref } from '../lib/routes'
 import { Reveal } from './Reveal'
+import { SmartLink } from './SmartLink'
 
 const consoleMetrics = [
   {
@@ -177,14 +179,20 @@ export function Hero() {
           immediate
           index={5}
         >
-          <a className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto" href="#projects">
+          <SmartLink
+            className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto"
+            href={getRouteHref('projects')}
+          >
             <span className="hero-cta-label">查看项目</span>
             <span className="hero-cta-arrow" aria-hidden="true">→</span>
-          </a>
-          <a className="btn-secondary hero-cta hero-cta-secondary w-full sm:w-auto" href="#contact">
+          </SmartLink>
+          <SmartLink
+            className="btn-secondary hero-cta hero-cta-secondary w-full sm:w-auto"
+            href={getRouteHref('contact')}
+          >
             <span className="hero-cta-label">联系我</span>
             <span className="hero-cta-arrow" aria-hidden="true">→</span>
-          </a>
+          </SmartLink>
         </Reveal>
       </div>
 
@@ -269,17 +277,17 @@ export function Hero() {
         </div>
       </Reveal>
 
-      <a
-        aria-label="Scroll to explore the next section"
+      <SmartLink
+        aria-label="前往关于页面"
         className="hero-scroll-cue"
-        href="#about"
+        href={getRouteHref('about')}
       >
         <span className="scroll-mouse" aria-hidden="true">
           <span className="scroll-wheel" />
         </span>
-        <span className="scroll-cue-text">Scroll to explore</span>
+        <span className="scroll-cue-text">Explore site</span>
         <span className="scroll-cue-arrow" aria-hidden="true">↓</span>
-      </a>
+      </SmartLink>
     </section>
   )
 }

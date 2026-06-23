@@ -121,7 +121,7 @@ export function Projects() {
                         link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
                       }`}
                       href={link.href}
-                      key={link.href}
+                      key={`${link.href}-${link.label}`}
                     >
                       <span>{link.label}</span>
                       <span aria-hidden="true">→</span>

@@ -1,36 +1,39 @@
-import { About } from './components/About'
-import { BackToTop } from './components/BackToTop'
-import { Contact } from './components/Contact'
-import { Footer } from './components/Footer'
-import { Hero } from './components/Hero'
-import { Navbar } from './components/Navbar'
-import { Projects } from './components/Projects'
-import { ScrollProgress } from './components/ScrollProgress'
-import { Skills } from './components/Skills'
-import { Timeline } from './components/Timeline'
+import { useEffect } from 'react'
+import { SiteLayout } from './layouts/SiteLayout'
+import { siteRoutes, type SitePage } from './lib/routes'
+import { AboutPage } from './pages/AboutPage'
+import { ContactPage } from './pages/ContactPage'
+import { HomePage } from './pages/HomePage'
+import { LearningPage } from './pages/LearningPage'
+import { ProjectsPage } from './pages/ProjectsPage'
 
-function App() {
+function App({ page }: { page: SitePage }) {
+  useEffect(() => {
+    const route = siteRoutes[page]
+    const description = document.querySelector('meta[name="description"]')
+
+    document.title = route.title
+    description?.setAttribute('content', route.description)
+  }, [page])
+
   return (
-    <div className="app-shell" id="top">
-      <div className="ambient-bg" />
-      <div className="grid-bg" />
-      <ScrollProgress />
-      <BackToTop />
-
-      <Navbar />
-
-      <main>
-        <Hero />
-        <About />
-        <Skills />
-        <Projects />
-        <Timeline />
-        <Contact />
-      </main>
-
-      <Footer />
-    </div>
+    <SiteLayout page={page}>{getPageContent(page)}</SiteLayout>
   )
+}
+
+function getPageContent(page: SitePage) {
+  switch (page) {
+    case 'about':
+      return <AboutPage />
+    case 'learning':
+      return <LearningPage />
+    case 'projects':
+      return <ProjectsPage />
+    case 'contact':
+      return <ContactPage />
+    case 'home':
+      return <HomePage />
+  }
 }
 
 export default App
