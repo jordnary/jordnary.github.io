@@ -1029,6 +1029,47 @@
     line-height: 1.55;
   }
 
+  .accent-link.content-flow-link {
+    position: relative;
+    align-items: center;
+    gap: 0.3rem;
+    width: fit-content;
+    padding: 0.15rem 0;
+    color: var(--color-primary-cyan-text);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    transition:
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .content-flow-link span:last-child {
+    display: inline-grid;
+    width: 1.2rem;
+    height: 1.2rem;
+    place-items: center;
+    color: var(--color-primary-cyan-text);
+    border-radius: var(--radius-pill);
+    background: var(--color-primary-cyan-soft);
+    transition:
+      color 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      background 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .accent-link.content-flow-link:hover {
+    color: var(--color-primary-cyan-text);
+    transform: translateY(-0.1rem);
+  }
+
+  .content-flow-link:hover span:last-child {
+    color: var(--color-bg);
+    background: var(--color-primary-cyan);
+    box-shadow: 0 0 12px rgb(103 232 249 / 0.36);
+    transform: translateX(0.2rem);
+  }
+
   .knowledge-card-grid {
     display: grid;
     gap: 1rem;

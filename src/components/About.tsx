@@ -7,19 +7,19 @@ import { getRouteHref } from '../lib/routes'
 const contentFlow = [
   {
     label: '关于页',
-    title: '我是谁、为何这样做',
+    title: '个人叙事',
     description: '保留学习背景、当前方向与驱动我持续记录的问题。',
     href: getRouteHref('about'),
   },
   {
     label: '学习笔记',
-    title: '学到了什么',
+    title: '学习笔记',
     description: '用问题、理解、实践和参考，沉淀可继续修订的知识。',
     href: `${getRouteHref('learning')}#notes`,
   },
   {
     label: '项目复盘',
-    title: '做成了什么',
+    title: '项目案例',
     description: '从背景、选择与实现出发，记录结果、问题和下一步。',
     href: getRouteHref('projects'),
   },
@@ -94,12 +94,9 @@ export function About() {
                 <p className="meta-label-muted">{item.label}</p>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
-                <SmartLink
-                  className="btn-secondary hero-cta hero-cta-secondary content-flow-link mt-4"
-                  href={item.href}
-                >
-                  <span className="hero-cta-label">前往阅读</span>
-                  <span className="hero-cta-arrow" aria-hidden="true">→</span>
+                <SmartLink className="accent-link content-flow-link mt-3" href={item.href}>
+                  <span>前往阅读</span>
+                  <span aria-hidden="true">→</span>
                 </SmartLink>
               </div>
             </li>
