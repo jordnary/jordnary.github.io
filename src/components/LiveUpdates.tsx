@@ -132,12 +132,12 @@ export function LiveUpdates() {
           index={1}
           whileHover={{ y: -5 }}
         >
-          <PanelHeader
-            actionHref="#rss-sources"
-            actionLabel="查看订阅源"
-            eyebrow="Reading Notes"
-            title="我最近在关注"
-          />
+          <header className="live-panel-header">
+            <div>
+              <p className="meta-label">Reading Notes</p>
+              <h3>我最近在关注</h3>
+            </div>
+          </header>
           {feedState.status === 'ready' && feedState.data ? (
             <RssContent feed={feedState.data} />
           ) : (
