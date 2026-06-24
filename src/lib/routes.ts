@@ -17,17 +17,17 @@ export const siteRoutes: Record<SitePage, SiteRoute> = {
   about: {
     label: '关于',
     title: '关于 | Jordnary',
-    description: '认识我当前的学习状态、关注方向和这个网站的成长轨迹。',
+    description: '认识我为何选择 CS、AI 与 Web，以及我持续学习和创造的方式。',
   },
   learning: {
     label: '学习',
-    title: '学习路径 | Jordnary',
-    description: '整理计算机、AI 和 Web 的学习笔记与阶段计划。',
+    title: '知识沉淀 | Jordnary',
+    description: '整理计算机、AI 和前端工程化的学习笔记与阶段计划。',
   },
   projects: {
     label: '项目',
-    title: '项目实践 | Jordnary',
-    description: '记录正在开发、持续打磨的项目实践与实验。',
+    title: '项目案例 | Jordnary',
+    description: '复盘已经可访问的项目案例，并记录仍在验证的实验方向。',
   },
   contact: {
     label: '联系',

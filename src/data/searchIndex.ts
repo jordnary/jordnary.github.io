@@ -1,11 +1,12 @@
 import { contactLinks } from './contact'
 import { aboutProfile } from './profile'
-import { projects } from './projects'
+import { learningNotes } from './notes'
+import { experimentalProjects, projects } from './projects'
 import { skillCategories } from './skills'
 import { timelineItems } from './timeline'
 import { getRouteHref, siteRoutes } from '../lib/routes'
 
-export type SearchEntryKind = '页面' | '项目' | '学习' | '时间线' | '联系'
+export type SearchEntryKind = '页面' | '项目' | '学习' | '笔记' | '时间线' | '联系'
 
 export type SearchEntry = {
   description: string
@@ -31,18 +32,18 @@ const pageEntries: SearchEntry[] = [
     keywords: aboutProfile.keywords,
   },
   {
-    title: '学习路径',
+    title: '知识沉淀',
     description: siteRoutes.learning.description,
     href: getRouteHref('learning'),
     kind: '页面',
-    keywords: ['学习', 'CS', 'AI', 'Web', '技能', '时间线'],
+    keywords: ['学习', 'CS', 'AI', 'Web', '知识地图', '笔记', '时间线'],
   },
   {
-    title: '项目实践',
+    title: '项目案例',
     description: siteRoutes.projects.description,
     href: getRouteHref('projects'),
     kind: '页面',
-    keywords: ['项目', '作品', 'React', 'TypeScript', 'GitHub Pages'],
+    keywords: ['项目', '案例', '复盘', 'React', 'TypeScript', 'GitHub Pages'],
   },
   {
     title: '联系我',
@@ -60,10 +61,18 @@ const projectEntries: SearchEntry[] = projects.map((project) => ({
   kind: '项目',
   keywords: [
     ...project.category,
-    ...project.highlights,
-    ...project.techStack,
+    ...project.responsibilities,
+    ...project.technicalChoices,
     project.status,
   ],
+}))
+
+const experimentalProjectEntries: SearchEntry[] = experimentalProjects.map((project) => ({
+  title: project.title,
+  description: project.description,
+  href: `${getRouteHref('projects')}#experiments`,
+  kind: '项目',
+  keywords: [...project.topics, project.status, project.nextStep],
 }))
 
 const skillEntries: SearchEntry[] = skillCategories.map((category) => ({
@@ -71,7 +80,15 @@ const skillEntries: SearchEntry[] = skillCategories.map((category) => ({
   description: category.description,
   href: `${getRouteHref('learning')}#skills`,
   kind: '学习',
-  keywords: category.items.map((item) => item.name),
+  keywords: category.items.flatMap((item) => [item.name, item.note]),
+}))
+
+const noteEntries: SearchEntry[] = learningNotes.map((note) => ({
+  title: note.title,
+  description: note.summary,
+  href: `${getRouteHref('learning')}#notes`,
+  kind: '笔记',
+  keywords: [note.topic, note.progress, note.difficulty, note.question],
 }))
 
 const timelineEntries: SearchEntry[] = timelineItems.map((item) => ({
@@ -93,7 +110,9 @@ const contactEntries: SearchEntry[] = contactLinks.map((link) => ({
 export const searchEntries = [
   ...pageEntries,
   ...projectEntries,
+  ...experimentalProjectEntries,
   ...skillEntries,
+  ...noteEntries,
   ...timelineEntries,
   ...contactEntries,
 ]

@@ -1,6 +1,6 @@
 # Jordnary Personal Website
 
-Jordnary 的个人网站，用于整理个人简介、计算机与 AI 学习记录、项目实践、学习时间线和联系方式。
+Jordnary 的个人网站，用于整理个人叙事、计算机与 AI 学习笔记、项目案例、阶段计划和联系方式。
 
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat)](https://www.typescriptlang.org/)
@@ -18,9 +18,9 @@ Jordnary 的个人网站，用于整理个人简介、计算机与 AI 学习记�
 这是一个基于 React、TypeScript、Tailwind CSS 和 Vite 构建的静态个人网站。当前内容围绕“计算机基础、人工智能学习、Web 项目实践、持续记录”展开，并使用 Vite 多页面构建生成可直接访问的独立页面：
 
 - `/`：首页，展示个人定位、各内容页面入口，以及 GitHub 与 RSS 动态。
-- `/about/`：说明当前学习阶段、关注主题和成长记录方式。
-- `/learning/`：按 Computer Science、AI & Machine Learning、Web Development、Tools & Workflow 组织学习方向，并记录学习时间线。
-- `/projects/`：展示个人网站、学习笔记系统、AI Learning Playground 等项目与计划。
+- `/about/`：以个人叙事说明学习背景、当前方向、选择 CS / AI / Web 的原因与长期问题。
+- `/learning/`：按知识分类组织学习方向，沉淀带有“问题—理解—实践—参考”结构的笔记，并记录阶段计划。
+- `/projects/`：复盘可访问的真实项目案例；学习笔记系统和 AI Learning Playground 明确归入计划中 / 实验中。
 - `/contact/`：提供邮箱、GitHub 和网站入口。
 
 项目采用数据驱动的内容结构。个人简介、技能、项目、时间线和联系方式集中维护在 `src/data`；跨页导航与页面元信息集中维护在 `src/lib/routes.ts`；每个页面组合在 `src/pages`。这让新增专题时不必再把所有内容堆到首页。
@@ -73,10 +73,11 @@ http://localhost:5173
 
 | 文件 | 用途 |
 | --- | --- |
-| `src/data/profile.ts` | 维护个人简介、关键词、当前关注方向和亮点说明。 |
-| `src/data/skills.ts` | 维护技能分类、技能名称和熟悉度展示。 |
-| `src/data/projects.ts` | 维护项目卡片、筛选分类、技术栈、链接和预览信息。 |
-| `src/data/timeline.ts` | 维护学习时间线与阶段计划。 |
+| `src/data/profile.ts` | 维护个人叙事、学习背景、当前方向与长期问题。 |
+| `src/data/skills.ts` | 维护知识分类及每类正在沉淀的主题。 |
+| `src/data/notes.ts` | 维护可筛选的学习笔记、实践说明与参考来源。 |
+| `src/data/projects.ts` | 维护真实项目案例及计划中 / 实验中的方向。 |
+| `src/data/timeline.ts` | 维护面向下一步的阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
 
 页面路由、导航标签和客户端标题集中维护在 `src/lib/routes.ts`。要增加一个新页面：

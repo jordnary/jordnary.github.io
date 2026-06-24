@@ -1,71 +1,49 @@
+export type NarrativeSection = {
+  label: string
+  paragraphs: string[]
+  title: string
+}
+
 export const aboutProfile = {
   intro:
-    '我目前处在计算机与人工智能方向的学习阶段，关注如何把理论知识、代码实践和项目表达结合起来。',
-  paragraphs: [
-    '这个个人网站会持续整理我的学习记录、课程知识点、项目实践和技术探索。相比展示“完成了什么”，我更希望它呈现“正在如何成长”。',
-    '近期的重点包括计算机基础、数据库与关系模型、机器学习、深度学习、大模型基础，以及用 React、TypeScript、Vite 搭建可持续维护的 Web 页面。',
-    '我会把 GitHub 作为长期记录学习过程和项目迭代的位置，让零散的笔记、练习和小项目逐渐形成可回顾的成长档案。',
-  ],
-  stats: [
+    '我是一名仍在学习中的计算机方向学生。这个网站不是一份堆满标签的简历，而是我把问题、理解和实践慢慢连起来的地方。',
+  background: {
+    label: '学习背景',
+    title: '从课程问题出发，建立自己的理解框架',
+    description:
+      '我在本科阶段学习计算机基础，并把数据库、机器学习和 Web 开发当作彼此关联的三条线：一条帮助我理解系统如何组织信息，一条训练我从数据中提炼模式，另一条让我把想法做成能被人使用和阅读的东西。',
+  },
+  direction: {
+    label: '当前方向',
+    title: 'AI × CS × Web 的交叉实践',
+    description:
+      '目前我在补齐基础知识，也在尝试把 AI 学习过程做成更清楚的笔记和小型体验。比起追逐单一工具，我更在意知识能否被解释、验证和复用。',
+  },
+  narratives: [
     {
-      label: 'Stage',
-      value: 'Undergrad',
-      description: '本科阶段学习中',
+      label: '为什么选择 CS / AI / Web',
+      title: '想理解，也想把理解变成可用的东西',
+      paragraphs: [
+        '计算机科学吸引我的地方，是它把抽象问题拆成可以推理、验证和改进的结构。AI 则让我持续好奇：数据、模型与人的表达之间，究竟怎样形成真正有帮助的能力。',
+        'Web 是我选择的表达媒介。它能把一段思考、一份工具或一次实验带到真实的阅读与使用场景里，也迫使我面对信息结构、可访问性和长期维护这些具体问题。',
+      ],
     },
     {
-      label: 'Focus',
-      value: 'AI / CS',
-      description: '计算机基础与人工智能',
+      label: '做事与学习方式',
+      title: '先把问题说清楚，再用实践校正理解',
+      paragraphs: [
+        '我习惯从一个具体问题开始：它的边界是什么、已有解释哪里不够、我怎样知道自己是否真的理解了。随后用笔记压缩思路，用小练习或页面实现验证，再把踩过的坑留下来。',
+        '这也是网站内容的组织方式：学习笔记回答“学到了什么”，项目复盘回答“做成了什么”，而这里保留“我为什么这样做”。',
+      ],
     },
     {
-      label: 'Mode',
-      value: 'Learning',
-      description: '边学边做边记录',
+      label: '兴趣与长期问题',
+      title: '让复杂知识更容易被理解、检查与继续生长',
+      paragraphs: [
+        '我想持续探索的不是某一个短期热点，而是知识与工具如何真正帮助人思考：怎样把复杂概念讲得不失真？怎样让 AI 辅助学习而不是替代判断？怎样让一个小项目在数月后仍能被自己读懂和继续维护？',
+        '这些问题暂时没有标准答案。我会继续用课程、笔记、实验和项目案例去积累更诚实的回答。',
+      ],
     },
-  ],
-  keywords: [
-    '计算机基础',
-    '数据库',
-    '机器学习',
-    '深度学习',
-    'LLM Basics',
-    'React',
-    'GitHub 记录',
-  ],
-  focusTitle: '当前关注',
-  focusAreas: [
-    {
-      label: '基础知识',
-      icon: 'message',
-    },
-    {
-      label: '项目实践',
-      icon: 'structure',
-    },
-    {
-      label: '学习笔记',
-      icon: 'responsive',
-    },
-    {
-      label: '持续迭代',
-      icon: 'iteration',
-    },
-  ],
-  highlights: [
-    {
-      label: 'Learning',
-      value: 'Computer Science Fundamentals',
-      description: '系统学习数据结构、数据库、计算方法、机器学习与深度学习等基础内容。',
-    },
-    {
-      label: 'Building',
-      value: 'Web & AI Projects',
-      description: '通过 React、TypeScript、Vite 和 GitHub Pages 搭建个人项目，并尝试把 AI 工具融入学习与开发流程。',
-    },
-    {
-      label: 'Recording',
-      value: 'Notes & Growth',
-      description: '把零散知识整理成清晰的笔记、页面和项目记录，形成可回顾的成长轨迹。',
-    },
-  ],
+  ] satisfies NarrativeSection[],
+  keywords: ['问题驱动', '可验证的理解', '持续记录', '长期维护'],
 }
