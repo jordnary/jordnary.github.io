@@ -15,17 +15,19 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   return (
-    <div className="app-shell" id="top">
-      <div className="ambient-bg" />
-      <div className="grid-bg" />
-      <ScrollProgress />
-      <BackToTop />
+    <div className={`app-shell${isSearchOpen ? ' is-search-open' : ''}`} id="top">
+      <div className="app-shell-content">
+        <div className="ambient-bg" />
+        <div className="grid-bg" />
+        <ScrollProgress />
+        <BackToTop />
 
-      <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />
+        <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />
 
-      <main>{children}</main>
+        <main>{children}</main>
 
-      <Footer />
+        <Footer />
+      </div>
       <SiteSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

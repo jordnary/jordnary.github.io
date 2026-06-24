@@ -1377,6 +1377,14 @@ a {
     background: var(--color-bg);
   }
 
+  .app-shell-content {
+    min-height: 100vh;
+  }
+
+  .app-shell.is-search-open .app-shell-content {
+    filter: blur(0.6rem);
+  }
+
   .app-shell::before {
     content: "";
     pointer-events: none;
@@ -5497,7 +5505,6 @@ a {
     padding: max(1rem, env(safe-area-inset-top)) var(--page-gutter);
     overflow-y: auto;
     background: rgb(2 6 23 / 0.7);
-    backdrop-filter: blur(0.6rem);
     animation: site-search-fade-in 150ms ease-out both;
   }
 
