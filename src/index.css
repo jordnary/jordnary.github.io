@@ -5852,8 +5852,13 @@ a {
   }
 
   .live-panel-link {
+    appearance: none;
+    background: transparent;
+    border: 0;
     display: inline-flex;
     align-items: center;
+    cursor: pointer;
+    font: inherit;
     gap: 0.3rem;
     padding: 0.35rem 0;
     color: var(--color-text-muted);

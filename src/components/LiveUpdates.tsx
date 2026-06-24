@@ -37,6 +37,7 @@ export function LiveUpdates() {
   const [githubState, setGitHubState] = useState(initialGitHubState)
   const [feedState, setFeedState] = useState(initialFeedState)
   const [refreshIndex, setRefreshIndex] = useState(0)
+  const [areRssSourcesExpanded, setAreRssSourcesExpanded] = useState(false)
 
   useEffect(() => {
     let isCurrent = true
@@ -133,13 +134,14 @@ export function LiveUpdates() {
           whileHover={{ y: -5 }}
         >
           <PanelHeader
-            actionHref="#rss-sources"
-            actionLabel="查看订阅源"
+            actionLabel={areRssSourcesExpanded ? '收起订阅源' : '查看订阅源'}
+            actionOnClick={() => setAreRssSourcesExpanded((isExpanded) => !isExpanded)}
+            actionPressed={areRssSourcesExpanded}
             eyebrow="Reading Notes"
             title="我最近在关注"
           />
           {feedState.status === 'ready' && feedState.data ? (
-            <RssContent feed={feedState.data} />
+            <RssContent feed={feedState.data} showSources={areRssSourcesExpanded} />
           ) : (
             <LiveState
               kind={feedState.status === 'error' ? 'error' : 'loading'}
@@ -155,15 +157,19 @@ export function LiveUpdates() {
 function PanelHeader({
   actionHref,
   actionLabel,
+  actionOnClick,
+  actionPressed,
   eyebrow,
   title,
 }: {
-  actionHref: string
+  actionHref?: string
   actionLabel: string
+  actionOnClick?: () => void
+  actionPressed?: boolean
   eyebrow: string
   title: string
 }) {
-  const isExternal = actionHref.startsWith('http')
+  const isExternal = actionHref?.startsWith('http') ?? false
 
   return (
     <header className="live-panel-header">
@@ -171,15 +177,28 @@ function PanelHeader({
         <p className="meta-label">{eyebrow}</p>
         <h3>{title}</h3>
       </div>
-      <a
-        className="live-panel-link"
-        href={actionHref}
-        rel={isExternal ? 'noreferrer' : undefined}
-        target={isExternal ? '_blank' : undefined}
-      >
-        {actionLabel}
-        <span aria-hidden="true">↗</span>
-      </a>
+      {actionOnClick ? (
+        <button
+          aria-controls="rss-sources"
+          aria-expanded={actionPressed}
+          className="live-panel-link"
+          onClick={actionOnClick}
+          type="button"
+        >
+          {actionLabel}
+          <span aria-hidden="true">{actionPressed ? '−' : '+'}</span>
+        </button>
+      ) : (
+        <a
+          className="live-panel-link"
+          href={actionHref}
+          rel={isExternal ? 'noreferrer' : undefined}
+          target={isExternal ? '_blank' : undefined}
+        >
+          {actionLabel}
+          <span aria-hidden="true">↗</span>
+        </a>
+      )}
     </header>
   )
 }
@@ -233,7 +252,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
   )
 }
 
-function RssContent({ feed }: { feed: RssFeed }) {
+function RssContent({ feed, showSources }: { feed: RssFeed; showSources: boolean }) {
   const items = feed.items.slice(0, 4)
 
   if (items.length === 0) {
@@ -261,7 +280,7 @@ function RssContent({ feed }: { feed: RssFeed }) {
           </li>
         ))}
       </ul>
-      <div className="rss-sources" id="rss-sources">
+      <div className="rss-sources" hidden={!showSources} id="rss-sources">
         <span>来源</span>
         {[...new Map(items.map((item) => [item.source, item.sourceUrl])).entries()].map(
           ([source, sourceUrl]) => (
