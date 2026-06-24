@@ -131,7 +131,6 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
               <ClearIcon />
             </button>
           )}
-          <kbd className="site-search-escape">Esc</kbd>
         </div>
 
         <div aria-live="polite" className="site-search-results">
@@ -173,6 +172,21 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
         </div>
 
         <div className="site-search-footer">
+          <div aria-label="搜索快捷键" className="site-search-shortcuts">
+            <span className="site-search-shortcut">
+              <kbd>↑</kbd>
+              <kbd>↓</kbd>
+              <span>选择</span>
+            </span>
+            <span className="site-search-shortcut">
+              <kbd>↵</kbd>
+              <span>打开</span>
+            </span>
+            <span className="site-search-shortcut">
+              <kbd>Esc</kbd>
+              <span>关闭</span>
+            </span>
+          </div>
           <button onClick={closeSearch} type="button">关闭</button>
         </div>
       </section>
@@ -192,7 +206,8 @@ function SearchIcon() {
 function ClearIcon() {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <path d="m7 7 10 10M17 7 7 17" />
+      <path d="m4.5 9.2 4.7-4.7h9.1a1.9 1.9 0 0 1 1.9 1.9v11.2a1.9 1.9 0 0 1-1.9 1.9H9.2l-4.7-4.7a4 4 0 0 1 0-5.6Z" />
+      <path d="m12.2 9.7 4.1 4.1m0-4.1-4.1 4.1" />
     </svg>
   )
 }
