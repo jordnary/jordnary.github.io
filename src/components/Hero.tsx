@@ -273,18 +273,6 @@ export function Hero() {
           </div>
         </div>
       </Reveal>
-
-      <SmartLink
-        aria-label="前往关于页面"
-        className="hero-scroll-cue"
-        href={getRouteHref('about')}
-      >
-        <span className="scroll-mouse" aria-hidden="true">
-          <span className="scroll-wheel" />
-        </span>
-        <span className="scroll-cue-text">Explore site</span>
-        <span className="scroll-cue-arrow" aria-hidden="true">↓</span>
-      </SmartLink>
     </section>
   )
 }
