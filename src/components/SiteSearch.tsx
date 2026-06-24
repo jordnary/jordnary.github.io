@@ -205,9 +205,9 @@ function SearchIcon() {
 
 function ClearIcon() {
   return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <path d="m4.5 9.2 4.7-4.7h9.1a1.9 1.9 0 0 1 1.9 1.9v11.2a1.9 1.9 0 0 1-1.9 1.9H9.2l-4.7-4.7a4 4 0 0 1 0-5.6Z" />
-      <path d="m12.2 9.7 4.1 4.1m0-4.1-4.1 4.1" />
+    <svg aria-hidden="true" fill="none" viewBox="0 0 28 24">
+      <path d="m4.5 9.2 4.7-4.7h12.1a1.9 1.9 0 0 1 1.9 1.9v11.2a1.9 1.9 0 0 1-1.9 1.9H9.2l-4.7-4.7a4 4 0 0 1 0-5.6Z" />
+      <path d="m14.2 9.7 4.1 4.1m0-4.1-4.1 4.1" />
     </svg>
   )
 }

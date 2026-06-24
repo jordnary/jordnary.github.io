@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { githubProfileUrl, getGitHubSnapshot, type GitHubSnapshot } from '../lib/github'
 import { PageSection } from './PageSection'
 import { Reveal } from './Reveal'
@@ -37,21 +37,42 @@ export function LiveUpdates() {
   const [githubState, setGitHubState] = useState(initialGitHubState)
   const [feedState, setFeedState] = useState(initialFeedState)
   const [refreshIndex, setRefreshIndex] = useState(0)
+  const [refreshFeedback, setRefreshFeedback] = useState<'error' | 'idle' | 'loading' | 'success'>('idle')
+  const feedbackTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     let isCurrent = true
+    const isManualRefresh = refreshIndex > 0
 
-    void getGitHubSnapshot({ force: refreshIndex > 0 })
-      .then((data) => {
-        if (isCurrent) {
-          setGitHubState({ data, status: 'ready' })
-        }
-      })
-      .catch(() => {
-        if (isCurrent) {
-          setGitHubState({ data: null, status: 'error' })
-        }
-      })
+    void Promise.allSettled([
+      getGitHubSnapshot({ force: isManualRefresh }),
+      loadRssFeed(),
+    ]).then(([githubResult, feedResult]) => {
+      if (!isCurrent) return
+
+      if (githubResult.status === 'fulfilled') {
+        setGitHubState({ data: githubResult.value, status: 'ready' })
+      } else {
+        setGitHubState({ data: null, status: 'error' })
+      }
+
+      if (feedResult.status === 'fulfilled') {
+        setFeedState({ data: feedResult.value, status: 'ready' })
+      } else {
+        setFeedState({ data: null, status: 'error' })
+      }
+
+      if (isManualRefresh) {
+        setRefreshFeedback(
+          githubResult.status === 'fulfilled' && feedResult.status === 'fulfilled'
+            ? 'success'
+            : 'error',
+        )
+        feedbackTimerRef.current = window.setTimeout(() => {
+          setRefreshFeedback('idle')
+        }, 3600)
+      }
+    })
 
     return () => {
       isCurrent = false
@@ -59,33 +80,28 @@ export function LiveUpdates() {
   }, [refreshIndex])
 
   useEffect(() => {
-    let isCurrent = true
-
-    void loadRssFeed()
-      .then((data) => {
-        if (isCurrent) {
-          setFeedState({ data, status: 'ready' })
-        }
-      })
-      .catch(() => {
-        if (isCurrent) {
-          setFeedState({ data: null, status: 'error' })
-        }
-      })
-
     return () => {
-      isCurrent = false
+      if (feedbackTimerRef.current !== null) {
+        window.clearTimeout(feedbackTimerRef.current)
+      }
     }
-  }, [refreshIndex])
+  }, [])
 
   const refresh = () => {
+    if (feedbackTimerRef.current !== null) {
+      window.clearTimeout(feedbackTimerRef.current)
+    }
+
+    setRefreshFeedback('loading')
     setGitHubState({ data: null, status: 'loading' })
     setFeedState({ data: null, status: 'loading' })
     setRefreshIndex((index) => index + 1)
   }
 
   const isRefreshing =
-    githubState.status === 'loading' || feedState.status === 'loading'
+    refreshFeedback === 'loading' ||
+    githubState.status === 'loading' ||
+    feedState.status === 'loading'
 
   return (
     <PageSection
@@ -104,6 +120,18 @@ export function LiveUpdates() {
           <RefreshIcon />
           <span>{isRefreshing ? '更新中…' : '刷新动态'}</span>
         </button>
+        {refreshFeedback === 'success' && (
+          <p className="live-refresh-feedback is-success" role="status">
+            <CheckIcon />
+            已更新
+          </p>
+        )}
+        {refreshFeedback === 'error' && (
+          <p className="live-refresh-feedback is-error" role="status">
+            <AlertIcon />
+            更新失败，请稍后再试
+          </p>
+        )}
       </div>
 
       <div className="live-updates-grid">
@@ -345,6 +373,23 @@ function RefreshIcon() {
       <path d="M3.5 3.8V8h4.2" />
       <path d="M4 13a8.2 8.2 0 0 0 14.8 4.8l1.7-1.8" />
       <path d="M20.5 20.2V16h-4.2" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path d="m5 12.5 4.4 4.4L19 7.5" />
+    </svg>
+  )
+}
+
+function AlertIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path d="M12 8v4.6M12 16.2h.01" />
+      <path d="M10.1 4.8 3.7 16a2.2 2.2 0 0 0 1.9 3.2h12.8a2.2 2.2 0 0 0 1.9-3.2L13.9 4.8a2.2 2.2 0 0 0-3.8 0Z" />
     </svg>
   )
 }
