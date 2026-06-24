@@ -5,7 +5,7 @@
 
   const getStoredTheme = () => {
     try {
-      const storedTheme = window.localStorage.getItem(storageKey)
+      const storedTheme = window.sessionStorage.getItem(storageKey)
 
       return storedTheme === 'light' || storedTheme === 'dark'
         ? storedTheme

@@ -13,7 +13,7 @@ export function isTheme(value: string | null | undefined): value is Theme {
 
 export function getStoredTheme() {
   try {
-    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+    const storedTheme = window.sessionStorage.getItem(THEME_STORAGE_KEY)
 
     return isTheme(storedTheme) ? storedTheme : null
   } catch {
@@ -61,7 +61,7 @@ export function applyTheme(theme: Theme) {
 
 export function storeTheme(theme: Theme) {
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    window.sessionStorage.setItem(THEME_STORAGE_KEY, theme)
   } catch {
     // Theme switching still works even when storage is unavailable.
   }
