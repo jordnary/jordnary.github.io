@@ -28,6 +28,7 @@
   --radius-pill: 9999px;
   --max-page-width: 72rem;
   --page-gutter: 1rem;
+  --section-space: 4rem;
   --nav-height: 5rem;
   --grid-size: 56px;
   --background-base:
@@ -1497,23 +1498,16 @@ a {
 
   .page-section {
     scroll-margin-top: 6rem;
-    padding-block: 4rem;
+    padding-block: var(--section-space);
     padding-inline: var(--page-gutter);
   }
 
-  #about.page-section {
-    padding-top: 2.25rem;
-  }
-
-  #explore.page-section {
-    padding-top: 2.5rem;
-  }
-
   .hero-section {
-    @apply grid items-start gap-10 pb-6 pt-16 sm:pb-8 sm:pt-20 lg:pb-8 lg:pt-20;
+    @apply grid items-start gap-10 pt-16 sm:pt-20;
     position: relative;
     isolation: isolate;
     grid-template-columns: minmax(0, 1fr);
+    padding-bottom: var(--section-space);
   }
 
   .hero-copy {
@@ -5200,6 +5194,10 @@ a {
   }
 
   @media (min-width: 640px) {
+    :root {
+      --section-space: 5rem;
+    }
+
     .hero-console {
       padding: 1.25rem;
     }
@@ -5208,16 +5206,13 @@ a {
       min-height: 13.75rem;
     }
 
-    .page-section {
-      padding-block: 5rem;
-    }
-
-    #about.page-section {
-      padding-top: 2.5rem;
-    }
   }
 
   @media (min-width: 1024px) {
+    :root {
+      --section-space: 6rem;
+    }
+
     .hero-section {
       grid-template-columns: minmax(0, 1.05fr) minmax(22rem, 0.95fr);
       gap: 3.5rem;
@@ -5232,13 +5227,6 @@ a {
       margin-inline: 0;
     }
 
-    .page-section {
-      padding-block: 6rem;
-    }
-
-    #about.page-section {
-      padding-top: 2.75rem;
-    }
   }
 
   @media (max-width: 640px) {
