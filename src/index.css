@@ -5773,6 +5773,13 @@ a {
     transform: translateY(-0.1rem);
   }
 
+  :root[data-theme="light"] .live-refresh-button:hover:not(:disabled) {
+    color: #ffffff;
+    border-color: var(--color-primary-cyan-strong);
+    background: var(--color-primary-cyan-strong);
+    box-shadow: 0 10px 22px -14px rgb(8 145 178 / 0.68);
+  }
+
   .live-refresh-button:disabled {
     cursor: wait;
     opacity: 0.6;
