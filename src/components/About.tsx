@@ -94,8 +94,12 @@ export function About() {
                 <p className="meta-label-muted">{item.label}</p>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
-                <SmartLink className="accent-link mt-3" href={item.href}>
-                  前往阅读 <span aria-hidden="true">→</span>
+                <SmartLink
+                  className="btn-secondary hero-cta hero-cta-secondary content-flow-link mt-4"
+                  href={item.href}
+                >
+                  <span className="hero-cta-label">前往阅读</span>
+                  <span className="hero-cta-arrow" aria-hidden="true">→</span>
                 </SmartLink>
               </div>
             </li>
