@@ -5567,6 +5567,36 @@ a {
     color: var(--color-text-subtle);
   }
 
+  .site-search-clear {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    flex: 0 0 auto;
+    place-items: center;
+    color: var(--color-text-subtle);
+    border-radius: 50%;
+    background: transparent;
+    transition: color 150ms ease, background 150ms ease;
+  }
+
+  .site-search-clear:hover {
+    color: var(--color-text);
+    background: rgb(148 163 184 / 0.14);
+  }
+
+  .site-search-clear:focus-visible {
+    outline: 2px solid var(--color-primary-cyan);
+    outline-offset: 2px;
+  }
+
+  .site-search-clear svg {
+    width: 1rem;
+    height: 1rem;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 2;
+  }
+
   .site-search-results {
     max-height: min(28rem, calc(100dvh - 11rem));
     min-height: 12rem;
@@ -5605,7 +5635,8 @@ a {
       transform 150ms ease;
   }
 
-  .site-search-result:hover {
+  .site-search-result:hover,
+  .site-search-result.is-active {
     border-color: rgb(103 232 249 / 0.24);
     background: rgb(103 232 249 / 0.08);
     transform: translateX(0.18rem);
@@ -5653,7 +5684,8 @@ a {
     transition: color 150ms ease, transform 150ms ease;
   }
 
-  .site-search-result:hover .site-search-result-arrow {
+  .site-search-result:hover .site-search-result-arrow,
+  .site-search-result.is-active .site-search-result-arrow {
     color: var(--color-primary-cyan-text);
     transform: translateX(0.16rem);
   }

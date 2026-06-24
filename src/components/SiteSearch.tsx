@@ -9,7 +9,9 @@ type SiteSearchProps = {
 
 export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
   const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(-1)
   const inputRef = useRef<HTMLInputElement>(null)
+  const resultRefs = useRef<Array<HTMLAnchorElement | null>>([])
   const results = useMemo(() => searchSite(query).slice(0, 8), [query])
 
   const closeSearch = useCallback(() => {
@@ -48,6 +50,44 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
     }
   }, [isOpen])
 
+  useEffect(() => {
+    if (activeIndex >= 0) {
+      resultRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [activeIndex])
+
+  const clearQuery = () => {
+    setQuery('')
+    setActiveIndex(-1)
+    inputRef.current?.focus()
+  }
+
+  const updateQuery = (value: string) => {
+    setQuery(value)
+    setActiveIndex(-1)
+  }
+
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveIndex((index) => (index + 1) % results.length)
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveIndex((index) => (index - 1 + results.length) % results.length)
+      return
+    }
+
+    if (event.key === 'Enter' && activeIndex >= 0) {
+      event.preventDefault()
+      resultRefs.current[activeIndex]?.click()
+    }
+  }
+
   if (!isOpen) {
     return null
   }
@@ -67,14 +107,30 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
         <div className="site-search-input-row">
           <SearchIcon />
           <input
+            aria-activedescendant={activeIndex >= 0 ? `site-search-result-${activeIndex}` : undefined}
             aria-label="搜索站内内容"
+            aria-controls="site-search-results"
+            aria-expanded="true"
+            aria-haspopup="listbox"
             className="site-search-input"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => updateQuery(event.target.value)}
+            onKeyDown={handleInputKeyDown}
             placeholder="搜索项目、学习内容或页面…"
             ref={inputRef}
+            role="combobox"
             type="search"
             value={query}
           />
+          {query && (
+            <button
+              aria-label="清空搜索内容"
+              className="site-search-clear"
+              onClick={clearQuery}
+              type="button"
+            >
+              <ClearIcon />
+            </button>
+          )}
           <kbd className="site-search-escape">Esc</kbd>
         </div>
 
@@ -83,10 +139,21 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
             {query.trim() ? `找到 ${results.length} 个相关结果` : '试试：AI、React、项目、GitHub'}
           </p>
           {results.length > 0 ? (
-            <ul className="site-search-list">
-              {results.map((result) => (
+            <ul className="site-search-list" id="site-search-results" role="listbox">
+              {results.map((result, index) => (
                 <li key={`${result.kind}-${result.title}`}>
-                  <a className="site-search-result" href={result.href} onClick={closeSearch}>
+                  <a
+                    aria-selected={index === activeIndex}
+                    className={`site-search-result${index === activeIndex ? ' is-active' : ''}`}
+                    href={result.href}
+                    id={`site-search-result-${index}`}
+                    onClick={closeSearch}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    ref={(node) => {
+                      resultRefs.current[index] = node
+                    }}
+                    role="option"
+                  >
                     <span className="site-search-result-type">{result.kind}</span>
                     <span className="site-search-result-copy">
                       <strong>{result.title}</strong>
@@ -118,6 +185,14 @@ function SearchIcon() {
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
       <circle cx="10.8" cy="10.8" r="6.3" />
       <path d="m16 16 4.2 4.2" />
+    </svg>
+  )
+}
+
+function ClearIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path d="m7 7 10 10M17 7 7 17" />
     </svg>
   )
 }
