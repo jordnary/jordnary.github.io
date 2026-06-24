@@ -106,7 +106,6 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
         </div>
 
         <div className="site-search-footer">
-          <span>本地索引 · 无需第三方搜索服务</span>
           <button onClick={closeSearch} type="button">关闭</button>
         </div>
       </section>

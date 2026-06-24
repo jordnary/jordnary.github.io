@@ -95,7 +95,6 @@ export function LiveUpdates() {
       title="最近在做什么"
     >
       <div className="live-updates-toolbar">
-        <p>来自我的公开足迹 · 无需登录</p>
         <button
           className="live-refresh-button"
           disabled={isRefreshing}

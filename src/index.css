@@ -5674,7 +5674,7 @@ a {
   .site-search-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 1rem;
     padding: 0.7rem 1.1rem;
     color: var(--color-text-subtle);
@@ -5736,14 +5736,6 @@ a {
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
-  }
-
-  .live-updates-toolbar > p {
-    margin: 0;
-    font-size: 0.75rem;
-    font-weight: 650;
-    color: var(--color-text-subtle);
-    letter-spacing: 0.04em;
   }
 
   .live-refresh-button {
@@ -6124,11 +6116,6 @@ a {
   }
 
   @media (max-width: 460px) {
-    .live-updates-toolbar {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
     .rss-item {
       grid-template-columns: auto minmax(0, 1fr);
     }
