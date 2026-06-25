@@ -1,4 +1,5 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react'
+import { getHashTargetId, scrollToElementId } from '../lib/hashScroll'
 
 type SmartLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   href: string
@@ -20,7 +21,7 @@ export function SmartLink({
 
     if (
       event.defaultPrevented ||
-      !isInternalAnchor(href) ||
+      !isSamePageAnchor(href) ||
       event.button !== 0 ||
       event.altKey ||
       event.ctrlKey ||
@@ -31,14 +32,12 @@ export function SmartLink({
     }
 
     const targetId = getAnchorTargetId(href)
-    const sectionElement = targetId ? document.getElementById(targetId) : null
 
-    if (!sectionElement) {
+    if (!targetId || !scrollToElementId(targetId)) {
       return
     }
 
     event.preventDefault()
-    sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
     window.history.pushState(null, '', href)
   }
 
@@ -53,8 +52,15 @@ export function SmartLink({
   )
 }
 
-function isInternalAnchor(href: string) {
-  return href.startsWith('#') && href.length > 1
+function isSamePageAnchor(href: string) {
+  const targetUrl = new URL(href, window.location.href)
+
+  return (
+    targetUrl.origin === window.location.origin &&
+    targetUrl.pathname === window.location.pathname &&
+    targetUrl.search === window.location.search &&
+    targetUrl.hash.length > 1
+  )
 }
 
 function isExternalHref(href: string) {
@@ -62,11 +68,7 @@ function isExternalHref(href: string) {
 }
 
 function getAnchorTargetId(href: string) {
-  try {
-    return decodeURIComponent(href.slice(1))
-  } catch {
-    return href.slice(1)
-  }
+  return getHashTargetId(new URL(href, window.location.href).hash)
 }
 
 function withNoreferrer(rel: string | undefined) {

@@ -6,6 +6,7 @@ import { ContactPage } from './pages/ContactPage'
 import { HomePage } from './pages/HomePage'
 import { LearningPage } from './pages/LearningPage'
 import { ProjectsPage } from './pages/ProjectsPage'
+import { scrollToHashTarget } from './lib/hashScroll'
 
 function App({ page }: { page: SitePage }) {
   useEffect(() => {
@@ -14,6 +15,22 @@ function App({ page }: { page: SitePage }) {
 
     document.title = route.title
     description?.setAttribute('content', route.description)
+  }, [page])
+
+  useEffect(() => {
+    scrollToHashTarget()
+
+    const frameId = window.requestAnimationFrame(() => {
+      scrollToHashTarget()
+    })
+    const timeoutId = window.setTimeout(() => {
+      scrollToHashTarget()
+    }, 100)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.clearTimeout(timeoutId)
+    }
   }, [page])
 
   return (
