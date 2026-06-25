@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(rootDirectory, 'public/data/rss.json')
 const maxItems = 12
+const maxItemsPerSource = maxItems
 
 // Add or replace sources here. Only title, a short excerpt, date and link are published.
 const feedSources = [
@@ -23,13 +24,15 @@ const feedSources = [
 ]
 
 const results = await Promise.allSettled(feedSources.map(syncSource))
-const successfulFeeds = results
+const sourceQueues = results
   .filter((result) => result.status === 'fulfilled')
-  .flatMap((result) => result.value)
+  .map((result) =>
+    [...result.value]
+      .sort((first, second) => getTimestamp(second.publishedAt) - getTimestamp(first.publishedAt))
+      .slice(0, maxItemsPerSource),
+  )
 
-let items = successfulFeeds
-  .sort((first, second) => getTimestamp(second.publishedAt) - getTimestamp(first.publishedAt))
-  .slice(0, maxItems)
+let items = roundRobin(sourceQueues).slice(0, maxItems)
 
 if (items.length === 0) {
   const previousFeed = await readPreviousFeed()
@@ -70,6 +73,26 @@ function parseFeed(xml, source) {
   return entries
     .map((entry, index) => toFeedItem(entry, source, index))
     .filter((item) => item !== null)
+}
+
+function roundRobin(queues) {
+  const items = []
+  let hasItems = true
+
+  while (hasItems) {
+    hasItems = false
+
+    for (const queue of queues) {
+      const item = queue.shift()
+
+      if (item) {
+        items.push(item)
+        hasItems = true
+      }
+    }
+  }
+
+  return items
 }
 
 function getBlocks(xml, tagName) {
