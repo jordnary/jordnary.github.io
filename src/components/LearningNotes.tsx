@@ -31,6 +31,11 @@ export function LearningNotes() {
     [difficulty, progress, topic],
   )
 
+  const activeFilters = [topic, progress, difficulty].filter(
+    (filter) => !filter.startsWith('全部'),
+  )
+  const resultScope = activeFilters.length > 0 ? activeFilters.join(' / ') : '全部笔记'
+
   return (
     <PageSection
       id="notes"
@@ -62,9 +67,13 @@ export function LearningNotes() {
         </div>
       </Reveal>
 
-      <p className="note-result-count" aria-live="polite">
-        当前显示 {filteredNotes.length} 篇笔记
-      </p>
+      <Reveal as="div" className="note-result-count" baseDelay={0.16}>
+        <span className="note-result-eyebrow">筛选结果</span>
+        <span className="note-result-summary" aria-live="polite">
+          当前显示 <strong key={filteredNotes.length}>{filteredNotes.length}</strong> 篇笔记
+        </span>
+        <span className="note-result-scope">{resultScope}</span>
+      </Reveal>
 
       <div className="note-list">
         {filteredNotes.map((note, index) => (
