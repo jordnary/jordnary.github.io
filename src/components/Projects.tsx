@@ -4,17 +4,17 @@ import { ProjectPreviewMock } from './ProjectPreview'
 import { Reveal } from './Reveal'
 import { SmartLink } from './SmartLink'
 import {
+  experimentalProjects,
   projectFilters,
   projects,
   type ProjectFilter,
-  type ProjectStatus,
 } from '../data/projects'
 
 export function Projects() {
-  const [activeFilter, setActiveFilter] = useState<ProjectFilter>('All')
+  const [activeFilter, setActiveFilter] = useState<ProjectFilter>('全部案例')
 
   const filteredProjects = useMemo(() => {
-    if (activeFilter === 'All') {
+    if (activeFilter === '全部案例') {
       return projects
     }
 
@@ -22,106 +22,74 @@ export function Projects() {
   }, [activeFilter])
 
   return (
-    <PageSection
-      id="projects"
-      eyebrow="Projects"
-      title="项目实践与学习记录"
-      description="这里更像一个持续更新的练习册，记录个人网站、学习笔记和 AI 方向的小实验。"
-    >
-      <Reveal
-        ariaLabel="Project filters"
-        className="project-filter-bar"
-        baseDelay={0.08}
+    <>
+      <PageSection
+        id="projects"
+        eyebrow="Case Studies"
+        title="项目案例"
+        description="这里仅收录已有可访问成果的项目；每个案例都记录背景、选择、实现和复盘，而不只展示一个项目名称。"
       >
-        {projectFilters.map((filter) => (
-          <button
-            aria-pressed={activeFilter === filter}
-            className={`project-filter-button ${
-              activeFilter === filter ? 'is-active' : ''
-            }`}
-            key={filter}
-            onClick={() => setActiveFilter(filter)}
-            type="button"
-          >
-            {filter}
-          </button>
-        ))}
-      </Reveal>
+        <Reveal ariaLabel="项目案例筛选" className="project-filter-bar" baseDelay={0.08}>
+          {projectFilters.map((filter) => (
+            <button
+              aria-pressed={activeFilter === filter}
+              className={`project-filter-button ${activeFilter === filter ? 'is-active' : ''}`}
+              key={filter}
+              onClick={() => setActiveFilter(filter)}
+              type="button"
+            >
+              {filter}
+            </button>
+          ))}
+        </Reveal>
 
-      {filteredProjects.length > 0 ? (
-        <Reveal
-          className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
-          immediate
-          key={activeFilter}
-        >
+        <div className="project-case-list">
           {filteredProjects.map((project, index) => (
             <Reveal
               as="article"
-              className="project-card glass-card interactive-card group flex h-full flex-col overflow-hidden"
+              className="project-case-card glass-card"
               index={index}
               key={project.title}
-              whileHover={{ y: -6 }}
             >
-              <div
-                aria-label={project.preview.description}
-                className="project-media"
-                role="img"
-              >
-                <div className={getProjectTint(index)} />
-                <ProjectPreviewMock variant={project.preview.variant} />
-                <div className="project-preview-panel">
-                  <span>{project.preview.label}</span>
-                  <strong>{project.preview.metric}</strong>
+              <div className="project-case-media">
+                <div aria-label={project.preview.description} className="project-media" role="img">
+                  <div className="project-tint-cyan" />
+                  <ProjectPreviewMock variant={project.preview.variant} />
+                  <div className="project-preview-panel">
+                    <span>{project.preview.label}</span>
+                    <strong>{project.preview.metric}</strong>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-col p-5 sm:p-6">
+              <div className="project-case-content">
                 <header className="project-card-header">
-                  <h3 className="card-title text-lg sm:text-xl">
-                    {project.title}
-                  </h3>
-                  <span className={`project-status ${getProjectStatusClass(project.status)}`}>
-                    {project.status}
-                  </span>
-                </header>
-
-                <p className="card-copy mt-3 flex-1 text-sm leading-6">
-                  {project.description}
-                </p>
-
-                <div className="project-detail-block">
-                  <p className="meta-label-muted">Stack</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {project.techStack.map((tech) => (
-                      <span
-                        className="tag-pill project-tech-tag"
-                        key={tech}
-                      >
-                        {tech}
-                      </span>
-                    ))}
+                  <div>
+                    <p className="meta-label">项目案例</p>
+                    <h3 className="card-title mt-2 text-xl sm:text-2xl">{project.title}</h3>
                   </div>
-                </div>
+                  <span className="project-status project-status-live">{project.status}</span>
+                </header>
+                <p className="card-copy mt-4 text-sm leading-7 sm:text-base">{project.description}</p>
 
-                <div className="project-detail-block">
-                  <p className="meta-label-muted">Highlights</p>
-                  <ul className="project-highlight-list">
-                    {project.highlights.map((highlight) => (
-                      <li key={highlight}>
-                        {highlight}
-                      </li>
-                    ))}
-                  </ul>
+                <dl className="project-case-facts">
+                  <CaseFact label="背景" copy={project.background} />
+                  <CaseFact label="目标" copy={project.goal} />
+                  <CaseFact label="职责" items={project.responsibilities} />
+                  <CaseFact label="技术选择" items={project.technicalChoices} />
+                </dl>
+
+                <div className="project-case-detail-grid">
+                  <CaseList label="关键实现" items={project.implementation} />
+                  <CaseList label="问题与复盘" items={project.reflection} />
                 </div>
 
                 <div className="project-actions">
                   {project.links.map((link) => (
                     <SmartLink
-                      className={`project-link ${
-                        link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'
-                      }`}
+                      className={`project-link ${link.variant === 'primary' ? 'btn-primary' : 'btn-secondary'}`}
                       href={link.href}
-                      key={link.href}
+                      key={`${link.href}-${link.label}`}
                     >
                       <span>{link.label}</span>
                       <span aria-hidden="true">→</span>
@@ -131,77 +99,79 @@ export function Projects() {
               </div>
             </Reveal>
           ))}
-        </Reveal>
-      ) : (
-        <ProjectEmptyState
-          activeFilter={activeFilter}
-          onReset={() => setActiveFilter('All')}
-        />
-      )}
-    </PageSection>
+        </div>
+      </PageSection>
+
+      <PageSection
+        id="experiments"
+        eyebrow="In Progress"
+        title="计划中 / 实验中"
+        description="这些方向尚未形成独立、可访问的成果，因此不与完成案例并列；这里保留它们现在的假设和下一步。"
+      >
+        <div className="experimental-project-grid">
+          {experimentalProjects.map((project, index) => (
+            <Reveal as="article" className="experimental-project-card glass-card" index={index} key={project.title}>
+              <header className="project-card-header">
+                <h3 className="card-title text-lg sm:text-xl">{project.title}</h3>
+                <span className={`project-status ${project.status === '实验中' ? 'project-status-building' : 'project-status-planned'}`}>
+                  {project.status}
+                </span>
+              </header>
+              <p className="card-copy mt-4 text-sm leading-7">{project.description}</p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {project.topics.map((topic) => (
+                  <span className="tag-pill project-tech-tag" key={topic}>
+                    {topic}
+                  </span>
+                ))}
+              </div>
+              <div className="experimental-next-step">
+                <p className="meta-label-muted">下一步</p>
+                <p>{project.nextStep}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </PageSection>
+    </>
   )
 }
 
-function ProjectEmptyState({
-  activeFilter,
-  onReset,
+function CaseFact({
+  copy,
+  items,
+  label,
 }: {
-  activeFilter: ProjectFilter
-  onReset: () => void
+  copy?: string
+  items?: string[]
+  label: string
 }) {
-  const emptyTitle =
-    activeFilter === 'All'
-      ? '暂无项目内容'
-      : `暂无 ${activeFilter} 项目`
-
   return (
-    <Reveal
-      className="project-empty-state glass-card"
-      immediate
-    >
-      <div className="project-empty-visual" aria-hidden="true">
-        <span className="project-empty-orbit" />
-        <span className="project-empty-dot project-empty-dot-a" />
-        <span className="project-empty-dot project-empty-dot-b" />
-      </div>
-      <div className="project-empty-copy">
-        <p className="meta-label-muted">No matches</p>
-        <h3>{emptyTitle}</h3>
-        <p>
-          这个分类暂时还在整理中，之后会把合适的作品补充进来。
-        </p>
-      </div>
-      {activeFilter !== 'All' && (
-        <button
-          className="project-empty-action"
-          onClick={onReset}
-          type="button"
-        >
-          <span>Show all projects</span>
-          <span aria-hidden="true">→</span>
-        </button>
-      )}
-    </Reveal>
+    <div className="project-case-fact">
+      <dt>{label}</dt>
+      {copy ? <dd>{copy}</dd> : null}
+      {items ? (
+        <dd>
+          <ul className="project-highlight-list">
+            {items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </dd>
+      ) : null}
+    </div>
   )
 }
 
-function getProjectTint(index: number) {
-  const tints = [
-    'project-tint-cyan',
-    'project-tint-violet',
-    'project-tint-emerald',
-  ]
-
-  return tints[index % tints.length]
-}
-
-function getProjectStatusClass(status: ProjectStatus) {
-  switch (status) {
-    case 'Building':
-      return 'project-status-building'
-    case 'Polishing':
-      return 'project-status-polishing'
-    case 'Planned':
-      return 'project-status-planned'
-  }
+function CaseList({ items, label }: { items: string[]; label: string }) {
+  return (
+    <section className="project-case-detail">
+      <p className="meta-label-muted">{label}</p>
+      <ul className="project-highlight-list">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </section>
+  )
 }

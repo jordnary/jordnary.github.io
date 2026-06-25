@@ -1,31 +1,30 @@
 import { useEffect, useState } from 'react'
+import { getRouteHref } from '../lib/routes'
 import { Reveal } from './Reveal'
+import { SmartLink } from './SmartLink'
 
 const consoleMetrics = [
   {
-    icon: '<>',
-    label: 'Focus',
-    value: 'AI & CS Learning',
+    icon: '01',
+    label: 'Narrative',
+    value: 'Why I learn',
   },
   {
-    icon: 'TS',
-    label: 'Stack',
-    value: 'React + TypeScript',
+    icon: '02',
+    label: 'Notes',
+    value: 'What I learn',
   },
   {
-    icon: 'GH',
-    label: 'Goal',
-    value: 'Build and Learn',
+    icon: '03',
+    label: 'Cases',
+    value: 'What I build',
   },
 ]
 
 const keywordTags = [
-  'Computer Science',
-  'Database',
-  'Machine Learning',
-  'LLM Basics',
-  'Web Development',
-  'TypeScript',
+  '个人叙事',
+  '知识沉淀',
+  '项目复盘',
 ]
 
 const consoleFlow = ['Learn', 'Build', 'Record']
@@ -156,7 +155,7 @@ export function Hero() {
           immediate
           index={3}
         >
-          记录学习、项目与技术笔记，用 React、TypeScript 和 GitHub Pages 持续构建个人展示空间。
+          把个人叙事、学习笔记与项目复盘组织在一起：记录为什么学习、学到了什么，以及如何把理解做成真实的实践。
         </Reveal>
         <Reveal
           className="hero-keywords"
@@ -177,14 +176,20 @@ export function Hero() {
           immediate
           index={5}
         >
-          <a className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto" href="#projects">
+          <SmartLink
+            className="btn-primary hero-cta hero-cta-primary w-full sm:w-auto"
+            href={getRouteHref('projects')}
+          >
             <span className="hero-cta-label">查看项目</span>
             <span className="hero-cta-arrow" aria-hidden="true">→</span>
-          </a>
-          <a className="btn-secondary hero-cta hero-cta-secondary w-full sm:w-auto" href="#contact">
+          </SmartLink>
+          <SmartLink
+            className="btn-secondary hero-cta hero-cta-secondary w-full sm:w-auto"
+            href={getRouteHref('contact')}
+          >
             <span className="hero-cta-label">联系我</span>
             <span className="hero-cta-arrow" aria-hidden="true">→</span>
-          </a>
+          </SmartLink>
         </Reveal>
       </div>
 
@@ -268,18 +273,6 @@ export function Hero() {
           </div>
         </div>
       </Reveal>
-
-      <a
-        aria-label="Scroll to explore the next section"
-        className="hero-scroll-cue"
-        href="#about"
-      >
-        <span className="scroll-mouse" aria-hidden="true">
-          <span className="scroll-wheel" />
-        </span>
-        <span className="scroll-cue-text">Scroll to explore</span>
-        <span className="scroll-cue-arrow" aria-hidden="true">↓</span>
-      </a>
     </section>
   )
 }

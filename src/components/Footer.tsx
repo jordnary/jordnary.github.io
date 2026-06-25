@@ -1,12 +1,5 @@
 import { SmartLink } from './SmartLink'
-
-const footerNavItems = [
-  { href: '#about', label: '关于' },
-  { href: '#skills', label: '技能' },
-  { href: '#projects', label: '项目' },
-  { href: '#timeline', label: '路径' },
-  { href: '#contact', label: '联系' },
-] as const
+import { getRouteHref, sitePages, siteRoutes } from '../lib/routes'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -15,18 +8,22 @@ export function Footer() {
     <footer className="footer-shell">
       <div className="site-container footer-content">
         <div className="footer-brand">
-          <SmartLink className="footer-brand-link" href="#home">
+          <SmartLink className="footer-brand-link" href={getRouteHref('home')}>
             Jordnary
           </SmartLink>
           <p className="footer-description">
-            记录计算机基础、AI 学习、Web 实践与个人成长。
+            记录个人叙事、知识沉淀与项目复盘。
           </p>
         </div>
 
         <nav aria-label="Footer navigation" className="footer-nav">
-          {footerNavItems.map((item) => (
-            <SmartLink className="footer-link" href={item.href} key={item.href}>
-              {item.label}
+          {sitePages.map((page) => (
+            <SmartLink
+              className="footer-link"
+              href={getRouteHref(page)}
+              key={page}
+            >
+              {siteRoutes[page].label}
             </SmartLink>
           ))}
         </nav>

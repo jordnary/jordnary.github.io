@@ -2,30 +2,20 @@ import { useEffect, useState, type CSSProperties } from 'react'
 import {
   applyTheme,
   getInitialTheme,
-  getStoredTheme,
-  getSystemTheme,
   storeTheme,
   type Theme,
 } from '../lib/theme'
-
-const navItems = [
-  { href: '#home', id: 'home', label: '首页' },
-  { href: '#about', id: 'about', label: '关于' },
-  { href: '#skills', id: 'skills', label: '技能' },
-  { href: '#projects', id: 'projects', label: '项目' },
-  { href: '#timeline', id: 'timeline', label: '路径' },
-  { href: '#contact', id: 'contact', label: '联系' },
-] as const
-
-type SectionId = (typeof navItems)[number]['id']
-
-const observerThresholds = Array.from({ length: 21 }, (_, index) => index / 20)
+import { getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
 
 const getStaggerStyle = (index: number) =>
   ({ '--stagger-delay': `${60 + index * 42}ms` } as CSSProperties)
 
-export function Navbar() {
-  const [activeSection, setActiveSection] = useState<SectionId>('home')
+type NavbarProps = {
+  activePage: SitePage
+  onSearchOpen: () => void
+}
+
+export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
@@ -33,21 +23,6 @@ export function Navbar() {
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleSystemThemeChange = () => {
-      if (getStoredTheme() === null) {
-        setTheme(getSystemTheme())
-      }
-    }
-
-    mediaQuery.addEventListener('change', handleSystemThemeChange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleSystemThemeChange)
-    }
-  }, [])
 
   useEffect(() => {
     let frameId = 0
@@ -75,64 +50,8 @@ export function Navbar() {
     }
   }, [])
 
-  useEffect(() => {
-    const sections = navItems
-      .map((item) => document.getElementById(item.id))
-      .filter((section): section is HTMLElement => Boolean(section))
-
-    if (sections.length === 0) {
-      return
-    }
-
-    const getCurrentSection = () => {
-      const viewportAnchor = window.innerHeight * 0.42
-      let currentSection = sections[0].id as SectionId
-
-      for (const section of sections) {
-        const rect = section.getBoundingClientRect()
-
-        if (rect.top <= viewportAnchor && rect.bottom > viewportAnchor) {
-          currentSection = section.id as SectionId
-          break
-        }
-
-        if (rect.top < viewportAnchor) {
-          currentSection = section.id as SectionId
-        }
-      }
-
-      return currentSection
-    }
-
-    const updateActiveSection = () => {
-      const nextSection = getCurrentSection()
-
-      setActiveSection((current) =>
-        current === nextSection ? current : nextSection,
-      )
-    }
-
-    const observer = new IntersectionObserver(updateActiveSection, {
-      root: null,
-      rootMargin: '-30% 0px -45% 0px',
-      threshold: observerThresholds,
-    })
-
-    sections.forEach((section) => observer.observe(section))
-    updateActiveSection()
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
-
   const closeMenu = () => {
     setIsOpen(false)
-  }
-
-  const handleNavItemClick = (sectionId: SectionId) => {
-    setActiveSection(sectionId)
-    closeMenu()
   }
 
   const handleThemeToggle = () => {
@@ -156,32 +75,37 @@ export function Navbar() {
         aria-label="Primary navigation"
         className="site-container nav-content"
       >
-        <a
-          className="nav-brand"
-          href="#home"
-          onClick={() => handleNavItemClick('home')}
-        >
+        <a className="nav-brand" href={getRouteHref('home')} onClick={closeMenu}>
           <span aria-hidden="true" className="brand-mark" />
           <span>Jordnary</span>
         </a>
         <div className="hidden items-center gap-1 lg:flex">
-          {navItems.map((item) => {
-            const isActive = activeSection === item.id
-
-            return (
-              <a
-                aria-current={isActive ? 'page' : undefined}
-                className={`nav-link ${isActive ? 'is-active' : ''}`}
-                href={item.href}
-                key={item.href}
-                onClick={() => handleNavItemClick(item.id)}
-              >
-                <span className="nav-link-label">{item.label}</span>
-              </a>
-            )
-          })}
+          {sitePages.map((page) => (
+            <a
+              aria-current={activePage === page ? 'page' : undefined}
+              className={`nav-link ${activePage === page ? 'is-active' : ''}`}
+              href={getRouteHref(page)}
+              key={page}
+            >
+              <span className="nav-link-label">{siteRoutes[page].label}</span>
+            </a>
+          ))}
         </div>
         <div className="nav-actions">
+          <button
+            aria-haspopup="dialog"
+            aria-label="搜索站内内容"
+            className="nav-search-button"
+            onClick={() => {
+              closeMenu()
+              onSearchOpen()
+            }}
+            type="button"
+          >
+            <SearchIcon />
+            <span className="nav-search-label">搜索</span>
+            <kbd className="nav-search-shortcut">⌘ K</kbd>
+          </button>
           <button
             aria-label={themeToggleLabel}
             aria-pressed={theme === 'dark'}
@@ -215,11 +139,7 @@ export function Navbar() {
               </svg>
             </span>
           </button>
-          <a
-            className="btn-secondary hidden lg:inline-flex"
-            href="#contact"
-            onClick={() => handleNavItemClick('contact')}
-          >
+          <a className="btn-secondary hidden lg:inline-flex" href={getRouteHref('contact')}>
             联系我
           </a>
           <button
@@ -242,40 +162,43 @@ export function Navbar() {
       </nav>
 
       <div
-        className={`mobile-nav-panel lg:hidden ${
-          isOpen ? 'is-open' : ''
-        }`}
+        className={`mobile-nav-panel lg:hidden ${isOpen ? 'is-open' : ''}`}
         id="mobile-navigation"
       >
         <div className="mobile-nav-list">
-          {navItems.map((item, index) => {
-            const isActive = activeSection === item.id
-
-            return (
-              <a
-                aria-current={isActive ? 'page' : undefined}
-                className={`mobile-nav-link mobile-nav-item ${
-                  isActive ? 'is-active' : ''
-                }`}
-                href={item.href}
-                key={item.href}
-                onClick={() => handleNavItemClick(item.id)}
-                style={getStaggerStyle(index)}
-              >
-                <span className="nav-link-label">{item.label}</span>
-              </a>
-            )
-          })}
+          {sitePages.map((page, index) => (
+            <a
+              aria-current={activePage === page ? 'page' : undefined}
+              className={`mobile-nav-link mobile-nav-item ${
+                activePage === page ? 'is-active' : ''
+              }`}
+              href={getRouteHref(page)}
+              key={page}
+              onClick={closeMenu}
+              style={getStaggerStyle(index)}
+            >
+              <span className="nav-link-label">{siteRoutes[page].label}</span>
+            </a>
+          ))}
           <a
             className="btn-primary mobile-nav-item mt-2 w-full"
-            href="#contact"
-            onClick={() => handleNavItemClick('contact')}
-            style={getStaggerStyle(navItems.length)}
+            href={getRouteHref('contact')}
+            onClick={closeMenu}
+            style={getStaggerStyle(sitePages.length)}
           >
             联系我
           </a>
         </div>
       </div>
     </header>
+  )
+}
+
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <circle cx="10.8" cy="10.8" r="6.3" />
+      <path d="m16 16 4.2 4.2" />
+    </svg>
   )
 }

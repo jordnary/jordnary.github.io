@@ -31,9 +31,9 @@ export function Timeline() {
   return (
     <PageSection
       id="timeline"
-      eyebrow="Timeline"
-      title="学习成长时间线"
-      description="用 Now、Recently、Next 记录当前重点、近期实践和下一步探索。"
+      eyebrow="Stage Plan"
+      title="学习阶段计划"
+      description="这是一条面向下一步的计划线：明确当前正在夯实什么、接下来准备验证什么，而不是罗列履历。"
     >
       <div className="timeline-shell">
         <div

@@ -4,10 +4,15 @@ on:
   push:
     branches: ['main']
 
+  schedule:
+    # 每 6 小时重新拉取 RSS、构建并发布一次（UTC）。
+    - cron: '17 */6 * * *'
+
   workflow_dispatch:
 
 permissions:
   contents: read
+  deployments: write
   pages: write
   id-token: write
 
@@ -50,3 +55,29 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  cleanup-deployments:
+    name: Keep latest Pages deployment
+    needs: deploy
+    if: ${{ needs.deploy.result == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete previous Pages deployments
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          mapfile -t old_deployments < <(
+            gh api --method GET --paginate --slurp \
+              "repos/${REPOSITORY}/deployments?environment=github-pages&per_page=100" \
+              --jq 'flatten | sort_by(.created_at) | reverse | .[1:][] | .id'
+          )
+
+          for deployment_id in "${old_deployments[@]}"; do
+            gh api --method POST \
+              "repos/${REPOSITORY}/deployments/${deployment_id}/statuses" \
+              -f state=inactive
+            gh api --method DELETE "repos/${REPOSITORY}/deployments/${deployment_id}"
+          done

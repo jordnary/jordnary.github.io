@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Reveal } from './Reveal'
+import { getHashTargetId, scrollToElementId } from '../lib/hashScroll'
 
 type PageSectionProps = {
   children: ReactNode
@@ -16,6 +17,22 @@ export function PageSection({
   id,
   title,
 }: PageSectionProps) {
+  useEffect(() => {
+    if (getHashTargetId() !== id) {
+      return
+    }
+
+    scrollToElementId(id, { behavior: 'auto' })
+
+    const timeoutId = window.setTimeout(() => {
+      scrollToElementId(id, { behavior: 'auto' })
+    }, 100)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [id])
+
   return (
     <section className="page-section" id={id}>
       <div className="site-container">

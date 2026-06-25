@@ -13,7 +13,7 @@ export function isTheme(value: string | null | undefined): value is Theme {
 
 export function getStoredTheme() {
   try {
-    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+    const storedTheme = window.sessionStorage.getItem(THEME_STORAGE_KEY)
 
     return isTheme(storedTheme) ? storedTheme : null
   } catch {
@@ -21,18 +21,13 @@ export function getStoredTheme() {
   }
 }
 
-export function getSystemTheme(): Theme {
-  if (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-color-scheme: light)').matches
-  ) {
-    return 'light'
+export function getInitialTheme(): Theme {
+  const storedTheme = getStoredTheme()
+
+  if (storedTheme) {
+    return storedTheme
   }
 
-  return 'dark'
-}
-
-export function getInitialTheme(): Theme {
   if (typeof document !== 'undefined') {
     const currentTheme = document.documentElement.dataset.theme
 
@@ -41,7 +36,7 @@ export function getInitialTheme(): Theme {
     }
   }
 
-  return getStoredTheme() ?? getSystemTheme()
+  return 'light'
 }
 
 export function applyTheme(theme: Theme) {
@@ -66,7 +61,7 @@ export function applyTheme(theme: Theme) {
 
 export function storeTheme(theme: Theme) {
   try {
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    window.sessionStorage.setItem(THEME_STORAGE_KEY, theme)
   } catch {
     // Theme switching still works even when storage is unavailable.
   }
