@@ -69,13 +69,25 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
-          mapfile -t old_deployments < <(
-            gh api --method GET --paginate --slurp \
+          deployment_rows="$(
+            gh api --method GET --paginate \
               "repos/${REPOSITORY}/deployments?environment=github-pages&per_page=100" \
-              --jq 'flatten | sort_by(.created_at) | reverse | .[1:][] | .id'
+              --jq '.[] | [.created_at, .id] | @tsv'
+          )"
+
+          mapfile -t old_deployments < <(
+            printf '%s\n' "${deployment_rows}" |
+              sort -r |
+              cut -f2 |
+              tail -n +2
           )
 
+          if ((${#old_deployments[@]} == 0)); then
+            echo "No previous Pages deployments to delete"
+          fi
+
           for deployment_id in "${old_deployments[@]}"; do
+            echo "Deleting previous Pages deployment ${deployment_id}"
             gh api --method POST \
               "repos/${REPOSITORY}/deployments/${deployment_id}/statuses" \
               -f state=inactive
