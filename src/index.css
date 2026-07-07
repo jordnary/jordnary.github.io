@@ -5700,8 +5700,8 @@ a {
       transform 150ms ease;
   }
 
-  .site-search-result:hover,
-  .site-search-result.is-active {
+  .site-search-result.is-active,
+  .site-search-dialog:not(.is-keyboard-navigating) .site-search-result:hover {
     border-color: rgb(103 232 249 / 0.24);
     background: rgb(103 232 249 / 0.08);
     transform: translateX(0.18rem);
@@ -5749,8 +5749,8 @@ a {
     transition: color 150ms ease, transform 150ms ease;
   }
 
-  .site-search-result:hover .site-search-result-arrow,
-  .site-search-result.is-active .site-search-result-arrow {
+  .site-search-result.is-active .site-search-result-arrow,
+  .site-search-dialog:not(.is-keyboard-navigating) .site-search-result:hover .site-search-result-arrow {
     color: var(--color-primary-cyan-text);
     transform: translateX(0.16rem);
   }

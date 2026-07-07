@@ -7,15 +7,20 @@ type SiteSearchProps = {
   onOpen: () => void
 }
 
+type SearchNavigationMode = 'pointer' | 'keyboard'
+
 export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(-1)
+  const [navigationMode, setNavigationMode] = useState<SearchNavigationMode>('pointer')
   const inputRef = useRef<HTMLInputElement>(null)
   const resultRefs = useRef<Array<HTMLAnchorElement | null>>([])
   const results = useMemo(() => searchSite(query).slice(0, 8), [query])
 
   const closeSearch = useCallback(() => {
     setQuery('')
+    setActiveIndex(-1)
+    setNavigationMode('pointer')
     onClose()
   }, [onClose])
 
@@ -65,6 +70,17 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
   const updateQuery = (value: string) => {
     setQuery(value)
     setActiveIndex(-1)
+    setNavigationMode('pointer')
+  }
+
+  const activateResultFromPointer = (index: number) => {
+    if (navigationMode !== 'pointer') {
+      setNavigationMode('pointer')
+    }
+
+    if (activeIndex !== index) {
+      setActiveIndex(index)
+    }
   }
 
   const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -72,13 +88,17 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
 
     if (event.key === 'ArrowDown') {
       event.preventDefault()
+      setNavigationMode('keyboard')
       setActiveIndex((index) => (index + 1) % results.length)
       return
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault()
-      setActiveIndex((index) => (index - 1 + results.length) % results.length)
+      setNavigationMode('keyboard')
+      setActiveIndex((index) => (
+        index < 0 ? results.length - 1 : (index - 1 + results.length) % results.length
+      ))
       return
     }
 
@@ -101,7 +121,7 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
     >
       <section
         aria-label="站内搜索"
-        className="site-search-dialog"
+        className={`site-search-dialog${navigationMode === 'keyboard' ? ' is-keyboard-navigating' : ''}`}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div className="site-search-input-row">
@@ -147,7 +167,7 @@ export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
                     href={result.href}
                     id={`site-search-result-${index}`}
                     onClick={closeSearch}
-                    onMouseEnter={() => setActiveIndex(index)}
+                    onMouseMove={() => activateResultFromPointer(index)}
                     ref={(node) => {
                       resultRefs.current[index] = node
                     }}
