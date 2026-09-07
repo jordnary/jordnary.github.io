@@ -71,7 +71,7 @@ const visible = () => getComputedStyle(tools()).visibility === 'visible'
 try {
   render()
   await nextPaint()
-  check(!document.querySelector('.live2d-companion'), 'Mobile has neither a model nor a launcher')
+  check(!!document.querySelector('.live2d-launcher') && !document.querySelector('.live2d-stage'), 'Mobile defaults to a collapsed launcher without mounting the model')
   check(!performance.getEntriesByType('resource').some((entry) => /\/src\/lib\/live2d|\/live2d\/vampire|cubism|pixi/.test(entry.name)), 'Mobile does not request the rendering runtime or model assets')
 
   compact.set(false)
@@ -342,7 +342,7 @@ try {
   check(localStorage.getItem(storageKey) === 'true', 'Desktop collapse preference is persisted')
   compact.set(true)
   await nextPaint()
-  check(!document.querySelector('.live2d-companion'), 'Mobile also removes the collapsed launcher')
+  check(!!document.querySelector('.live2d-launcher') && !document.querySelector('.live2d-stage'), 'Mobile preserves its collapsed launcher independently of desktop')
   compact.set(false)
   await nextPaint()
   check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed preference')

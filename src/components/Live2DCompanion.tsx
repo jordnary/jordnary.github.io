@@ -43,24 +43,27 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     () => true,
   )
   const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(preferenceKey))
+  const [mobileCollapsed, setMobileCollapsed] = useState(true)
+  const collapsed = compact ? mobileCollapsed : desktopCollapsed
   const [chatEnabled, setChatEnabled] = useState(() => readPreference(chatPreferenceKey, true))
   const [restoreFocus, setRestoreFocus] = useState(false)
   const [homeRequested, setHomeRequested] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (desktopCollapsed && restoreFocus) launcherRef.current?.focus({ preventScroll: true })
-  }, [desktopCollapsed, restoreFocus])
-
-  // Do not mount a launcher, import the renderer or fetch model assets on mobile.
-  if (compact) return null
+    if (collapsed && restoreFocus) launcherRef.current?.focus({ preventScroll: true })
+  }, [collapsed, restoreFocus])
 
   const toggle = () => {
     setRestoreFocus(true)
-    setHomeRequested(desktopCollapsed)
-    setDesktopCollapsed(!desktopCollapsed)
+    setHomeRequested(collapsed)
+    if (compact) {
+      setMobileCollapsed(!collapsed)
+      return
+    }
+    setDesktopCollapsed(!collapsed)
     try {
-      localStorage.setItem(preferenceKey, String(!desktopCollapsed))
+      localStorage.setItem(preferenceKey, String(!collapsed))
     } catch { /* Storage is optional, including in private browsing. */ }
   }
 
@@ -72,8 +75,8 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   }
 
   return (
-    <aside aria-label="网站看板娘" className={`live2d-companion${desktopCollapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
-      {!desktopCollapsed ? (
+    <aside aria-label="网站看板娘" className={`live2d-companion${collapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
+      {!collapsed ? (
         <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
