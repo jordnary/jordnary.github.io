@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 import type { Live2DScene } from '../lib/live2d'
-import { createCompanionLoader, type LoadState } from '../lib/companion-loading'
+import { CompanionLoadError, createCompanionLoader, type LoadState } from '../lib/companion-loading'
 import type { CompanionReaction, CompanionState } from '../lib/companion-behavior'
 import type { CompanionHit } from '../lib/live2d-hit'
 import { githubProfileUrl } from '../lib/github'
@@ -120,6 +120,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   const sceneRef = useRef<Live2DScene | null>(null)
   const suspendedRef = useRef(suspended)
   const entranceRef = useRef(homeRequested)
+  const recoveringRef = useRef(false)
   const homePrepared = useEffectEvent(onHomePrepared)
   const [loadState, setLoadState] = useState<LoadState>({ status: 'waiting', stage: 'runtime', slow: false })
   const status = loadState.status
@@ -140,13 +141,14 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   useEffect(() => {
     suspendedRef.current = suspended
     sceneRef.current?.pause(document.hidden || suspended || !!document.querySelector('.toast'))
+    loaderRef.current?.sync()
   }, [suspended])
 
   useEffect(() => {
     if (!page || introducedPageRef.current === page) return
     const available = chatEnabled && !suspended && !document.hidden && !document.querySelector('.toast')
     // Initial loading may finish the current visit; unavailable visits are discarded.
-    if (available && (status === 'loading' || status === 'waiting')) return
+    if (available && !recoveringRef.current && (status === 'loading' || status === 'waiting')) return
     introducedPageRef.current = page
     if (available && status === 'ready') sceneRef.current?.introduce(companionIntroductions[page])
   }, [page, status, chatEnabled, suspended, introducedPageRef])
@@ -213,6 +215,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       hover(false)
     }
     const syncVisibility = () => {
+      loaderRef.current?.sync()
       sceneRef.current?.pause(!available())
       if (!available()) {
         discardIntroduction()
@@ -264,19 +267,35 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       }
     }
 
+    const contextLost = (event: Event) => { event.preventDefault(); loader.contextLost() }
+    const contextRestored = () => loader.contextRestored()
+    const disconnectCanvas = () => {
+      canvas.removeEventListener('webglcontextlost', contextLost)
+      canvas.removeEventListener('webglcontextrestored', contextRestored)
+      canvas.remove()
+    }
     const loader = createCompanionLoader<Live2DScene>({
+      available,
+      online: () => navigator.onLine,
       async load(signal, onStage) {
-        canvas.remove()
+        disconnectCanvas()
         canvas = document.createElement('canvas')
         canvas.setAttribute('aria-hidden', 'true')
+        canvas.addEventListener('webglcontextlost', contextLost)
+        canvas.addEventListener('webglcontextrestored', contextRestored)
         container.append(canvas)
-        const { createLive2DScene } = await import('../lib/live2d')
+        const { createLive2DScene } = await import('../lib/live2d').catch(() => { throw new CompanionLoadError('module') })
         signal.throwIfAborted()
         return createLive2DScene(canvas, container, signal, (state) => {
           if (!signal.aborted) setInteraction(state)
         }, () => !available(), entranceRef.current, onStage)
       },
       change(state) {
+        if (state.status === 'error' || state.status === 'offline' || state.status === 'recovering') {
+          recoveringRef.current = true
+          entranceRef.current = false
+          discardIntroduction()
+        }
         if (state.status !== 'ready') {
           sceneRef.current = null
           canvas.classList.remove('is-ready')
@@ -295,6 +314,9 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       },
     })
     loaderRef.current = loader
+    const connected = () => loader.connected()
+    window.addEventListener('online', connected)
+    window.addEventListener('offline', loader.sync)
     let frame = 0
     let idle = 0
     let startup = 0
@@ -338,7 +360,9 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       if (idle) window.cancelIdleCallback(idle)
       loader.destroy()
       loaderRef.current = null
-      canvas.remove()
+      disconnectCanvas()
+      window.removeEventListener('online', connected)
+      window.removeEventListener('offline', loader.sync)
       toastObserver.disconnect()
       sceneRef.current?.destroy()
       sceneRef.current = null
@@ -396,8 +420,10 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         ]} />
       ) : (
         <div className="live2d-placeholder">
-          <p role="status">{status === 'error' ? (loadState.failure === 'webgl' ? '暂时无法显示动画' : '暂时没能赶到') : loadState.slow ? '这次有点慢，还在准备…' : '正在赶来…'}</p>
+          {(status === 'error' || status === 'offline') && <CompanionIcon />}
+          <p aria-atomic="true" role="status">{status === 'offline' ? '网络似乎断开了，连接恢复后会再试' : status === 'recovering' ? (loadState.failure === 'webgl' ? '正在恢复动画…' : '正在重新连接…') : status === 'error' ? (loadState.failure === 'webgl' ? '暂时无法显示动画' : loadState.failure === 'resource' ? '角色资源暂时不可用' : loadState.failure === 'module' ? '页面组件未能加载，请重试或刷新页面' : '暂时没能赶到') : loadState.slow ? '这次有点慢，还在准备…' : '正在赶来…'}</p>
           {status === 'error' && <button onClick={() => loaderRef.current?.retry()} type="button">再试一次</button>}
+          {status === 'error' && loadState.failure === 'module' && <button onClick={() => window.location.reload()} type="button">刷新页面</button>}
           <button aria-label="收起看板娘" className="live2d-placeholder-close" onClick={onCollapse} title="收起看板娘" type="button"><CollapseIcon /></button>
         </div>
       )}

@@ -4,6 +4,8 @@ import { createCompanionBehavior, type CompanionReaction, type CompanionState } 
 import { createCompanionHitTest, hitAlphaThreshold, type CompanionHit } from './live2d-hit'
 import { CompanionLoadError, type LoadStage } from './companion-loading'
 import { loadCompanionAssets } from './live2d-assets'
+import { createMotionLoader } from './companion-motion-loader'
+import { classifyLoadError } from './companion-loading'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
 let corePromise: Promise<void> | undefined
@@ -59,7 +61,7 @@ export async function createLive2DScene(
   onLoadStage('runtime')
   await loadCore()
   signal.throwIfAborted()
-  const [{ Application }, { Live2DModel, MotionPreloadStrategy }] = await Promise.all([
+  const [{ Application, Container, Texture }, { Live2DModel, Live2DFactory, Cubism4ModelSettings, MotionPreloadStrategy }] = await Promise.all([
     import('pixi.js'),
     import('pixi-live2d-display/cubism4'),
   ]).catch(() => { throw new CompanionLoadError('module') })
@@ -73,17 +75,32 @@ export async function createLive2DScene(
   let behavior: ReturnType<typeof createCompanionBehavior> | undefined
   let entranceTimeout = 0
   let destroyed = false
+  let reconnect: (() => void) | undefined
+  let preparing = false
+  const textures: import('pixi.js').Texture[] = []
+  const releaseModel = () => {
+    if (model) {
+      if (model.internalModel) model.destroy({ children: true })
+      else {
+        model.emit('destroy')
+        Container.prototype.destroy.call(model, { children: true })
+      }
+      model = undefined
+    }
+    textures.splice(0).forEach((texture) => texture.destroy(true))
+    assets.release()
+  }
   const destroy = () => {
     if (destroyed) return
     destroyed = true
     window.clearTimeout(entranceTimeout)
     observer?.disconnect()
+    if (reconnect) window.removeEventListener('online', reconnect)
     behavior?.destroy()
     // Stop the ticker immediately, including when unmounted during a model fetch.
     app?.stop()
-    model?.destroy({ children: true, texture: true, baseTexture: true })
+    if (!preparing) releaseModel()
     app?.destroy(false)
-    assets.release()
     signal.removeEventListener('abort', destroy)
   }
 
@@ -102,28 +119,56 @@ export async function createLive2DScene(
       sharedTicker: false,
     }) } catch { throw new CompanionLoadError('webgl') }
     signal.addEventListener('abort', destroy, { once: true })
-    const loadedModel = await Live2DModel.from(
-      assets.source,
-      { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.NONE, idleMotionGroup: 'idle' },
-    ) as Live2DModel<Cubism4InternalModel>
-    if (signal.aborted) {
-      loadedModel.destroy({ children: true, texture: true, baseTexture: true })
+    const settings = new Cubism4ModelSettings(assets.source)
+    // The adapter's legacy URL resolver corrupts blob URLs; retain native resolution.
+    settings.resolveURL = (path) => new URL(path, settings.url).href
+    const options = { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.NONE, idleMotionGroup: 'idle' }
+    preparing = true
+    try {
+      // Own textures and the partial model even when the factory rejects during setup.
+      const results = await Promise.allSettled(settings.textures.map(async (path) => {
+        const texture = await Texture.fromURL(settings.resolveURL(path))
+        textures.push(texture)
+      }))
+      if (results.some((result) => result.status === 'rejected')) throw new CompanionLoadError('resource')
       signal.throwIfAborted()
+      model = new Live2DModel(options) as Live2DModel<Cubism4InternalModel>
+      await Live2DFactory.setupLive2DModel(model, settings, options).catch(() => { throw new CompanionLoadError('resource') })
+    } finally {
+      preparing = false
+      if (destroyed) releaseModel()
     }
-    model = loadedModel
+    signal.throwIfAborted()
+    if (!model) throw new CompanionLoadError('resource')
     const currentApp = app
     const currentModel = model
     const internal = model.internalModel
     const manager = internal.motionManager
+    const failedMotions = new Map<string, boolean>()
+    manager.on('motionLoadError', (group: string, index: number, error: unknown) => {
+      failedMotions.set(`${group}:${index}`, classifyLoadError(error) === 'network')
+    })
+    const originalLoadMotion = manager.loadMotion.bind(manager)
+    const motions = createMotionLoader({
+      load: originalLoadMotion,
+      reset(group, index) {
+        // pixi-live2d-display 0.4.0 retains both a null motion and its failed task.
+        const cached = manager.motionGroups[group]
+        if (cached?.[index] === null) delete cached[index]
+        const tasks = Live2DFactory.motionTasksMap.get(manager)?.[group]
+        if (tasks) delete tasks[index]
+        failedMotions.delete(`${group}:${index}`)
+      },
+      networkFailure: (group, index) => failedMotions.get(`${group}:${index}`) ?? false,
+    }, signal)
+    manager.loadMotion = motions.load
+    reconnect = motions.connected
+    window.addEventListener('online', reconnect)
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     app.stage.addChild(model)
     onLoadStage('motions')
     // Preload idle for recovery, but never start it ahead of the entrance.
-    const idleMotion = await Promise.race([
-      manager.loadMotion('idle', 0).catch(() => undefined),
-      new Promise<undefined>((resolve) => { entranceTimeout = window.setTimeout(resolve, 8000) }),
-    ])
-    window.clearTimeout(entranceTimeout)
+    let idleMotion = await manager.loadMotion('idle', 0)
     idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
     const homeMotion = !playHome || reducedMotion.matches ? undefined : await Promise.race([
@@ -246,7 +291,12 @@ export async function createLive2DScene(
         if (destroyed) return
         manager.stopAllMotions()
         internal.focusController.focus(0, 0, true)
-        if (idleMotion) void currentModel.motion('idle', 0, 3).catch(() => false)
+        void manager.loadMotion('idle', 0).then((motion) => {
+          if (!motion || destroyed || behavior?.state.phase === 'responding' || behavior?.state.phase === 'noticing') return
+          idleMotion = motion
+          motion.setFadeInTime(0.45)
+          return currentModel.motion('idle', 0, 3)
+        }).catch(() => false)
       },
       reducedMotion: () => reducedMotion.matches,
       change(state) {

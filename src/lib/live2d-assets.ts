@@ -29,15 +29,21 @@ export async function loadCompanionAssets(url: string, signal: AbortSignal) {
       || !Array.isArray(files.Textures) || !files.Textures.length
       || !files.Textures.every((path: unknown) => typeof path === 'string')
       || (files.Physics != null && typeof files.Physics !== 'string')) throw new CompanionLoadError('resource')
-    const blob = async (path: string) => {
+    const blob = async (path: string, kind: 'moc' | 'texture' | 'physics') => {
       const data = await (await fetchResource(new URL(path, url).href)).blob()
+      if (kind === 'moc' && await data.slice(0, 4).text() !== 'MOC3') throw new CompanionLoadError('resource')
+      if (kind === 'physics') JSON.parse(await data.text())
+      if (kind === 'texture') {
+        try { const bitmap = await createImageBitmap(data); bitmap.close() }
+        catch { throw new CompanionLoadError('resource') }
+      }
       controller.signal.throwIfAborted()
       const objectURL = URL.createObjectURL(data)
       blobs.push(objectURL)
       return objectURL
     }
     const [moc, textures, physics] = await Promise.all([
-      blob(files.Moc), Promise.all(files.Textures.map(blob)), files.Physics ? blob(files.Physics) : undefined,
+      blob(files.Moc, 'moc'), Promise.all(files.Textures.map((path: string) => blob(path, 'texture'))), files.Physics ? blob(files.Physics, 'physics') : undefined,
     ])
     signal.throwIfAborted()
     return {

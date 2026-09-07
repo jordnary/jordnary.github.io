@@ -55,3 +55,53 @@ test('HTTP failures distinguish transient and permanent errors without retaining
   assert.equal(classifyLoadError(new SyntaxError()), 'resource')
   assert.equal(classifyLoadError(new Error()), 'unknown')
 })
+
+test('transient failures retry twice, stop while hidden, and do not loop on online events', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] })
+  let available = false
+  let online = true
+  let attempts = 0
+  const loader = createCompanionLoader({
+    async load() { attempts++; throw new CompanionLoadError('network') },
+    change() {}, ready() {}, available: () => available, online: () => online,
+  })
+  loader.start(); await flush()
+  t.mock.timers.tick(10000); await flush()
+  assert.equal(attempts, 1)
+  available = true; online = false; loader.sync()
+  assert.equal(loader.state.status, 'offline')
+  online = true; loader.connected(); loader.connected()
+  t.mock.timers.tick(0); await flush()
+  assert.equal(attempts, 2)
+  t.mock.timers.tick(4999); await flush()
+  assert.equal(attempts, 2)
+  t.mock.timers.tick(1); await flush()
+  assert.equal(attempts, 3)
+  assert.equal(loader.state.status, 'error')
+  loader.connected(); t.mock.timers.tick(60000); await flush()
+  assert.equal(attempts, 3)
+  loader.destroy()
+})
+
+test('WebGL recovery waits for restoration or timeout and is limited to two per minute', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] })
+  let attempts = 0
+  let destroys = 0
+  const loader = createCompanionLoader({
+    async load() { attempts++; return { destroy() { destroys++ } } }, change() {}, ready() {},
+  })
+  loader.start(); await flush()
+  loader.contextLost(); loader.contextLost()
+  assert.equal(destroys, 1)
+  t.mock.timers.tick(9999); await flush()
+  assert.equal(attempts, 1)
+  loader.contextRestored(); t.mock.timers.tick(0); await flush()
+  assert.equal(attempts, 2)
+  loader.contextLost(); t.mock.timers.tick(10000); await flush()
+  assert.equal(attempts, 3)
+  loader.contextLost(); loader.contextRestored(); t.mock.timers.tick(10000); await flush()
+  assert.equal(attempts, 3)
+  assert.equal(loader.state.failure, 'webgl')
+  assert.equal(loader.state.status, 'error')
+  loader.destroy()
+})
