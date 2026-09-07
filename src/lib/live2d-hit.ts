@@ -1,7 +1,7 @@
 import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
 
-export type CompanionHit = 'head' | 'body' | null
+export type CompanionHit = 'head' | 'special' | 'body' | null
 export const hitAlphaThreshold = 24
 // Verified against isolated drawable previews for this model: wing membranes,
 // spars, trailing ribbons and held ornaments are nested among body/face parts.
@@ -44,6 +44,7 @@ export function createCompanionHitTest(app: Application, model: Live2DModel<Cubi
     return null
   })
   const headIndex = core.getDrawableIndex('TouchHead')
+  const specialIndex = core.getDrawableIndex('TouchSpecial')
   const pixel = new Uint8Array(4)
   const saved = new Float32Array(raw.drawables.count)
   const local = { x: 0, y: 0 }
@@ -74,7 +75,10 @@ export function createCompanionHitTest(app: Application, model: Live2DModel<Cubi
       internal.localTransform.applyInverse(local, local)
       if (headIndex >= 0 && inMesh(local.x, local.y, internal.getDrawableVertices(headIndex), core.getDrawableVertexIndices(headIndex))
         && isolated('head', () => sample(x, y))) return 'head'
-      if (isolated('body', () => sample(x, y))) return 'body'
+      if (isolated('body', () => sample(x, y))) {
+        if (specialIndex >= 0 && inMesh(local.x, local.y, internal.getDrawableVertices(specialIndex), core.getDrawableVertexIndices(specialIndex))) return 'special'
+        return 'body'
+      }
       return null
     },
     // Used only by the development fixture to inspect the exact semantic alpha masks.

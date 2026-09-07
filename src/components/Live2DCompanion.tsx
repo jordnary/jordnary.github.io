@@ -2,7 +2,6 @@ import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } fro
 import type { Live2DScene } from '../lib/live2d'
 import type { CompanionReaction, CompanionState } from '../lib/companion-behavior'
 import type { CompanionHit } from '../lib/live2d-hit'
-import { onCompanionComplete } from '../lib/companion-events'
 import { githubProfileUrl } from '../lib/github'
 import { contactProfile } from '../data/contact'
 import { CompanionTools, type CompanionAction } from './CompanionTools'
@@ -14,14 +13,6 @@ const preferenceKey = 'site-live2d-collapsed'
 const chatPreferenceKey = 'site-live2d-chat-enabled'
 const interactiveSelector = 'a, button, input, textarea, select, label, summary, [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="slider"], [tabindex], [contenteditable]:not([contenteditable="false"])'
 const noActions: readonly CompanionAction[] = []
-const lines = [
-  '欢迎来做客，今天也一起发现有趣的事吧。',
-  '想看看最近在做什么？去「项目」里逛逛吧。',
-  '学习的每一小步，都算数。',
-  '盯着屏幕很久了？记得眨眨眼、喝口水。',
-  '我就在这里，陪你慢慢逛。',
-]
-const headpatLines = ['唔，轻轻的就好～', '收到你的摸摸啦，谢谢你。', '头发要被揉乱啦，不过很开心。']
 
 function subscribeCompact(callback: () => void) {
   const query = window.matchMedia(compactQuery)
@@ -52,6 +43,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(preferenceKey))
   const [chatEnabled, setChatEnabled] = useState(() => readPreference(chatPreferenceKey, true))
   const [restoreFocus, setRestoreFocus] = useState(false)
+  const [homeRequested, setHomeRequested] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -63,6 +55,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
 
   const toggle = () => {
     setRestoreFocus(true)
+    setHomeRequested(desktopCollapsed)
     setDesktopCollapsed(!desktopCollapsed)
     try {
       localStorage.setItem(preferenceKey, String(!desktopCollapsed))
@@ -79,7 +72,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   return (
     <aside aria-label="网站看板娘" className={`live2d-companion${desktopCollapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
       {!desktopCollapsed ? (
-        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
+        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomeStarted={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
           aria-expanded="false"
@@ -97,9 +90,11 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   )
 }
 
-function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnabled, onToggleChat }: CompanionProps & {
+function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequested, onHomeStarted, chatEnabled, onToggleChat }: CompanionProps & {
   onCollapse: () => void
   focusOnReady: boolean
+  homeRequested: boolean
+  onHomeStarted: () => void
   chatEnabled: boolean
   onToggleChat: () => void
 }) {
@@ -107,26 +102,31 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<Live2DScene | null>(null)
   const suspendedRef = useRef(suspended)
-  const lineRef = useRef(0)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [attempt, setAttempt] = useState(0)
   const [interaction, setInteraction] = useState<CompanionState>({ phase: 'idle', reaction: null, text: '' })
   const [hovered, setHovered] = useState(false)
 
-  const talk = (reaction: CompanionReaction = 'greeting', completion?: string) => {
-    if (status !== 'ready' || suspended || !chatEnabled || document.hidden || document.querySelector('.toast')) return
-    const choices = reaction === 'headpat' ? headpatLines : lines
-    const text = completion ?? choices[lineRef.current % choices.length]
-    if (sceneRef.current?.react(reaction, text)) lineRef.current++
+  const talk = (reaction: CompanionReaction = 'touch_body') => {
+    if (status !== 'ready' || suspended || (!chatEnabled && reaction !== 'mail') || document.hidden || document.querySelector('.toast')) return
+    sceneRef.current?.react(reaction)
   }
   const talkFromPointer = useEffectEvent(talk)
 
-  useEffect(() => onCompanionComplete((text) => talkFromPointer('complete', text)), [])
+  useEffect(() => {
+    if (status === 'ready') sceneRef.current?.setChatEnabled(chatEnabled)
+  }, [status, chatEnabled])
 
   useEffect(() => {
     suspendedRef.current = suspended
-    sceneRef.current?.pause(document.hidden || suspended)
+    sceneRef.current?.pause(document.hidden || suspended || !!document.querySelector('.toast'))
   }, [suspended])
+
+  useEffect(() => {
+    if (status !== 'ready' || !homeRequested || suspended || document.hidden || document.querySelector('.toast')) return
+    if (sceneRef.current?.react('home')) onHomeStarted()
+    // Visibility restoration can publish a fresh idle state without changing its phase.
+  }, [status, homeRequested, suspended, interaction, onHomeStarted])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -216,7 +216,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       if (Math.hypot(event.clientX - started.x, event.clientY - started.y) > 6) return
       if (hitModel(event) === started.hit) {
         hover(true)
-        talkFromPointer(started.hit === 'head' ? 'headpat' : 'greeting')
+        talkFromPointer(started.hit === 'head' ? 'touch_head' : started.hit === 'special' ? 'touch_special' : 'touch_body')
       }
     }
 
@@ -279,7 +279,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       </div>
       <div
         aria-disabled={status === 'ready' ? !chatEnabled : undefined}
-        aria-label={chatEnabled ? '看板娘，点击头部摸头，点击身体打招呼；按 Enter 或空格打招呼' : '看板娘，对话已关闭，可在功能列表中开启'}
+        aria-label={chatEnabled ? '看板娘，点击头部、胸部或其他部位互动；按 Enter 或空格触发身体互动' : '看板娘，对话已关闭，可在功能列表中开启'}
         className="live2d-canvas-wrap"
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
@@ -295,16 +295,13 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       {status === 'ready' ? (
         <CompanionTools actions={[
           { id: 'github', label: '访问 GitHub 主页', icon: <ContactIcon title="GitHub" />, href: githubProfileUrl, external: true },
-          { id: 'email', label: '通过 Gmail 联系我', icon: <ContactIcon title="Email" />, href: `mailto:${contactProfile.email}` },
+          { id: 'email', label: '通过 Gmail 联系我', icon: <ContactIcon title="Email" />, href: `mailto:${contactProfile.email}`, onSelect: () => talk('mail') },
           {
             id: 'chat-toggle',
             label: chatEnabled ? '关闭人物点击对话' : '开启人物点击对话',
             icon: <ChatIcon enabled={chatEnabled} />,
             pressed: chatEnabled,
-            onSelect: () => {
-              sceneRef.current?.reset()
-              onToggleChat()
-            },
+            onSelect: onToggleChat,
           },
           ...(actions ?? noActions),
           { id: 'collapse', label: '收起看板娘', icon: <CollapseIcon />, onSelect: onCollapse },

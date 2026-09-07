@@ -1,6 +1,7 @@
 import { Application, Point } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel as Model } from 'pixi-live2d-display/cubism4'
 import { createCompanionHitTest } from '../src/lib/live2d-hit'
+import { companionMotions } from '../src/lib/companion-behavior'
 
 // Vite-only inspection page. All picking uses the production code and shipped assets.
 const script = document.createElement('script')
@@ -9,11 +10,11 @@ await new Promise<void>((resolve, reject) => { script.onload = () => resolve(); 
 const { Live2DModel } = await import('pixi-live2d-display/cubism4')
 const canvas = document.querySelector('#model') as HTMLCanvasElement
 const app = new Application({ view: canvas, width: 700, height: 540, backgroundAlpha: 0, autoStart: false })
-const model = await Live2DModel.from('/live2d/vampire/model.model3.json', { autoInteract: false, autoUpdate: false }) as Model<Cubism4InternalModel>
+const model = await Live2DModel.from('/live2d/vampire/model.model3.json', { autoInteract: false, autoUpdate: false, idleMotionGroup: 'idle' }) as Model<Cubism4InternalModel>
 app.stage.addChild(model)
 model.scale.set(0.1)
 model.position.set(125, 0)
-await model.motion('Idle', 0, 3)
+await model.motion('idle', 0, 3)
 model.update(0)
 app.render()
 const hit = createCompanionHitTest(app, model, canvas)
@@ -27,7 +28,7 @@ const button = (label: string, action: () => void) => {
   element.textContent = label; element.onclick = action; controls.append(element)
 }
 app.ticker.add(() => model.update(app.ticker.deltaMS))
-for (const group of ['Idle', 'HeadPat', 'Greeting', 'Complete']) {
+for (const group of ['idle', ...Object.keys(companionMotions)]) {
   button(group, () => { app.start(); void model.motion(group, 0, 3) })
 }
 button('Freeze', () => app.stop())
@@ -44,7 +45,8 @@ const checks: string[] = []
 // Points annotated from the idle artwork, independently of the hit-test output.
 const points = [
   { name: 'head', x: 2050, y: 1800, expected: 'head' },
-  { name: 'torso', x: 2000, y: 2350, expected: 'body' },
+  { name: 'chest', x: 2000, y: 2350, expected: 'special' },
+  { name: 'waist', x: 1860, y: 2700, expected: 'body' },
   { name: 'leg', x: 1550, y: 3300, expected: 'body' },
   { name: 'backdrop', x: 2850, y: 1200, expected: null },
   { name: 'wing', x: 3180, y: 2630, expected: null },
@@ -70,12 +72,12 @@ info.textContent = checks.join('\n')
 button('Check motion endings', async () => {
   app.stop()
   const manager = model.internalModel.motionManager
-  for (const [group, duration] of [['HeadPat', 10.3], ['Greeting', 7.87], ['Complete', 6.1]] as const) {
+  for (const [group, { duration }] of Object.entries(companionMotions)) {
     let finished = false
     const finish = () => { finished = true }
     manager.on('motionFinish', finish)
     await model.motion(group, 0, 3)
-    for (let frame = 0; frame < (duration + 0.3) * 30; frame++) {
+    for (let frame = 0; frame < (duration / 1000 + 0.3) * 30; frame++) {
       // Exercise the real Cubism motion and deformation without a wall-clock wait.
       model.elapsedTime += 1000 / 30
       model.internalModel.update(1000 / 30, model.elapsedTime)
@@ -84,7 +86,7 @@ button('Check motion endings', async () => {
     await Promise.resolve()
     checks.push(`${finished ? 'PASS' : 'FAIL'}: ${group} finishes after one playback`)
   }
-  await model.motion('Idle', 0, 3)
+  await model.motion('idle', 0, 3)
   model.update(1); app.render()
   info.textContent = checks.join('\n')
 })

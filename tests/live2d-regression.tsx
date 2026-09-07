@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { Live2DCompanion } from '../src/components/Live2DCompanion'
 import { githubProfileUrl } from '../src/lib/github'
 import { contactProfile } from '../src/data/contact'
-import { notifyCompanionComplete, onCompanionComplete } from '../src/lib/companion-events'
+import { companionMotions } from '../src/lib/companion-behavior'
 import { Contact } from '../src/components/Contact'
 import '../src/index.css'
 
@@ -19,8 +19,8 @@ function check(condition: unknown, label: string) {
   if (!condition) throw new Error(label)
   passed++
 }
-async function until(predicate: () => unknown) {
-  const deadline = performance.now() + 25000
+async function until(predicate: () => unknown, timeout = 25000) {
+  const deadline = performance.now() + timeout
   while (!predicate()) {
     if (performance.now() > deadline) throw new Error('Expected browser state timed out')
     await delay(100)
@@ -80,6 +80,7 @@ try {
   const container = document.querySelector('.live2d-canvas-wrap') as HTMLElement
   check(container.clientWidth >= 192 && container.clientWidth <= 240 && container.clientHeight <= 336, 'Desktop canvas uses the compact reference size')
   check(!visible(), 'Tools are hidden before interaction')
+  check(phase() === 'idle' && !dialogue(), 'An initially expanded page starts in idle without playing home')
   check(!document.querySelector('.live2d-chat'), 'There is no separate chat control')
 
   const copy = document.createElement('canvas')
@@ -131,7 +132,7 @@ try {
     y: (artwork.top + (artwork.bottom - artwork.top) * y) / copy.height * container.clientHeight,
   })
   // Annotated torso and head landmarks, relative to the artwork (not canvas padding).
-  solid = artworkPoint(0.4, 0.5)
+  solid = artworkPoint(0.36, 0.64)
   mouse('pointercancel', { x: 0, y: 0 })
   check(solid && transparent, 'Independent alpha snapshot has solid artwork and internal transparent space')
   click({ x: -1, y: 0 })
@@ -187,18 +188,22 @@ try {
   check(!dialogue(), 'Opaque backdrop pixels do not trigger a character reaction')
   click(artworkPoint(0.42, 0.36))
   await nextPaint()
-  check(reaction() === 'headpat' && !!dialogue(), 'A head click selects the head-pat response and its own dialogue')
+  check(reaction() === 'touch_head' && dialogue() === companionMotions.touch_head.text, 'A head click selects the head-pat response and its own dialogue')
+  await until(() => phase() === 'idle')
+
+  click(artworkPoint(0.4, 0.5))
+  await nextPaint()
+  check(reaction() === 'touch_special' && dialogue() === companionMotions.touch_special.text, 'A chest click selects touch_special and its exact dialogue')
   await until(() => phase() === 'idle')
 
   click()
   await nextPaint()
   const firstLine = dialogue()
-  check(firstLine.length > 0, 'A primary click on the torso speaks')
-  check(reaction() === 'greeting', 'Body clicks greet instead of playing a head pat')
+  check(firstLine.length > 0, 'A primary click on the body speaks')
+  check(reaction() === 'touch_body' && dialogue() === companionMotions.touch_body.text, 'Other body parts select touch_body and its exact dialogue')
   click()
-  notifyCompanionComplete('Do not interrupt')
   await nextPaint()
-  check(dialogue() === firstLine, 'Rapid clicks and automatic completion cannot interrupt an active response')
+  check(dialogue() === firstLine, 'Rapid clicks cannot interrupt an active touch response')
   const bubbleRect = document.querySelector('.live2d-dialogue p')!.getBoundingClientRect()
   const artworkCenter = canvasRect.left + (artwork.left + artwork.right) / 2 / copy.width * canvasRect.width
   const artworkTop = canvasRect.top + artwork.top / copy.height * canvasRect.height
@@ -235,8 +240,17 @@ try {
   await until(() => phase() === 'idle')
   container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await nextPaint()
-  check(dialogue() !== firstLine, 'The character itself supports keyboard chat')
+  check(dialogue() === firstLine && reaction() === 'touch_body', 'Keyboard chat uses the same body action and dialogue')
   const secondLine = dialogue()
+  const mail = document.querySelector('[aria-label="通过 Gmail 联系我"]') as HTMLAnchorElement
+  // Exercise the link handler without opening an external mail application.
+  mail.addEventListener('click', (event) => event.preventDefault(), { once: true })
+  mail.click()
+  await nextPaint()
+  check(reaction() === 'mail' && dialogue() === companionMotions.mail.text, 'The mailbox link triggers mail even while a touch response is active')
+  await until(() => phase() === 'idle')
+  container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+  await nextPaint()
   const action = document.querySelector('[aria-label="Test page action"]') as HTMLButtonElement
   action.click()
   await nextPaint()
@@ -293,12 +307,18 @@ try {
   await nextPaint()
   check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed preference')
   ;(document.querySelector('.live2d-launcher') as HTMLButtonElement).click()
+  render(true)
   await until(() => document.querySelector('canvas.is-ready'))
+  check(phase() === 'idle' && !dialogue(), 'An expansion that finishes loading while suspended waits before playing home')
+  render()
+  await until(() => reaction() === 'home' && phase() === 'responding')
+  check(!dialogue(), 'Expanding from collapsed triggers home without dialogue, including with chat disabled')
   check(document.querySelector('[aria-label="开启人物点击对话"]')?.getAttribute('aria-pressed') === 'false', 'Chat stays disabled after mobile transitions and collapse/reopen')
   root.unmount()
   root = createRoot(document.querySelector('#fixture')!)
   render()
   await until(() => document.querySelector('canvas.is-ready'))
+  check(phase() === 'idle', 'Restoring an expanded preference on a fresh mount does not replay home')
   const restoredContainer = document.querySelector('.live2d-canvas-wrap') as HTMLElement
   restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await nextPaint()
@@ -310,45 +330,42 @@ try {
   check(!!dialogue(), 'Keyboard users can re-enable chat after restoring a disabled preference')
 
   await until(() => phase() === 'idle')
-  notifyCompanionComplete('完成啦。')
-  await nextPaint()
-  check(dialogue() === '完成啦。' && reaction() === 'complete', 'Explicit successful operations have a distinct completion response')
-  await until(() => phase() === 'idle')
-  notifyCompanionComplete('重复完成')
-  await nextPaint()
-  check(!dialogue(), 'Repeated completion events respect their cooldown')
-
   reduced.set(false)
   restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await nextPaint()
-  check(phase() === 'noticing' && !dialogue(), 'Animated greeting first notices the user without speaking over the transition')
+  check(phase() === 'noticing' && !dialogue(), 'Animated body response first notices the user without speaking over the transition')
   await until(() => phase() === 'responding')
   const responseStarted = performance.now()
-  check(reaction() === 'greeting' && !!dialogue(), 'The greeting response starts after attention')
+  check(reaction() === 'touch_body' && !!dialogue(), 'The body response starts after attention')
   await until(() => phase() === 'recovering')
-  check(performance.now() - responseStarted < 9000, 'Greeting recovery uses the actual motion finish rather than its timeout fallback')
+  check(performance.now() - responseStarted < 8500, 'Body recovery uses the actual motion finish rather than its timeout fallback')
   check(!dialogue(), 'Actual motion completion starts recovery and clears dialogue')
   await until(() => phase() === 'idle')
-  check(phase() === 'idle', 'A real non-looping greeting returns to idle')
+  check(phase() === 'idle', 'A real non-looping body response returns to idle')
+
+  await until(() => phase() === 'responding' && reaction()?.startsWith('main_'), 65000)
+  const ambient = reaction() as 'main_1' | 'main_2' | 'main_3'
+  check(dialogue() === companionMotions[ambient].text, 'Real inactivity triggers a random main action with its matching dialogue')
+  restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+  await until(() => phase() === 'responding' && reaction() === 'touch_body')
+  check(dialogue() === companionMotions.touch_body.text, 'A deliberate interaction replaces automatic chatter')
 
   // Exercise the actual contact handler without changing the browser clipboard.
   const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
   const originalCopy = document.execCommand
-  const completed: string[] = []
-  const stopCompletion = onCompanionComplete((text) => completed.push(text))
   try {
     let resolveCopy!: () => void
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => new Promise<void>((resolve) => { resolveCopy = resolve }) } })
-    root.render(<Contact />)
+    root.render(<><Contact /><Live2DCompanion suspended={false} /></>)
     await nextPaint()
     ;(document.querySelector('.contact-copy-button') as HTMLButtonElement).click()
     await nextPaint()
-    check(!document.querySelector('.toast') && completed.length === 0, 'Pending copy operations do not claim completion')
+    check(!document.querySelector('.toast'), 'Pending copy operations do not claim completion')
     resolveCopy()
     await until(() => document.querySelector('.toast'))
-    check(document.querySelector('.toast')?.textContent === '已复制邮箱' && completed.length === 0, 'Successful copying shows its toast before the character response')
-    await until(() => completed.length === 1)
-    check(!document.querySelector('.toast') && completed[0].includes('邮箱复制好啦'), 'Copy success emits completion only after the toast disappears')
+    check(document.querySelector('.toast')?.textContent === '已复制邮箱', 'Successful copying shows its success toast')
+    await until(() => !document.querySelector('.toast'))
+    check(!dialogue(), 'Copy success does not trigger unused completion actions')
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('Clipboard unavailable')) } })
     document.execCommand = () => false
     ;(document.querySelector('.contact-copy-button') as HTMLButtonElement).click()
@@ -356,9 +373,8 @@ try {
     check(document.querySelector('.toast')?.textContent?.startsWith('复制失败'), 'Failed clipboard and fallback operations display a failure message')
     await until(() => !document.querySelector('.toast'))
     await nextPaint()
-    check(completed.length === 1, 'Failed operations never emit a completion response')
+    check(!dialogue(), 'Failed operations do not trigger a character response')
   } finally {
-    stopCompletion()
     document.execCommand = originalCopy
     if (clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
     else Reflect.deleteProperty(navigator, 'clipboard')

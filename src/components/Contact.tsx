@@ -4,7 +4,6 @@ import { Reveal } from './Reveal'
 import { Toast } from './Toast'
 import { ContactIcon, CopyIcon } from './icons'
 import { contactLinks, contactProfile } from '../data/contact'
-import { notifyCompanionComplete } from '../lib/companion-events'
 
 export function Contact() {
   const [copyToastId, setCopyToastId] = useState(0)
@@ -12,11 +11,7 @@ export function Contact() {
 
   const handleToastClose = useCallback(() => {
     setCopyToastId(0)
-    if (copySucceeded) {
-      // The toast and character share a corner; respond after the toast unmounts.
-      window.setTimeout(() => notifyCompanionComplete('邮箱复制好啦，随时欢迎来信。'), 0)
-    }
-  }, [copySucceeded])
+  }, [])
 
   async function handleCopyEmail() {
     setCopySucceeded(await copyToClipboard(contactProfile.email))

@@ -18,9 +18,9 @@
 
 ## 3. 从随机短句升级为角色反馈
 
-现已建立「待机 → 注意到用户 → 回应 → 恢复待机」的状态流程，区分摸头、招呼和成功操作反馈，并在回应期间暂停鼠标注视叠加。具体素材、触发区域和恢复策略见 [看板娘说明](./live2d.md)。
+现已建立「待机 → 注意到用户 → 回应 → 恢复待机」的状态流程，区分头部、胸部、其他身体互动、闲置对话、展开和邮箱动作，并在回应期间暂停鼠标注视叠加。具体素材、触发区域和恢复策略见 [看板娘说明](./live2d.md)。
 
-[pixi-live2d-display 的完整指南](https://github.com/guansss/pixi-live2d-display/wiki/Complete-Guide) 提供动作组、动作优先级、表情和手动交互机制。当前接入 `Idle`、`HeadPat`、`Greeting`、`Complete` 四组；`Expressions` 仍为空。若进一步增加独立情绪，需要另行制作并验证表情配置。
+[pixi-live2d-display 的完整指南](https://github.com/guansss/pixi-live2d-display/wiki/Complete-Guide) 提供动作组、动作优先级、表情和手动交互机制。当前接入 `idle`、`touch_head`、`touch_special`、`touch_body`、`main_1`、`main_2`、`main_3`、`home`、`mail` 九组；`Expressions` 仍为空。若进一步增加独立情绪，需要另行制作并验证表情配置。
 
 头部和身体现已使用语义部位与实际可见像素判定。开发检查页面支持部件隔离预览和不同缩放下的命中核验；后续更换模型时需要重新核对部件层级及命中网格。
 

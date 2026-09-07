@@ -9,7 +9,7 @@ type ActionBase = {
 /** Add page actions or links without changing the companion's interaction code. */
 export type CompanionAction = ActionBase & (
   | { onSelect: () => void; pressed?: boolean; href?: never; external?: never }
-  | { href: string; external?: boolean; onSelect?: never; pressed?: never }
+  | { href: string; external?: boolean; onSelect?: () => void; pressed?: never }
 )
 
 export function CompanionTools({ actions }: { actions: readonly CompanionAction[] }) {
@@ -23,7 +23,7 @@ export function CompanionTools({ actions }: { actions: readonly CompanionAction[
         }
         const content = <><span aria-hidden="true" className="live2d-tool-icon">{action.icon}</span><span aria-hidden="true" className="live2d-tool-label">{action.label}</span></>
         return action.href !== undefined ? (
-          <a {...props} href={action.href} key={action.id} rel={action.external ? 'noopener noreferrer' : undefined} target={action.external ? '_blank' : undefined}>
+          <a {...props} href={action.href} key={action.id} onClick={action.onSelect} rel={action.external ? 'noopener noreferrer' : undefined} target={action.external ? '_blank' : undefined}>
             {content}
           </a>
         ) : (

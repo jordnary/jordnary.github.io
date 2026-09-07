@@ -1,6 +1,6 @@
 import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
-import { companionMotions, createCompanionBehavior, type CompanionReaction, type CompanionState } from './companion-behavior'
+import { createCompanionBehavior, type CompanionReaction, type CompanionState } from './companion-behavior'
 import { createCompanionHitTest, hitAlphaThreshold, type CompanionHit } from './live2d-hit'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
@@ -39,8 +39,8 @@ export type Live2DScene = {
   focus: (x: number, y: number) => void
   pause: (paused: boolean) => void
   hitTest: (x: number, y: number) => CompanionHit
-  react: (reaction: CompanionReaction, text: string) => boolean
-  reset: () => void
+  react: (reaction: CompanionReaction) => boolean
+  setChatEnabled: (enabled: boolean) => void
 }
 
 export async function createLive2DScene(
@@ -90,7 +90,7 @@ export async function createLive2DScene(
     signal.addEventListener('abort', destroy, { once: true })
     const loadedModel = await Live2DModel.from(
       `${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`,
-      { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.IDLE },
+      { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.IDLE, idleMotionGroup: 'idle' },
     ) as Live2DModel<Cubism4InternalModel>
     if (signal.aborted) {
       loadedModel.destroy({ children: true, texture: true, baseTexture: true })
@@ -102,8 +102,8 @@ export async function createLive2DScene(
     const internal = model.internalModel
     app.stage.addChild(model)
     // This model includes its own blinking and breathing in the idle motion.
-    await model.motion('Idle', 0)
-    const idleMotion = await internal.motionManager.loadMotion('Idle', 0)
+    await model.motion('idle', 0)
+    const idleMotion = await internal.motionManager.loadMotion('idle', 0)
     idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
     model.update(0)
@@ -188,20 +188,21 @@ export async function createLive2DScene(
     const hit = createCompanionHitTest(currentApp, currentModel, canvas)
     const manager = internal.motionManager
     let paused = false
+    let chatEnabled = false
     let wasReduced = reducedMotion.matches
     behavior = createCompanionBehavior({
       async prepare(reaction) {
-        const motion = await manager.loadMotion(companionMotions[reaction].group, 0)
+        const motion = await manager.loadMotion(reaction, 0)
         if (!motion || destroyed) return false
         motion.setIsLoop(false)
         return true
       },
-      play: (reaction) => currentModel.motion(companionMotions[reaction].group, 0, 3),
+      play: (reaction) => currentModel.motion(reaction, 0, 3),
       idle() {
         if (destroyed) return
         manager.stopAllMotions()
         internal.focusController.focus(0, 0, true)
-        void currentModel.motion('Idle', 0, 3)
+        void currentModel.motion('idle', 0, 3)
       },
       reducedMotion: () => reducedMotion.matches,
       change(state) {
@@ -217,6 +218,7 @@ export async function createLive2DScene(
       if (next !== paused || wasReduced !== reducedMotion.matches) behavior?.reset()
       paused = next
       wasReduced = reducedMotion.matches
+      behavior?.setAutoplay(chatEnabled && !paused)
       if (paused || reducedMotion.matches) currentApp.stop()
       else currentApp.start()
     }
@@ -233,10 +235,15 @@ export async function createLive2DScene(
       hitTest(x, y) {
         return destroyed || paused ? null : hit.hitTest(x, y)
       },
-      react(reaction, text) {
-        return !destroyed && !paused && (behavior?.request(reaction, text) ?? false)
+      react(reaction) {
+        return !destroyed && !paused && (behavior?.request(reaction) ?? false)
       },
-      reset: () => { if (!destroyed) behavior?.reset() },
+      setChatEnabled(enabled) {
+        if (destroyed || enabled === chatEnabled) return
+        chatEnabled = enabled
+        if (!enabled) behavior?.reset()
+        behavior?.setAutoplay(enabled && !paused)
+      },
     }
   } catch (error) {
     destroy()
