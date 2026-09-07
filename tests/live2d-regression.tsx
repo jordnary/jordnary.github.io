@@ -2,6 +2,8 @@ import { createRoot } from 'react-dom/client'
 import { Live2DCompanion } from '../src/components/Live2DCompanion'
 import { githubProfileUrl } from '../src/lib/github'
 import { contactProfile } from '../src/data/contact'
+import { notifyCompanionComplete, onCompanionComplete } from '../src/lib/companion-events'
+import { Contact } from '../src/components/Contact'
 import '../src/index.css'
 
 // This browser fixture is served by Vite only; it is not a production build entry.
@@ -34,12 +36,14 @@ class TestMedia extends EventTarget {
   removeListener(callback: EventListener) { this.removeEventListener('change', callback) }
   set(matches: boolean) {
     this.matches = matches
+    if (this.media === '(prefers-reduced-motion: reduce)') document.documentElement.dataset.testReducedMotion = String(matches)
     this.dispatchEvent(new MediaQueryListEvent('change', { matches, media: this.media }))
   }
 }
 
 const compact = new TestMedia('(max-width: 767px), (pointer: coarse), (hover: none)', true)
 const reduced = new TestMedia('(prefers-reduced-motion: reduce)', true)
+document.documentElement.dataset.testReducedMotion = 'true'
 const originalMatchMedia = window.matchMedia.bind(window)
 window.matchMedia = (query) => {
   if (query.includes('max-width: 767px')) return compact as unknown as MediaQueryList
@@ -59,6 +63,8 @@ const render = (suspended = false) => root.render(<Live2DCompanion suspended={su
   { id: 'test-link', label: 'Test external link', icon: <span>L</span>, href: 'https://example.com/', external: true },
 ]} />)
 const dialogue = () => document.querySelector('.live2d-dialogue')?.textContent ?? ''
+const phase = () => document.querySelector('.live2d-stage')?.getAttribute('data-phase')
+const reaction = () => document.querySelector('.live2d-stage')?.getAttribute('data-reaction')
 const tools = () => document.querySelector('.live2d-tools') as HTMLElement
 const visible = () => getComputedStyle(tools()).visibility === 'visible'
 
@@ -102,26 +108,30 @@ try {
   context.clearRect(0, 0, copy.width, copy.height)
   context.drawImage(canvas, 0, 0, copy.width, copy.height)
   const mountedPixels = context.getImageData(0, 0, copy.width, copy.height).data
-  const artwork = { left: copy.width, right: 0, top: copy.height }
+  const artwork = { left: copy.width, right: 0, top: copy.height, bottom: 0 }
   for (let y = 0; y < copy.height; y++) {
     for (let x = 0; x < copy.width; x++) {
       if (mountedPixels[(y * copy.width + x) * 4 + 3] < 24) continue
       artwork.left = Math.min(artwork.left, x)
       artwork.right = Math.max(artwork.right, x + 1)
       artwork.top = Math.min(artwork.top, y)
+      artwork.bottom = Math.max(artwork.bottom, y + 1)
     }
   }
   solid = undefined
   for (let y = Math.floor(copy.height * 0.45); y < copy.height * 0.85; y += 5) {
     for (let x = Math.floor(copy.width * 0.3); x < copy.width * 0.75; x += 5) {
-      if (!solid && [0, -5, 5, -5 * copy.width, 5 * copy.width].every((offset) => mountedPixels[((y * copy.width + x) + offset) * 4 + 3] > 250)) {
-        solid = { x: (x + 0.5) / copy.width * container.clientWidth, y: (y + 0.5) / copy.height * container.clientHeight }
-      }
       if (!transparent && mountedPixels[(y * copy.width + x) * 4 + 3] === 0) {
         transparent = { x: (x + 0.5) / copy.width * container.clientWidth, y: (y + 0.5) / copy.height * container.clientHeight }
       }
     }
   }
+  const artworkPoint = (x: number, y: number) => ({
+    x: (artwork.left + (artwork.right - artwork.left) * x) / copy.width * container.clientWidth,
+    y: (artwork.top + (artwork.bottom - artwork.top) * y) / copy.height * container.clientHeight,
+  })
+  // Annotated torso and head landmarks, relative to the artwork (not canvas padding).
+  solid = artworkPoint(0.4, 0.5)
   mouse('pointercancel', { x: 0, y: 0 })
   check(solid && transparent, 'Independent alpha snapshot has solid artwork and internal transparent space')
   click({ x: -1, y: 0 })
@@ -172,10 +182,23 @@ try {
   await until(() => !visible())
   check(!visible(), 'Leaving the character and tools hides the rail')
 
+  click(artworkPoint(0.65, 0.15))
+  await nextPaint()
+  check(!dialogue(), 'Opaque backdrop pixels do not trigger a character reaction')
+  click(artworkPoint(0.42, 0.36))
+  await nextPaint()
+  check(reaction() === 'headpat' && !!dialogue(), 'A head click selects the head-pat response and its own dialogue')
+  await until(() => phase() === 'idle')
+
   click()
   await nextPaint()
   const firstLine = dialogue()
-  check(firstLine.length > 0, 'A primary click on visible artwork speaks')
+  check(firstLine.length > 0, 'A primary click on the torso speaks')
+  check(reaction() === 'greeting', 'Body clicks greet instead of playing a head pat')
+  click()
+  notifyCompanionComplete('Do not interrupt')
+  await nextPaint()
+  check(dialogue() === firstLine, 'Rapid clicks and automatic completion cannot interrupt an active response')
   const bubbleRect = document.querySelector('.live2d-dialogue p')!.getBoundingClientRect()
   const artworkCenter = canvasRect.left + (artwork.left + artwork.right) / 2 / copy.width * canvasRect.width
   const artworkTop = canvasRect.top + artwork.top / copy.height * canvasRect.height
@@ -209,6 +232,7 @@ try {
   check(dialogue() === firstLine, 'Selecting page text suppresses character clicks')
   selection.removeAllRanges()
 
+  await until(() => phase() === 'idle')
   container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await nextPaint()
   check(dialogue() !== firstLine, 'The character itself supports keyboard chat')
@@ -230,7 +254,7 @@ try {
   await nextPaint()
   click(solid!, document.body, beforeSuspension)
   await nextPaint()
-  check(document.querySelector('.live2d-companion')?.hasAttribute('hidden') && dialogue() === secondLine, 'Search suspension hides the companion and blocks interaction')
+  check(document.querySelector('.live2d-companion')?.hasAttribute('hidden') && !dialogue() && phase() === 'idle', 'Search suspension hides the companion and cancels its response')
   render()
   await nextPaint()
   ;(document.querySelector('[aria-label="关闭人物点击对话"]') as HTMLButtonElement).click()
@@ -285,11 +309,67 @@ try {
   await nextPaint()
   check(!!dialogue(), 'Keyboard users can re-enable chat after restoring a disabled preference')
 
+  await until(() => phase() === 'idle')
+  notifyCompanionComplete('完成啦。')
+  await nextPaint()
+  check(dialogue() === '完成啦。' && reaction() === 'complete', 'Explicit successful operations have a distinct completion response')
+  await until(() => phase() === 'idle')
+  notifyCompanionComplete('重复完成')
+  await nextPaint()
+  check(!dialogue(), 'Repeated completion events respect their cooldown')
+
+  reduced.set(false)
+  restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+  await nextPaint()
+  check(phase() === 'noticing' && !dialogue(), 'Animated greeting first notices the user without speaking over the transition')
+  await until(() => phase() === 'responding')
+  const responseStarted = performance.now()
+  check(reaction() === 'greeting' && !!dialogue(), 'The greeting response starts after attention')
+  await until(() => phase() === 'recovering')
+  check(performance.now() - responseStarted < 9000, 'Greeting recovery uses the actual motion finish rather than its timeout fallback')
+  check(!dialogue(), 'Actual motion completion starts recovery and clears dialogue')
+  await until(() => phase() === 'idle')
+  check(phase() === 'idle', 'A real non-looping greeting returns to idle')
+
+  // Exercise the actual contact handler without changing the browser clipboard.
+  const clipboardDescriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
+  const originalCopy = document.execCommand
+  const completed: string[] = []
+  const stopCompletion = onCompanionComplete((text) => completed.push(text))
+  try {
+    let resolveCopy!: () => void
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => new Promise<void>((resolve) => { resolveCopy = resolve }) } })
+    root.render(<Contact />)
+    await nextPaint()
+    ;(document.querySelector('.contact-copy-button') as HTMLButtonElement).click()
+    await nextPaint()
+    check(!document.querySelector('.toast') && completed.length === 0, 'Pending copy operations do not claim completion')
+    resolveCopy()
+    await until(() => document.querySelector('.toast'))
+    check(document.querySelector('.toast')?.textContent === '已复制邮箱' && completed.length === 0, 'Successful copying shows its toast before the character response')
+    await until(() => completed.length === 1)
+    check(!document.querySelector('.toast') && completed[0].includes('邮箱复制好啦'), 'Copy success emits completion only after the toast disappears')
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: () => Promise.reject(new Error('Clipboard unavailable')) } })
+    document.execCommand = () => false
+    ;(document.querySelector('.contact-copy-button') as HTMLButtonElement).click()
+    await until(() => document.querySelector('.toast'))
+    check(document.querySelector('.toast')?.textContent?.startsWith('复制失败'), 'Failed clipboard and fallback operations display a failure message')
+    await until(() => !document.querySelector('.toast'))
+    await nextPaint()
+    check(completed.length === 1, 'Failed operations never emit a completion response')
+  } finally {
+    stopCompletion()
+    document.execCommand = originalCopy
+    if (clipboardDescriptor) Object.defineProperty(navigator, 'clipboard', clipboardDescriptor)
+    else Reflect.deleteProperty(navigator, 'clipboard')
+  }
+
   document.querySelector('#result')!.textContent = `${passed} checks passed`
 } catch (error) {
   document.querySelector('#result')!.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown test failure'}`
 } finally {
   root.unmount()
+  delete document.documentElement.dataset.testReducedMotion
   window.matchMedia = originalMatchMedia
   if (originalPreference === null) localStorage.removeItem(storageKey)
   else localStorage.setItem(storageKey, originalPreference)

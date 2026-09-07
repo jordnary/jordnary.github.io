@@ -6,6 +6,8 @@
     <title>Companion regression checks</title>
     <style>
       #checks { position: fixed; inset: 6rem 26rem 1rem 1rem; overflow: auto; }
+      /* Match the fixture's simulated reduced-motion media query in CSS too. */
+      html[data-test-reduced-motion="true"] .live2d-companion * { animation: none; transition: none; }
     </style>
   </head>
   <body>

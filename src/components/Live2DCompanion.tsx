@@ -1,5 +1,8 @@
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from 'react'
 import type { Live2DScene } from '../lib/live2d'
+import type { CompanionReaction, CompanionState } from '../lib/companion-behavior'
+import type { CompanionHit } from '../lib/live2d-hit'
+import { onCompanionComplete } from '../lib/companion-events'
 import { githubProfileUrl } from '../lib/github'
 import { contactProfile } from '../data/contact'
 import { CompanionTools, type CompanionAction } from './CompanionTools'
@@ -18,6 +21,7 @@ const lines = [
   '盯着屏幕很久了？记得眨眨眼、喝口水。',
   '我就在这里，陪你慢慢逛。',
 ]
+const headpatLines = ['唔，轻轻的就好～', '收到你的摸摸啦，谢谢你。', '头发要被揉乱啦，不过很开心。']
 
 function subscribeCompact(callback: () => void) {
   const query = window.matchMedia(compactQuery)
@@ -106,16 +110,18 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
   const lineRef = useRef(0)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [attempt, setAttempt] = useState(0)
-  const [message, setMessage] = useState({ text: '', sequence: 0 })
+  const [interaction, setInteraction] = useState<CompanionState>({ phase: 'idle', reaction: null, text: '' })
   const [hovered, setHovered] = useState(false)
 
-  const talk = () => {
-    if (status !== 'ready' || suspended || !chatEnabled) return
-    const text = lines[lineRef.current++ % lines.length]
-    setMessage((current) => ({ text, sequence: current.sequence + 1 }))
-    sceneRef.current?.greet()
+  const talk = (reaction: CompanionReaction = 'greeting', completion?: string) => {
+    if (status !== 'ready' || suspended || !chatEnabled || document.hidden || document.querySelector('.toast')) return
+    const choices = reaction === 'headpat' ? headpatLines : lines
+    const text = completion ?? choices[lineRef.current % choices.length]
+    if (sceneRef.current?.react(reaction, text)) lineRef.current++
   }
   const talkFromPointer = useEffectEvent(talk)
+
+  useEffect(() => onCompanionComplete((text) => talkFromPointer('complete', text)), [])
 
   useEffect(() => {
     suspendedRef.current = suspended
@@ -131,7 +137,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
     let hideTimer = 0
     let hoverTimer = 0
     let lastHitTime = 0
-    let press: { x: number; y: number; pointerId: number } | null = null
+    let press: { x: number; y: number; pointerId: number; hit: CompanionHit } | null = null
 
     const available = () => !document.hidden && !suspendedRef.current && !document.querySelector('.toast')
     const hover = (active: boolean) => {
@@ -149,17 +155,17 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
     }
     const hitModel = (event: MouseEvent) => {
       const target = event.target
-      if (!available() || !(target instanceof Element)) return false
-      if (target.closest(interactiveSelector) || window.getSelection()?.toString()) return false
+      if (!available() || !(target instanceof Element)) return null
+      if (target.closest(interactiveSelector) || window.getSelection()?.toString()) return null
       const rect = canvas.getBoundingClientRect()
       const x = event.clientX - rect.left
       const y = event.clientY - rect.top
-      if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return false
+      if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null
       // Pixi's auto-density canvas may round CSS dimensions at fractional DPR.
-      return sceneRef.current?.contains(
+      return sceneRef.current?.hitTest(
         x / rect.width * container.clientWidth,
         y / rect.height * container.clientHeight,
-      ) ?? false
+      ) ?? null
     }
     const inHoverArea = (event: PointerEvent) => {
       if (!sceneRef.current) return false
@@ -194,9 +200,11 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       }, Math.max(0, 50 - (performance.now() - lastHitTime)))
     }
     const startPress = (event: PointerEvent) => {
-      press = event.isPrimary && event.pointerType === 'mouse' && event.button === 0
-        && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && !event.defaultPrevented && hitModel(event)
-        ? { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
+      const eligible = event.isPrimary && event.pointerType === 'mouse' && event.button === 0
+        && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && !event.defaultPrevented
+      const hit = eligible ? hitModel(event) : null
+      press = hit
+        ? { x: event.clientX, y: event.clientY, pointerId: event.pointerId, hit }
         : null
     }
     const clickModel = (event: MouseEvent) => {
@@ -206,14 +214,16 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
         || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
       if (event instanceof PointerEvent && event.pointerId !== started.pointerId) return
       if (Math.hypot(event.clientX - started.x, event.clientY - started.y) > 6) return
-      if (hitModel(event)) {
+      if (hitModel(event) === started.hit) {
         hover(true)
-        talkFromPointer()
+        talkFromPointer(started.hit === 'head' ? 'headpat' : 'greeting')
       }
     }
 
     void import('../lib/live2d')
-      .then(({ createLive2DScene }) => createLive2DScene(canvas, container, controller.signal))
+      .then(({ createLive2DScene }) => createLive2DScene(canvas, container, controller.signal, (state) => {
+        if (!controller.signal.aborted) setInteraction(state)
+      }))
       .then((scene) => {
         if (controller.signal.aborted) {
           scene.destroy()
@@ -228,6 +238,9 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       })
 
     document.addEventListener('visibilitychange', syncVisibility)
+    // Toasts mount in a portal; synchronize their visibility without polling.
+    const toastObserver = new MutationObserver(syncVisibility)
+    toastObserver.observe(document.body, { childList: true })
     reducedMotion.addEventListener('change', syncVisibility)
     window.addEventListener('pointermove', pointerMove, { passive: true })
     window.addEventListener('pointerdown', startPress, { passive: true })
@@ -240,6 +253,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       window.clearTimeout(hideTimer)
       window.clearTimeout(hoverTimer)
       controller.abort()
+      toastObserver.disconnect()
       sceneRef.current?.destroy()
       sceneRef.current = null
       document.removeEventListener('visibilitychange', syncVisibility)
@@ -258,20 +272,14 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
     if (status === 'ready' && focusOnReady) containerRef.current?.focus({ preventScroll: true })
   }, [status, focusOnReady])
 
-  useEffect(() => {
-    if (!message.text) return
-    const timeout = window.setTimeout(() => setMessage((current) => ({ ...current, text: '' })), 5000)
-    return () => window.clearTimeout(timeout)
-  }, [message])
-
   return (
-    <div className={`live2d-stage${hovered && !suspended ? ' is-hovered' : ''}`}>
+    <div className={`live2d-stage${hovered && !suspended ? ' is-hovered' : ''}`} data-phase={interaction.phase} data-reaction={interaction.reaction ?? undefined}>
       <div aria-atomic="true" aria-live="polite" className="live2d-dialogue" role="status">
-        {message.text && <p key={message.sequence}>{message.text}</p>}
+        {interaction.text && <p key={interaction.reaction}>{interaction.text}</p>}
       </div>
       <div
         aria-disabled={status === 'ready' ? !chatEnabled : undefined}
-        aria-label={chatEnabled ? '看板娘，按 Enter 或空格聊天' : '看板娘，对话已关闭，可在功能列表中开启'}
+        aria-label={chatEnabled ? '看板娘，点击头部摸头，点击身体打招呼；按 Enter 或空格打招呼' : '看板娘，对话已关闭，可在功能列表中开启'}
         className="live2d-canvas-wrap"
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
@@ -294,7 +302,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
             icon: <ChatIcon enabled={chatEnabled} />,
             pressed: chatEnabled,
             onSelect: () => {
-              setMessage((current) => ({ ...current, text: '' }))
+              sceneRef.current?.reset()
               onToggleChat()
             },
           },

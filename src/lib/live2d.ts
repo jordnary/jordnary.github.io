@@ -1,8 +1,9 @@
 import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
+import { companionMotions, createCompanionBehavior, type CompanionReaction, type CompanionState } from './companion-behavior'
+import { createCompanionHitTest, hitAlphaThreshold, type CompanionHit } from './live2d-hit'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
-const hitAlphaThreshold = 24
 let corePromise: Promise<void> | undefined
 
 function loadCore() {
@@ -37,14 +38,16 @@ export type Live2DScene = {
   destroy: () => void
   focus: (x: number, y: number) => void
   pause: (paused: boolean) => void
-  contains: (x: number, y: number) => boolean
-  greet: () => void
+  hitTest: (x: number, y: number) => CompanionHit
+  react: (reaction: CompanionReaction, text: string) => boolean
+  reset: () => void
 }
 
 export async function createLive2DScene(
   canvas: HTMLCanvasElement,
   container: HTMLElement,
   signal: AbortSignal,
+  onState: (state: CompanionState) => void = () => {},
 ): Promise<Live2DScene> {
   await loadCore()
   signal.throwIfAborted()
@@ -57,11 +60,13 @@ export async function createLive2DScene(
   let app: Application | undefined
   let model: Live2DModel<Cubism4InternalModel> | undefined
   let observer: ResizeObserver | undefined
+  let behavior: ReturnType<typeof createCompanionBehavior> | undefined
   let destroyed = false
   const destroy = () => {
     if (destroyed) return
     destroyed = true
     observer?.disconnect()
+    behavior?.destroy()
     // Stop the ticker immediately, including when unmounted during a model fetch.
     app?.stop()
     model?.destroy({ children: true, texture: true, baseTexture: true })
@@ -98,6 +103,8 @@ export async function createLive2DScene(
     app.stage.addChild(model)
     // This model includes its own blinking and breathing in the idle motion.
     await model.motion('Idle', 0)
+    const idleMotion = await internal.motionManager.loadMotion('Idle', 0)
+    idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
     model.update(0)
     app.render()
@@ -178,9 +185,38 @@ export async function createLive2DScene(
     app.ticker.add(() => currentModel.update(Math.min(currentApp.ticker.deltaMS, 100)))
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const hitPixel = new Uint8Array(4)
-    const pause = (paused: boolean) => {
+    const hit = createCompanionHitTest(currentApp, currentModel, canvas)
+    const manager = internal.motionManager
+    let paused = false
+    let wasReduced = reducedMotion.matches
+    behavior = createCompanionBehavior({
+      async prepare(reaction) {
+        const motion = await manager.loadMotion(companionMotions[reaction].group, 0)
+        if (!motion || destroyed) return false
+        motion.setIsLoop(false)
+        return true
+      },
+      play: (reaction) => currentModel.motion(companionMotions[reaction].group, 0, 3),
+      idle() {
+        if (destroyed) return
+        manager.stopAllMotions()
+        internal.focusController.focus(0, 0, true)
+        void currentModel.motion('Idle', 0, 3)
+      },
+      reducedMotion: () => reducedMotion.matches,
+      change(state) {
+        if (state.phase === 'noticing') internal.focusController.focus(0, 0)
+        // Let the authored response own head, eye and body parameters completely.
+        if (state.phase === 'responding' || state.phase === 'recovering') internal.focusController.focus(0, 0, true)
+        onState(state)
+      },
+    })
+    manager.on('motionFinish', () => behavior?.finish())
+    const pause = (next: boolean) => {
       if (destroyed) return
+      if (next !== paused || wasReduced !== reducedMotion.matches) behavior?.reset()
+      paused = next
+      wasReduced = reducedMotion.matches
       if (paused || reducedMotion.matches) currentApp.stop()
       else currentApp.start()
     }
@@ -190,29 +226,17 @@ export async function createLive2DScene(
       destroy,
       pause,
       focus(x, y) {
-        if (destroyed || reducedMotion.matches) return
+        if (destroyed || paused || reducedMotion.matches || behavior?.state.phase !== 'idle') return
         // Normalize against the viewport so tracking stays gentle outside the small canvas.
         internal.focusController.focus(x * 0.65, y * 0.45)
       },
-      contains(x, y) {
-        if (destroyed || !Number.isFinite(x) || !Number.isFinite(y)) return false
-        const { width, height } = currentApp.screen
-        if (x < 0 || y < 0 || x >= width || y >= height || gl.isContextLost()) return false
-        // Sample the current pose, including clipping masks and transparent holes.
-        // Render and read in the same task: WebGL may clear its buffer after compositing.
-        // Only a single pixel is read per dialogue hit check.
-        currentApp.render()
-        hitPixel.fill(0)
-        gl.readPixels(
-          Math.floor(x / width * canvas.width),
-          canvas.height - 1 - Math.floor(y / height * canvas.height),
-          1, 1, gl.RGBA, gl.UNSIGNED_BYTE, hitPixel,
-        )
-        return hitPixel[3] >= hitAlphaThreshold
+      hitTest(x, y) {
+        return destroyed || paused ? null : hit.hitTest(x, y)
       },
-      greet() {
-        if (!destroyed && !reducedMotion.matches) void currentModel.motion('Tap', 0)
+      react(reaction, text) {
+        return !destroyed && !paused && (behavior?.request(reaction, text) ?? false)
       },
+      reset: () => { if (!destroyed) behavior?.reset() },
     }
   } catch (error) {
     destroy()

@@ -4,16 +4,22 @@ import { Reveal } from './Reveal'
 import { Toast } from './Toast'
 import { ContactIcon, CopyIcon } from './icons'
 import { contactLinks, contactProfile } from '../data/contact'
+import { notifyCompanionComplete } from '../lib/companion-events'
 
 export function Contact() {
   const [copyToastId, setCopyToastId] = useState(0)
+  const [copySucceeded, setCopySucceeded] = useState(false)
 
   const handleToastClose = useCallback(() => {
     setCopyToastId(0)
-  }, [])
+    if (copySucceeded) {
+      // The toast and character share a corner; respond after the toast unmounts.
+      window.setTimeout(() => notifyCompanionComplete('邮箱复制好啦，随时欢迎来信。'), 0)
+    }
+  }, [copySucceeded])
 
   async function handleCopyEmail() {
-    await copyToClipboard(contactProfile.email)
+    setCopySucceeded(await copyToClipboard(contactProfile.email))
     setCopyToastId((currentId) => currentId + 1)
   }
 
@@ -91,7 +97,7 @@ export function Contact() {
           ))}
         </div>
         <Toast
-          message="已复制邮箱"
+          message={copySucceeded ? '已复制邮箱' : '复制失败，请手动选择邮箱复制'}
           onClose={handleToastClose}
           open={copyToastId > 0}
           resetKey={copyToastId}
@@ -105,7 +111,7 @@ async function copyToClipboard(value: string) {
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(value)
-      return
+      return true
     }
   } catch {
     // Fall through to the textarea fallback.
@@ -118,6 +124,11 @@ async function copyToClipboard(value: string) {
   textarea.style.opacity = '0'
   document.body.appendChild(textarea)
   textarea.select()
-  document.execCommand('copy')
-  document.body.removeChild(textarea)
+  try {
+    return document.execCommand('copy')
+  } catch {
+    return false
+  } finally {
+    document.body.removeChild(textarea)
+  }
 }

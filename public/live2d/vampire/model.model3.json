@@ -15,9 +15,19 @@
           "File": "motions/idle.motion3.json"
         }
       ],
-      "Tap": [
+      "HeadPat": [
         {
           "File": "motions/touch_head.motion3.json"
+        }
+      ],
+      "Greeting": [
+        {
+          "File": "motions/main_1.motion3.json"
+        }
+      ],
+      "Complete": [
+        {
+          "File": "motions/mission_complete.motion3.json"
         }
       ]
     },
@@ -38,6 +48,12 @@
       "Ids": [
         "ParamMouthOpenY"
       ]
+    }
+  ],
+  "HitAreas": [
+    {
+      "Id": "TouchHead",
+      "Name": "Head"
     }
   ]
 }
