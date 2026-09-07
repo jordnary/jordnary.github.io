@@ -121,6 +121,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   const suspendedRef = useRef(suspended)
   const entranceRef = useRef(homeRequested)
   const recoveringRef = useRef(false)
+  const focusPendingRef = useRef(focusOnReady)
   const homePrepared = useEffectEvent(onHomePrepared)
   const [loadState, setLoadState] = useState<LoadState>({ status: 'waiting', stage: 'runtime', slow: false })
   const status = loadState.status
@@ -284,7 +285,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         canvas.addEventListener('webglcontextlost', contextLost)
         canvas.addEventListener('webglcontextrestored', contextRestored)
         container.append(canvas)
-        const { createLive2DScene } = await import('../lib/live2d').catch(() => { throw new CompanionLoadError('module') })
+        const { createLive2DScene } = await import('../lib/live2d').catch(() => { throw new CompanionLoadError(navigator.onLine ? 'module' : 'network') })
         signal.throwIfAborted()
         return createLive2DScene(canvas, container, signal, (state) => {
           if (!signal.aborted) setInteraction(state)
@@ -320,11 +321,13 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
     let frame = 0
     let idle = 0
     let startup = 0
+    let fallback = 0
     let started = false
     const start = () => {
       if (started) return
       started = true
       window.clearTimeout(startup)
+      cancelAnimationFrame(frame)
       if (idle) window.cancelIdleCallback(idle)
       loader.start()
     }
@@ -333,7 +336,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       startup = window.setTimeout(start, 1000)
       frame = requestAnimationFrame(() => {
         if (typeof window.requestIdleCallback === 'function') idle = window.requestIdleCallback(start, { timeout: 1000 })
-        else setTimeout(start, 0)
+        else fallback = window.setTimeout(start, 0)
       })
     }
 
@@ -356,6 +359,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       window.clearTimeout(touchTimer)
       window.clearTimeout(hoverTimer)
       window.clearTimeout(startup)
+      window.clearTimeout(fallback)
       cancelAnimationFrame(frame)
       if (idle) window.cancelIdleCallback(idle)
       loader.destroy()
@@ -381,8 +385,10 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   }, [])
 
   useEffect(() => {
-    if (status === 'ready' && focusOnReady) containerRef.current?.focus({ preventScroll: true })
-  }, [status, focusOnReady])
+    if (status !== 'ready' || !focusPendingRef.current) return
+    focusPendingRef.current = false
+    if (!suspended && !document.hidden && !document.querySelector('.toast')) containerRef.current?.focus({ preventScroll: true })
+  }, [status, suspended])
 
   return (
     <div className={`live2d-stage${hovered && !suspended ? ' is-hovered' : ''}`} data-load-status={status} data-load-stage={loadState.stage} data-phase={interaction.phase} data-reaction={interaction.reaction ?? undefined}>
@@ -390,6 +396,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         {interaction.text && (chatEnabled || interaction.reaction === 'mail') && <p key={interaction.reaction}>{interaction.text}</p>}
       </div>
       <div
+        aria-busy={status === 'loading' || status === 'waiting' || status === 'recovering'}
         aria-disabled={status === 'ready' ? !chatEnabled : undefined}
         aria-label={chatEnabled ? '看板娘，点击头部、胸部或其他部位互动；按 Enter 或空格触发身体互动' : '看板娘，对话已关闭，可在功能列表中开启'}
         className="live2d-canvas-wrap"
@@ -422,7 +429,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         <div className="live2d-placeholder">
           {(status === 'error' || status === 'offline') && <CompanionIcon />}
           <p aria-atomic="true" role="status">{status === 'offline' ? '网络似乎断开了，连接恢复后会再试' : status === 'recovering' ? (loadState.failure === 'webgl' ? '正在恢复动画…' : '正在重新连接…') : status === 'error' ? (loadState.failure === 'webgl' ? '暂时无法显示动画' : loadState.failure === 'resource' ? '角色资源暂时不可用' : loadState.failure === 'module' ? '页面组件未能加载，请重试或刷新页面' : '暂时没能赶到') : loadState.slow ? '这次有点慢，还在准备…' : '正在赶来…'}</p>
-          {status === 'error' && <button onClick={() => loaderRef.current?.retry()} type="button">再试一次</button>}
+          {status === 'error' && <button onClick={(event) => { focusPendingRef.current = event.detail === 0; loaderRef.current?.retry() }} type="button">再试一次</button>}
           {status === 'error' && loadState.failure === 'module' && <button onClick={() => window.location.reload()} type="button">刷新页面</button>}
           <button aria-label="收起看板娘" className="live2d-placeholder-close" onClick={onCollapse} title="收起看板娘" type="button"><CollapseIcon /></button>
         </div>

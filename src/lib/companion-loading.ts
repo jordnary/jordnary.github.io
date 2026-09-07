@@ -45,6 +45,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
   let retryAt = 0
   let retries = 0
   let contextWaiting = false
+  let contextRecovery = false
   let contextAttempts: number[] = []
   const online = () => options.online?.() ?? true
   const available = () => options.available?.() ?? true
@@ -89,7 +90,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
       record(failure)
       release()
       publish({ ...state, status: 'error', failure })
-      const limit = failure === 'network' || failure === 'timeout' ? 2 : failure === 'unknown' ? 1 : 0
+      const limit = contextRecovery ? 0 : failure === 'network' || failure === 'timeout' ? 2 : failure === 'unknown' ? 1 : 0
       if (retries < limit) {
         retryAt = Date.now() + [2000, 5000][retries]
         retries++
@@ -108,6 +109,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
       clearTimers()
       scene = loaded
       record()
+      contextRecovery = false
       publish({ ...state, status: 'ready', slow: false })
       options.ready(loaded)
     }).catch(fail)
@@ -117,6 +119,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
     retry() {
       if (disposed || state.status === 'loading' || contextWaiting) return
       retries = 0
+      contextRecovery = false
       start()
     },
     sync,
@@ -126,6 +129,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
     contextLost() {
       if (disposed || contextWaiting || (state.status !== 'ready' && state.status !== 'loading')) return
       generation++
+      contextRecovery = true
       release()
       clearTimeout(retryTimer)
       contextAttempts = contextAttempts.filter((time) => Date.now() - time < 60000)

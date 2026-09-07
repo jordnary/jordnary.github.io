@@ -105,3 +105,21 @@ test('WebGL recovery waits for restoration or timeout and is limited to two per 
   assert.equal(loader.state.status, 'error')
   loader.destroy()
 })
+
+test('a failed WebGL rebuild does not create another automatic network retry loop', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] })
+  let attempts = 0
+  const loader = createCompanionLoader({
+    async load() {
+      if (++attempts > 1) throw new CompanionLoadError('network')
+      return { destroy() {} }
+    }, change() {}, ready() {},
+  })
+  loader.start(); await flush()
+  loader.contextLost(); loader.contextRestored()
+  t.mock.timers.tick(0); await flush()
+  assert.equal(loader.state.status, 'error')
+  t.mock.timers.tick(60000); await flush()
+  assert.equal(attempts, 2)
+  loader.destroy()
+})

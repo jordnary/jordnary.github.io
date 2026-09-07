@@ -64,7 +64,7 @@ export async function createLive2DScene(
   const [{ Application, Container, Texture }, { Live2DModel, Live2DFactory, Cubism4ModelSettings, MotionPreloadStrategy }] = await Promise.all([
     import('pixi.js'),
     import('pixi-live2d-display/cubism4'),
-  ]).catch(() => { throw new CompanionLoadError('module') })
+  ]).catch(() => { throw new CompanionLoadError(navigator.onLine ? 'module' : 'network') })
   signal.throwIfAborted()
   onLoadStage('assets')
   const assets = await loadCompanionAssets(new URL(`${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`, document.baseURI).href, signal)

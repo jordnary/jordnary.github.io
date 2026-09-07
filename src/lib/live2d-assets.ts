@@ -1,4 +1,4 @@
-import { CompanionLoadError } from './companion-loading'
+import { CompanionLoadError } from './companion-loading.ts'
 
 /** Fetch essential resources with a shared cancellation boundary before GPU setup. */
 export async function loadCompanionAssets(url: string, signal: AbortSignal) {
