@@ -75,6 +75,9 @@ try {
   check(!performance.getEntriesByType('resource').some((entry) => /\/src\/lib\/live2d|\/live2d\/vampire|cubism|pixi/.test(entry.name)), 'Mobile does not request the rendering runtime or model assets')
 
   compact.set(false)
+  await until(() => document.querySelector('.live2d-placeholder'))
+  const loadingRect = document.querySelector('.live2d-placeholder')!.getBoundingClientRect()
+  check(document.documentElement.clientWidth - loadingRect.right >= 23.5 && window.innerHeight - loadingRect.bottom >= 23.5, 'Loading status has comfortable right and bottom viewport margins')
   await until(() => document.querySelector('canvas.is-ready'))
   const canvas = document.querySelector('.live2d-canvas-wrap canvas') as HTMLCanvasElement
   const container = document.querySelector('.live2d-canvas-wrap') as HTMLElement
@@ -186,6 +189,12 @@ try {
   mouse('pointermove', { x: -20, y: 0 })
   await until(() => !visible())
   check(!visible(), 'Leaving the character and tools hides the rail')
+  mouse('pointermove', { x: canvas.clientWidth / 2, y: 2 })
+  await delay(600)
+  check(!visible(), 'Unused canvas space above the artwork does not reveal the tools')
+  mouse('pointermove', artworkPoint(0.5, 0))
+  await until(visible)
+  check(visible(), 'The hover area includes the top of the artwork')
 
   click(artworkPoint(0.65, 0.15))
   await nextPaint()
@@ -209,11 +218,17 @@ try {
   await nextPaint()
   check(dialogue() === firstLine, 'Rapid clicks cannot interrupt an active touch response')
   const bubbleRect = document.querySelector('.live2d-dialogue p')!.getBoundingClientRect()
-  const artworkCenter = canvasRect.left + (artwork.left + artwork.right) / 2 / copy.width * canvasRect.width
+  const artworkCenter = canvasRect.left + (artwork.left + (artwork.right - artwork.left) * 0.42) / copy.width * canvasRect.width
   const artworkTop = canvasRect.top + artwork.top / copy.height * canvasRect.height
-  check(Math.abs(bubbleRect.left + bubbleRect.width / 2 - artworkCenter) < 3, 'Dialogue is horizontally centered above visible artwork')
+  check(Math.abs(bubbleRect.left + bubbleRect.width / 2 - artworkCenter) < 3, 'Dialogue shifts slightly left of the backdrop center to align above the character')
   check(artworkTop - bubbleRect.bottom >= 4 && artworkTop - bubbleRect.bottom <= 18, 'Dialogue sits close above the artwork without covering it')
   check(bubbleRect.left >= 0 && bubbleRect.right <= document.documentElement.clientWidth && bubbleRect.top >= 0, 'The resized dialogue stays within the viewport')
+  mouse('pointermove', {
+    x: (bubbleRect.left + bubbleRect.width / 2 - canvasRect.left) / canvasRect.width * canvas.clientWidth,
+    y: (bubbleRect.top + bubbleRect.height / 2 - canvasRect.top) / canvasRect.height * canvas.clientHeight,
+  })
+  await until(() => !visible())
+  check(!visible(), 'Hovering the dialogue hides the tools even when it overlaps the canvas')
   click(solid!, document.body, { ctrlKey: true })
   click(solid!, document.body, { button: 2 })
   click(solid!, document.body, { pointerType: 'touch' })

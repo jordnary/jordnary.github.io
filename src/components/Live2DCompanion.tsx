@@ -168,11 +168,13 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     const inHoverArea = (event: PointerEvent) => {
       if (!sceneRef.current) return false
       if (event.target instanceof Element && event.target.closest('.live2d-tools')) return true
-      // Include transparent gaps on the way to the tools without intercepting clicks.
-      // Dialogue continues to use the separate, visible-pixel hitModel check.
+      // Include gaps around the artwork and tools, excluding the bubble and
+      // the canvas's unused space above the model. Clicks still use hitModel.
       const rect = canvas.getBoundingClientRect()
+      const artworkTop = Number.parseFloat(container.parentElement?.style.getPropertyValue('--companion-artwork-top') ?? '') || 0
+      const hoverTop = rect.top + Math.max(0, artworkTop - 8)
       return event.clientX >= rect.left && event.clientX < rect.right
-        && event.clientY >= rect.top && event.clientY < rect.bottom
+        && event.clientY >= hoverTop && event.clientY < rect.bottom
     }
     const resetFocus = () => {
       sceneRef.current?.focus(0, 0)

@@ -156,7 +156,8 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 .live2d-dialogue {
   position: absolute;
   z-index: 1;
-  left: var(--companion-artwork-center, 50%);
+  /* The character sits slightly left of the backdrop's center. */
+  left: calc(var(--companion-artwork-center, 50%) - var(--companion-artwork-width, var(--companion-width)) * 0.08);
   bottom: calc(100% - var(--companion-artwork-top, 0px) + 0.625rem);
   transform: translateX(-50%);
   width: min(12.5rem, var(--companion-artwork-width, var(--companion-width)));
@@ -178,8 +179,8 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 
 .live2d-placeholder {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  right: 1.375rem;
+  bottom: 1.125rem;
   padding: 0.875rem 3.25rem 0.875rem 0.875rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-soft);
