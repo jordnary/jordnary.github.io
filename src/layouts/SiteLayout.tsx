@@ -15,7 +15,7 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   return (
-    <div className={`app-shell${isSearchOpen ? ' is-search-open' : ''}`} id="top">
+    <div className={`app-shell${isSearchOpen ? ' is-search-open' : ''}`}>
       <div className="app-shell-content">
         <div className="ambient-bg" />
         <div className="grid-bg" />

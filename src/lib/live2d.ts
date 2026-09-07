@@ -2,6 +2,7 @@ import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
+const hitAlphaThreshold = 24
 let corePromise: Promise<void> | undefined
 
 function loadCore() {
@@ -72,8 +73,8 @@ export async function createLive2DScene(
     app = new Application({
       view: canvas,
       // Search can hide the widget while its resources are still arriving.
-      width: container.clientWidth || 200,
-      height: container.clientHeight || 280,
+      width: container.clientWidth || 320,
+      height: container.clientHeight || 440,
       backgroundAlpha: 0,
       antialias: true,
       autoDensity: true,
@@ -149,7 +150,7 @@ export async function createLive2DScene(
     let pixelBottom = -1
     for (let y = 0; y < canvas.height; y++) {
       for (let x = 0; x < canvas.width; x++) {
-        if (pixels[(y * canvas.width + x) * 4 + 3] < 24) continue
+        if (pixels[(y * canvas.width + x) * 4 + 3] < hitAlphaThreshold) continue
         pixelLeft = Math.min(pixelLeft, x)
         pixelRight = Math.max(pixelRight, x)
         pixelTop = Math.min(pixelTop, canvas.height - 1 - y)
@@ -171,6 +172,7 @@ export async function createLive2DScene(
     app.ticker.add(() => currentModel.update(Math.min(currentApp.ticker.deltaMS, 100)))
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const hitPixel = new Uint8Array(4)
     const pause = (paused: boolean) => {
       if (destroyed) return
       if (paused || reducedMotion.matches) currentApp.stop()
@@ -187,8 +189,20 @@ export async function createLive2DScene(
         internal.focusController.focus(x * 0.65, y * 0.45)
       },
       contains(x, y) {
-        const point = currentModel.toLocal({ x, y })
-        return point.x >= left && point.x <= right && point.y >= top && point.y <= bottom
+        if (destroyed || !Number.isFinite(x) || !Number.isFinite(y)) return false
+        const { width, height } = currentApp.screen
+        if (x < 0 || y < 0 || x >= width || y >= height || gl.isContextLost()) return false
+        // Sample the current pose, including clipping masks and transparent holes.
+        // Render and read in the same task: WebGL may clear its buffer after compositing.
+        // The caller throttles hover checks; only a single pixel is read per check.
+        currentApp.render()
+        hitPixel.fill(0)
+        gl.readPixels(
+          Math.floor(x / width * canvas.width),
+          canvas.height - 1 - Math.floor(y / height * canvas.height),
+          1, 1, gl.RGBA, gl.UNSIGNED_BYTE, hitPixel,
+        )
+        return hitPixel[3] >= hitAlphaThreshold
       },
       greet() {
         if (!destroyed && !reducedMotion.matches) void currentModel.motion('Tap', 0)
