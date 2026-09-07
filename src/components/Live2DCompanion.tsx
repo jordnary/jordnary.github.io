@@ -9,7 +9,8 @@ import { ContactIcon } from './icons'
 import './Live2DCompanion.css'
 
 const compactQuery = '(max-width: 767px), (pointer: coarse), (hover: none)'
-const preferenceKey = 'site-live2d-collapsed'
+const desktopCollapseKey = 'site-live2d-collapsed-desktop'
+const mobileCollapseKey = 'site-live2d-collapsed-mobile'
 const chatPreferenceKey = 'site-live2d-chat-enabled'
 // Navigation uses tabindex="-1" to focus main; its content still allows character clicks.
 // Native and ARIA controls retain priority even when removed from the tab order.
@@ -22,9 +23,9 @@ function subscribeCompact(callback: () => void) {
   return () => query.removeEventListener('change', callback)
 }
 
-function readPreference(key: string, fallback = false) {
+function readPreference(key: string, fallback = false, storage: 'localStorage' | 'sessionStorage' = 'localStorage') {
   try {
-    const stored = localStorage.getItem(key)
+    const stored = window[storage].getItem(key)
     return stored === null ? fallback : stored === 'true'
   } catch {
     return fallback
@@ -42,8 +43,8 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     () => window.matchMedia(compactQuery).matches,
     () => true,
   )
-  const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(preferenceKey))
-  const [mobileCollapsed, setMobileCollapsed] = useState(true)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(desktopCollapseKey, false, 'sessionStorage'))
+  const [mobileCollapsed, setMobileCollapsed] = useState(() => readPreference(mobileCollapseKey, true, 'sessionStorage'))
   const collapsed = compact ? mobileCollapsed : desktopCollapsed
   const [chatEnabled, setChatEnabled] = useState(() => readPreference(chatPreferenceKey, true))
   const [restoreFocus, setRestoreFocus] = useState(false)
@@ -60,11 +61,11 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     setHomeRequested(collapsed)
     if (compact) {
       setMobileCollapsed(!collapsed)
-      return
+    } else {
+      setDesktopCollapsed(!collapsed)
     }
-    setDesktopCollapsed(!collapsed)
     try {
-      localStorage.setItem(preferenceKey, String(!collapsed))
+      sessionStorage.setItem(compact ? mobileCollapseKey : desktopCollapseKey, String(!collapsed))
     } catch { /* Storage is optional, including in private browsing. */ }
   }
 

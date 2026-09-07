@@ -26,6 +26,9 @@ const originalState = history.state
 const preferenceKeys = ['site-live2d-collapsed', 'site-live2d-chat-enabled']
 const preferences = preferenceKeys.map((key) => localStorage.getItem(key))
 preferenceKeys.forEach((key) => localStorage.removeItem(key))
+const sessionKeys = ['site-live2d-collapsed-desktop', 'site-live2d-collapsed-mobile']
+const sessionPreferences = sessionKeys.map((key) => sessionStorage.getItem(key))
+sessionKeys.forEach((key) => sessionStorage.removeItem(key))
 const root = createRoot(document.querySelector('#root')!)
 const modelRequests = () => performance.getEntriesByType('resource').filter((entry) => /\/live2d\/vampire\//.test(entry.name)).length
 const phase = () => document.querySelector('.live2d-stage')?.getAttribute('data-phase')
@@ -135,6 +138,10 @@ try {
 } finally {
   root.unmount()
   history.replaceState(originalState, '', originalUrl)
+  sessionKeys.forEach((key, index) => {
+    if (sessionPreferences[index] === null) sessionStorage.removeItem(key)
+    else sessionStorage.setItem(key, sessionPreferences[index]!)
+  })
   preferenceKeys.forEach((key, index) => {
     if (preferences[index] === null) localStorage.removeItem(key)
     else localStorage.setItem(key, preferences[index]!)

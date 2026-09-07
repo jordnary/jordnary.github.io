@@ -24,6 +24,9 @@ const visible = () => {
   return !!tools && getComputedStyle(tools).visibility === 'visible'
 }
 let selected = 0
+const storageKey = 'site-live2d-collapsed-mobile'
+const originalPreference = sessionStorage.getItem(storageKey)
+sessionStorage.removeItem(storageKey)
 const root = createRoot(document.querySelector('#fixture')!)
 try {
   check(window.innerWidth < 768, 'Fixture uses a mobile viewport')
@@ -98,4 +101,6 @@ try {
   document.querySelector('#result')!.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown test failure'}`
 } finally {
   root.unmount()
+  if (originalPreference === null) sessionStorage.removeItem(storageKey)
+  else sessionStorage.setItem(storageKey, originalPreference)
 }

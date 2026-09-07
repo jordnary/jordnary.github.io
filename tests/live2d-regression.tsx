@@ -51,6 +51,9 @@ window.matchMedia = (query) => {
   return originalMatchMedia(query)
 }
 const storageKey = 'site-live2d-collapsed'
+const sessionKeys = ['site-live2d-collapsed-desktop', 'site-live2d-collapsed-mobile']
+const originalSessionPreferences = sessionKeys.map((key) => sessionStorage.getItem(key))
+sessionKeys.forEach((key) => sessionStorage.removeItem(key))
 const chatStorageKey = 'site-live2d-chat-enabled'
 const originalPreference = localStorage.getItem(storageKey)
 const originalChatPreference = localStorage.getItem(chatStorageKey)
@@ -339,13 +342,13 @@ try {
   const launcherRect = document.querySelector('.live2d-launcher')!.getBoundingClientRect()
   check(document.documentElement.clientWidth - launcherRect.right >= 23 && window.innerHeight - launcherRect.bottom >= 23, 'The collapsed launcher has comfortable right and bottom margins')
   check(launcherRect.width >= 43.5 && launcherRect.height >= 43.5, 'The collapsed launcher retains its accessible target size')
-  check(localStorage.getItem(storageKey) === 'true', 'Desktop collapse preference is persisted')
+  check(localStorage.getItem(storageKey) === null && sessionStorage.getItem(sessionKeys[0]) === 'true', 'Desktop collapse state is saved only for the current tab session')
   compact.set(true)
   await nextPaint()
   check(!!document.querySelector('.live2d-launcher') && !document.querySelector('.live2d-stage'), 'Mobile preserves its collapsed launcher independently of desktop')
   compact.set(false)
   await nextPaint()
-  check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed preference')
+  check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed state within the current page')
   const { Live2DModel } = await import('pixi-live2d-display/cubism4')
   const originalMotion = Live2DModel.prototype.motion
   const entranceMotions: string[] = []
@@ -448,6 +451,10 @@ try {
   window.matchMedia = originalMatchMedia
   if (originalPreference === null) localStorage.removeItem(storageKey)
   else localStorage.setItem(storageKey, originalPreference)
+  sessionKeys.forEach((key, index) => {
+    if (originalSessionPreferences[index] === null) sessionStorage.removeItem(key)
+    else sessionStorage.setItem(key, originalSessionPreferences[index]!)
+  })
   if (originalChatPreference === null) localStorage.removeItem(chatStorageKey)
   else localStorage.setItem(chatStorageKey, originalChatPreference)
 }
