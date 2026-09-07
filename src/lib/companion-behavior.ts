@@ -6,10 +6,10 @@ export const companionMotions = {
   touch_head: { duration: 10300, text: '你当人家还是小孩子吗？……痒痒的，诶，这就结束了？' },
   touch_special: { duration: 5130, text: '诶！笨蛋！色狼！萝莉控！' },
   touch_body: { duration: 7000, text: '对人家来说，夜晚才刚刚开始呢，汝可不许说困了哦？' },
-  main_1: { duration: 7870, text: '好无聊……阅读？没办法的啦' },
-  main_2: { duration: 9100, text: '喂喂，我们去做些快乐的事吧' },
-  main_3: { duration: 10170, text: '太平洋风平浪静？不，人家可不这样觉得' },
-  home: { duration: 6070, text: '' },
+  main_1: { duration: 7870, text: '好无聊……阅读？没办法的啦。' },
+  main_2: { duration: 9100, text: '喂喂，我们去做些快乐的事吧。' },
+  main_3: { duration: 10170, text: '太平洋风平浪静？不，人家可不这样觉得。' },
+  home: { duration: 6070, text: '洗澡！然后进餐！咦，人家的葡萄酒呢？' },
   mail: { duration: 5130, text: '有话想对人家说？那就写封信吧，人家会期待的哦。' },
 } as const
 export const companionInactivityDelay = 60000
@@ -95,7 +95,7 @@ export function createCompanionBehavior(driver: Driver) {
       if (disposed || state.phase !== 'idle') return
       generation++
       clear()
-      publish({ phase: 'responding', reaction: 'home', text: '' })
+      publish({ phase: 'responding', reaction: 'home', text: companionMotions.home.text })
       timer = setTimeout(recover, companionMotions.home.duration + 2000)
     },
     setAutoplay(enabled: boolean) {

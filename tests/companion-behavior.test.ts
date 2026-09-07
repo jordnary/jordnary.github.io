@@ -15,7 +15,7 @@ test('a prepared entrance starts directly in home and recovers once, without rep
     idle: () => { idle++ }, reducedMotion: () => false, change: (state) => phases.push(state.phase),
   })
   behavior.enter()
-  assert.deepEqual(behavior.state, { phase: 'responding', reaction: 'home', text: '' })
+  assert.deepEqual(behavior.state, { phase: 'responding', reaction: 'home', text: '洗澡！然后进餐！咦，人家的葡萄酒呢？' })
   assert.equal(idle, 0)
   assert.equal(behavior.request('touch_body'), false)
   behavior.enter()

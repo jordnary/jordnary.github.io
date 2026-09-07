@@ -348,7 +348,7 @@ try {
   check(phase() === 'idle' && entranceMotions.join(',') === 'home', 'A hidden entrance stays on its first frame beyond the normal motion timeout')
   render()
   await until(() => reaction() === 'home' && phase() === 'responding')
-  check(!dialogue(), 'Expanding from collapsed triggers home without dialogue, including with chat disabled')
+  check(!dialogue(), 'Expanding from collapsed triggers home while keeping dialogue hidden when chat is disabled')
   check(entranceMotions.join(',') === 'home', 'Revealing the prepared canvas does not restart home')
   const entranceStarted = performance.now()
   await until(() => phase() === 'recovering')

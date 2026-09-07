@@ -274,7 +274,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
   return (
     <div className={`live2d-stage${hovered && !suspended ? ' is-hovered' : ''}`} data-phase={interaction.phase} data-reaction={interaction.reaction ?? undefined}>
       <div aria-atomic="true" aria-live="polite" className="live2d-dialogue" role="status">
-        {interaction.text && <p key={interaction.reaction}>{interaction.text}</p>}
+        {interaction.text && (chatEnabled || interaction.reaction === 'mail') && <p key={interaction.reaction}>{interaction.text}</p>}
       </div>
       <div
         aria-disabled={status === 'ready' ? !chatEnabled : undefined}
