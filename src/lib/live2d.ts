@@ -2,6 +2,8 @@ import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
 import { createCompanionBehavior, type CompanionReaction, type CompanionState } from './companion-behavior'
 import { createCompanionHitTest, hitAlphaThreshold, type CompanionHit } from './live2d-hit'
+import { CompanionLoadError, type LoadStage } from './companion-loading'
+import { loadCompanionAssets } from './live2d-assets'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
 let corePromise: Promise<void> | undefined
@@ -22,7 +24,7 @@ function loadCore() {
       } else {
         script.remove()
         corePromise = undefined
-        reject(new Error('Live2D runtime unavailable'))
+        reject(new CompanionLoadError('network'))
       }
     }
     script.src = coreUrl
@@ -51,14 +53,19 @@ export async function createLive2DScene(
   onState: (state: CompanionState) => void = () => {},
   initiallyPaused: () => boolean = () => document.hidden,
   playHome = false,
+  onLoadStage: (stage: LoadStage) => void = () => {},
 ): Promise<Live2DScene> {
+  signal.throwIfAborted()
+  onLoadStage('runtime')
   await loadCore()
   signal.throwIfAborted()
   const [{ Application }, { Live2DModel, MotionPreloadStrategy }] = await Promise.all([
     import('pixi.js'),
     import('pixi-live2d-display/cubism4'),
-  ])
+  ]).catch(() => { throw new CompanionLoadError('module') })
   signal.throwIfAborted()
+  onLoadStage('assets')
+  const assets = await loadCompanionAssets(new URL(`${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`, document.baseURI).href, signal)
 
   let app: Application | undefined
   let model: Live2DModel<Cubism4InternalModel> | undefined
@@ -76,11 +83,13 @@ export async function createLive2DScene(
     app?.stop()
     model?.destroy({ children: true, texture: true, baseTexture: true })
     app?.destroy(false)
+    assets.release()
     signal.removeEventListener('abort', destroy)
   }
 
   try {
-    app = new Application({
+    signal.throwIfAborted()
+    try { app = new Application({
       view: canvas,
       // Search can hide the widget while its resources are still arriving.
       width: container.clientWidth || 320,
@@ -91,11 +100,11 @@ export async function createLive2DScene(
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       autoStart: false,
       sharedTicker: false,
-    })
+    }) } catch { throw new CompanionLoadError('webgl') }
     signal.addEventListener('abort', destroy, { once: true })
     const loadedModel = await Live2DModel.from(
-      `${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`,
-      { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.IDLE, idleMotionGroup: 'idle' },
+      assets.source,
+      { autoInteract: false, autoUpdate: false, motionPreload: MotionPreloadStrategy.NONE, idleMotionGroup: 'idle' },
     ) as Live2DModel<Cubism4InternalModel>
     if (signal.aborted) {
       loadedModel.destroy({ children: true, texture: true, baseTexture: true })
@@ -108,8 +117,13 @@ export async function createLive2DScene(
     const manager = internal.motionManager
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     app.stage.addChild(model)
+    onLoadStage('motions')
     // Preload idle for recovery, but never start it ahead of the entrance.
-    const idleMotion = await manager.loadMotion('idle', 0)
+    const idleMotion = await Promise.race([
+      manager.loadMotion('idle', 0).catch(() => undefined),
+      new Promise<undefined>((resolve) => { entranceTimeout = window.setTimeout(resolve, 8000) }),
+    ])
+    window.clearTimeout(entranceTimeout)
     idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
     const homeMotion = !playHome || reducedMotion.matches ? undefined : await Promise.race([
@@ -124,6 +138,7 @@ export async function createLive2DScene(
     // Fit the neutral artwork before starting either motion. Home's first frame
     // only shows the backdrop and would otherwise produce a larger model scale.
     // This hidden render does not advance the model or start an idle motion.
+    onLoadStage('frame')
     app.render()
 
     // Fit the visible artwork, excluding the empty canvas around the exported model.
@@ -178,7 +193,7 @@ export async function createLive2DScene(
 
     // Some exported meshes include large transparent regions. Measure the rendered
     // alpha once so those regions do not shrink the character to a tiny thumbnail.
-    if (!('gl' in app.renderer)) throw new Error('Live2D requires WebGL')
+    if (!('gl' in app.renderer)) throw new CompanionLoadError('webgl')
     const gl = app.renderer.gl
     const pixels = new Uint8Array(canvas.width * canvas.height * 4)
     gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
@@ -206,7 +221,7 @@ export async function createLive2DScene(
     framingReady = true
     resize()
     let entrancePending = !!homeMotion && !reducedMotion.matches && await model.motion('home', 0, 3)
-    if (!entrancePending) await model.motion('idle', 0, 3)
+    if (!entrancePending && idleMotion) await model.motion('idle', 0, 3)
     signal.throwIfAborted()
     model.update(1)
     app.render()
@@ -231,7 +246,7 @@ export async function createLive2DScene(
         if (destroyed) return
         manager.stopAllMotions()
         internal.focusController.focus(0, 0, true)
-        void currentModel.motion('idle', 0, 3)
+        if (idleMotion) void currentModel.motion('idle', 0, 3).catch(() => false)
       },
       reducedMotion: () => reducedMotion.matches,
       change(state) {
