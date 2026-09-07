@@ -54,8 +54,9 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     if (collapsed && restoreFocus) launcherRef.current?.focus({ preventScroll: true })
   }, [collapsed, restoreFocus])
 
-  const toggle = () => {
-    setRestoreFocus(true)
+  const toggle = (event?: { detail: number }) => {
+    // Only keyboard activation transfers focus; touch must not pin the tool rail open.
+    setRestoreFocus(event?.detail === 0)
     setHomeRequested(collapsed)
     if (compact) {
       setMobileCollapsed(!collapsed)
@@ -135,17 +136,21 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     if (!canvas || !container) return
     const controller = new AbortController()
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const compactMedia = window.matchMedia(compactQuery)
     let hideTimer = 0
+    let touchTimer = 0
     let hoverTimer = 0
     let lastHitTime = 0
     let press: { x: number; y: number; pointerId: number; hit: CompanionHit } | null = null
 
     const available = () => !document.hidden && !suspendedRef.current && !document.querySelector('.toast')
-    const hover = (active: boolean) => {
+    const hover = (active: boolean, timed = compactMedia.matches) => {
+      window.clearTimeout(touchTimer)
       if (active) {
         window.clearTimeout(hideTimer)
         hideTimer = 0
         setHovered(true)
+        if (timed) touchTimer = window.setTimeout(() => setHovered(false), 3000)
       } else if (!hideTimer) {
         // Smooth brief exits from the shared character and toolbar hover area.
         hideTimer = window.setTimeout(() => {
@@ -189,6 +194,10 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
       sceneRef.current?.pause(!available())
       if (!available()) resetFocus()
     }
+    const pointerLeave = (event: PointerEvent) => {
+      // Touch emits pointerleave on release; retain its inactivity timeout.
+      if (event.pointerType === 'mouse') resetFocus()
+    }
     const pointerMove = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse' || !available()) return
       if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) press = null
@@ -209,6 +218,13 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
       press = hit
         ? { x: event.clientX, y: event.clientY, pointerId: event.pointerId, hit }
         : null
+    }
+    const touchTools = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse' || !event.isPrimary || !available()) return
+      const target = event.target
+      const inTools = target instanceof Element && !!target.closest('.live2d-tools')
+      const pageControl = target instanceof Element && !!target.closest(interactiveSelector)
+      hover(inTools || (!pageControl && inHoverArea(event)), true)
     }
     const clickModel = (event: MouseEvent) => {
       const started = press
@@ -236,6 +252,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
         syncVisibility()
         homePrepared()
         setStatus('ready')
+        if (compactMedia.matches && available()) hover(true)
       })
       .catch(() => {
         if (!controller.signal.aborted) setStatus('error')
@@ -248,13 +265,16 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     reducedMotion.addEventListener('change', syncVisibility)
     window.addEventListener('pointermove', pointerMove, { passive: true })
     window.addEventListener('pointerdown', startPress, { passive: true })
+    window.addEventListener('pointerdown', touchTools, { passive: true })
+    window.addEventListener('pointerup', touchTools, { passive: true })
     window.addEventListener('pointercancel', resetFocus)
     window.addEventListener('scroll', resetFocus, { passive: true })
-    document.documentElement.addEventListener('pointerleave', resetFocus)
+    document.documentElement.addEventListener('pointerleave', pointerLeave)
     window.addEventListener('blur', resetFocus)
     window.addEventListener('click', clickModel)
     return () => {
       window.clearTimeout(hideTimer)
+      window.clearTimeout(touchTimer)
       window.clearTimeout(hoverTimer)
       controller.abort()
       toastObserver.disconnect()
@@ -264,9 +284,11 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
       reducedMotion.removeEventListener('change', syncVisibility)
       window.removeEventListener('pointermove', pointerMove)
       window.removeEventListener('pointerdown', startPress)
+      window.removeEventListener('pointerdown', touchTools)
+      window.removeEventListener('pointerup', touchTools)
       window.removeEventListener('pointercancel', resetFocus)
       window.removeEventListener('scroll', resetFocus)
-      document.documentElement.removeEventListener('pointerleave', resetFocus)
+      document.documentElement.removeEventListener('pointerleave', pointerLeave)
       window.removeEventListener('blur', resetFocus)
       window.removeEventListener('click', clickModel)
     }

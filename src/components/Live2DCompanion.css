@@ -207,16 +207,7 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 }
 
 @media (max-width: 767px), (pointer: coarse), (hover: none) {
-  .live2d-companion { --companion-tool-size: 2.75rem; }
-  .live2d-stage .live2d-tools {
-    visibility: visible;
-    pointer-events: auto;
-  }
-  .live2d-stage .live2d-tool {
-    opacity: 1;
-    transform: none;
-    pointer-events: auto;
-  }
+  .live2d-companion { --companion-tool-size: 2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
