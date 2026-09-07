@@ -1,0 +1,129 @@
+.live2d-companion {
+  position: fixed;
+  right: calc(var(--page-gutter) + env(safe-area-inset-right));
+  bottom: calc(1rem + env(safe-area-inset-bottom));
+  z-index: 40;
+  pointer-events: none;
+}
+
+.live2d-companion[hidden] { display: none; }
+
+/* Keep short-lived copy notifications unobstructed. */
+body:has(.toast) .live2d-companion { visibility: hidden; }
+
+.live2d-stage {
+  width: clamp(10.5rem, 15vw, 12.5rem);
+  max-width: calc(100vw - 2rem);
+  position: relative;
+}
+
+.live2d-canvas-wrap {
+  height: clamp(13rem, 33vh, 17.5rem);
+  position: relative;
+}
+
+.live2d-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 250ms ease;
+  filter: drop-shadow(0 6px 8px rgb(15 23 42 / 0.12));
+}
+
+.live2d-canvas-wrap canvas.is-ready { opacity: 1; }
+
+.live2d-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.375rem;
+}
+
+.live2d-companion button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary-cyan-text);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-control);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 180ms ease, background 180ms ease;
+}
+
+.live2d-companion button:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-elevated);
+}
+
+.live2d-companion button:focus-visible {
+  outline: 2px solid var(--color-primary-cyan);
+  outline-offset: 3px;
+}
+
+.live2d-companion button:disabled { opacity: 0.5; cursor: default; }
+.live2d-companion svg { width: 1.125rem; height: 1.125rem; flex-shrink: 0; }
+.live2d-companion .live2d-collapse { width: 2.75rem; padding: 0.5rem; }
+
+.live2d-dialogue {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.625rem);
+  width: 13.5rem;
+  max-width: calc(100vw - 2rem);
+}
+
+.live2d-dialogue p {
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.875rem 0.875rem 0.25rem 0.875rem;
+  background: var(--color-bg);
+  color: var(--color-text-soft);
+  box-shadow: var(--shadow-control);
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+.live2d-placeholder {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-soft);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.live2d-placeholder p { margin: 0 0 0.625rem; }
+
+@media (max-width: 767px), (pointer: coarse) {
+  .live2d-companion {
+    right: calc(0.85rem + env(safe-area-inset-right));
+    bottom: calc(0.85rem + env(safe-area-inset-bottom));
+  }
+  .live2d-stage { width: 10rem; }
+  .live2d-canvas-wrap { height: min(14rem, 34svh); }
+}
+
+@media (max-height: 540px) {
+  .live2d-canvas-wrap { height: 30svh; }
+  .live2d-dialogue { width: 12rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live2d-companion *, .live2d-companion *::before, .live2d-companion *::after {
+    transition: none;
+  }
+}

@@ -2160,7 +2160,6 @@ a {
   .footer-brand-link:focus-visible,
   .footer-link:focus-visible,
   .footer-github-link:focus-visible,
-  .back-to-top-button:focus-visible,
   .icon-button:focus-visible,
   .project-filter-button:focus-visible,
   .project-empty-action:focus-visible,
@@ -2491,97 +2490,6 @@ a {
   :root[data-theme="light"] .theme-icon-moon {
     opacity: 1;
     transform: rotate(0deg) scale(1);
-  }
-
-  .back-to-top-button {
-    @apply fixed grid place-items-center;
-    right: calc(var(--page-gutter) + env(safe-area-inset-right));
-    bottom: calc(1rem + env(safe-area-inset-bottom));
-    z-index: 45;
-    width: 3rem;
-    height: 3rem;
-    color: var(--color-primary-cyan-text);
-    border: 1px solid rgb(103 232 249 / 0.28);
-    border-radius: var(--radius-pill);
-    background:
-      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.18), transparent 42%),
-      linear-gradient(
-        135deg,
-        rgb(8 145 178 / 0.42),
-        rgb(15 23 42 / 0.84)
-      );
-    box-shadow:
-      0 14px 34px -18px rgb(34 211 238 / 0.62),
-      inset 0 1px 0 rgb(255 255 255 / 0.08);
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(0.65rem) scale(0.94);
-    visibility: hidden;
-    -webkit-backdrop-filter: blur(18px);
-    backdrop-filter: blur(18px);
-    transition:
-      border-color 180ms ease,
-      background 180ms ease,
-      box-shadow 180ms ease;
-  }
-
-  .back-to-top-button.is-visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0) scale(1);
-    visibility: visible;
-  }
-
-  .back-to-top-button.is-visible:hover {
-    border-color: var(--color-border-hover);
-    background:
-      radial-gradient(circle at 30% 20%, rgb(255 255 255 / 0.22), transparent 42%),
-      linear-gradient(
-        135deg,
-        rgb(8 145 178 / 0.5),
-        rgb(30 41 59 / 0.9)
-      );
-    box-shadow:
-      0 16px 36px -18px rgb(34 211 238 / 0.78),
-      inset 0 1px 0 rgb(255 255 255 / 0.12);
-    transform: translateY(-0.125rem) scale(1);
-  }
-
-  :root[data-theme="light"] .back-to-top-button {
-    color: var(--color-primary-cyan-text);
-    border-color: rgb(8 145 178 / 0.24);
-    background:
-      radial-gradient(circle at 30% 18%, rgb(255 255 255 / 0.98), transparent 44%),
-      linear-gradient(
-        135deg,
-        rgb(255 255 255 / 0.9),
-        rgb(207 250 254 / 0.74) 54%,
-        rgb(224 242 254 / 0.84)
-      );
-    box-shadow:
-      0 18px 38px -26px rgb(8 145 178 / 0.58),
-      inset 0 1px 0 rgb(255 255 255 / 0.9);
-  }
-
-  :root[data-theme="light"] .back-to-top-button.is-visible:hover {
-    color: #0e7490;
-    border-color: rgb(8 145 178 / 0.38);
-    background:
-      radial-gradient(circle at 30% 18%, rgb(255 255 255 / 1), transparent 44%),
-      linear-gradient(
-        135deg,
-        rgb(236 254 255 / 0.96),
-        rgb(186 230 253 / 0.78) 54%,
-        rgb(224 242 254 / 0.92)
-      );
-    box-shadow:
-      0 20px 42px -24px rgb(8 145 178 / 0.68),
-      inset 0 1px 0 rgb(255 255 255 / 0.96);
-  }
-
-  .back-to-top-button svg {
-    width: 1.1rem;
-    height: 1.1rem;
   }
 
   .menu-icon {
@@ -5293,21 +5201,6 @@ a {
     .hero-visual {
       max-width: none;
       margin-inline: 0;
-    }
-
-  }
-
-  @media (max-width: 640px) {
-    .back-to-top-button {
-      right: calc(0.85rem + env(safe-area-inset-right));
-      bottom: calc(0.85rem + env(safe-area-inset-bottom));
-      width: 2.55rem;
-      height: 2.55rem;
-    }
-
-    .back-to-top-button svg {
-      width: 0.95rem;
-      height: 0.95rem;
     }
 
   }

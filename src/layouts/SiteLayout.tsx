@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { BackToTop } from '../components/BackToTop'
 import { Footer } from '../components/Footer'
+import { Live2DCompanion } from '../components/Live2DCompanion'
 import { Navbar } from '../components/Navbar'
 import { ScrollProgress } from '../components/ScrollProgress'
 import { SiteSearch } from '../components/SiteSearch'
@@ -20,7 +20,6 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
         <div className="ambient-bg" />
         <div className="grid-bg" />
         <ScrollProgress />
-        <BackToTop />
 
         <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />
 
@@ -28,6 +27,7 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
 
         <Footer />
       </div>
+      <Live2DCompanion suspended={isSearchOpen} />
       <SiteSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

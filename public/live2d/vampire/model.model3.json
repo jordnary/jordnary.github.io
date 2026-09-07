@@ -1,0 +1,43 @@
+{
+  "Version": 3,
+  "Name": "xixuegui_4",
+  "FileReferences": {
+    "Moc": "xixuegui_4.moc3",
+    "Textures": [
+      "textures/texture_00.webp"
+    ],
+    "Physics": "xixuegui_4.physics3.json",
+    "Pose": null,
+    "DisplayInfo": null,
+    "Motions": {
+      "Idle": [
+        {
+          "File": "motions/idle.motion3.json"
+        }
+      ],
+      "Tap": [
+        {
+          "File": "motions/touch_head.motion3.json"
+        }
+      ]
+    },
+    "Expressions": []
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}
