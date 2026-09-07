@@ -120,10 +120,9 @@ export async function createLive2DScene(
     homeMotion?.setIsLoop(false)
     // The first visible pose belongs entirely to home, without blending from idle.
     homeMotion?.setFadeInTime(0)
-    let entrancePending = !!homeMotion && !reducedMotion.matches && await model.motion('home', 0, 3)
-    if (!entrancePending) await model.motion('idle', 0, 3)
-    signal.throwIfAborted()
-    model.update(1)
+    // Fit the neutral artwork before starting either motion. Home's first frame
+    // only shows the backdrop and would otherwise produce a larger model scale.
+    // This hidden render does not advance the model or start an idle motion.
     app.render()
 
     // Fit the visible artwork, excluding the empty canvas around the exported model.
@@ -196,6 +195,11 @@ export async function createLive2DScene(
       bottom = ((pixelBottom + 1) / resolution - model.y) / scale
       resize()
     }
+    let entrancePending = !!homeMotion && !reducedMotion.matches && await model.motion('home', 0, 3)
+    if (!entrancePending) await model.motion('idle', 0, 3)
+    signal.throwIfAborted()
+    model.update(1)
+    app.render()
     observer = new ResizeObserver(resize)
     observer.observe(container)
     app.ticker.maxFPS = 30

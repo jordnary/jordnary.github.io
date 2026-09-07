@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Companion framing regression</title>
+    <style>
+      body { font: 14px monospace; }
+      #fixture { width: 240px; height: 336px; }
+      #previews { display: flex; gap: 12px; flex-wrap: wrap; }
+      #previews canvas { border: 1px solid #ccc; }
+    </style>
+  </head>
+  <body>
+    <h1>Companion framing regression</h1>
+    <pre id="result">Running…</pre>
+    <div id="previews"></div>
+    <div id="fixture"><canvas id="model"></canvas></div>
+    <script type="module" src="./live2d-bounds.ts"></script>
+  </body>
+</html>
