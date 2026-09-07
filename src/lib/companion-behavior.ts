@@ -89,6 +89,15 @@ export function createCompanionBehavior(driver: Driver) {
   return {
     get state() { return state },
     request,
+    // The scene has already rendered home's first frame before becoming visible.
+    // Adopt that playback without an idle reset, asset load or attention delay.
+    enter() {
+      if (disposed || state.phase !== 'idle') return
+      generation++
+      clear()
+      publish({ phase: 'responding', reaction: 'home', text: '' })
+      timer = setTimeout(recover, companionMotions.home.duration + 2000)
+    },
     setAutoplay(enabled: boolean) {
       if (autoplay === enabled) return
       autoplay = enabled

@@ -72,7 +72,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   return (
     <aside aria-label="网站看板娘" className={`live2d-companion${desktopCollapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
       {!desktopCollapsed ? (
-        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomeStarted={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
+        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
           aria-expanded="false"
@@ -90,11 +90,11 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   )
 }
 
-function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequested, onHomeStarted, chatEnabled, onToggleChat }: CompanionProps & {
+function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
   onCollapse: () => void
   focusOnReady: boolean
   homeRequested: boolean
-  onHomeStarted: () => void
+  onHomePrepared: () => void
   chatEnabled: boolean
   onToggleChat: () => void
 }) {
@@ -102,6 +102,8 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<Live2DScene | null>(null)
   const suspendedRef = useRef(suspended)
+  const entranceRef = useRef(homeRequested)
+  const homePrepared = useEffectEvent(onHomePrepared)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [attempt, setAttempt] = useState(0)
   const [interaction, setInteraction] = useState<CompanionState>({ phase: 'idle', reaction: null, text: '' })
@@ -121,12 +123,6 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     suspendedRef.current = suspended
     sceneRef.current?.pause(document.hidden || suspended || !!document.querySelector('.toast'))
   }, [suspended])
-
-  useEffect(() => {
-    if (status !== 'ready' || !homeRequested || suspended || document.hidden || document.querySelector('.toast')) return
-    if (sceneRef.current?.react('home')) onHomeStarted()
-    // Visibility restoration can publish a fresh idle state without changing its phase.
-  }, [status, homeRequested, suspended, interaction, onHomeStarted])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -223,7 +219,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     void import('../lib/live2d')
       .then(({ createLive2DScene }) => createLive2DScene(canvas, container, controller.signal, (state) => {
         if (!controller.signal.aborted) setInteraction(state)
-      }))
+      }, () => !available(), entranceRef.current))
       .then((scene) => {
         if (controller.signal.aborted) {
           scene.destroy()
@@ -231,6 +227,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
         }
         sceneRef.current = scene
         syncVisibility()
+        homePrepared()
         setStatus('ready')
       })
       .catch(() => {

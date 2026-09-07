@@ -48,6 +48,8 @@ export async function createLive2DScene(
   container: HTMLElement,
   signal: AbortSignal,
   onState: (state: CompanionState) => void = () => {},
+  initiallyPaused: () => boolean = () => document.hidden,
+  playHome = false,
 ): Promise<Live2DScene> {
   await loadCore()
   signal.throwIfAborted()
@@ -61,10 +63,12 @@ export async function createLive2DScene(
   let model: Live2DModel<Cubism4InternalModel> | undefined
   let observer: ResizeObserver | undefined
   let behavior: ReturnType<typeof createCompanionBehavior> | undefined
+  let entranceTimeout = 0
   let destroyed = false
   const destroy = () => {
     if (destroyed) return
     destroyed = true
+    window.clearTimeout(entranceTimeout)
     observer?.disconnect()
     behavior?.destroy()
     // Stop the ticker immediately, including when unmounted during a model fetch.
@@ -100,13 +104,26 @@ export async function createLive2DScene(
     const currentApp = app
     const currentModel = model
     const internal = model.internalModel
+    const manager = internal.motionManager
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     app.stage.addChild(model)
-    // This model includes its own blinking and breathing in the idle motion.
-    await model.motion('idle', 0)
-    const idleMotion = await internal.motionManager.loadMotion('idle', 0)
+    // Preload idle for recovery, but never start it ahead of the entrance.
+    const idleMotion = await manager.loadMotion('idle', 0)
     idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
-    model.update(0)
+    const homeMotion = !playHome || reducedMotion.matches ? undefined : await Promise.race([
+      manager.loadMotion('home', 0).catch(() => undefined),
+      new Promise<undefined>((resolve) => { entranceTimeout = window.setTimeout(resolve, 8000) }),
+    ])
+    window.clearTimeout(entranceTimeout)
+    signal.throwIfAborted()
+    homeMotion?.setIsLoop(false)
+    // The first visible pose belongs entirely to home, without blending from idle.
+    homeMotion?.setFadeInTime(0)
+    let entrancePending = !!homeMotion && !reducedMotion.matches && await model.motion('home', 0, 3)
+    if (!entrancePending) await model.motion('idle', 0, 3)
+    signal.throwIfAborted()
+    model.update(1)
     app.render()
 
     // Fit the visible artwork, excluding the empty canvas around the exported model.
@@ -184,10 +201,8 @@ export async function createLive2DScene(
     app.ticker.maxFPS = 30
     app.ticker.add(() => currentModel.update(Math.min(currentApp.ticker.deltaMS, 100)))
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const hit = createCompanionHitTest(currentApp, currentModel, canvas)
-    const manager = internal.motionManager
-    let paused = false
+    let paused = initiallyPaused()
     let chatEnabled = false
     let wasReduced = reducedMotion.matches
     behavior = createCompanionBehavior({
@@ -215,14 +230,24 @@ export async function createLive2DScene(
     manager.on('motionFinish', () => behavior?.finish())
     const pause = (next: boolean) => {
       if (destroyed) return
-      if (next !== paused || wasReduced !== reducedMotion.matches) behavior?.reset()
+      if (entrancePending && !reducedMotion.matches) {
+        // Loading behind search, a toast or a background tab keeps home frozen
+        // at its first frame; its recovery timer starts only when actually shown.
+        if (!next) {
+          entrancePending = false
+          behavior?.enter()
+        }
+      } else if (next !== paused || wasReduced !== reducedMotion.matches) {
+        entrancePending = false
+        behavior?.reset()
+      }
       paused = next
       wasReduced = reducedMotion.matches
       behavior?.setAutoplay(chatEnabled && !paused)
       if (paused || reducedMotion.matches) currentApp.stop()
       else currentApp.start()
     }
-    pause(document.hidden)
+    pause(initiallyPaused())
 
     return {
       destroy,

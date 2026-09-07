@@ -306,13 +306,32 @@ try {
   compact.set(false)
   await nextPaint()
   check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed preference')
+  const { Live2DModel } = await import('pixi-live2d-display/cubism4')
+  const originalMotion = Live2DModel.prototype.motion
+  const entranceMotions: string[] = []
+  Live2DModel.prototype.motion = function (...args) {
+    entranceMotions.push(args[0])
+    return originalMotion.apply(this, args)
+  }
+  reduced.set(false)
   ;(document.querySelector('.live2d-launcher') as HTMLButtonElement).click()
   render(true)
   await until(() => document.querySelector('canvas.is-ready'))
   check(phase() === 'idle' && !dialogue(), 'An expansion that finishes loading while suspended waits before playing home')
+  check(entranceMotions.join(',') === 'home', 'Expansion prepares home as its first motion without ever starting idle')
+  await delay(8500)
+  check(phase() === 'idle' && entranceMotions.join(',') === 'home', 'A hidden entrance stays on its first frame beyond the normal motion timeout')
   render()
   await until(() => reaction() === 'home' && phase() === 'responding')
   check(!dialogue(), 'Expanding from collapsed triggers home without dialogue, including with chat disabled')
+  check(entranceMotions.join(',') === 'home', 'Revealing the prepared canvas does not restart home')
+  const entranceStarted = performance.now()
+  await until(() => phase() === 'recovering')
+  check(performance.now() - entranceStarted < 7500, 'Home returns to idle through its actual finish event')
+  await until(() => phase() === 'idle')
+  check(entranceMotions[0] === 'home' && entranceMotions.slice(1).every((motion) => motion === 'idle'), 'Entrance playback is home followed only by idle')
+  Live2DModel.prototype.motion = originalMotion
+  reduced.set(true)
   check(document.querySelector('[aria-label="开启人物点击对话"]')?.getAttribute('aria-pressed') === 'false', 'Chat stays disabled after mobile transitions and collapse/reopen')
   root.unmount()
   root = createRoot(document.querySelector('#fixture')!)

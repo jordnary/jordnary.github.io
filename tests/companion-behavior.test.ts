@@ -5,6 +5,50 @@ import { companionInactivityDelay, companionMotions, createCompanionBehavior, ty
 
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve() }
 
+test('a prepared entrance starts directly in home and recovers once, without replaying or preceding it with idle', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const phases: string[] = []
+  let idle = 0
+  const behavior = createCompanionBehavior({
+    prepare: async () => { assert.fail('Entrance is already prepared') },
+    play: async () => { assert.fail('Entrance must not restart') },
+    idle: () => { idle++ }, reducedMotion: () => false, change: (state) => phases.push(state.phase),
+  })
+  behavior.enter()
+  assert.deepEqual(behavior.state, { phase: 'responding', reaction: 'home', text: '' })
+  assert.equal(idle, 0)
+  assert.equal(behavior.request('touch_body'), false)
+  behavior.enter()
+  assert.deepEqual(phases, ['responding'])
+  behavior.finish()
+  assert.equal(idle, 1)
+  t.mock.timers.tick(450)
+  assert.equal(behavior.state.phase, 'idle')
+  t.mock.timers.tick(10000)
+  assert.equal(idle, 1)
+  behavior.destroy()
+})
+
+test('entrance watchdog and suspension both release the prepared motion without a late replay', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const reset of [false, true]) {
+    let idle = 0
+    const behavior = createCompanionBehavior({
+      prepare: async () => true, play: async () => true,
+      idle: () => { idle++ }, reducedMotion: () => false, change: () => {},
+    })
+    behavior.enter()
+    if (reset) behavior.reset()
+    t.mock.timers.tick(companionMotions.home.duration + 2000)
+    t.mock.timers.tick(450)
+    assert.equal(behavior.state.phase, 'idle')
+    assert.equal(idle, 1)
+    behavior.destroy()
+    behavior.enter()
+    assert.equal(behavior.state.phase, 'idle')
+  }
+})
+
 test('published assets contain only the requested motions, with one-shot responses and looping idle', () => {
   const folder = new URL('../public/live2d/vampire/', import.meta.url)
   const model = JSON.parse(readFileSync(new URL('model.model3.json', folder), 'utf8'))
