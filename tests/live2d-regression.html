@@ -6,6 +6,8 @@
     <title>Companion regression checks</title>
     <style>
       #checks { position: fixed; inset: 6rem 26rem 1rem 1rem; overflow: auto; }
+      #page-content { position: fixed; right: 0; bottom: 0; width: 260px; height: 360px; }
+      #page-content > div { width: 100%; height: 100%; }
       /* Match the fixture's simulated reduced-motion media query in CSS too. */
       html[data-test-reduced-motion="true"] .live2d-companion * { animation: none; transition: none; }
     </style>
@@ -14,6 +16,7 @@
     <h1>Companion regression checks</h1>
     <p id="result" role="status">Running…</p>
     <ol id="checks"></ol>
+    <main id="page-content" tabindex="-1"><div>Underlying page content</div></main>
     <div id="fixture"></div>
     <script type="module" src="./live2d-regression.tsx"></script>
   </body>

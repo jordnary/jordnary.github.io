@@ -96,10 +96,12 @@ try {
       clientY: rect.top + point.y / container.clientHeight * rect.height,
     }
   }
-  const mouse = (type: string, point = solid!, target: Element = document.body, extra: PointerEventInit = {}) => {
-    target.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, detail: 1, ...coordinates(point), ...extra }))
+  const mouse = (type: string, point = solid!, target?: Element, extra: PointerEventInit = {}) => {
+    const position = coordinates(point)
+    const receiver = target ?? document.elementFromPoint(position.clientX, position.clientY) ?? document.body
+    receiver.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, detail: 1, ...position, ...extra }))
   }
-  const click = (point = solid!, target: Element = document.body, extra: PointerEventInit = {}) => {
+  const click = (point = solid!, target?: Element, extra: PointerEventInit = {}) => {
     mouse('pointerdown', point, target, extra)
     mouse('pointerup', point, target, extra)
     mouse('click', point, target, extra)
@@ -135,6 +137,8 @@ try {
   solid = artworkPoint(0.36, 0.64)
   mouse('pointercancel', { x: 0, y: 0 })
   check(solid && transparent, 'Independent alpha snapshot has solid artwork and internal transparent space')
+  const bodyPosition = coordinates(solid)
+  check(document.elementFromPoint(bodyPosition.clientX, bodyPosition.clientY)?.closest('main[tabindex="-1"]'), 'Character clicks pass through to content inside the navigation focus target')
   click({ x: -1, y: 0 })
   click({ x: container.clientWidth, y: container.clientHeight })
   await nextPaint()
@@ -238,6 +242,27 @@ try {
   selection.removeAllRanges()
 
   await until(() => phase() === 'idle')
+  for (const [tag, attributes, label] of [
+    ['button', { tabindex: '-1' }, 'Native buttons outside the tab order'],
+    ['a', { tabindex: '-1', href: '#page-content' }, 'Links outside the tab order'],
+    ['div', { tabindex: '-1', role: 'button' }, 'ARIA buttons outside the tab order'],
+    ['div', { tabindex: '0' }, 'Tabbable custom controls'],
+    ['div', { contenteditable: 'true' }, 'Editable content'],
+  ] as const) {
+    const control = document.createElement(tag)
+    for (const [name, value] of Object.entries(attributes)) control.setAttribute(name, value)
+    const child = document.createElement('span')
+    child.textContent = label
+    control.append(child)
+    document.querySelector('#page-content')!.append(control)
+    // Prevent native navigation while still exercising the companion's window listener.
+    const preventNavigation = (event: MouseEvent) => event.preventDefault()
+    window.addEventListener('click', preventNavigation, { once: true })
+    click(solid, child)
+    await nextPaint()
+    check(phase() === 'idle' && !dialogue(), `${label} keep priority over an idle character, including their descendants`)
+    control.remove()
+  }
   container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await nextPaint()
   check(dialogue() === firstLine && reaction() === 'touch_body', 'Keyboard chat uses the same body action and dialogue')

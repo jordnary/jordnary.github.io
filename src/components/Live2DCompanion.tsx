@@ -11,7 +11,9 @@ import './Live2DCompanion.css'
 const compactQuery = '(max-width: 767px), (pointer: coarse), (hover: none)'
 const preferenceKey = 'site-live2d-collapsed'
 const chatPreferenceKey = 'site-live2d-chat-enabled'
-const interactiveSelector = 'a, button, input, textarea, select, label, summary, [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="slider"], [tabindex], [contenteditable]:not([contenteditable="false"])'
+// Navigation uses tabindex="-1" to focus main; its content still allows character clicks.
+// Native and ARIA controls retain priority even when removed from the tab order.
+const interactiveSelector = 'a, button, input, textarea, select, label, summary, [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="slider"], [tabindex]:not([tabindex="-1"]), [contenteditable]:not([contenteditable="false"])'
 const noActions: readonly CompanionAction[] = []
 
 function subscribeCompact(callback: () => void) {
