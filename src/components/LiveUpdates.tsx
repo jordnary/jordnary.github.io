@@ -45,15 +45,18 @@ export function LiveUpdates() {
     const isManualRefresh = refreshIndex > 0
 
     void Promise.allSettled([
-      getGitHubSnapshot({ force: isManualRefresh }),
+      getGitHubSnapshot(),
       loadRssFeed(),
     ]).then(([githubResult, feedResult]) => {
       if (!isCurrent) return
 
       if (githubResult.status === 'fulfilled') {
-        setGitHubState({ data: githubResult.value, status: 'ready' })
+        setGitHubState({
+          data: githubResult.value.snapshot,
+          status: githubResult.value.fromCache ? 'error' : 'ready',
+        })
       } else {
-        setGitHubState({ data: null, status: 'error' })
+        setGitHubState((previous) => ({ ...previous, status: 'error' }))
       }
 
       if (feedResult.status === 'fulfilled') {
@@ -64,7 +67,7 @@ export function LiveUpdates() {
 
       if (isManualRefresh) {
         setRefreshFeedback(
-          githubResult.status === 'fulfilled' && feedResult.status === 'fulfilled'
+          githubResult.status === 'fulfilled' && !githubResult.value.fromCache && feedResult.status === 'fulfilled'
             ? 'success'
             : 'error',
         )
@@ -93,7 +96,7 @@ export function LiveUpdates() {
     }
 
     setRefreshFeedback('loading')
-    setGitHubState({ data: null, status: 'loading' })
+    setGitHubState((previous) => ({ ...previous, status: 'loading' }))
     setFeedState({ data: null, status: 'loading' })
     setRefreshIndex((index) => index + 1)
   }
@@ -142,8 +145,13 @@ export function LiveUpdates() {
             eyebrow="Code Activity"
             title="我最近在维护"
           />
-          {githubState.status === 'ready' && githubState.data ? (
-            <GitHubContent snapshot={githubState.data} />
+          {githubState.data ? (
+            <>
+              <GitHubContent snapshot={githubState.data} />
+              {githubState.status === 'error' && (
+                <p className="live-inline-note" role="status">暂时无法更新，显示上次成功的数据。</p>
+              )}
+            </>
           ) : (
             <LiveState
               kind={githubState.status === 'error' ? 'error' : 'loading'}
@@ -225,7 +233,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
         </div>
         <div>
           <dt>最近状态</dt>
-          <dd className="github-live-status"><span />持续更新</dd>
+          <dd className="github-live-status"><span />定期同步</dd>
         </div>
       </dl>
 
@@ -255,7 +263,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
       ) : (
         <p className="live-inline-note">暂时还没有可展示的公开项目。</p>
       )}
-      <p className="live-sync-note">更新于：{formatTime(snapshot.fetchedAt)}</p>
+      <p className="live-sync-note">同步于：{formatTime(snapshot.fetchedAt)}</p>
     </>
   )
 }
@@ -324,6 +332,7 @@ function LiveState({ kind, source }: { kind: 'error' | 'loading'; source: string
 async function loadRssFeed(): Promise<RssFeed> {
   const response = await fetch(`${import.meta.env.BASE_URL}data/rss.json`, {
     cache: 'no-cache',
+    signal: AbortSignal.timeout(10000),
   })
 
   if (!response.ok) {

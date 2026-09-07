@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 public/data/rss.json
+public/data/github.json
+public/data/github.json.tmp
 *.local
 
 # Editor directories and files

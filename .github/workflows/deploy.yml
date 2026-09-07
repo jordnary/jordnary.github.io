@@ -5,16 +5,13 @@ on:
     branches: ['main']
 
   schedule:
-    # 每 6 小时重新拉取 RSS、构建并发布一次（UTC）。
+    # 每 6 小时同步 GitHub / RSS 快照、构建、发布并清理历史（UTC）。
     - cron: '17 */6 * * *'
 
   workflow_dispatch:
 
 permissions:
   contents: read
-  deployments: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: 'pages'
@@ -22,6 +19,10 @@ concurrency:
 
 jobs:
   deploy:
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -41,29 +42,55 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v6
+
+      - name: Validate snapshots
+        run: npm run test:snapshots
+
+      - name: Build with authenticated GitHub snapshot sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: './dist'
+          retention-days: 1
 
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
 
   cleanup-deployments:
-    name: Keep latest Pages deployment
+    name: Clean Pages deployment history
     needs: deploy
-    if: ${{ needs.deploy.result == 'success' }}
+    if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+      actions: write
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Delete old completed deployment workflow runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/cleanup-history.mjs
+
       - name: Delete previous Pages deployments
+        if: ${{ needs.deploy.result == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}

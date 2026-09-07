@@ -4,11 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "npm run sync:feeds",
-    "prebuild": "npm run sync:feeds",
+    "predev": "npm run sync:github && npm run sync:feeds",
+    "prebuild": "npm run sync:github && npm run sync:feeds",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "sync:feeds": "node scripts/sync-rss.mjs",
+    "sync:github": "node scripts/sync-github.mjs",
+    "test:snapshots": "node --test tests/github-snapshot.test.mjs tests/cleanup-history.test.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

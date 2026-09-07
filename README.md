@@ -58,12 +58,17 @@ http://localhost:5173
 | `npm run lint` | 运行 ESLint 检查。 |
 | `npm run build` | 执行 TypeScript 构建检查并生成生产产物。 |
 | `npm run sync:feeds` | 拉取 RSS 源并生成供页面读取的静态数据。 |
+| `npm run sync:github` | 同步 GitHub 公开数据，失败时恢复上一份有效快照。 |
+| `npm run test:snapshots` | 验证快照同步、离线兜底及历史清理规则。 |
 | `npm run preview` | 本地预览 `dist` 生产构建结果。 |
 
 ## 站内搜索与动态内容
 
 - 在任意页面点击导航栏“搜索”，或按 `Ctrl/⌘ + K`，即可搜索项目、学习方向、时间线与站内页面。搜索索引来自 `src/data`，完全在浏览器本地运行，不依赖第三方搜索服务。
-- 首页的 GitHub Pulse 使用 GitHub 公共 REST API 读取 `jordnary` 的公开仓库和资料，并在浏览器中缓存 5 分钟，降低接口请求频率。
+- 首页 Code Activity 读取同源的 `data/github.json`，访客浏览器不再请求 GitHub API。`scripts/sync-github.mjs` 在 `dev` 与 `build` 前同步公开资料和最近维护的 3 个非 fork、未归档公开仓库；生成文件被 Git 忽略，不会产生数据提交历史。
+- Actions 使用内置 `github.token` 认证同步，无需额外配置个人令牌。令牌仅用于构建阶段的 GitHub API 请求，不会写入 JSON、前端代码或发往快照站点。本地可通过进程环境变量 `GH_TOKEN` 或 `GITHUB_TOKEN` 提供认证；未设置时使用匿名请求。
+- GitHub 同步失败时，从本地文件与已发布站点中选取最新的有效快照，并保留原 `fetchedAt`。Actions 通过 Pages 的 `base_url` 设置 `SITE_URL`，支持自定义域名和站点子路径。首次构建若无法同步且没有旧快照，会停止部署，避免空数据覆盖线上网站。
+- 浏览器刷新只重新读取站内快照，不触发 GitHub 同步；刷新时保留现有内容，加载失败时使用本地缓存并提示旧数据，页面显示真实同步时间。需要立即同步时，手动运行部署工作流。
 - RSS 阅读流由 `scripts/sync-rss.mjs` 在 `dev` 与 `build` 前自动同步；生成的 `public/data/rss.json` 会被忽略，不会提交到仓库。这样 GitHub Pages 的访客始终读取同源静态 JSON，不受浏览器跨域限制。
 - 默认 RSS 源为 GitHub Blog 与 Hacker News。可在 `scripts/sync-rss.mjs` 的 `feedSources` 中增删来源；脚本会在单个来源失败时继续生成其余内容，并在所有来源暂时不可用时保留上一份成功数据。
 
@@ -112,10 +117,21 @@ npm run preview
 GitHub Pages 部署流程配置在 `.github/workflows/deploy.yml` 中：
 
 - `main` 分支收到 push 后自动触发部署。
+- 每 6 小时自动同步 GitHub / RSS 数据并部署一次（UTC 的 00:17、06:17、12:17、18:17；北京时间 08:17、14:17、20:17、次日 02:17）。定时任务可能因 Actions 排队而延迟。
 - 工作流使用 Node.js LTS 并通过 `npm ci` 安装依赖。
 - 执行 `npm run build` 生成 `dist` 静态产物。
 - 上传 Pages artifact 并部署到 GitHub Pages。
 - 也可以在 GitHub Actions 页面手动运行 `Deploy static content to Pages`。
+
+### 数据与历史保留
+
+- GitHub 快照固定覆盖 `public/data/github.json`，最多保留 3 个项目；RSS 快照最多保留 12 条内容。不创建按时间命名的快照文件，不将生成数据提交到 Git。
+- Pages 构建 artifact 设置 `retention-days: 1`，一天后自动过期；线上快照由 Pages 提供，不依赖短期 artifact 保存。
+- 每次工作流结束后清理该部署工作流的历史：保护最近 20 次、最近 7 天、当前运行、进行中的运行和最近一次成功运行；仅删除同时超出数量和时间门槛的已完成记录，每次最多 100 条。其他工作流不受影响。规则位于 `scripts/cleanup-history.mjs`。
+- 继续沿用部署记录清理：新部署成功后，只保留最新一条 `github-pages` deployment 记录。构建失败时仍可清理旧工作流记录，但不会执行部署记录清理。
+- 清理任务单独使用 `actions: write` 和 `deployments: write`；构建任务只保留读取代码与发布 Pages 所需权限。
+
+参考：[Pages artifact 保留参数](https://github.com/actions/upload-pages-artifact#inputs-)、[工作流记录删除 API](https://docs.github.com/en/rest/actions/workflow-runs#delete-a-workflow-run)。
 
 ## 目录结构
 
