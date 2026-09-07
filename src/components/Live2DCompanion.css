@@ -1,10 +1,10 @@
 .live2d-companion {
   --companion-width: clamp(17rem, 24vw, 21rem);
   --companion-height: min(29rem, 58svh);
-  --companion-tool-size: 2.375rem;
+  --companion-tool-size: 1.75rem;
   position: fixed;
-  right: calc(1rem + env(safe-area-inset-right));
-  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  right: calc(0.375rem + env(safe-area-inset-right));
+  bottom: calc(0.375rem + env(safe-area-inset-bottom));
   z-index: 40;
   pointer-events: none;
 }
@@ -16,11 +16,12 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 
 .live2d-stage {
   width: var(--companion-width);
-  max-width: calc(100vw - 5rem);
+  max-width: calc(100vw - 2rem);
   position: relative;
 }
 
 .live2d-canvas-wrap {
+  width: 100%;
   height: var(--companion-height);
   position: relative;
   border-radius: 1.5rem;
@@ -81,14 +82,12 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 /* Absolute positioning keeps extra tools and dialogue out of the model's layout. */
 .live2d-tools {
   position: absolute;
-  right: calc(100% - 0.5rem);
-  top: 38%;
+  right: 1.5rem;
+  bottom: 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem;
-  max-height: 60%;
+  gap: 0.25rem;
   visibility: hidden;
   pointer-events: none;
   transition: visibility 220ms;
@@ -101,10 +100,14 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
   flex-shrink: 0;
   padding: 0;
   opacity: 0;
-  transform: translateX(10px) scale(0.86);
+  transform: translateX(-6px) scale(0.86);
   pointer-events: none;
   transition: opacity 180ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), background 180ms ease, border-color 180ms ease;
 }
+
+.live2d-tool-icon { display: inline-flex; }
+.live2d-tool-icon svg { width: 0.875rem; height: 0.875rem; }
+.live2d-tool[aria-pressed="false"] { color: var(--color-text-muted); }
 
 .live2d-stage:is(.is-hovered, :has(:focus-visible)) .live2d-tools {
   visibility: visible;
@@ -119,7 +122,7 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
   transition-delay: calc(var(--tool-index) * 35ms);
 }
 
-.live2d-stage .live2d-tool:hover { transform: translateX(-2px) scale(1.06); }
+.live2d-stage .live2d-tool:hover { transform: scale(1.04); }
 .live2d-stage .live2d-tool:active { transform: scale(0.94); }
 
 .live2d-tool-label {
@@ -147,8 +150,9 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 .live2d-dialogue {
   position: absolute;
   z-index: 1;
-  right: 0.5rem;
-  bottom: calc(100% - 3.5rem);
+  left: var(--companion-artwork-center, 50%);
+  bottom: calc(100% - var(--companion-artwork-top, 0px) + 0.625rem);
+  transform: translateX(-50%);
   width: 15rem;
   max-width: calc(100vw - 2rem);
 }
@@ -157,7 +161,7 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
   margin: 0;
   padding: 0.75rem 0.875rem;
   border: 1px solid var(--color-border-strong);
-  border-radius: 0.875rem 0.875rem 0.25rem 0.875rem;
+  border-radius: 0.875rem;
   background: var(--color-bg);
   color: var(--color-text-soft);
   box-shadow: var(--shadow-control);

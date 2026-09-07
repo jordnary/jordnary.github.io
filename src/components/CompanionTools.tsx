@@ -8,8 +8,8 @@ type ActionBase = {
 
 /** Add page actions or links without changing the companion's interaction code. */
 export type CompanionAction = ActionBase & (
-  | { onSelect: () => void; href?: never; external?: never }
-  | { href: string; external?: boolean; onSelect?: never }
+  | { onSelect: () => void; pressed?: boolean; href?: never; external?: never }
+  | { href: string; external?: boolean; onSelect?: never; pressed?: never }
 )
 
 export function CompanionTools({ actions }: { actions: readonly CompanionAction[] }) {
@@ -21,13 +21,13 @@ export function CompanionTools({ actions }: { actions: readonly CompanionAction[
           className: 'live2d-tool',
           style: { '--tool-index': index } as CSSProperties,
         }
-        const content = <>{action.icon}<span aria-hidden="true" className="live2d-tool-label">{action.label}</span></>
+        const content = <><span aria-hidden="true" className="live2d-tool-icon">{action.icon}</span><span aria-hidden="true" className="live2d-tool-label">{action.label}</span></>
         return action.href !== undefined ? (
           <a {...props} href={action.href} key={action.id} rel={action.external ? 'noopener noreferrer' : undefined} target={action.external ? '_blank' : undefined}>
             {content}
           </a>
         ) : (
-          <button {...props} key={action.id} onClick={action.onSelect} type="button">{content}</button>
+          <button {...props} aria-pressed={action.pressed} key={action.id} onClick={action.onSelect} type="button">{content}</button>
         )
       })}
     </div>

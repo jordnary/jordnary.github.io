@@ -1,10 +1,14 @@
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from 'react'
 import type { Live2DScene } from '../lib/live2d'
+import { githubProfileUrl } from '../lib/github'
+import { contactProfile } from '../data/contact'
 import { CompanionTools, type CompanionAction } from './CompanionTools'
+import { ContactIcon } from './icons'
 import './Live2DCompanion.css'
 
 const compactQuery = '(max-width: 767px), (pointer: coarse), (hover: none)'
 const preferenceKey = 'site-live2d-collapsed'
+const chatPreferenceKey = 'site-live2d-chat-enabled'
 const interactiveSelector = 'a, button, input, textarea, select, label, summary, [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="slider"], [tabindex], [contenteditable]:not([contenteditable="false"])'
 const noActions: readonly CompanionAction[] = []
 const lines = [
@@ -21,11 +25,12 @@ function subscribeCompact(callback: () => void) {
   return () => query.removeEventListener('change', callback)
 }
 
-function readPreference() {
+function readPreference(key: string, fallback = false) {
   try {
-    return localStorage.getItem(preferenceKey) === 'true'
+    const stored = localStorage.getItem(key)
+    return stored === null ? fallback : stored === 'true'
   } catch {
-    return false
+    return fallback
   }
 }
 
@@ -40,7 +45,8 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     () => window.matchMedia(compactQuery).matches,
     () => true,
   )
-  const [desktopCollapsed, setDesktopCollapsed] = useState(readPreference)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(preferenceKey))
+  const [chatEnabled, setChatEnabled] = useState(() => readPreference(chatPreferenceKey, true))
   const [restoreFocus, setRestoreFocus] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
 
@@ -59,10 +65,17 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
     } catch { /* Storage is optional, including in private browsing. */ }
   }
 
+  const toggleChat = () => {
+    setChatEnabled(!chatEnabled)
+    try {
+      localStorage.setItem(chatPreferenceKey, String(!chatEnabled))
+    } catch { /* Storage is optional, including in private browsing. */ }
+  }
+
   return (
     <aside aria-label="网站看板娘" className="live2d-companion" hidden={suspended}>
       {!desktopCollapsed ? (
-        <CompanionStage actions={actions} focusOnReady={restoreFocus} onCollapse={toggle} suspended={suspended} />
+        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
           aria-expanded="false"
@@ -80,7 +93,12 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   )
 }
 
-function CompanionStage({ onCollapse, suspended, actions, focusOnReady }: CompanionProps & { onCollapse: () => void; focusOnReady: boolean }) {
+function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnabled, onToggleChat }: CompanionProps & {
+  onCollapse: () => void
+  focusOnReady: boolean
+  chatEnabled: boolean
+  onToggleChat: () => void
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<Live2DScene | null>(null)
@@ -92,7 +110,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady }: Compan
   const [hovered, setHovered] = useState(false)
 
   const talk = () => {
-    if (status !== 'ready' || suspended) return
+    if (status !== 'ready' || suspended || !chatEnabled) return
     const text = lines[lineRef.current++ % lines.length]
     setMessage((current) => ({ text, sequence: current.sequence + 1 }))
     sceneRef.current?.greet()
@@ -244,7 +262,8 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady }: Compan
         {message.text && <p key={message.sequence}>{message.text}</p>}
       </div>
       <div
-        aria-label="看板娘，按 Enter 或空格聊天"
+        aria-disabled={status === 'ready' ? !chatEnabled : undefined}
+        aria-label={chatEnabled ? '看板娘，按 Enter 或空格聊天' : '看板娘，对话已关闭，可在功能列表中开启'}
         className="live2d-canvas-wrap"
         onKeyDown={(event) => {
           if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
@@ -259,6 +278,18 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady }: Compan
       </div>
       {status === 'ready' ? (
         <CompanionTools actions={[
+          { id: 'github', label: '访问 GitHub 主页', icon: <ContactIcon title="GitHub" />, href: githubProfileUrl, external: true },
+          { id: 'email', label: '通过 Gmail 联系我', icon: <ContactIcon title="Email" />, href: `mailto:${contactProfile.email}` },
+          {
+            id: 'chat-toggle',
+            label: chatEnabled ? '关闭人物点击对话' : '开启人物点击对话',
+            icon: <ChatIcon enabled={chatEnabled} />,
+            pressed: chatEnabled,
+            onSelect: () => {
+              setMessage((current) => ({ ...current, text: '' }))
+              onToggleChat()
+            },
+          },
           ...(actions ?? noActions),
           { id: 'collapse', label: '收起看板娘', icon: <CollapseIcon />, onSelect: onCollapse },
         ]} />
@@ -270,6 +301,15 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady }: Compan
         </div>
       )}
     </div>
+  )
+}
+
+function ChatIcon({ enabled }: { enabled: boolean }) {
+  return (
+    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
+      <path d="M5 4h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 3v-3a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
+      {enabled ? <path d="M7 9h10M7 13h6" /> : <path d="m3 3 18 18" />}
+    </svg>
   )
 }
 

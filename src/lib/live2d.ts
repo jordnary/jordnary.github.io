@@ -130,10 +130,15 @@ export async function createLive2DScene(
       currentApp.renderer.resize(width, height)
       const scale = Math.min((width - 16) / (right - left), (height - 16) / (bottom - top))
       currentModel.scale.set(scale)
+      // Keep spare canvas space on the left when the window height limits the model.
       currentModel.position.set(
-        (width - (right - left) * scale) / 2 - left * scale,
+        width - 8 - right * scale,
         height - 8 - bottom * scale,
       )
+      // Anchor the bubble to visible artwork, including the export's transparent padding.
+      const stage = container.parentElement
+      stage?.style.setProperty('--companion-artwork-top', `${currentModel.y + top * scale}px`)
+      stage?.style.setProperty('--companion-artwork-center', `${currentModel.x + (left + right) * scale / 2}px`)
       currentApp.render()
     }
     resize()

@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client'
 import { Live2DCompanion } from '../src/components/Live2DCompanion'
+import { githubProfileUrl } from '../src/lib/github'
+import { contactProfile } from '../src/data/contact'
 import '../src/index.css'
 
 // This browser fixture is served by Vite only; it is not a production build entry.
@@ -45,9 +47,12 @@ window.matchMedia = (query) => {
   return originalMatchMedia(query)
 }
 const storageKey = 'site-live2d-collapsed'
+const chatStorageKey = 'site-live2d-chat-enabled'
 const originalPreference = localStorage.getItem(storageKey)
+const originalChatPreference = localStorage.getItem(chatStorageKey)
 localStorage.removeItem(storageKey)
-const root = createRoot(document.querySelector('#fixture')!)
+localStorage.removeItem(chatStorageKey)
+let root = createRoot(document.querySelector('#fixture')!)
 let actionCount = 0
 const render = (suspended = false) => root.render(<Live2DCompanion suspended={suspended} actions={[
   { id: 'test-action', label: 'Test page action', icon: <span>A</span>, onSelect: () => { actionCount++ } },
@@ -67,7 +72,7 @@ try {
   await until(() => document.querySelector('canvas.is-ready'))
   const canvas = document.querySelector('.live2d-canvas-wrap canvas') as HTMLCanvasElement
   const container = document.querySelector('.live2d-canvas-wrap') as HTMLElement
-  check(container.clientWidth >= 272 && container.clientHeight > 280, 'Desktop canvas is larger than the initial version')
+  check(container.clientWidth >= 224 && container.clientHeight > 280, 'Desktop canvas remains usable in both standard and short windows')
   check(!visible(), 'Tools are hidden before interaction')
   check(!document.querySelector('.live2d-chat'), 'There is no separate chat control')
 
@@ -97,6 +102,15 @@ try {
   context.clearRect(0, 0, copy.width, copy.height)
   context.drawImage(canvas, 0, 0, copy.width, copy.height)
   const mountedPixels = context.getImageData(0, 0, copy.width, copy.height).data
+  const artwork = { left: copy.width, right: 0, top: copy.height }
+  for (let y = 0; y < copy.height; y++) {
+    for (let x = 0; x < copy.width; x++) {
+      if (mountedPixels[(y * copy.width + x) * 4 + 3] < 24) continue
+      artwork.left = Math.min(artwork.left, x)
+      artwork.right = Math.max(artwork.right, x + 1)
+      artwork.top = Math.min(artwork.top, y)
+    }
+  }
   solid = undefined
   for (let y = Math.floor(copy.height * 0.45); y < copy.height * 0.85; y += 5) {
     for (let x = Math.floor(copy.width * 0.3); x < copy.width * 0.75; x += 5) {
@@ -124,8 +138,16 @@ try {
   await nextPaint()
   check(visible(), 'Tools remain visible while crossing the gap')
   mouse('pointermove', solid!, tools())
-  await delay(300)
+  // Allow the last extended tool's staggered transition to finish before measuring.
+  await delay(450)
   check(visible(), 'Entering the tool rail cancels delayed hiding')
+  const canvasRect = canvas.getBoundingClientRect()
+  const toolRects = Array.from(tools().querySelectorAll('.live2d-tool'), (tool) => tool.getBoundingClientRect())
+  const toolsInside = toolRects.every((rect) => rect.left >= canvasRect.left + canvasRect.width * 0.75 && rect.right <= canvasRect.right && rect.top >= 0 && rect.bottom <= window.innerHeight)
+  check(toolsInside, 'Tools sit inside the right side of the canvas without reserving external space')
+  check(Math.abs(canvasRect.bottom - toolRects.at(-1)!.bottom - 8) <= 1, 'The tool rail is anchored beside the lower part of the character')
+  check(window.innerWidth - canvasRect.right <= 8 && window.innerHeight - canvasRect.bottom <= 8, 'The character canvas stays close to the bottom-right corner')
+  check(toolRects.every((rect) => rect.width >= 28 && rect.width <= 32 && rect.height >= 28 && rect.height <= 32), 'Tool buttons use the smaller desktop size')
   mouse('pointermove', { x: -20, y: 0 })
   await until(() => !visible())
   check(!visible(), 'Leaving the character and tools hides the rail')
@@ -134,6 +156,11 @@ try {
   await nextPaint()
   const firstLine = dialogue()
   check(firstLine.length > 0, 'A primary click on visible artwork speaks')
+  const bubbleRect = document.querySelector('.live2d-dialogue p')!.getBoundingClientRect()
+  const artworkCenter = canvasRect.left + (artwork.left + artwork.right) / 2 / copy.width * canvasRect.width
+  const artworkTop = canvasRect.top + artwork.top / copy.height * canvasRect.height
+  check(Math.abs(bubbleRect.left + bubbleRect.width / 2 - artworkCenter) < 3, 'Dialogue is horizontally centered above visible artwork')
+  check(artworkTop - bubbleRect.bottom >= 4 && artworkTop - bubbleRect.bottom <= 18, 'Dialogue sits close above the artwork without covering it')
   click(solid!, document.body, { ctrlKey: true })
   click(solid!, document.body, { button: 2 })
   click(solid!, document.body, { pointerType: 'touch' })
@@ -171,6 +198,11 @@ try {
   check(actionCount === 1 && dialogue() === secondLine, 'Reusable action controls invoke their handler without speaking')
   const link = document.querySelector('[aria-label="Test external link"]') as HTMLAnchorElement
   check(link.target === '_blank' && link.rel.includes('noopener') && link.href === 'https://example.com/', 'Reusable external links have the expected navigation attributes')
+  const github = document.querySelector('[aria-label="访问 GitHub 主页"]') as HTMLAnchorElement
+  check(github.href === githubProfileUrl && github.target === '_blank' && github.rel.includes('noopener'), 'Built-in GitHub action links to the configured profile in a new tab')
+  const email = document.querySelector('[aria-label="通过 Gmail 联系我"]') as HTMLAnchorElement
+  check(email.href === `mailto:${contactProfile.email}`, 'Built-in email action addresses the configured Gmail contact')
+  check(document.querySelector('[aria-label="关闭人物点击对话"]')?.getAttribute('aria-pressed') === 'true', 'Character chat is enabled by default')
 
   const beforeSuspension = coordinates(solid!)
   render(true)
@@ -179,6 +211,26 @@ try {
   await nextPaint()
   check(document.querySelector('.live2d-companion')?.hasAttribute('hidden') && dialogue() === secondLine, 'Search suspension hides the companion and blocks interaction')
   render()
+  await nextPaint()
+  ;(document.querySelector('[aria-label="关闭人物点击对话"]') as HTMLButtonElement).click()
+  await nextPaint()
+  check(!dialogue() && container.getAttribute('aria-disabled') === 'true', 'Disabling chat immediately clears its bubble and updates accessibility state')
+  check(localStorage.getItem(chatStorageKey) === 'false' && document.querySelector('[aria-label="开启人物点击对话"]')?.getAttribute('aria-pressed') === 'false', 'Disabled chat preference and tool state agree')
+  click()
+  container.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+  container.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }))
+  await nextPaint()
+  check(!dialogue(), 'Disabled chat blocks both pointer and keyboard dialogue')
+  mouse('pointermove', solid!, tools())
+  await until(visible)
+  action.click()
+  check(visible() && actionCount === 2, 'Disabling chat leaves the tool rail and other actions usable')
+  ;(document.querySelector('[aria-label="开启人物点击对话"]') as HTMLButtonElement).click()
+  await nextPaint()
+  click()
+  await nextPaint()
+  check(!!dialogue() && localStorage.getItem(chatStorageKey) === 'true', 'Re-enabling chat restores character clicks and persists the setting')
+  ;(document.querySelector('[aria-label="关闭人物点击对话"]') as HTMLButtonElement).click()
   await nextPaint()
   ;(document.querySelector('[aria-label="收起看板娘"]') as HTMLButtonElement).click()
   await nextPaint()
@@ -190,6 +242,22 @@ try {
   compact.set(false)
   await nextPaint()
   check(!!document.querySelector('.live2d-launcher'), 'Returning to desktop preserves its collapsed preference')
+  ;(document.querySelector('.live2d-launcher') as HTMLButtonElement).click()
+  await until(() => document.querySelector('canvas.is-ready'))
+  check(document.querySelector('[aria-label="开启人物点击对话"]')?.getAttribute('aria-pressed') === 'false', 'Chat stays disabled after mobile transitions and collapse/reopen')
+  root.unmount()
+  root = createRoot(document.querySelector('#fixture')!)
+  render()
+  await until(() => document.querySelector('canvas.is-ready'))
+  const restoredContainer = document.querySelector('.live2d-canvas-wrap') as HTMLElement
+  restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+  await nextPaint()
+  check(!dialogue() && restoredContainer.getAttribute('aria-disabled') === 'true', 'A fresh mount restores the disabled chat preference from storage')
+  ;(document.querySelector('[aria-label="开启人物点击对话"]') as HTMLButtonElement).click()
+  await nextPaint()
+  restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }))
+  await nextPaint()
+  check(!!dialogue(), 'Keyboard users can re-enable chat after restoring a disabled preference')
 
   document.querySelector('#result')!.textContent = `${passed} checks passed`
 } catch (error) {
@@ -199,4 +267,6 @@ try {
   window.matchMedia = originalMatchMedia
   if (originalPreference === null) localStorage.removeItem(storageKey)
   else localStorage.setItem(storageKey, originalPreference)
+  if (originalChatPreference === null) localStorage.removeItem(chatStorageKey)
+  else localStorage.setItem(chatStorageKey, originalChatPreference)
 }
