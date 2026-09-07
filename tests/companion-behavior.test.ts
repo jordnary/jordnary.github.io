@@ -146,6 +146,7 @@ test('failed, stalled and unfinished motions recover without trapping the charac
 })
 
 test('inactivity chooses each main action and schedules another only after a full interval', async (t) => {
+  assert.equal(companionInactivityDelay, 90000)
   t.mock.timers.enable({ apis: ['setTimeout'] })
   const random = t.mock.method(Math, 'random', () => 0)
   const played: string[] = []

@@ -3,8 +3,7 @@ import type { Cubism4InternalModel, Live2DModel as Model } from 'pixi-live2d-dis
 import { createLive2DScene } from '../src/lib/live2d'
 import { companionMotions } from '../src/lib/companion-behavior'
 
-// Verify the shared framing through the real motion; temporary effect overflow
-// is intentional and must not trigger resizing, repositioning or camera scaling.
+// Verify full idle coverage and stable framing through the real motions.
 const script = document.createElement('script')
 script.src = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
 await new Promise<void>((resolve, reject) => { script.onload = () => resolve(); script.onerror = reject; document.head.append(script) })
@@ -30,7 +29,7 @@ let activeScene: Awaited<ReturnType<typeof createLive2DScene>> | undefined
 try {
   for (const resolution of [1, 1.5, 2]) {
     Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: resolution })
-    for (const [width, height] of [[240, 336], [192, 220]]) {
+    for (const [width, height] of [[240, 336], [192, 336], [192, 220]]) {
       container.style.width = `${width}px`; container.style.height = `${height}px`
       let idle = { scale: 0, x: 0, y: 0 }
       for (const initial of ['idle', 'home']) {
@@ -42,13 +41,43 @@ try {
         await delay(30)
         if (initial === 'idle') {
           idle = { scale: model.scale.x, x: model.x, y: model.y }
+          const canvasWidth = app.screen.width
+          const offset = Number.parseFloat(canvas.style.left)
+          check(canvasWidth > width && Math.abs(offset + canvasWidth - width) < 0.001,
+            `${width}x${height}, DPR ${resolution}: canvas expands left while the layout and right edge stay fixed`)
+          // Render into a larger probe so clipped pixels cannot hide beyond an edge.
+          // Read every visible alpha value, including translucent hair and ribbons.
+          const padding = 32
+          app.renderer.resize(canvasWidth + padding * 2, height + padding * 2)
+          model.position.set(idle.x + padding, idle.y + padding)
+          const gl = (app.renderer as import('pixi.js').Renderer).gl
+          const pixels = new Uint8Array(canvas.width * canvas.height * 4)
+          let clipped = false
+          let marginLeft = Infinity
+          for (let frame = 0; frame <= 1092; frame++) {
+            model.update(1000 / 30)
+            app.render()
+            gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+            for (let y = 0; y < canvas.height; y++) {
+              for (let x = 0; x < canvas.width; x++) {
+                if (!pixels[(y * canvas.width + x) * 4 + 3]) continue
+                const px = x / resolution - padding
+                const py = (canvas.height - 1 - y) / resolution - padding
+                marginLeft = Math.min(marginLeft, px)
+                clipped ||= px < 0 || px >= canvasWidth || py < 0 || py >= height
+              }
+            }
+            if (frame % 30 === 0) await delay(0)
+          }
+          check(!clipped, `${width}x${height}, DPR ${resolution}: two complete idle loops fit, including translucent edges (left margin ${marginLeft.toFixed(1)}px)`)
           activeScene.destroy()
           continue
         }
         const sameFraming = () => Math.abs(model.scale.x - idle.scale) < 0.000001
           && Math.abs(model.x - idle.x) < 0.000001 && Math.abs(model.y - idle.y) < 0.000001
-        const sameCanvas = () => app.screen.width === width && app.screen.height === height
-          && canvas.width === Math.round(width * resolution) && canvas.height === Math.round(height * resolution)
+        const canvasWidth = app.screen.width
+        const sameCanvas = () => app.screen.width === canvasWidth && app.screen.height === height
+          && canvas.width === Math.round(canvasWidth * resolution) && canvas.height === Math.round(height * resolution)
         check(sameFraming() && sameCanvas(), `${width}x${height}, DPR ${resolution}: home starts at the original idle scale, position and canvas size`)
         let unchanged = true
         for (let frame = 0; frame <= Math.floor(companionMotions.home.duration / 1000 * 30); frame++) {
@@ -57,8 +86,8 @@ try {
           unchanged &&= sameFraming() && sameCanvas()
           if (resolution === 1 && width === 240 && [0, 42, 90, 180].includes(frame)) {
             const preview = document.createElement('canvas')
-            preview.width = width; preview.height = height
-            preview.getContext('2d')!.drawImage(canvas, 0, 0, width, height)
+            preview.width = canvasWidth; preview.height = height
+            preview.getContext('2d')!.drawImage(canvas, 0, 0, canvasWidth, height)
             const figure = document.createElement('figure')
             const caption = document.createElement('figcaption')
             caption.textContent = `home at ${(frame / 30).toFixed(1)}s`

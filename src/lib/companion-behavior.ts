@@ -12,7 +12,7 @@ export const companionMotions = {
   home: { duration: 6070, text: '洗澡！然后进餐！咦，人家的葡萄酒呢？' },
   mail: { duration: 5130, text: '有话想对人家说？那就写封信吧，人家会期待的哦。' },
 } as const
-export const companionInactivityDelay = 60000
+export const companionInactivityDelay = 90000
 const mainReactions = ['main_1', 'main_2', 'main_3'] as const
 
 type Driver = {

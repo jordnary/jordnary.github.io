@@ -146,22 +146,30 @@ export async function createLive2DScene(
       bottom = internal.height
     }
 
+    let framingReady = false
+    let layoutWidth = container.clientWidth || 320
+    let layoutHeight = container.clientHeight || 440
     const resize = () => {
       if (destroyed) return
-      const width = container.clientWidth || currentApp.screen.width
-      const height = container.clientHeight || currentApp.screen.height
-      currentApp.renderer.resize(width, height)
+      const width = layoutWidth = container.clientWidth || layoutWidth
+      const height = layoutHeight = container.clientHeight || layoutHeight
       const scale = Math.min((width - 16) / (right - left), (height - 16) / (bottom - top))
+      // Two full idle loops extend left by ~8% of the neutral artwork width.
+      // Give that motion 10% while keeping the original layout and model scale.
+      const resolution = currentApp.renderer.resolution
+      const overflowLeft = framingReady ? Math.ceil((right - left) * scale * 0.1 * resolution) / resolution : 0
+      currentApp.renderer.resize(width + overflowLeft, height)
+      canvas.style.left = `${-overflowLeft}px`
       currentModel.scale.set(scale)
       // Keep spare canvas space on the left when the window height limits the model.
       currentModel.position.set(
-        width - 8 - right * scale,
+        width - 8 - right * scale + overflowLeft,
         height - 8 - bottom * scale,
       )
       // Anchor the bubble to visible artwork, including the export's transparent padding.
       const stage = container.parentElement
       stage?.style.setProperty('--companion-artwork-top', `${currentModel.y + top * scale}px`)
-      stage?.style.setProperty('--companion-artwork-center', `${currentModel.x + (left + right) * scale / 2}px`)
+      stage?.style.setProperty('--companion-artwork-center', `${currentModel.x - overflowLeft + (left + right) * scale / 2}px`)
       stage?.style.setProperty('--companion-artwork-width', `${(right - left) * scale}px`)
       currentApp.render()
     }
@@ -193,8 +201,9 @@ export async function createLive2DScene(
       right = ((pixelRight + 1) / resolution - model.x) / scale
       top = (pixelTop / resolution - model.y) / scale
       bottom = ((pixelBottom + 1) / resolution - model.y) / scale
-      resize()
     }
+    framingReady = true
+    resize()
     let entrancePending = !!homeMotion && !reducedMotion.matches && await model.motion('home', 0, 3)
     if (!entrancePending) await model.motion('idle', 0, 3)
     signal.throwIfAborted()

@@ -161,8 +161,8 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
       if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return null
       // Pixi's auto-density canvas may round CSS dimensions at fractional DPR.
       return sceneRef.current?.hitTest(
-        x / rect.width * container.clientWidth,
-        y / rect.height * container.clientHeight,
+        x / rect.width * Number.parseFloat(canvas.style.width),
+        y / rect.height * Number.parseFloat(canvas.style.height),
       ) ?? null
     }
     const inHoverArea = (event: PointerEvent) => {
@@ -170,7 +170,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
       if (event.target instanceof Element && event.target.closest('.live2d-tools')) return true
       // Include transparent gaps on the way to the tools without intercepting clicks.
       // Dialogue continues to use the separate, visible-pixel hitModel check.
-      const rect = container.getBoundingClientRect()
+      const rect = canvas.getBoundingClientRect()
       return event.clientX >= rect.left && event.clientX < rect.right
         && event.clientY >= rect.top && event.clientY < rect.bottom
     }

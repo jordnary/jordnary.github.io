@@ -92,8 +92,8 @@ try {
   const coordinates = (point: { x: number; y: number }) => {
     const rect = canvas.getBoundingClientRect()
     return {
-      clientX: rect.left + point.x / container.clientWidth * rect.width,
-      clientY: rect.top + point.y / container.clientHeight * rect.height,
+      clientX: rect.left + point.x / canvas.clientWidth * rect.width,
+      clientY: rect.top + point.y / canvas.clientHeight * rect.height,
     }
   }
   const mouse = (type: string, point = solid!, target?: Element, extra: PointerEventInit = {}) => {
@@ -125,13 +125,13 @@ try {
   for (let y = Math.floor(copy.height * 0.45); y < copy.height * 0.85; y += 5) {
     for (let x = Math.floor(copy.width * 0.3); x < copy.width * 0.75; x += 5) {
       if (!transparent && mountedPixels[(y * copy.width + x) * 4 + 3] === 0) {
-        transparent = { x: (x + 0.5) / copy.width * container.clientWidth, y: (y + 0.5) / copy.height * container.clientHeight }
+        transparent = { x: (x + 0.5) / copy.width * canvas.clientWidth, y: (y + 0.5) / copy.height * canvas.clientHeight }
       }
     }
   }
   const artworkPoint = (x: number, y: number) => ({
-    x: (artwork.left + (artwork.right - artwork.left) * x) / copy.width * container.clientWidth,
-    y: (artwork.top + (artwork.bottom - artwork.top) * y) / copy.height * container.clientHeight,
+    x: (artwork.left + (artwork.right - artwork.left) * x) / copy.width * canvas.clientWidth,
+    y: (artwork.top + (artwork.bottom - artwork.top) * y) / copy.height * canvas.clientHeight,
   })
   // Annotated torso and head landmarks, relative to the artwork (not canvas padding).
   solid = artworkPoint(0.36, 0.64)
@@ -140,7 +140,7 @@ try {
   const bodyPosition = coordinates(solid)
   check(document.elementFromPoint(bodyPosition.clientX, bodyPosition.clientY)?.closest('main[tabindex="-1"]'), 'Character clicks pass through to content inside the navigation focus target')
   click({ x: -1, y: 0 })
-  click({ x: container.clientWidth, y: container.clientHeight })
+  click({ x: canvas.clientWidth, y: canvas.clientHeight })
   await nextPaint()
   check(!dialogue(), 'Outside canvas edges do not speak')
   click(transparent!)
@@ -158,8 +158,8 @@ try {
   const railRect = tools().getBoundingClientRect()
   const modelRect = canvas.getBoundingClientRect()
   const railPoint = {
-    x: (railRect.left + railRect.width / 2 - modelRect.left) / modelRect.width * container.clientWidth,
-    y: (railRect.bottom - 12 - modelRect.top) / modelRect.height * container.clientHeight,
+    x: (railRect.left + railRect.width / 2 - modelRect.left) / modelRect.width * canvas.clientWidth,
+    y: (railRect.bottom - 12 - modelRect.top) / modelRect.height * canvas.clientHeight,
   }
   for (let step = 1; step <= 4; step++) {
     mouse('pointermove', {
@@ -387,7 +387,7 @@ try {
   await until(() => phase() === 'idle')
   check(phase() === 'idle', 'A real non-looping body response returns to idle')
 
-  await until(() => phase() === 'responding' && reaction()?.startsWith('main_'), 65000)
+  await until(() => phase() === 'responding' && reaction()?.startsWith('main_'), 95000)
   const ambient = reaction() as 'main_1' | 'main_2' | 'main_3'
   check(dialogue() === companionMotions[ambient].text, 'Real inactivity triggers a random main action with its matching dialogue')
   restoredContainer.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
