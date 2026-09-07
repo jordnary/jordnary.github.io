@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from '../src/App'
+import { companionIntroductions } from '../src/data/companion-introductions'
 import { getRouteHref, sitePages, siteRoutes, type SitePage } from '../src/lib/routes'
 import '../src/index.css'
 
@@ -32,6 +33,7 @@ sessionKeys.forEach((key) => sessionStorage.removeItem(key))
 const root = createRoot(document.querySelector('#root')!)
 const modelRequests = () => performance.getEntriesByType('resource').filter((entry) => /\/live2d\/vampire\//.test(entry.name)).length
 const phase = () => document.querySelector('.live2d-stage')?.getAttribute('data-phase')
+const dialogue = () => document.querySelector('.live2d-dialogue')?.textContent
 const navigate = async (page: SitePage) => {
   const link = document.querySelector<HTMLAnchorElement>(`nav a[href="${getRouteHref(page)}"]`)!
   link.click()
@@ -45,9 +47,22 @@ try {
   const canvas = document.querySelector('.live2d-canvas-wrap canvas')!
   const companion = document.querySelector('.live2d-companion')!
   check(phase() === 'idle', 'Fresh navigation begins with idle, without home')
+  await until(() => dialogue() === companionIntroductions.home)
+  const initialRequests = modelRequests()
+  for (const page of sitePages.slice(1)) {
+    await navigate(page)
+    check(dialogue() === companionIntroductions[page] && phase() === 'idle', `${page}: page introduction replaces the previous line without a reaction`)
+  }
+  check(modelRequests() === initialRequests, 'Introductions do not request motion assets')
+  await delay(6200)
+  check(dialogue() === '', 'Introduction disappears after six seconds')
+  await navigate('contact')
+  check(dialogue() === '', 'Clicking the current page does not repeat its introduction')
+  await navigate('home')
   const character = document.querySelector('.live2d-canvas-wrap')!
   character.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
   await until(() => phase() === 'responding')
+  const manualDialogue = dialogue()
   const requests = modelRequests()
   for (const page of [...sitePages.slice(1), 'home'] as SitePage[]) {
     await navigate(page)
@@ -58,6 +73,7 @@ try {
       && canvas.classList.contains('is-ready') && document.querySelector('.live2d-companion') === companion,
     `${page}: the same ready canvas and companion remain mounted`)
     check(phase() === 'responding' && document.querySelector('.live2d-stage')?.getAttribute('data-reaction') === 'touch_body', `${page}: navigation preserves the playing response`)
+    check(dialogue() === manualDialogue, `${page}: manual dialogue takes priority over introductions`)
     check(modelRequests() === requests, `${page}: no model, texture or motion reload`)
   }
 
@@ -127,11 +143,31 @@ try {
   await delay(80)
   check(location.href === currentUrl, 'Navigation respects an already cancelled click')
 
+  document.querySelector<HTMLButtonElement>('[aria-label="关闭人物点击对话"]')!.click()
+  await navigate('learning')
+  check(dialogue() === '', 'Disabled dialogue discards a page introduction')
+  document.querySelector<HTMLButtonElement>('[aria-label="开启人物点击对话"]')!.click()
+  await delay(100)
+  check(dialogue() === '', 'Enabling dialogue does not replay a skipped introduction')
+  await navigate('about')
+  check(dialogue() === companionIntroductions.about, 'A later page visit can introduce itself again')
+  document.querySelector<HTMLButtonElement>('.nav-search-button')!.click()
+  await until(() => document.querySelector('.site-search-backdrop'))
+  await navigate('projects')
+  check(dialogue() === '', 'Navigation while search is open discards the introduction')
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+  await until(() => !document.querySelector('.site-search-backdrop'))
+  check(dialogue() === '', 'Closing search does not replay the discarded introduction')
+
   document.querySelector<HTMLButtonElement>('[aria-label="收起看板娘"]')!.click()
   await until(() => document.querySelector('.live2d-launcher'))
   const launcher = document.querySelector('.live2d-launcher')!
   await navigate('learning')
   check(document.querySelector('.live2d-launcher') === launcher && !document.querySelector('.live2d-companion canvas'), 'A collapsed companion also persists across pages')
+  launcher.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+  await until(() => document.querySelector('canvas.is-ready'))
+  await until(() => phase() === 'idle')
+  check(dialogue() === '', 'Expanding does not replay a page introduction skipped while collapsed')
   document.querySelector('#result')!.textContent = `${passed} checks passed`
 } catch (error) {
   document.querySelector('#result')!.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown test failure'}`

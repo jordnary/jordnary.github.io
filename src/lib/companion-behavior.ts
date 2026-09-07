@@ -13,6 +13,7 @@ export const companionMotions = {
   mail: { duration: 5130, text: '有话想对人家说？那就写封信吧，人家会期待的哦。' },
 } as const
 export const companionInactivityDelay = 90000
+export const companionIntroductionDuration = 6000
 const mainReactions = ['main_1', 'main_2', 'main_3'] as const
 
 type Driver = {
@@ -31,15 +32,27 @@ export function createCompanionBehavior(driver: Driver) {
   let disposed = false
   let autoplay = false
   let inactivityTimer: ReturnType<typeof setTimeout> | undefined
+  let introduction = ''
+  let introductionTimer: ReturnType<typeof setTimeout> | undefined
+  let ambientMuted = false
+  const visibleState = (): CompanionState => ({ ...state, text: introduction || state.text })
+  const clearIntroduction = () => {
+    clearTimeout(introductionTimer)
+    introduction = ''
+  }
   const scheduleAutoplay = () => {
     clearTimeout(inactivityTimer)
-    if (!autoplay || disposed) return
+    if (!autoplay || disposed || introduction) return
     inactivityTimer = setTimeout(() => {
       if (state.phase === 'idle') request(mainReactions[Math.floor(Math.random() * mainReactions.length)])
       scheduleAutoplay()
     }, companionInactivityDelay)
   }
-  const publish = (next: CompanionState) => { state = next; driver.change(next) }
+  const publish = (next: CompanionState) => {
+    if (!next.reaction?.startsWith('main_')) ambientMuted = false
+    state = ambientMuted ? { ...next, text: '' } : next
+    driver.change(visibleState())
+  }
   const clear = () => { clearTimeout(timer); timer = undefined }
   const recover = () => {
     if (disposed || state.phase === 'idle' || state.phase === 'recovering') return
@@ -52,6 +65,7 @@ export function createCompanionBehavior(driver: Driver) {
   const reset = () => {
     generation++
     clear()
+    clearIntroduction()
     driver.idle()
     publish({ phase: 'idle', reaction: null, text: '' })
     scheduleAutoplay()
@@ -63,6 +77,10 @@ export function createCompanionBehavior(driver: Driver) {
     if (!disposed && state.phase !== 'idle' && (reaction === 'mail'
       || (reaction.startsWith('touch_') && state.reaction?.startsWith('main_')))) reset()
     if (disposed || state.phase !== 'idle') return false
+    if (introduction) {
+      clearIntroduction()
+      scheduleAutoplay()
+    }
     const token = ++generation
     publish({ phase: 'noticing', reaction, text: '' })
     // Bound slow/failed asset loads; a late result cannot restart a cancelled response.
@@ -87,12 +105,28 @@ export function createCompanionBehavior(driver: Driver) {
     return true
   }
   return {
-    get state() { return state },
+    get state() { return visibleState() },
     request,
+    introduce(text: string) {
+      if (disposed || (state.phase !== 'idle' && !state.reaction?.startsWith('main_'))) return false
+      clearIntroduction()
+      introduction = text
+      // Replace ambient dialogue while its existing motion continues naturally.
+      ambientMuted = !!state.reaction?.startsWith('main_')
+      publish(state)
+      scheduleAutoplay()
+      introductionTimer = setTimeout(() => {
+        clearIntroduction()
+        publish(state)
+        scheduleAutoplay()
+      }, companionIntroductionDuration)
+      return true
+    },
     // The scene has already rendered home's first frame before becoming visible.
     // Adopt that playback without an idle reset, asset load or attention delay.
     enter() {
       if (disposed || state.phase !== 'idle') return
+      clearIntroduction()
       generation++
       clear()
       publish({ phase: 'responding', reaction: 'home', text: companionMotions.home.text })
@@ -105,6 +139,6 @@ export function createCompanionBehavior(driver: Driver) {
     },
     finish() { if (state.phase === 'responding') recover() },
     reset,
-    destroy() { disposed = true; generation++; clear(); clearTimeout(inactivityTimer) },
+    destroy() { disposed = true; generation++; clear(); clearIntroduction(); clearTimeout(inactivityTimer) },
   }
 }

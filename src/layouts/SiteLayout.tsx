@@ -27,7 +27,7 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
 
         <Footer />
       </div>
-      <Live2DCompanion suspended={isSearchOpen} />
+      <Live2DCompanion page={page} suspended={isSearchOpen} />
       <SiteSearch
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}

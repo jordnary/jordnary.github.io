@@ -1,9 +1,107 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync, readdirSync } from 'node:fs'
-import { companionInactivityDelay, companionMotions, createCompanionBehavior, type CompanionReaction } from '../src/lib/companion-behavior.ts'
+import { companionInactivityDelay, companionIntroductionDuration, companionMotions, createCompanionBehavior, type CompanionReaction } from '../src/lib/companion-behavior.ts'
 
 const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve() }
+
+test('page introductions replace earlier text for six seconds without loading or changing motions', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  for (const reduced of [false, true]) {
+    const behavior = createCompanionBehavior({
+      prepare: async () => { assert.fail('Introduction must not load motions') },
+      play: async () => { assert.fail('Introduction must not play motions') },
+      idle: () => { assert.fail('Introduction must not restart idle') },
+      reducedMotion: () => reduced, change: () => {},
+    })
+    assert.equal(behavior.introduce('First page'), true)
+    t.mock.timers.tick(4000)
+    behavior.introduce('Latest page')
+    t.mock.timers.tick(companionIntroductionDuration - 1)
+    assert.deepEqual(behavior.state, { phase: 'idle', reaction: null, text: 'Latest page' })
+    t.mock.timers.tick(1)
+    assert.equal(behavior.state.text, '')
+    behavior.destroy()
+  }
+})
+
+test('introductions postpone idle chatter and manual interactions immediately replace them', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const played: string[] = []
+  const behavior = createCompanionBehavior({
+    prepare: async () => true, play: async (action) => { played.push(action); return true },
+    idle: () => {}, reducedMotion: () => false, change: () => {},
+  })
+  behavior.setAutoplay(true)
+  t.mock.timers.tick(companionInactivityDelay - 1)
+  behavior.introduce('Current page')
+  t.mock.timers.tick(companionIntroductionDuration - 1)
+  assert.equal(behavior.state.text, 'Current page')
+  assert.deepEqual(played, [])
+  t.mock.timers.tick(1)
+  t.mock.timers.tick(companionInactivityDelay - 1)
+  assert.equal(behavior.state.phase, 'idle')
+  t.mock.timers.tick(1)
+  assert.ok(behavior.state.reaction?.startsWith('main_'))
+  behavior.reset()
+  for (const action of ['touch_body', 'mail'] as const) {
+    behavior.introduce('Current page')
+    assert.equal(behavior.request(action), true)
+    assert.equal(behavior.state.text, '')
+    t.mock.timers.tick(240); await flush()
+    assert.equal(behavior.state.text, companionMotions[action].text)
+    assert.equal(behavior.introduce('Skipped page'), false)
+    behavior.finish()
+    t.mock.timers.tick(companionIntroductionDuration)
+    assert.equal(behavior.state.text, '')
+  }
+  behavior.destroy()
+})
+
+test('an introduction preserves an ambient motion and does not restore its old dialogue', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  const played: string[] = []
+  let idle = 0
+  const behavior = createCompanionBehavior({
+    prepare: async () => true, play: async (action) => { played.push(action); return true },
+    idle: () => { idle++ }, reducedMotion: () => false, change: () => {},
+  })
+  behavior.request('main_3')
+  behavior.introduce('Current page')
+  t.mock.timers.tick(240); await flush()
+  assert.deepEqual(played, ['main_3'])
+  assert.equal(behavior.state.phase, 'responding')
+  assert.equal(behavior.state.text, 'Current page')
+  t.mock.timers.tick(companionIntroductionDuration)
+  assert.equal(idle, 0)
+  assert.equal(behavior.state.reaction, 'main_3')
+  assert.equal(behavior.state.text, '')
+  behavior.introduce('Next page')
+  behavior.finish()
+  t.mock.timers.tick(450)
+  assert.equal(behavior.state.text, 'Next page')
+  assert.equal(idle, 1)
+  behavior.destroy()
+})
+
+test('reset and disposal cancel introductions without delayed publications or replay', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] })
+  let publications = 0
+  const behavior = createCompanionBehavior({
+    prepare: async () => true, play: async () => true, idle: () => {},
+    reducedMotion: () => false, change: () => { publications++ },
+  })
+  behavior.introduce('Discard on pause or disabling chat')
+  behavior.reset()
+  t.mock.timers.tick(companionIntroductionDuration)
+  assert.equal(behavior.state.text, '')
+  assert.equal(publications, 2)
+  behavior.introduce('Discard on collapse')
+  behavior.destroy()
+  t.mock.timers.tick(companionIntroductionDuration)
+  assert.equal(publications, 3)
+  assert.equal(behavior.introduce('Too late'), false)
+})
 
 test('a prepared entrance starts directly in home and recovers once, without replaying or preceding it with idle', (t) => {
   t.mock.timers.enable({ apis: ['setTimeout'] })

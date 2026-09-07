@@ -1,9 +1,11 @@
-import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 import type { Live2DScene } from '../lib/live2d'
 import type { CompanionReaction, CompanionState } from '../lib/companion-behavior'
 import type { CompanionHit } from '../lib/live2d-hit'
 import { githubProfileUrl } from '../lib/github'
 import { contactProfile } from '../data/contact'
+import { companionIntroductions } from '../data/companion-introductions'
+import type { SitePage } from '../lib/routes'
 import { CompanionTools, type CompanionAction } from './CompanionTools'
 import { ContactIcon } from './icons'
 import './Live2DCompanion.css'
@@ -34,10 +36,11 @@ function readPreference(key: string, fallback = false, storage: 'localStorage' |
 
 type CompanionProps = {
   suspended: boolean
+  page?: SitePage
   actions?: readonly CompanionAction[]
 }
 
-export function Live2DCompanion({ suspended, actions = noActions }: CompanionProps) {
+export function Live2DCompanion({ suspended, page, actions = noActions }: CompanionProps) {
   const compact = useSyncExternalStore(
     subscribeCompact,
     () => window.matchMedia(compactQuery).matches,
@@ -50,6 +53,12 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   const [restoreFocus, setRestoreFocus] = useState(false)
   const [homeRequested, setHomeRequested] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
+  const introducedPageRef = useRef<SitePage | undefined>(undefined)
+
+  useEffect(() => {
+    // Consume visits while collapsed so expanding never replays their introduction.
+    if (collapsed) introducedPageRef.current = page
+  }, [collapsed, page])
 
   useEffect(() => {
     if (collapsed && restoreFocus) launcherRef.current?.focus({ preventScroll: true })
@@ -79,7 +88,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   return (
     <aside aria-label="网站看板娘" className={`live2d-companion${collapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
       {!collapsed ? (
-        <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
+        <CompanionStage page={page} introducedPageRef={introducedPageRef} actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
           aria-expanded="false"
@@ -97,7 +106,8 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   )
 }
 
-function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
+function CompanionStage({ onCollapse, suspended, page, introducedPageRef, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
+  introducedPageRef: RefObject<SitePage | undefined>
   onCollapse: () => void
   focusOnReady: boolean
   homeRequested: boolean
@@ -130,6 +140,17 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     suspendedRef.current = suspended
     sceneRef.current?.pause(document.hidden || suspended || !!document.querySelector('.toast'))
   }, [suspended])
+
+  useEffect(() => {
+    if (!page || introducedPageRef.current === page) return
+    const available = chatEnabled && !suspended && !document.hidden && !document.querySelector('.toast')
+    // Initial loading may finish the current visit; unavailable visits are discarded.
+    if (available && status === 'loading') return
+    introducedPageRef.current = page
+    if (available && status === 'ready') sceneRef.current?.introduce(companionIntroductions[page])
+  }, [page, status, chatEnabled, suspended, introducedPageRef])
+
+  const discardIntroduction = useEffectEvent(() => { introducedPageRef.current = page })
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -193,7 +214,10 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, homeRequ
     }
     const syncVisibility = () => {
       sceneRef.current?.pause(!available())
-      if (!available()) resetFocus()
+      if (!available()) {
+        discardIntroduction()
+        resetFocus()
+      }
     }
     const pointerLeave = (event: PointerEvent) => {
       // Touch emits pointerleave on release; retain its inactivity timeout.
