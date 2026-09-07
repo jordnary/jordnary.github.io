@@ -139,6 +139,7 @@ export async function createLive2DScene(
       const stage = container.parentElement
       stage?.style.setProperty('--companion-artwork-top', `${currentModel.y + top * scale}px`)
       stage?.style.setProperty('--companion-artwork-center', `${currentModel.x + (left + right) * scale / 2}px`)
+      stage?.style.setProperty('--companion-artwork-width', `${(right - left) * scale}px`)
       currentApp.render()
     }
     resize()
@@ -199,7 +200,7 @@ export async function createLive2DScene(
         if (x < 0 || y < 0 || x >= width || y >= height || gl.isContextLost()) return false
         // Sample the current pose, including clipping masks and transparent holes.
         // Render and read in the same task: WebGL may clear its buffer after compositing.
-        // The caller throttles hover checks; only a single pixel is read per check.
+        // Only a single pixel is read per dialogue hit check.
         currentApp.render()
         hitPixel.fill(0)
         gl.readPixels(

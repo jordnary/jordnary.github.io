@@ -72,7 +72,7 @@ try {
   await until(() => document.querySelector('canvas.is-ready'))
   const canvas = document.querySelector('.live2d-canvas-wrap canvas') as HTMLCanvasElement
   const container = document.querySelector('.live2d-canvas-wrap') as HTMLElement
-  check(container.clientWidth >= 224 && container.clientHeight > 280, 'Desktop canvas remains usable in both standard and short windows')
+  check(container.clientWidth >= 192 && container.clientWidth <= 240 && container.clientHeight <= 336, 'Desktop canvas uses the compact reference size')
   check(!visible(), 'Tools are hidden before interaction')
   check(!document.querySelector('.live2d-chat'), 'There is no separate chat control')
 
@@ -134,6 +134,26 @@ try {
   mouse('pointermove')
   await until(visible)
   check(visible(), 'Hovering solid artwork reveals tools without a click')
+  mouse('pointermove', transparent!)
+  await delay(800)
+  check(visible(), 'Pausing in transparent space keeps tools visible beyond the old hide delay')
+  click(transparent!)
+  await nextPaint()
+  check(!dialogue(), 'The expanded hover area does not expand the dialogue hit area')
+  const railRect = tools().getBoundingClientRect()
+  const modelRect = canvas.getBoundingClientRect()
+  const railPoint = {
+    x: (railRect.left + railRect.width / 2 - modelRect.left) / modelRect.width * container.clientWidth,
+    y: (railRect.bottom - 12 - modelRect.top) / modelRect.height * container.clientHeight,
+  }
+  for (let step = 1; step <= 4; step++) {
+    mouse('pointermove', {
+      x: solid!.x + (railPoint.x - solid!.x) * step / 4,
+      y: solid!.y + (railPoint.y - solid!.y) * step / 4,
+    })
+    await delay(600)
+    check(visible(), `Slow travel to the tool rail stays open at step ${step}`)
+  }
   mouse('pointermove', { x: -20, y: 0 })
   await nextPaint()
   check(visible(), 'Tools remain visible while crossing the gap')
@@ -146,8 +166,8 @@ try {
   const toolsInside = toolRects.every((rect) => rect.left >= canvasRect.left + canvasRect.width * 0.75 && rect.right <= canvasRect.right && rect.top >= 0 && rect.bottom <= window.innerHeight)
   check(toolsInside, 'Tools sit inside the right side of the canvas without reserving external space')
   check(Math.abs(canvasRect.bottom - toolRects.at(-1)!.bottom - 8) <= 1, 'The tool rail is anchored beside the lower part of the character')
-  check(window.innerWidth - canvasRect.right <= 8 && window.innerHeight - canvasRect.bottom <= 8, 'The character canvas stays close to the bottom-right corner')
-  check(toolRects.every((rect) => rect.width >= 28 && rect.width <= 32 && rect.height >= 28 && rect.height <= 32), 'Tool buttons use the smaller desktop size')
+  check(document.documentElement.clientWidth - canvasRect.right <= 3 && window.innerHeight - canvasRect.bottom <= 8, 'The character canvas moves a few pixels closer to the right edge')
+  check(toolRects.every((rect) => rect.width >= 24 && rect.width <= 28 && rect.height >= 24 && rect.height <= 28), 'Tool buttons scale with the character and retain a usable target size')
   mouse('pointermove', { x: -20, y: 0 })
   await until(() => !visible())
   check(!visible(), 'Leaving the character and tools hides the rail')
@@ -161,6 +181,7 @@ try {
   const artworkTop = canvasRect.top + artwork.top / copy.height * canvasRect.height
   check(Math.abs(bubbleRect.left + bubbleRect.width / 2 - artworkCenter) < 3, 'Dialogue is horizontally centered above visible artwork')
   check(artworkTop - bubbleRect.bottom >= 4 && artworkTop - bubbleRect.bottom <= 18, 'Dialogue sits close above the artwork without covering it')
+  check(bubbleRect.left >= 0 && bubbleRect.right <= document.documentElement.clientWidth && bubbleRect.top >= 0, 'The resized dialogue stays within the viewport')
   click(solid!, document.body, { ctrlKey: true })
   click(solid!, document.body, { button: 2 })
   click(solid!, document.body, { pointerType: 'touch' })
@@ -235,6 +256,11 @@ try {
   ;(document.querySelector('[aria-label="收起看板娘"]') as HTMLButtonElement).click()
   await nextPaint()
   check(!document.querySelector('.live2d-companion canvas') && !!document.querySelector('.live2d-launcher'), 'Collapse unmounts the canvas and preserves the launcher')
+  // Measure after the launcher's arrival animation reaches its resting position.
+  await delay(300)
+  const launcherRect = document.querySelector('.live2d-launcher')!.getBoundingClientRect()
+  check(document.documentElement.clientWidth - launcherRect.right >= 23 && window.innerHeight - launcherRect.bottom >= 23, 'The collapsed launcher has comfortable right and bottom margins')
+  check(launcherRect.width >= 43.5 && launcherRect.height >= 43.5, 'The collapsed launcher retains its accessible target size')
   check(localStorage.getItem(storageKey) === 'true', 'Desktop collapse preference is persisted')
   compact.set(true)
   await nextPaint()

@@ -1,12 +1,17 @@
 .live2d-companion {
-  --companion-width: clamp(17rem, 24vw, 21rem);
-  --companion-height: min(29rem, 58svh);
-  --companion-tool-size: 1.75rem;
+  --companion-width: clamp(12rem, 18vw, 15rem);
+  --companion-height: min(21rem, 46svh);
+  --companion-tool-size: 1.5rem;
   position: fixed;
-  right: calc(0.375rem + env(safe-area-inset-right));
+  right: calc(0.125rem + env(safe-area-inset-right));
   bottom: calc(0.375rem + env(safe-area-inset-bottom));
   z-index: 40;
   pointer-events: none;
+}
+
+.live2d-companion.is-collapsed {
+  right: calc(1.5rem + env(safe-area-inset-right));
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
 }
 
 .live2d-companion[hidden] { display: none; }
@@ -82,7 +87,7 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 /* Absolute positioning keeps extra tools and dialogue out of the model's layout. */
 .live2d-tools {
   position: absolute;
-  right: 1.5rem;
+  right: 1rem;
   bottom: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -106,7 +111,7 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 }
 
 .live2d-tool-icon { display: inline-flex; }
-.live2d-tool-icon svg { width: 0.875rem; height: 0.875rem; }
+.live2d-tool-icon svg { width: 0.75rem; height: 0.75rem; }
 .live2d-tool[aria-pressed="false"] { color: var(--color-text-muted); }
 
 .live2d-stage:is(.is-hovered, :has(:focus-visible)) .live2d-tools {
@@ -153,19 +158,19 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
   left: var(--companion-artwork-center, 50%);
   bottom: calc(100% - var(--companion-artwork-top, 0px) + 0.625rem);
   transform: translateX(-50%);
-  width: 15rem;
+  width: min(12.5rem, var(--companion-artwork-width, var(--companion-width)));
   max-width: calc(100vw - 2rem);
 }
 
 .live2d-dialogue p {
   margin: 0;
-  padding: 0.75rem 0.875rem;
+  padding: 0.625rem 0.75rem;
   border: 1px solid var(--color-border-strong);
-  border-radius: 0.875rem;
+  border-radius: 0.75rem;
   background: var(--color-bg);
   color: var(--color-text-soft);
   box-shadow: var(--shadow-control);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   line-height: 1.7;
   animation: companion-arrive 220ms ease both;
 }
@@ -201,14 +206,6 @@ body:has(.toast) .live2d-companion { visibility: hidden; }
 
 @media (max-width: 767px), (pointer: coarse), (hover: none) {
   .live2d-companion { display: none; }
-}
-
-@media (max-height: 540px) {
-  .live2d-companion {
-    --companion-width: 14rem;
-    --companion-height: 66svh;
-  }
-  .live2d-dialogue { width: 13rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

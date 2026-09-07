@@ -73,7 +73,7 @@ export function Live2DCompanion({ suspended, actions = noActions }: CompanionPro
   }
 
   return (
-    <aside aria-label="网站看板娘" className="live2d-companion" hidden={suspended}>
+    <aside aria-label="网站看板娘" className={`live2d-companion${desktopCollapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
       {!desktopCollapsed ? (
         <CompanionStage actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
@@ -140,7 +140,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
         hideTimer = 0
         setHovered(true)
       } else if (!hideTimer) {
-        // Let the pointer cross the transparent gap from artwork to the tool rail.
+        // Smooth brief exits from the shared character and toolbar hover area.
         hideTimer = window.setTimeout(() => {
           setHovered(false)
           hideTimer = 0
@@ -160,6 +160,15 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
         x / rect.width * container.clientWidth,
         y / rect.height * container.clientHeight,
       ) ?? false
+    }
+    const inHoverArea = (event: PointerEvent) => {
+      if (!sceneRef.current) return false
+      if (event.target instanceof Element && event.target.closest('.live2d-tools')) return true
+      // Include transparent gaps on the way to the tools without intercepting clicks.
+      // Dialogue continues to use the separate, visible-pixel hitModel check.
+      const rect = container.getBoundingClientRect()
+      return event.clientX >= rect.left && event.clientX < rect.right
+        && event.clientY >= rect.top && event.clientY < rect.bottom
     }
     const resetFocus = () => {
       sceneRef.current?.focus(0, 0)
@@ -181,8 +190,7 @@ function CompanionStage({ onCollapse, suspended, actions, focusOnReady, chatEnab
       window.clearTimeout(hoverTimer)
       hoverTimer = window.setTimeout(() => {
         lastHitTime = performance.now()
-        const overTools = event.target instanceof Element && !!event.target.closest('.live2d-tools')
-        hover(available() && (overTools || hitModel(event)))
+        hover(available() && inHoverArea(event))
       }, Math.max(0, 50 - (performance.now() - lastHitTime)))
     }
     const startPress = (event: PointerEvent) => {
