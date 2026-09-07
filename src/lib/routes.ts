@@ -52,6 +52,16 @@ export function getPageFromDocument() {
   return isSitePage(page) ? page : 'home'
 }
 
+/** Match only the static pages this app can render, including their HTML URLs. */
+export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SitePage | null {
+  const root = base.replace(/\/$/, '')
+  for (const page of sitePages) {
+    const path = page === 'home' ? root : `${root}/${page}`
+    if ([path || '/', `${path}/`, `${path}/index.html`].includes(url.pathname)) return page
+  }
+  return null
+}
+
 function isSitePage(value: string | undefined): value is SitePage {
   return sitePages.includes(value as SitePage)
 }

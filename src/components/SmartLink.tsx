@@ -1,5 +1,4 @@
-import type { AnchorHTMLAttributes, MouseEvent } from 'react'
-import { getHashTargetId, scrollToElementId } from '../lib/hashScroll'
+import type { AnchorHTMLAttributes } from 'react'
 
 type SmartLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   href: string
@@ -16,35 +15,10 @@ export function SmartLink({
   const linkTarget = isExternal ? '_blank' : target
   const linkRel = isExternal ? withNoreferrer(rel) : rel
 
-  function handleClick(event: MouseEvent<HTMLAnchorElement>) {
-    onClick?.(event)
-
-    if (
-      event.defaultPrevented ||
-      !isSamePageAnchor(href) ||
-      event.button !== 0 ||
-      event.altKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      event.shiftKey
-    ) {
-      return
-    }
-
-    const targetId = getAnchorTargetId(href)
-
-    if (!targetId || !scrollToElementId(targetId)) {
-      return
-    }
-
-    event.preventDefault()
-    window.history.pushState(null, '', href)
-  }
-
   return (
     <a
       href={href}
-      onClick={handleClick}
+      onClick={onClick}
       rel={linkRel}
       target={linkTarget}
       {...props}
@@ -52,23 +26,8 @@ export function SmartLink({
   )
 }
 
-function isSamePageAnchor(href: string) {
-  const targetUrl = new URL(href, window.location.href)
-
-  return (
-    targetUrl.origin === window.location.origin &&
-    targetUrl.pathname === window.location.pathname &&
-    targetUrl.search === window.location.search &&
-    targetUrl.hash.length > 1
-  )
-}
-
 function isExternalHref(href: string) {
   return /^https?:\/\//i.test(href) || href.startsWith('//')
-}
-
-function getAnchorTargetId(href: string) {
-  return getHashTargetId(new URL(href, window.location.href).hash)
 }
 
 function withNoreferrer(rel: string | undefined) {

@@ -23,7 +23,7 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
 
         <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />
 
-        <main>{children}</main>
+        <main tabIndex={-1}>{children}</main>
 
         <Footer />
       </div>
