@@ -228,8 +228,9 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       if (event.pointerType === 'mouse') resetFocus()
     }
     const pointerMove = (event: PointerEvent) => {
+      // Every input type can turn a tap into a drag, even if it returns to its origin.
+      if (press?.pointerId === event.pointerId && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) press = null
       if (event.pointerType !== 'mouse' || !available()) return
-      if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) press = null
       sceneRef.current?.focus(
         (event.clientX / window.innerWidth) * 2 - 1,
         1 - (event.clientY / window.innerHeight) * 2,
@@ -241,7 +242,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       }, Math.max(0, 50 - (performance.now() - lastHitTime)))
     }
     const startPress = (event: PointerEvent) => {
-      const eligible = event.isPrimary && event.pointerType === 'mouse' && event.button === 0
+      const eligible = event.isPrimary && ['mouse', 'touch', 'pen'].includes(event.pointerType) && event.button === 0
         && !event.ctrlKey && !event.metaKey && !event.altKey && !event.shiftKey && !event.defaultPrevented
       const hit = eligible ? hitModel(event) : null
       press = hit
