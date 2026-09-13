@@ -31,8 +31,12 @@ export async function syncGitHubSnapshot({
       getJson(`https://api.github.com/users/${username}`, true),
       getJson(`https://api.github.com/users/${username}/repos?sort=updated&direction=desc&per_page=100&type=owner`, true),
     ])
+    const profileSnapshot = { followers: profile.followers, publicRepos: profile.public_repos }
+    if (typeof profile.avatar_url === 'string' && profile.avatar_url.startsWith('https://avatars.githubusercontent.com/')) {
+      profileSnapshot.avatarUrl = profile.avatar_url
+    }
     snapshot = {
-      profile: { followers: profile.followers, publicRepos: profile.public_repos },
+      profile: profileSnapshot,
       repos: repos.filter((repo) => repo.private === false && !repo.fork && !repo.archived)
         .slice(0, 3).map((repo) => ({
           description: repo.description,

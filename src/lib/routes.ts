@@ -40,7 +40,7 @@ export function getRouteHref(page: SitePage) {
   const base = import.meta.env.BASE_URL
 
   if (page === 'home') {
-    return base
+    return `${base.replace(/\/$/, '')}/home/`
   }
 
   return `${base.replace(/\/$/, '')}/${page}/`
@@ -56,8 +56,9 @@ export function getPageFromDocument() {
 export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SitePage | null {
   const root = base.replace(/\/$/, '')
   for (const page of sitePages) {
-    const path = page === 'home' ? root : `${root}/${page}`
-    if ([path || '/', `${path}/`, `${path}/index.html`].includes(url.pathname)) return page
+    const path = page === 'home' ? `${root}/home` : `${root}/${page}`
+    const portalPath = page === 'home' ? root : path
+    if ([portalPath || '/', `${portalPath}/`, `${portalPath}/index.html`, path, `${path}/`, `${path}/index.html`].includes(url.pathname)) return page
   }
   return null
 }

@@ -4,10 +4,31 @@ import { PageSection } from '../components/PageSection'
 import { Reveal } from '../components/Reveal'
 import { SmartLink } from '../components/SmartLink'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
+import { HomepageHub } from '../components/HomepageHub'
+import { LaunchIntro } from '../components/LaunchIntro'
+import { useEffect, useState } from 'react'
 
 const explorePages: SitePage[] = ['about', 'learning', 'projects', 'contact']
 
 export function HomePage() {
+  const [isSiteHome, setIsSiteHome] = useState(() => !isPortalPath())
+
+  useEffect(() => {
+    const updateMode = () => setIsSiteHome(!isPortalPath())
+    window.addEventListener('hashchange', updateMode)
+    return () => window.removeEventListener('hashchange', updateMode)
+  }, [])
+
+  if (!isSiteHome) {
+    return (
+      <>
+        <LaunchIntro />
+        <div aria-hidden="true" className="portal-spacer" />
+        <HomepageHub />
+      </>
+    )
+  }
+
   return (
     <>
       <Hero />
@@ -46,3 +67,10 @@ export function HomePage() {
     </>
   )
 }
+
+function isPortalPath() {
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const currentPath = window.location.pathname.replace(/\/$/, '')
+  return currentPath === basePath
+}
+

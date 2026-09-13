@@ -1,5 +1,5 @@
 export type GitHubSnapshot = {
-  profile: { followers: number; publicRepos: number }
+  profile: { followers: number; publicRepos: number; avatarUrl?: string }
   repos: GitHubRepository[]
   fetchedAt: string
 }
@@ -24,7 +24,9 @@ export function isGitHubSnapshot(value: unknown): value is GitHubSnapshot {
   const snapshot = value as GitHubSnapshot
   return Boolean(
     snapshot.profile && isCount(snapshot.profile.followers) &&
-    isCount(snapshot.profile.publicRepos) && isDate(snapshot.fetchedAt) &&
+    isCount(snapshot.profile.publicRepos) &&
+    (snapshot.profile.avatarUrl === undefined || /^https:\/\/avatars\.githubusercontent\.com\//.test(snapshot.profile.avatarUrl)) &&
+    isDate(snapshot.fetchedAt) &&
     Array.isArray(snapshot.repos) && snapshot.repos.length <= 3 &&
     snapshot.repos.every((repo) => repo && typeof repo.name === 'string' &&
       isNullableText(repo.description) && isNullableText(repo.language) &&
