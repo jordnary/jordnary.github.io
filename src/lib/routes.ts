@@ -46,6 +46,11 @@ export function getRouteHref(page: SitePage) {
   return `${base.replace(/\/$/, '')}/${page}/`
 }
 
+/** Return the standalone homepage portal URL (the site's root entry). */
+export function getHomepagePortalHref() {
+  return import.meta.env.BASE_URL
+}
+
 export function getPageFromDocument() {
   const page = document.body.dataset.page
 

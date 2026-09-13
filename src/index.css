@@ -2205,16 +2205,15 @@ a {
 
   .brand-mark {
     @apply grid h-9 w-9 place-items-center text-sm transition;
+    overflow: hidden;
     color: var(--color-primary-cyan-text);
     border: 1px solid rgb(103 232 249 / 0.25);
-    border-radius: var(--radius-card);
+    border-radius: 50%;
     background: var(--color-primary-cyan-soft);
     box-shadow: var(--shadow-control);
   }
 
-  .brand-mark::before {
-    content: "J";
-  }
+  .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 
   .nav-brand:hover .brand-mark {
     border-color: rgb(165 243 252 / 0.6);
@@ -5549,6 +5548,7 @@ a {
 
   .launch-intro-orbit {
     position: absolute;
+    z-index: 1;
     border: 1px solid rgb(103 232 249 / 0.2);
     border-radius: 50%;
     transform: rotate(-24deg);
@@ -5556,7 +5556,30 @@ a {
   }
 
   .launch-intro-orbit-one { width: min(72vw, 58rem); height: min(30vw, 24rem); animation: launch-orbit 14s ease-in-out infinite alternate; }
+  .launch-intro-planet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    pointer-events: none;
+    offset-path: ellipse(50% 50% at 50% 50%);
+    offset-rotate: 0deg;
+    will-change: offset-distance;
+  }
+  .launch-intro-planet-one {
+    width: clamp(0.45rem, 0.9vw, 0.72rem);
+    background: radial-gradient(circle at 34% 30%, #fff 0 12%, #a5f3fc 34%, #22d3ee 68%, transparent 100%);
+    box-shadow: 0 0 0.45rem rgb(165 243 252 / 0.9), 0 0 1.2rem rgb(34 211 238 / 0.72);
+    offset-distance: 12%;
+  }
   .launch-intro-orbit-two { width: min(48vw, 38rem); height: min(21vw, 16rem); opacity: 0.6; transform: rotate(22deg); animation: launch-orbit-two 11s ease-in-out infinite alternate; }
+  .launch-intro-planet-two {
+    width: clamp(0.4rem, 0.78vw, 0.62rem);
+    background: radial-gradient(circle at 34% 30%, #fff 0 12%, #fde68a 34%, #f59e0b 68%, transparent 100%);
+    box-shadow: 0 0 0.45rem rgb(253 230 138 / 0.95), 0 0 1.2rem rgb(245 158 11 / 0.78);
+    offset-distance: 58%;
+  }
 
   .launch-intro-core {
     position: absolute;
@@ -5654,7 +5677,7 @@ a {
 
   @media (prefers-reduced-motion: reduce) {
     .homepage-portal-track, .transition-wipe-overlay { transition: none; }
-    .launch-intro-content, .launch-intro-orbit, .launch-intro-core, .launch-intro-core::before, .launch-intro-core::after, .launch-intro-core span, .launch-intro-fluid, .launch-intro-enter-label, .launch-intro-scroll::before, .launch-intro-scroll::after, .launch-intro h1, .launch-intro-description span { animation: none; transition-duration: 0ms; }
+    .launch-intro-content, .launch-intro-orbit, .launch-intro-planet, .launch-intro-core, .launch-intro-core::before, .launch-intro-core::after, .launch-intro-core span, .launch-intro-fluid, .launch-intro-enter-label, .launch-intro-scroll::before, .launch-intro-scroll::after, .launch-intro h1, .launch-intro-description span { animation: none; transition-duration: 0ms; }
   }
 }
 

@@ -5,7 +5,8 @@ import {
   storeTheme,
   type Theme,
 } from '../lib/theme'
-import { getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
+import { getGitHubSnapshot } from '../lib/github'
+import { getHomepagePortalHref, getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
 
 const getStaggerStyle = (index: number) =>
   ({ '--stagger-delay': `${60 + index * 42}ms` } as CSSProperties)
@@ -19,10 +20,21 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
+
+  useEffect(() => {
+    let active = true
+    getGitHubSnapshot().then(({ snapshot }) => {
+      if (active) setAvatarUrl(snapshot.profile.avatarUrl ?? 'https://github.com/jordnary.png?size=96')
+    }).catch(() => {
+      if (active) setAvatarUrl('https://github.com/jordnary.png?size=96')
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     let frameId = 0
@@ -75,8 +87,10 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
         aria-label="Primary navigation"
         className="site-container nav-content"
       >
-        <a className="nav-brand" href={getRouteHref('home')} onClick={closeMenu}>
-          <span aria-hidden="true" className="brand-mark" />
+        <a className="nav-brand" href={getHomepagePortalHref()} onClick={closeMenu}>
+          <span className="brand-mark">
+            {avatarUrl ? <img alt="" aria-hidden="true" onError={() => setAvatarUrl(null)} src={avatarUrl} /> : <span aria-hidden="true">J</span>}
+          </span>
           <span>Jordnary</span>
         </a>
         <div className="hidden items-center gap-1 lg:flex">

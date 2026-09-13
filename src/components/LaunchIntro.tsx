@@ -1,4 +1,33 @@
+import { useEffect, useRef } from 'react'
+
 export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
+  const firstPlanetRef = useRef<HTMLSpanElement>(null)
+  const secondPlanetRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const firstPlanet = firstPlanetRef.current
+    const secondPlanet = secondPlanetRef.current
+    if (!firstPlanet || !secondPlanet || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const speeds = [1 / 9000, -1 / 12000]
+    let progress = [0.12, 0.58]
+    let lastTime = performance.now()
+    let frame = 0
+
+    const animate = (time: number) => {
+      const delta = Math.min(40, Math.max(0, time - lastTime))
+      lastTime = time
+
+      progress = progress.map((value, index) => (value + speeds[index] * delta + 1) % 1)
+      firstPlanet.style.setProperty('offset-distance', `${progress[0] * 100}%`)
+      secondPlanet.style.setProperty('offset-distance', `${progress[1] * 100}%`)
+      frame = requestAnimationFrame(animate)
+    }
+
+    frame = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
   return (
     <div
       aria-labelledby="launch-intro-title"
@@ -10,8 +39,12 @@ export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
       <div className="launch-intro-fluid launch-intro-fluid-cyan" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-violet" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-lime" aria-hidden="true" />
-      <div className="launch-intro-orbit launch-intro-orbit-one" aria-hidden="true" />
-      <div className="launch-intro-orbit launch-intro-orbit-two" aria-hidden="true" />
+      <div className="launch-intro-orbit launch-intro-orbit-one" aria-hidden="true">
+        <span className="launch-intro-planet launch-intro-planet-one" ref={firstPlanetRef} />
+      </div>
+      <div className="launch-intro-orbit launch-intro-orbit-two" aria-hidden="true">
+        <span className="launch-intro-planet launch-intro-planet-two" ref={secondPlanetRef} />
+      </div>
       <div className="launch-intro-core" aria-hidden="true">
         <span />
       </div>
