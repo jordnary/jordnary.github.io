@@ -11,8 +11,26 @@ const hubPages: Array<{ page: SitePage; glyph: string }> = [
   { page: 'contact', glyph: '✧' },
 ]
 
-export function HomepageHub({ active = true }: { active?: boolean }) {
+export function HomepageHub({ active = true, revealed = true }: { active?: boolean; revealed?: boolean }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [backgroundActive, setBackgroundActive] = useState(false)
+
+  useEffect(() => {
+    if (!active) return
+
+    // Wait until the last foreground item (status, 170ms delay + 360ms
+    // animation) has settled before starting the grid, blocks and trail.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion || !revealed) {
+      if (reducedMotion && revealed) {
+        const timer = window.setTimeout(() => setBackgroundActive(true), 0)
+        return () => window.clearTimeout(timer)
+      }
+      return
+    }
+    const timer = window.setTimeout(() => setBackgroundActive(true), 560)
+    return () => window.clearTimeout(timer)
+  }, [active, revealed])
 
   useEffect(() => {
     let active = true
@@ -25,30 +43,36 @@ export function HomepageHub({ active = true }: { active?: boolean }) {
   }, [])
 
   return (
-    <section aria-labelledby="hub-title" className="homepage-hub" id="directory">
-      <GridCanvas active={active} />
+    <section aria-labelledby="hub-title" className="homepage-hub" data-background-active={backgroundActive} data-revealed={revealed} id="directory">
+      <GridCanvas active={active && backgroundActive} />
       <div className="homepage-hub-scanline" aria-hidden="true" />
-      <a aria-label="访问 GitHub 主页" className="homepage-hub-github" href={githubProfileUrl} rel="noreferrer" target="_blank">
+      <a aria-label="访问 GitHub 主页" className="homepage-hub-github homepage-hub-reveal-item" href={githubProfileUrl} rel="noreferrer" target="_blank">
         <ContactIcon title="GitHub" />
       </a>
       <div className="homepage-hub-content">
-        <div className="homepage-hub-avatar" aria-label="GitHub 头像" data-trail-exclusion="circle">
+        <div className="homepage-hub-avatar homepage-hub-reveal-item" aria-label="GitHub 头像" data-trail-exclusion="circle">
           {avatarUrl ? <img alt="Jordnary 的 GitHub 头像" onError={() => setAvatarUrl(null)} src={avatarUrl} /> : <span>J</span>}
         </div>
-        <p className="homepage-hub-kicker">AI × CS × WEB</p>
-        <h1 id="hub-title"><span data-trail-exclusion>Jordnary</span></h1>
-        <p className="homepage-hub-tagline">把问题说清楚，再把理解做成可用的东西。</p>
-        <nav aria-label="个人网站目录" className="homepage-hub-nav">
+        <p className="homepage-hub-kicker homepage-hub-reveal-item">AI × CS × WEB</p>
+        <h1 className="homepage-hub-reveal-item" id="hub-title"><span data-trail-exclusion>Jordnary</span></h1>
+        <p className="homepage-hub-tagline homepage-hub-reveal-item">Dimidium facti, qui coepit, habet: sapere aude, incipe.</p>
+        <nav aria-label="个人网站目录" className="homepage-hub-nav homepage-hub-reveal-item">
           {hubPages.map(({ page, glyph }) => (
             <a className="homepage-hub-link" href={getRouteHref(page)} key={page}>
-              <span className="homepage-hub-glyph" aria-hidden="true" data-trail-exclusion>{glyph}</span>
+              <span className="homepage-hub-glyph" aria-hidden="true" data-trail-exclusion>
+                {page === 'about' ? (
+                  <svg className="homepage-hub-glyph-svg" fill="none" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="7.25" />
+                  </svg>
+                ) : glyph}
+              </span>
               <span data-trail-exclusion>{siteRoutes[page].label}</span>
               <small data-trail-exclusion>{page.toUpperCase()}</small>
             </a>
           ))}
         </nav>
       </div>
-      <div className="homepage-hub-status"><span /> LEARNING IN PUBLIC <b>2026</b></div>
+      <div className="homepage-hub-status homepage-hub-reveal-item"><span /> LEARNING IN PUBLIC</div>
     </section>
   )
 }

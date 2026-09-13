@@ -5,20 +5,11 @@ import { Reveal } from '../components/Reveal'
 import { SmartLink } from '../components/SmartLink'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
 import { HomepagePortal } from '../components/HomepagePortal'
-import { useEffect, useState } from 'react'
 
 const explorePages: SitePage[] = ['about', 'learning', 'projects', 'contact']
 
 export function HomePage() {
-  const [isSiteHome, setIsSiteHome] = useState(() => !isPortalPath())
-
-  useEffect(() => {
-    const updateMode = () => setIsSiteHome(!isPortalPath())
-    window.addEventListener('hashchange', updateMode)
-    return () => window.removeEventListener('hashchange', updateMode)
-  }, [])
-
-  if (!isSiteHome) {
+  if (isPortalPath()) {
     return <HomepagePortal />
   }
 

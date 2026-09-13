@@ -6,6 +6,7 @@ import { TransitionWipeOverlay } from './TransitionWipeOverlay'
 
 export function HomepagePortal() {
   const [phase, setPhase] = useState<HomepageTransitionPhase>('intro')
+  const [hubRevealed, setHubRevealed] = useState(false)
   const hasEntered = useRef(false)
   const trackRef = useRef<HTMLDivElement>(null)
   const hubRef = useRef<HTMLDivElement>(null)
@@ -15,14 +16,19 @@ export function HomepagePortal() {
     hasEntered.current = true
     // Establish the initial position even when input arrives before the first paint.
     trackRef.current?.getBoundingClientRect()
-    setPhase(window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'hub' : 'pushing')
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion) setHubRevealed(true)
+    setPhase(reducedMotion ? 'hub' : 'pushing')
   }, [])
 
   useEffect(() => {
     document.body.classList.add('homepage-portal-active')
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const handleMotionChange = () => {
-      if (motionPreference.matches && hasEntered.current) setPhase('hub')
+      if (motionPreference.matches && hasEntered.current) {
+        setHubRevealed(true)
+        setPhase('hub')
+      }
     }
     motionPreference.addEventListener('change', handleMotionChange)
     return () => {
@@ -58,6 +64,9 @@ export function HomepagePortal() {
 
   const handlePushEnd = (event: TransitionEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget && event.propertyName === 'transform' && phase === 'pushing') {
+      // The hub is already in place behind the wave. Start its staggered
+      // reveal as soon as the wave begins shrinking away.
+      setHubRevealed(true)
       setPhase('settling')
     }
   }
@@ -79,7 +88,7 @@ export function HomepagePortal() {
           </div>
         )}
         <div className="homepage-portal-hub" inert={phase !== 'hub'} ref={hubRef} tabIndex={-1}>
-          <HomepageHub active={phase !== 'intro'} />
+          <HomepageHub active={phase !== 'intro'} revealed={hubRevealed} />
         </div>
       </div>
       {phase !== 'hub' && (

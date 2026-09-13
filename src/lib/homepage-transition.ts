@@ -12,12 +12,12 @@ export type HomepageTransitionPhase = 'intro' | 'pushing' | 'settling' | 'hub'
 export const homepageTransitionTiming = {
   // Give the wave enough time to travel with the two-screen push so its
   // expansion reads as one continuous transition instead of a quick wipe.
-  pushDurationMs: 1650,
+  pushDurationMs: 1100,
   shapeScale: [0.8, 1.8, 1] as const,
-  shapeScaleSplitMs: 700,
+  shapeScaleSplitMs: 460,
   // The hub is already in place when settling starts; keep only a short
   // tail so the wave is essentially gone as the second screen settles.
-  waveExitDurationMs: 320,
+  waveExitDurationMs: 180,
   waveExitScale: 0.72,
   easing: 'cubic-bezier(0.65, 0, 0.35, 1)',
   viewBox: '0 0 1440 800',

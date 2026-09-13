@@ -32,10 +32,6 @@ export function useSiteNavigation(initialPage: SitePage) {
       if (url.origin !== window.location.origin) return
       const page = getPageFromUrl(url)
       if (!page) return
-      // The portal root and the real home page are separate HTML entry points.
-      // Let the browser load /home/ instead of converting this transition into
-      // an in-place history update that would leave the portal mounted.
-      if (page === 'home' && url.pathname !== window.location.pathname) return
       const behavior = url.pathname === window.location.pathname && url.search === window.location.search && url.hash.length > 1
         ? 'smooth' : 'instant'
       event.preventDefault()

@@ -1,25 +1,9 @@
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
-
 export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
-  const introRef = useRef<HTMLDivElement>(null)
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const rect = introRef.current?.getBoundingClientRect()
-    const intro = introRef.current
-    if (!rect || !intro) return
-    const x = ((event.clientX - rect.left) / rect.width) * 100
-    const y = ((event.clientY - rect.top) / rect.height) * 100
-    intro.style.setProperty('--launch-x', `${x}%`)
-    intro.style.setProperty('--launch-y', `${y}%`)
-  }
-
   return (
     <div
       aria-labelledby="launch-intro-title"
       aria-modal="true"
       className="launch-intro"
-      onPointerMove={handlePointerMove}
-      ref={introRef}
       role="dialog"
     >
       <div className="launch-intro-noise" aria-hidden="true" />
@@ -37,7 +21,7 @@ export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
           <span className="launch-intro-index">00 / 01</span>
           <span className="launch-intro-status"><i /> SYSTEM ONLINE</span>
         </div>
-        <p className="launch-intro-kicker">PERSONAL WEBSITE / 2026</p>
+        <p className="launch-intro-kicker">PERSONAL WEBSITE</p>
         <h1 id="launch-intro-title">Jordnary</h1>
         <p aria-label="AI · CS · Web · Explorer" className="launch-intro-description">
           {'AI · CS · Web · Explorer'.split('').map((character, index) => (

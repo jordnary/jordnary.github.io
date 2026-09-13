@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Footer } from '../components/Footer'
 import { Live2DCompanion } from '../components/Live2DCompanion'
 import { Navbar } from '../components/Navbar'
@@ -13,13 +13,10 @@ type SiteLayoutProps = {
 
 export function SiteLayout({ children, page }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isPortalMode, setIsPortalMode] = useState(() => page === 'home' && isPortalPath())
-
-  useEffect(() => {
-    const updateMode = () => setIsPortalMode(page === 'home' && isPortalPath())
-    window.addEventListener('hashchange', updateMode)
-    return () => window.removeEventListener('hashchange', updateMode)
-  }, [page])
+  // Derive portal mode from the current route on every render. Keeping this as
+  // state can leave the fixed homepage portal mode active for one render after
+  // in-place navigation to a static page, hiding its shared chrome.
+  const isPortalMode = page === 'home' && isPortalPath()
 
   return (
     <div className={`app-shell${isSearchOpen ? ' is-search-open' : ''}`}>
