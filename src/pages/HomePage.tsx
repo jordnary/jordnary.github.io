@@ -23,7 +23,6 @@ export function HomePage() {
     return (
       <>
         <LaunchIntro />
-        <div aria-hidden="true" className="portal-spacer" />
         <HomepageHub />
       </>
     )

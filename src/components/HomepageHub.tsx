@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
 import { getGitHubSnapshot, githubProfileUrl } from '../lib/github'
+import { homepageTransitionEvents, homepageTransitionTiming } from '../lib/homepage-transition'
 import { ContactIcon } from './icons'
 
 const hubPages: Array<{ page: SitePage; glyph: string }> = [
@@ -13,6 +14,32 @@ const hubPages: Array<{ page: SitePage; glyph: string }> = [
 
 export function HomepageHub() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [isRevealed, setIsRevealed] = useState(false)
+  const [isGridActive, setIsGridActive] = useState(false)
+
+  useEffect(() => {
+    let revealTimer: number | null = null
+    let gridTimer: number | null = null
+
+    const handleTransitionStart = () => {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      revealTimer = window.setTimeout(
+        () => setIsRevealed(true),
+        reducedMotion ? 0 : homepageTransitionTiming.contentDelayMs,
+      )
+      gridTimer = window.setTimeout(
+        () => setIsGridActive(true),
+        reducedMotion ? 0 : homepageTransitionTiming.gridDelayMs,
+      )
+    }
+
+    window.addEventListener(homepageTransitionEvents.start, handleTransitionStart)
+    return () => {
+      window.removeEventListener(homepageTransitionEvents.start, handleTransitionStart)
+      if (revealTimer !== null) window.clearTimeout(revealTimer)
+      if (gridTimer !== null) window.clearTimeout(gridTimer)
+    }
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -25,8 +52,8 @@ export function HomepageHub() {
   }, [])
 
   return (
-    <section aria-labelledby="hub-title" className="homepage-hub" id="directory">
-      <GridCanvas />
+    <section aria-labelledby="hub-title" className={`homepage-hub${isRevealed ? ' is-revealed' : ''}`} id="directory">
+      <GridCanvas active={isGridActive} />
       <div className="homepage-hub-scanline" aria-hidden="true" />
       <a aria-label="访问 GitHub 主页" className="homepage-hub-github" href={githubProfileUrl} rel="noreferrer" target="_blank">
         <ContactIcon title="GitHub" />
@@ -53,10 +80,11 @@ export function HomepageHub() {
   )
 }
 
-export function GridCanvas({ className = 'homepage-hub-canvas' }: { className?: string }) {
+export function GridCanvas({ className = 'homepage-hub-canvas', active = true }: { className?: string; active?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
+    if (!active) return
     const canvas = canvasRef.current
     if (!canvas) return
     const context = canvas.getContext('2d')
@@ -294,7 +322,7 @@ export function GridCanvas({ className = 'homepage-hub-canvas' }: { className?: 
       interactionSurface.removeEventListener('pointermove', handlePointer)
       interactionSurface.removeEventListener('pointerleave', clearPointer)
     }
-  }, [])
+  }, [active])
 
   return <canvas aria-hidden="true" className={className} ref={canvasRef} />
 }

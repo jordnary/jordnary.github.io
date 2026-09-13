@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { TransitionWipeOverlay } from './TransitionWipeOverlay'
+import { homepageTransitionEvents } from '../lib/homepage-transition'
 
 export function LaunchIntro() {
   const [isClosing, setIsClosing] = useState(false)
@@ -8,16 +10,19 @@ export function LaunchIntro() {
   const isClosingRef = useRef(false)
   const isHiddenRef = useRef(false)
   const hasEnteredRef = useRef(false)
-  const allowRestoreRef = useRef(false)
 
   const enter = useCallback(() => {
     if (isClosingRef.current || isHiddenRef.current) return
     isClosingRef.current = true
     hasEnteredRef.current = true
+    window.dispatchEvent(new CustomEvent(homepageTransitionEvents.start))
     setIsClosing(true)
     closeTimerRef.current = window.setTimeout(() => {
       isHiddenRef.current = true
+      isClosingRef.current = false
       setIsHidden(true)
+      setIsClosing(false)
+      window.dispatchEvent(new CustomEvent(homepageTransitionEvents.complete))
       closeTimerRef.current = null
     }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100)
   }, [])
@@ -25,25 +30,8 @@ export function LaunchIntro() {
   useEffect(() => {
     if (isHidden) {
       document.body.classList.remove('launch-intro-active')
-      document.getElementById('directory')?.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-        block: 'start',
-      })
-      const restoreOnScrollUp = () => {
-        if (!allowRestoreRef.current || window.scrollY > 24) return
-        allowRestoreRef.current = false
-        isClosingRef.current = false
-        isHiddenRef.current = false
-        hasEnteredRef.current = false
-        setIsClosing(false)
-        setIsHidden(false)
-      }
-      const restoreTimer = window.setTimeout(() => {
-        allowRestoreRef.current = true
-        if (window.scrollY <= 24) restoreOnScrollUp()
-      }, 1500)
-      window.addEventListener('scroll', restoreOnScrollUp, { passive: true })
-      return () => { window.clearTimeout(restoreTimer); window.removeEventListener('scroll', restoreOnScrollUp) }
+      document.getElementById('directory')?.scrollIntoView({ behavior: 'auto', block: 'start' })
+      return
     }
 
     if (!hasEnteredRef.current) document.body.classList.add('launch-intro-active')
@@ -55,9 +43,7 @@ export function LaunchIntro() {
       }
     }
 
-    const handleWheel = (event: WheelEvent) => {
-      if (event.deltaY > 4) enter()
-    }
+    const handleWheel = (event: WheelEvent) => { if (event.deltaY > 1) enter() }
 
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('wheel', handleWheel, { passive: true })
@@ -80,16 +66,22 @@ export function LaunchIntro() {
     intro.style.setProperty('--launch-y', `${y}%`)
   }
 
+  const phase = isHidden ? 'hub' : (isClosing ? 'entering' : 'intro')
+
   return (
-    <div
-      aria-label="Jordnary 启动页"
-      aria-labelledby="launch-intro-title"
-      aria-modal="true"
-      className={`launch-intro${isClosing ? ' is-closing' : ''}${isHidden ? ' is-hidden' : ''}`}
-      onPointerMove={handlePointerMove}
-      ref={introRef}
-      role="dialog"
-    >
+    <>
+      <TransitionWipeOverlay active={isClosing} />
+      <div
+        aria-hidden={isHidden || undefined}
+        aria-label="Jordnary 启动页"
+        aria-labelledby="launch-intro-title"
+        aria-modal="true"
+        className={`launch-intro${isClosing ? ' is-closing' : ''}${isHidden ? ' is-hidden' : ''}`}
+        data-phase={phase}
+        onPointerMove={handlePointerMove}
+        ref={introRef}
+        role="dialog"
+      >
       <div className="launch-intro-noise" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-cyan" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-violet" aria-hidden="true" />
@@ -132,6 +124,7 @@ export function LaunchIntro() {
         </button>
         <span className="launch-intro-coordinates">JORDNARY / ONLINE</span>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

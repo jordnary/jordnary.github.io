@@ -5390,6 +5390,35 @@ a {
     }
   }
 
+  .transition-wipe-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    overflow: hidden;
+    pointer-events: none;
+    visibility: hidden;
+    color: #030303;
+    opacity: 0;
+  }
+
+  .transition-wipe-overlay.is-active {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .transition-wipe-overlay svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  .transition-wipe-overlay path {
+    fill: currentColor;
+    transform-origin: var(--transition-origin, 50% 0%);
+    will-change: d, transform;
+  }
+
   .launch-intro {
     --launch-x: 50%;
     --launch-y: 50%;
@@ -5416,13 +5445,13 @@ a {
   }
 
   .launch-intro.is-closing {
+    animation: none;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-200vh);
   }
 
   .launch-intro.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-200vh); }
-
   .launch-intro::before,
   .launch-intro::after {
     content: "";
@@ -5582,12 +5611,6 @@ a {
 }
 
 @layer components {
-  .portal-spacer {
-    height: 100svh;
-    background:
-      radial-gradient(circle at 50% 42%, rgb(103 232 249 / 0.08), transparent 32rem),
-      linear-gradient(135deg, #101316 0%, #171b1e 48%, #11151a 100%);
-  }
   .homepage-hub {
     position: relative;
     display: grid;
@@ -5599,10 +5622,12 @@ a {
     background: #030303;
     margin-top: 0;
     scroll-margin-top: 0;
-    animation: hub-enter 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    opacity: 0;
+    transform: translateY(1.5rem);
+    transition: opacity 900ms cubic-bezier(0.22, 1, 0.36, 1), transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  @keyframes hub-enter { from { opacity: 0.55; transform: translateY(1.5rem); } to { opacity: 1; transform: translateY(0); } }
+  .homepage-hub.is-revealed { opacity: 1; transform: translateY(0); }
 
   .homepage-hub-grid {
     position: absolute;
