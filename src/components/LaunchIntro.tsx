@@ -1,60 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { TransitionWipeOverlay } from './TransitionWipeOverlay'
-import { homepageTransitionEvents } from '../lib/homepage-transition'
+import { useRef, type PointerEvent as ReactPointerEvent } from 'react'
 
-export function LaunchIntro() {
-  const [isClosing, setIsClosing] = useState(false)
-  const [isHidden, setIsHidden] = useState(false)
+export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
   const introRef = useRef<HTMLDivElement>(null)
-  const closeTimerRef = useRef<number | null>(null)
-  const isClosingRef = useRef(false)
-  const isHiddenRef = useRef(false)
-  const hasEnteredRef = useRef(false)
-
-  const enter = useCallback(() => {
-    if (isClosingRef.current || isHiddenRef.current) return
-    isClosingRef.current = true
-    hasEnteredRef.current = true
-    window.dispatchEvent(new CustomEvent(homepageTransitionEvents.start))
-    setIsClosing(true)
-    closeTimerRef.current = window.setTimeout(() => {
-      isHiddenRef.current = true
-      isClosingRef.current = false
-      setIsHidden(true)
-      setIsClosing(false)
-      window.dispatchEvent(new CustomEvent(homepageTransitionEvents.complete))
-      closeTimerRef.current = null
-    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1100)
-  }, [])
-
-  useEffect(() => {
-    if (isHidden) {
-      document.body.classList.remove('launch-intro-active')
-      document.getElementById('directory')?.scrollIntoView({ behavior: 'auto', block: 'start' })
-      return
-    }
-
-    if (!hasEnteredRef.current) document.body.classList.add('launch-intro-active')
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault()
-        enter()
-      }
-    }
-
-    const handleWheel = (event: WheelEvent) => { if (event.deltaY > 1) enter() }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('wheel', handleWheel, { passive: true })
-
-    return () => {
-      document.body.classList.remove('launch-intro-active')
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('wheel', handleWheel)
-      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current)
-    }
-  }, [enter, isHidden])
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = introRef.current?.getBoundingClientRect()
@@ -66,22 +13,15 @@ export function LaunchIntro() {
     intro.style.setProperty('--launch-y', `${y}%`)
   }
 
-  const phase = isHidden ? 'hub' : (isClosing ? 'entering' : 'intro')
-
   return (
-    <>
-      <TransitionWipeOverlay active={isClosing} />
-      <div
-        aria-hidden={isHidden || undefined}
-        aria-label="Jordnary 启动页"
-        aria-labelledby="launch-intro-title"
-        aria-modal="true"
-        className={`launch-intro${isClosing ? ' is-closing' : ''}${isHidden ? ' is-hidden' : ''}`}
-        data-phase={phase}
-        onPointerMove={handlePointerMove}
-        ref={introRef}
-        role="dialog"
-      >
+    <div
+      aria-labelledby="launch-intro-title"
+      aria-modal="true"
+      className="launch-intro"
+      onPointerMove={handlePointerMove}
+      ref={introRef}
+      role="dialog"
+    >
       <div className="launch-intro-noise" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-cyan" aria-hidden="true" />
       <div className="launch-intro-fluid launch-intro-fluid-violet" aria-hidden="true" />
@@ -104,7 +44,7 @@ export function LaunchIntro() {
             <span aria-hidden="true" key={`${character}-${index}`}>{character}</span>
           ))}
         </p>
-        <button className="launch-intro-enter" onClick={enter} type="button">
+        <button className="launch-intro-enter" onClick={onEnter} type="button">
           <span className="launch-intro-enter-label">PRESS ENTER</span>
           <span className="launch-intro-enter-key">↵</span>
         </button>
@@ -115,7 +55,7 @@ export function LaunchIntro() {
         <button
           aria-label="向下滚动，进入个人目录"
           className="launch-intro-scroll"
-          onClick={enter}
+          onClick={onEnter}
           type="button"
         >
           <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
@@ -124,7 +64,6 @@ export function LaunchIntro() {
         </button>
         <span className="launch-intro-coordinates">JORDNARY / ONLINE</span>
       </div>
-      </div>
-    </>
+    </div>
   )
 }

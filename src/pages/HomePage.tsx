@@ -4,8 +4,7 @@ import { PageSection } from '../components/PageSection'
 import { Reveal } from '../components/Reveal'
 import { SmartLink } from '../components/SmartLink'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
-import { HomepageHub } from '../components/HomepageHub'
-import { LaunchIntro } from '../components/LaunchIntro'
+import { HomepagePortal } from '../components/HomepagePortal'
 import { useEffect, useState } from 'react'
 
 const explorePages: SitePage[] = ['about', 'learning', 'projects', 'contact']
@@ -20,12 +19,7 @@ export function HomePage() {
   }, [])
 
   if (!isSiteHome) {
-    return (
-      <>
-        <LaunchIntro />
-        <HomepageHub />
-      </>
-    )
+    return <HomepagePortal />
   }
 
   return (
