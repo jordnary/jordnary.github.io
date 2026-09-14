@@ -23,7 +23,14 @@ const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
     ),
   },
   { page: 'projects', glyph: '▦' },
-  { page: 'contact', glyph: '✧' },
+  {
+    page: 'contact',
+    glyph: (
+      <svg className="homepage-hub-glyph-svg" fill="none" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="m12 2.5 2.8 6.7 6.7 2.8-6.7 2.8-2.8 6.7-2.8-6.7L2.5 12l6.7-2.8Z" />
+      </svg>
+    ),
+  },
 ]
 
 export function HomepageHub({ active = true, revealed = true }: { active?: boolean; revealed?: boolean }) {
