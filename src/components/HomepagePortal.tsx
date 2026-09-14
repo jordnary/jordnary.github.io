@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type TransitionEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type TouchEvent, type TransitionEvent } from 'react'
 import { homepageTransitionTiming, type HomepageTransitionPhase } from '../lib/homepage-transition'
 import { HomepageHub } from './HomepageHub'
 import { LaunchIntro } from './LaunchIntro'
@@ -10,6 +10,7 @@ export function HomepagePortal() {
   const hasEntered = useRef(false)
   const trackRef = useRef<HTMLDivElement>(null)
   const hubRef = useRef<HTMLDivElement>(null)
+  const touchStart = useRef<{ identifier: number; x: number; y: number } | null>(null)
 
   const enter = useCallback(() => {
     if (hasEntered.current) return
@@ -62,6 +63,26 @@ export function HomepagePortal() {
     }
   }, [enter, phase])
 
+  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    const touch = event.touches[0]
+    // Adding another finger invalidates the gesture until all fingers lift.
+    touchStart.current = phase === 'intro' && event.touches.length === 1
+      ? { identifier: touch.identifier, x: touch.clientX, y: touch.clientY }
+      : null
+  }
+
+  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = touchStart.current
+    touchStart.current = null
+    const touch = event.changedTouches[0]
+    if (!start || event.touches.length !== 0 || touch?.identifier !== start.identifier) return
+
+    const deltaX = touch.clientX - start.x
+    const deltaY = start.y - touch.clientY
+    // Require a deliberate, mostly vertical upward swipe rather than tap jitter.
+    if (deltaY >= 50 && deltaY > Math.abs(deltaX)) enter()
+  }
+
   const handlePushEnd = (event: TransitionEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget && event.propertyName === 'transform' && phase === 'pushing') {
       // The hub is already in place behind the wave. Start its staggered
@@ -83,7 +104,13 @@ export function HomepagePortal() {
       {/* Both screens share one transform. Their common edge cannot drift apart. */}
       <div className="homepage-portal-track" onTransitionEnd={handlePushEnd} ref={trackRef}>
         {phase !== 'hub' && (
-          <div className="homepage-portal-intro" inert={phase !== 'intro'}>
+          <div
+            className="homepage-portal-intro"
+            inert={phase !== 'intro'}
+            onTouchCancel={() => { touchStart.current = null }}
+            onTouchEnd={handleTouchEnd}
+            onTouchStart={handleTouchStart}
+          >
             <LaunchIntro onEnter={enter} />
           </div>
         )}

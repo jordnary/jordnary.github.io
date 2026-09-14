@@ -5425,7 +5425,11 @@ a {
     height: 100%;
   }
 
-  .homepage-portal-intro { top: 0; }
+  .homepage-portal-intro {
+    top: 0;
+    /* Handle intro swipes here while preserving browser pinch zoom. */
+    touch-action: pinch-zoom;
+  }
   .homepage-portal-hub {
     top: 100%;
     overflow-x: hidden;

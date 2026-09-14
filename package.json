@@ -10,6 +10,7 @@
     "build": "tsc -b && vite build",
     "sync:feeds": "node scripts/sync-rss.mjs",
     "sync:github": "node scripts/sync-github.mjs",
+    "test:homepage": "node tests/homepage-touch.browser.mjs",
     "test:snapshots": "node --test tests/github-snapshot.test.mjs tests/cleanup-history.test.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
