@@ -1,12 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
 import { getGitHubSnapshot, githubProfileUrl } from '../lib/github'
 import { ContactIcon } from './icons'
 
-const hubPages: Array<{ page: SitePage; glyph: string }> = [
+const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
   { page: 'home', glyph: '⌂' },
-  { page: 'about', glyph: '◌' },
-  { page: 'learning', glyph: '⌁' },
+  {
+    page: 'about',
+    glyph: (
+      <svg className="homepage-hub-glyph-svg" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="7.25" />
+      </svg>
+    ),
+  },
+  {
+    page: 'learning',
+    glyph: (
+      <svg className="homepage-hub-glyph-svg" fill="none" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M12 6.5C9.5 4.5 6.5 4 3 4.5v14c3.5-.5 6.5 0 9 2 2.5-2 5.5-2.5 9-2v-14c-3.5-.5-6.5 0-9 2Z" />
+        <path d="M12 6.5v14" />
+      </svg>
+    ),
+  },
   { page: 'projects', glyph: '▦' },
   { page: 'contact', glyph: '✧' },
 ]
@@ -60,11 +75,7 @@ export function HomepageHub({ active = true, revealed = true }: { active?: boole
           {hubPages.map(({ page, glyph }) => (
             <a className="homepage-hub-link" href={getRouteHref(page)} key={page}>
               <span className="homepage-hub-glyph" aria-hidden="true" data-trail-exclusion>
-                {page === 'about' ? (
-                  <svg className="homepage-hub-glyph-svg" fill="none" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="7.25" />
-                  </svg>
-                ) : glyph}
+                {glyph}
               </span>
               <span data-trail-exclusion>{siteRoutes[page].label}</span>
               <small data-trail-exclusion>{page.toUpperCase()}</small>
