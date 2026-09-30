@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
-import { ImageGalleryDialog, type GalleryImage } from '../components/ImageGalleryDialog'
+import { ImageGallery, GalleryTrigger, type GalleryImage } from '../components/image-gallery'
 import { SmartLink } from '../components/SmartLink'
 import { getRouteHref } from '../lib/routes'
 import './ProjectDetailPage.css'
@@ -12,10 +12,17 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   const [activeHeading, setActiveHeading] = useState('')
   const [tocOpen, setTocOpen] = useState(false)
   const base = import.meta.env.BASE_URL
-  const images = useMemo<GalleryImage[]>(() => project.image ? [{
-    src: `${base}images/projects/${project.image.file}`,
-    alt: project.image.alt, caption: project.image.caption, title: project.title,
-  }] : [], [base, project])
+  const images = useMemo<GalleryImage[]>(() => {
+    if (!project.image) return []
+    const { cover } = project.image
+    const items = cover && cover.file !== project.image.file ? [cover, project.image] : [project.image]
+    return items.map(image => ({
+      src: `${base}images/projects/${image.file}`,
+      alt: image.alt, caption: image.caption, title: project.title,
+      source: project.source.href,
+    }))
+  }, [base, project])
+  const resultIndex = Math.max(0, images.length - 1)
   const readingMinutes = Math.max(1, Math.ceil(sections.reduce(
     (length, section) => length + section.title.length + section.paragraphs.join('').length, 0,
   ) / 400))
@@ -61,10 +68,13 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
             {project.demo && <SmartLink href={project.demo}>访问网站 ↗</SmartLink>}
           </div>
         </div>
-        {project.image && <button type="button" className="project-reader-cover" onClick={() => setPreviewIndex(0)} aria-label={`放大查看 ${project.title} 项目图片`}>
-          <img src={`${base}images/projects/${(project.image.cover ?? project.image).file}`} alt={(project.image.cover ?? project.image).alt} width="1600" height="1000" />
-          <span>{project.image.caption}<span aria-hidden="true">⤢</span></span>
-        </button>}
+        {project.image && <figure className="project-reader-cover">
+          <div className="project-reader-cover-image">
+            <img src={images[0].src} alt={images[0].alt} width="1600" height="1000" />
+            <GalleryTrigger onClick={() => setPreviewIndex(0)} label={`放大查看 ${project.title} 项目图片`} />
+          </div>
+          <figcaption>{images[0].caption}<span>{images.length} 张图片</span></figcaption>
+        </figure>}
       </header>
 
       <div className="project-reader-layout">
@@ -87,10 +97,10 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
                   {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
                   {section.figure && project.image && (
                     <figure className="project-introduction-figure">
-                      <button type="button" onClick={() => setPreviewIndex(0)} aria-label={`放大查看 ${project.title} 实验结果`}>
-                        <img src={images[0].src} alt={project.image.alt} loading="lazy" />
-                        <span aria-hidden="true">⤢</span>
-                      </button>
+                      <div className="project-introduction-image">
+                        <img src={images[resultIndex].src} alt={project.image.alt} loading="lazy" />
+                        <GalleryTrigger onClick={() => setPreviewIndex(resultIndex)} label={`放大查看 ${project.title} 实验结果`} />
+                      </div>
                       <figcaption>{project.image.caption}</figcaption>
                     </figure>
                   )}
@@ -101,7 +111,7 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
           <footer className="project-reader-end"><a href={getRouteHref('projects')} data-project-return>← 返回全部项目</a><a href="#project-overview">回到项目概览 ↑</a></footer>
         </div>
       </div>
-      <ImageGalleryDialog images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
+      <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
     </div>
   )
 }

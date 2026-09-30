@@ -43,7 +43,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       'Eight distinct projects render with a page heading and stable anchors',
     )
 
-    for (const preview of await page.locator('.portfolio-image-button').all()) {
+    for (const preview of await page.locator('.portfolio-image-preview').all()) {
       await preview.scrollIntoViewIfNeeded()
       await preview.locator('img').evaluate((image) => image.decode())
       assert.ok(
@@ -57,7 +57,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
           ),
       )
     }
-    assert.equal(await page.locator('.portfolio-image-button').count(), 5)
+    assert.equal(await page.locator('.portfolio-image-preview').count(), 5)
     pass('All five local poster covers load at 8:5 with descriptive alternatives')
 
     for (const [name, expected] of [
@@ -104,72 +104,13 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await waitForCount(8)
     pass('All cards place the internal introduction on the left and external destination on the right; keyboard navigation works')
 
-    const opener = page.getByRole('button', {
-      name: '放大查看 Briefing Atlas 项目图片',
-      exact: true,
-    })
-    await opener.click()
-    const dialog = page.getByRole('dialog')
-    await dialog.waitFor()
-    assert.equal(
-      await page.evaluate(() => document.body.style.overflow),
-      'hidden',
-    )
-    for (let i = 0; i < 8; i++) {
-      await page.keyboard.press('Tab')
-      assert.ok(
-        await dialog.evaluate((element) =>
-          element.contains(document.activeElement),
-        ),
-      )
+    for (const preview of await page.locator('.portfolio-image-preview').all()) {
+      await preview.click()
+      assert.equal(await page.getByRole('dialog').count(), 0)
+      assert.equal(await preview.locator('button, [role="button"]').count(), 0)
+      assert.ok(!(await preview.textContent()).includes('⤢'))
     }
-    await page.keyboard.press('ArrowRight')
-    assert.equal(
-      await dialog.getByRole('heading').textContent(),
-      'VAE-GAN DigitGen',
-    )
-    assert.ok(
-      (
-        await page
-          .locator('#vae-gan-digits .portfolio-image-button img')
-          .getAttribute('src')
-      ).endsWith('/vaegan-poster.webp'),
-    )
-    assert.ok(
-      (await dialog.locator('img').getAttribute('src')).endsWith(
-        '/vaegan-comparison.webp',
-      ),
-    )
-    await page.keyboard.press('ArrowLeft')
-    assert.equal(
-      await dialog.getByRole('heading').textContent(),
-      'Briefing Atlas',
-    )
-    await dialog.getByRole('button', { name: '上一张图片' }).click()
-    assert.equal(
-      await dialog.getByRole('heading').textContent(),
-      'Personal Website',
-    )
-    await dialog.getByRole('button', { name: '下一张图片' }).click()
-    assert.equal(
-      await dialog.getByRole('heading').textContent(),
-      'Briefing Atlas',
-    )
-    await page.keyboard.press('Escape')
-    await dialog.waitFor({ state: 'hidden' })
-    assert.ok(
-      await opener.evaluate((element) => document.activeElement === element),
-    )
-    assert.notEqual(
-      await page.evaluate(() => document.body.style.overflow),
-      'hidden',
-    )
-    await opener.click()
-    await dialog.getByRole('button', { name: '关闭图片预览' }).click()
-    await dialog.waitFor({ state: 'hidden' })
-    pass(
-      'The gallery supports arrows, wraparound, focus containment, Escape and focus return',
-    )
+    pass('List covers keep their visual preview without a duplicate gallery trigger')
 
     await filter('Web 应用').click()
     await page.locator('.nav-search-button').click()
@@ -224,17 +165,6 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     )
 
     await page.setViewportSize({ width: 390, height: 844 })
-    await opener.click()
-    await dialog.waitFor()
-    assert.ok(
-      await dialog.evaluate(
-        (element) => element.scrollWidth <= element.clientWidth + 1,
-      ),
-    )
-    await page.keyboard.press('Escape')
-    await dialog.waitFor({ state: 'hidden' })
-    pass('The image gallery fits the mobile viewport')
-
     const motionContext = await browser.newContext({
       viewport: { width: 1440, height: 900 },
       reducedMotion: 'no-preference',
@@ -299,7 +229,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
 
       await motionPage.goto(url('projects/'))
       await motionPage
-        .locator('#personal-website .portfolio-image-button')
+        .locator('#personal-website .portfolio-primary-link')
         .focus()
       await motionPage.waitForFunction(
         () =>
@@ -309,7 +239,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       )
       assert.ok(
         await motionPage
-          .locator('#personal-website .portfolio-image-button')
+          .locator('#personal-website .portfolio-primary-link')
           .evaluate((element) => document.activeElement === element),
       )
       pass(

@@ -1,0 +1,24 @@
+.gallery-trigger {
+  position: absolute;
+  right: .7rem;
+  bottom: .7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #ffffff40;
+  border-radius: .7rem;
+  background: #0f172ade;
+  color: #fff;
+  box-shadow: 0 4px 14px #02061725;
+  cursor: zoom-in;
+  backdrop-filter: blur(8px);
+  transition: background .2s, transform .2s;
+}
+.gallery-trigger:hover { background: #0e7490; transform: translateY(-2px); }
+.gallery-trigger:focus-visible { outline: 3px solid var(--color-primary-cyan-strong, #22d3ee); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .gallery-trigger { transition: none; }
+}

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ProjectCard } from './ProjectCard'
 import { FilterBar } from './FilterBar'
-import { ImageGalleryDialog } from './ImageGalleryDialog'
 import { SmartLink } from './SmartLink'
 import { projectFilters, projects, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
@@ -17,13 +16,6 @@ const filterOptions = projectFilters.map((value) => ({
       : projects.filter((project) => project.category === value).length,
 }))
 const galleryProjects = projects.filter((project) => project.image)
-const galleryImages = galleryProjects.map((project) => ({
-  src: `${import.meta.env.BASE_URL}images/projects/${project.image!.file}`,
-  alt: project.image!.alt,
-  caption: project.image!.caption,
-  title: project.title,
-  source: project.source.href,
-}))
 const heroProjects = galleryProjects.filter((project) => project.demo).slice(0, 2)
 
 export function Projects() {
@@ -35,7 +27,6 @@ export function Projects() {
     window.history.replaceState({ ...window.history.state, projectFilter: value }, '')
     setActiveFilter(value)
   }
-  const [previewIndex, setPreviewIndex] = useState<number | null>(null)
   const filteredProjects = projects.filter(
     (project) =>
       activeFilter === '全部项目' || project.category === activeFilter,
@@ -173,11 +164,6 @@ export function Projects() {
               key={project.id}
               project={project}
               index={projects.indexOf(project)}
-              onPreview={() =>
-                setPreviewIndex(
-                  galleryProjects.findIndex((item) => item.id === project.id),
-                )
-              }
             />
           ))}
         </div>
@@ -194,12 +180,6 @@ export function Projects() {
         </SmartLink>
       </aside>
 
-      <ImageGalleryDialog
-        images={galleryImages}
-        activeIndex={previewIndex}
-        onIndexChange={setPreviewIndex}
-        onClose={() => setPreviewIndex(null)}
-      />
     </div>
   )
 }

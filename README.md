@@ -33,6 +33,7 @@ Jordnary 的个人网站，用于整理个人叙事、计算机与 AI 学习笔�
 - Tailwind CSS 4：管理响应式布局、视觉样式和主题细节。
 - Vite 8：提供本地开发服务器、生产构建和预览流程。
 - Motion：处理页面进入、滚动和交互动效。
+- Yet Another React Lightbox：提供可复用的图片浏览、缩放、触摸手势、缩略图与全屏。
 - ESLint：执行基础代码质量检查。
 - GitHub Actions + GitHub Pages：自动构建并部署静态站点。
 
@@ -62,7 +63,8 @@ http://localhost:5173
 | `npm run sync:github` | 同步 GitHub 公开数据，失败时恢复上一份有效快照。 |
 | `npm run sync:projects` | 手动同步仓库文档与图片，供资料核对；站内介绍不依赖此命令。 |
 | `npm run test:snapshots` | 验证快照同步、离线兜底及历史清理规则。 |
-| `npm run test:projects` | 在本地服务启动后，检查项目入口、筛选、图片预览、键盘操作、站内搜索和响应式布局。 |
+| `npm run test:projects` | 在本地服务启动后，检查项目入口、筛选、静态封面、入场动效、站内搜索和响应式布局。 |
+| `npm run test:gallery` | 检查图片缩放、拖动、缩略图、全屏、键盘焦点、手机滑动与双指缩放。 |
 | `npm run test:project-docs` | 验证文档同步、图片路径、失败回退、隐私清理与详情页路由。 |
 | `npm run test:project-details` | 对生产预览检查八篇介绍、章节链接、图片缩放、返回恢复和无远端文档依赖的阅读。 |
 | `npm run preview` | 本地预览 `dist` 生产构建结果。 |
@@ -91,13 +93,13 @@ http://localhost:5173
 | `src/data/timeline.ts` | 维护面向下一步的阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
 
-Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内搜索直接打开相应项目介绍。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目以完整结果图制作封面；`image.cover` 可单独配置封面，图库仍展示 `image.file` 中的原图。原生对话框支持方向键、Escape 关闭和焦点恢复。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建五张海报，无需 API。
+Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内搜索直接打开相应项目介绍。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目以完整结果图制作封面；`image.cover` 可单独配置封面，详情页图库同时展示封面和 `image.file` 中的原图，并按文件去重。列表封面不再打开图库，也不显示放大图标；原有悬浮效果仍保留。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建五张海报，无需 API。
 
 项目浏览器检查沿用现有 Playwright 运行方式，默认使用 Microsoft Edge 和 `http://127.0.0.1:5173/`，可通过 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL` 或 `PROJECTS_BROWSER_EXECUTABLE` 覆盖。先运行 `npm run dev`，再执行 `npm run test:projects`。
 
 项目标题与卡片左侧的“项目介绍”打开站内详情页，右侧“访问网站”或“查看仓库”在新标签页打开外部链接。介绍内容保存在 `src/data/project-introductions.ts`，随详情组件一起按需加载；每篇围绕用途、实现和效果单独撰写，不直接展示仓库 README。实验数字依据对应公开报告，适用范围写在相关结果段落中。
 
-详情页提供桌面侧边目录和手机折叠目录。封面与正文实验图共用原生弹窗，支持 100%–300% 缩放、滚动查看和关闭后的焦点恢复。返回入口与浏览器后退保留项目列表的筛选和滚动位置。
+详情页提供桌面侧边目录和手机折叠目录。封面与正文实验图通过独立的右下角图标打开同一图集，并定位到对应图片。通用模块 `src/components/image-gallery` 提供图标工具栏、滚轮与双击缩放、拖动浏览、缩略图、全屏和触摸手势；支持方向键、Escape、焦点恢复与减少动态效果偏好。其他板块可直接传入图片列表复用，接口示例见 [模块使用说明](src/components/image-gallery/README.md)。返回入口与浏览器后退保留项目列表的筛选和滚动位置。
 
 `scripts/sync-project-docs.mjs` 保留为手动资料同步工具，可读取项目的 `source.href` 并缓存 Markdown 与图片，供核对技术资料使用。它不再参与开发或生产构建的自动流程，远端 README 的更新不会覆盖本站介绍。
 

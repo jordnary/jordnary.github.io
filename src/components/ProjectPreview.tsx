@@ -4,11 +4,9 @@ import type { ProjectCase } from '../data/projects'
 export function ProjectPreview({
   project,
   index,
-  onPreview,
 }: {
   project: ProjectCase
   index: number
-  onPreview: () => void
 }) {
   const [imageFailed, setImageFailed] = useState(false)
   const image = imageFailed ? undefined : project.image?.cover ?? project.image
@@ -19,15 +17,10 @@ export function ProjectPreview({
           {String(index + 1).padStart(2, '0')} /{' '}
           {project.category === 'Web 应用' ? 'BUILD' : 'EXPERIMENT'}
         </span>
-        <span>{image ? '项目图集' : '原理示意'}</span>
+        <span>{image ? '项目预览' : '原理示意'}</span>
       </div>
       {image ? (
-        <button
-          aria-label={`放大查看 ${project.title} 项目图片`}
-          className="portfolio-image-button"
-          onClick={onPreview}
-          type="button"
-        >
+        <div className="portfolio-image-preview">
           <span className="portfolio-image-frame">
             <img
               alt={image.alt}
@@ -41,9 +34,8 @@ export function ProjectPreview({
           </span>
           <span className="portfolio-image-caption">
             {image.caption}
-            <span aria-hidden="true">⤢</span>
           </span>
-        </button>
+        </div>
       ) : (
         <div
           aria-hidden="true"

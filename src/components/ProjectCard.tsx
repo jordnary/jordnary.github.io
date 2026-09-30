@@ -14,11 +14,9 @@ import { getProjectHref } from '../lib/routes'
 export function ProjectCard({
   project,
   index,
-  onPreview,
 }: {
   project: ProjectCase
   index: number
-  onPreview: () => void
 }) {
   const reducedMotion = useReducedMotion()
   const [focused, setFocused] = useState(false)
@@ -39,7 +37,7 @@ export function ProjectCard({
         }
         onFocusCapture={() => setFocused(true)}
       >
-        <ProjectPreview project={project} index={index} onPreview={onPreview} />
+        <ProjectPreview project={project} index={index} />
         <div className="portfolio-card-body">
           <div className="portfolio-card-meta">
             <span>{project.category}</span>
