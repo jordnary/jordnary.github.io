@@ -11,7 +11,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
   const checks = []
   const pass = name => { checks.push(name); report(name) }
   const url = path => new URL(path, baseURL.endsWith('/') ? baseURL : `${baseURL}/`).href
-  const loaded = () => page.locator('.project-markdown').waitFor()
+  const loaded = () => page.locator('.project-introduction').waitFor()
   try {
     for (const project of projects) {
       const response = await page.goto(url(`projects/${project.id}/`))
@@ -21,23 +21,23 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       await loaded()
       assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
       assert.equal(await page.getByRole('heading', { level: 1 }).textContent(), project.title)
-      assert.ok(await page.locator('.project-markdown').innerText())
-      assert.equal(await page.locator('.katex-error').count(), 0)
+      assert.ok((await page.locator('.project-introduction').innerText()).length > 300)
+      assert.equal(await page.locator('.project-introduction section').count(), 3)
+      assert.equal(await page.getByText('阅读提示', { exact: true }).count(), 0)
+      assert.equal(await page.locator('.project-reader-actions a').nth(1).getAttribute('href'), project.repository)
       const links = await page.locator('#project-toc-links a').evaluateAll(nodes => nodes.map(n => n.hash))
       for (const hash of links) assert.ok(await page.evaluate(id => Boolean(document.getElementById(decodeURIComponent(id.slice(1)))), hash))
-      for (const image of await page.locator('.project-document-image img').all()) {
+      for (const image of await page.locator('.project-introduction-figure img').all()) {
         await image.scrollIntoViewIfNeeded()
         await image.evaluate(element => element.decode())
         assert.ok(await image.evaluate(element => element.naturalWidth > 0 && new URL(element.src).origin === location.origin))
       }
     }
-    pass('All eight static detail URLs serve real reports, valid heading links and same-origin images')
+    pass('All eight static detail URLs serve individual introductions, valid chapters and same-origin images')
 
     await page.goto(url('projects/vae-gan-digits/'))
     await loaded()
-    assert.ok(await page.locator('.katex').count() > 10)
-    assert.ok(await page.locator('.project-table-scroll').count() > 0)
-    const heading = page.locator('#project-toc-links a').filter({ hasText: '2 实验设置与评价方法' })
+    const heading = page.locator('#project-toc-links a').nth(1)
     const sectionHash = await heading.getAttribute('href')
     await heading.click()
     await page.waitForFunction(hash => Math.abs(document.getElementById(decodeURIComponent(hash.slice(1))).getBoundingClientRect().top - 104) < 12, sectionHash)
@@ -47,16 +47,16 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       const top = document.getElementById(decodeURIComponent(hash.slice(1)))?.getBoundingClientRect().top
       return top >= 80 && top < 150
     }, sectionHash)
-    pass('Math and tables render; chapter deep links restore below the navigation after a reload')
+    pass('Introduction chapter links restore below the navigation after a reload')
 
-    const imageButton = page.locator('.project-document-image').first()
+    const imageButton = page.locator('.project-introduction-figure button').first()
     await imageButton.scrollIntoViewIfNeeded()
     await imageButton.click()
     const dialog = page.getByRole('dialog')
     await dialog.waitFor()
     await dialog.getByRole('button', { name: '放大图片', exact: true }).click()
     assert.equal(await dialog.getByRole('button', { name: '重置图片缩放' }).textContent(), '150%')
-    await dialog.getByRole('button', { name: '下一张图片' }).click()
+    await dialog.getByRole('button', { name: '重置图片缩放' }).click()
     assert.equal(await dialog.getByRole('button', { name: '重置图片缩放' }).textContent(), '100%')
     for (let i = 0; i < 12; i++) {
       await page.keyboard.press('Tab')
@@ -66,11 +66,11 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await dialog.waitFor({ state: 'hidden' })
     assert.ok(await imageButton.evaluate(element => element === document.activeElement))
     assert.notEqual(await page.evaluate(() => document.body.style.overflow), 'hidden')
-    pass('Document images support zoom, gallery navigation, keyboard containment and focus return')
+    pass('Introduction figures support zoom, reset, keyboard containment and focus return')
 
     await page.goto(url('projects/'))
     await page.getByRole('group', { name: '按项目方向筛选' }).getByRole('button', { name: /^机器学习/ }).click()
-    const cardLink = page.getByRole('link', { name: 'VAE DigitGen：阅读文档', exact: true })
+    const cardLink = page.getByRole('link', { name: 'VAE DigitGen：项目介绍', exact: true })
     await cardLink.scrollIntoViewIfNeeded()
     const position = await page.evaluate(() => scrollY)
     await cardLink.click()
@@ -111,23 +111,16 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await page.keyboard.press('Escape')
     pass('Phone, tablet and desktop layouts fit both themes; the mobile contents menu and gallery work')
 
-    await page.route('**/data/project-docs/orientation-jnd.json', route => route.fulfill({ status: 503, body: 'Unavailable' }))
+    let documentRequests = 0
+    await page.route('**/data/project-docs/**', route => { documentRequests++; return route.abort() })
+    await page.route('https://raw.githubusercontent.com/**', route => route.abort())
     await page.goto(url('projects/orientation-jnd/'))
-    await page.getByRole('alert').waitFor()
-    assert.ok(await page.getByRole('button', { name: '重新加载' }).isVisible())
-    await page.unroute('**/data/project-docs/orientation-jnd.json')
-    await page.getByRole('button', { name: '重新加载' }).click()
     await loaded()
-    pass('A failed document request exposes a retry and recovers without leaving the site')
-
-    const malicious = { version: 1, id: 'orientation-jnd', sourceUrl: 'https://github.com/example/report/blob/HEAD/report.md', rawUrl: 'https://raw.githubusercontent.com/example/report/HEAD/report.md', fetchedAt: '2026-01-01T00:00:00Z', headings: [], images: {}, markdown: '# Safe\n<script>window.injected=true</script>\n<img src=x onerror="window.injected=true">\n[Bad](javascript:alert(1))\n<iframe src="https://example.com"></iframe>' }
-    await page.route('**/data/project-docs/orientation-jnd.json', route => route.fulfill({ json: malicious }))
-    await page.reload()
-    await loaded()
-    assert.equal(await page.locator('.project-markdown script, .project-markdown iframe, .project-markdown [onerror]').count(), 0)
-    assert.equal(await page.evaluate(() => Boolean(window.injected)), false)
-    pass('Repository Markdown cannot inject scripts, event handlers or embedded frames')
-    await page.unroute('**/data/project-docs/orientation-jnd.json')
+    assert.ok((await page.locator('.project-introduction').innerText()).includes('82.47%'))
+    assert.equal(documentRequests, 0)
+    await page.unroute('**/data/project-docs/**')
+    await page.unroute('https://raw.githubusercontent.com/**')
+    pass('Introductions load without repository documents or remote Markdown requests')
 
     assert.deepEqual(errors, [])
     pass('No uncaught browser errors during detail-page interactions')

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { projects } from '../src/data/projects.ts'
 import { pathToFileURL } from 'node:url'
 
 export async function runProjectChecks(browser, baseURL, report = () => {}) {
@@ -80,16 +81,28 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await waitForCount(8)
     pass('Every category filters correctly and supports keyboard activation')
 
-    const details = cards.first().locator('details')
-    await details.locator('summary').focus()
+    for (const project of projects) {
+      const card = page.locator('#' + project.id)
+      const primary = card.locator('.portfolio-primary-link')
+      const external = card.locator('.portfolio-source-link')
+      assert.equal(await primary.getAttribute('href'), new URL(url('projects/' + project.id + '/')).pathname)
+      assert.equal(await primary.getAttribute('target'), null)
+      assert.equal((await primary.innerText()).replace('→', '').trim(), '项目介绍')
+      assert.equal(await external.getAttribute('href'), project.demo ?? project.repository)
+      assert.equal(await external.getAttribute('target'), '_blank')
+      assert.ok((await external.getAttribute('rel')).includes('noreferrer'))
+      await primary.scrollIntoViewIfNeeded()
+      const primaryBox = await primary.boundingBox()
+      const externalBox = await external.boundingBox()
+      assert.ok(primaryBox.x < externalBox.x)
+    }
+    await cards.first().locator('.portfolio-primary-link').focus()
     await page.keyboard.press('Enter')
-    assert.equal(await details.getAttribute('open'), '')
-    assert.ok(
-      await details.getByRole('heading', { name: '如何理解结果' }).isVisible(),
-    )
-    await page.keyboard.press('Enter')
-    assert.equal(await details.getAttribute('open'), null)
-    pass('Case-study disclosures open and close with the keyboard')
+    await page.waitForURL(url('projects/briefing-atlas/'))
+    await page.locator('.project-introduction').waitFor()
+    await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
+    await waitForCount(8)
+    pass('All cards place the internal introduction on the left and external destination on the right; keyboard navigation works')
 
     const opener = page.getByRole('button', {
       name: '放大查看 Briefing Atlas 项目图片',
@@ -165,18 +178,13 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       .locator('.site-search-result')
       .filter({ hasText: 'Few-Shot Learning' })
       .click()
-    await page.waitForURL('**/projects/#few-shot-learning')
-    await waitForCount(8)
-    await page.waitForFunction(() => {
-      const top = document
-        .getElementById('few-shot-learning')
-        ?.getBoundingClientRect().top
-      return top !== undefined && top >= 70 && top < 140
-    })
-    assert.equal(await filter('全部项目').getAttribute('aria-pressed'), 'true')
-    pass(
-      'Search reveals and scrolls to a project hidden by the active category',
-    )
+    await page.waitForURL(url('projects/few-shot-learning/'))
+    await page.locator('.project-introduction').waitFor()
+    assert.equal(await page.getByRole('heading', { level: 1 }).textContent(), 'Few-Shot Learning')
+    await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
+    await waitForCount(2)
+    assert.equal(await filter('Web 应用').getAttribute('aria-pressed'), 'true')
+    pass('Search opens the project introduction and returning preserves the active category')
 
     await page.goto(url('projects/#orientation-jnd'))
     await page.waitForFunction(() => {

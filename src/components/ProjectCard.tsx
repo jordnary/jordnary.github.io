@@ -66,49 +66,22 @@ export function ProjectCard({
           <div className="portfolio-card-actions">
             <SmartLink
               className="portfolio-primary-link btn-primary"
-              href={project.demo ?? project.repository}
-              aria-label={`${project.title}：${project.demo ? '访问网站' : '查看代码'}`}
+              href={getProjectHref(project.id)}
+              aria-label={`${project.title}：项目介绍`}
             >
-              {project.demo ? '访问网站' : '查看代码'}
-              <span aria-hidden="true">↗</span>
+              项目介绍
+              <span aria-hidden="true">→</span>
             </SmartLink>
             <SmartLink
               className="portfolio-source-link"
-              href={getProjectHref(project.id)}
-              aria-label={`${project.title}：阅读文档`}
+              href={project.demo ?? project.repository}
+              aria-label={`${project.title}：${project.demo ? '访问网站' : '查看仓库'}`}
             >
-              阅读文档
-              <span aria-hidden="true">→</span>
+              {project.demo ? '访问网站' : '查看仓库'}
+              <span aria-hidden="true">↗</span>
             </SmartLink>
           </div>
         </div>
-        <details className="portfolio-details">
-          <summary>
-            <span>
-              问题、实现与边界
-              <span className="portfolio-sr-only">：{project.title}</span>
-            </span>
-            <span aria-hidden="true" className="portfolio-details-icon">
-              +
-            </span>
-          </summary>
-          <div className="portfolio-details-content">
-            <h4>要解决的问题</h4>
-            <p>{project.question}</p>
-            <h4>实现路径</h4>
-            <ol>
-              {project.implementation.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ol>
-            <h4>如何理解结果</h4>
-            <p>{project.limitation}</p>
-            <SmartLink href={getProjectHref(project.id)}>
-              {project.source.label}
-              <span aria-hidden="true"> →</span>
-            </SmartLink>
-          </div>
-        </details>
       </motion.div>
     </article>
   )

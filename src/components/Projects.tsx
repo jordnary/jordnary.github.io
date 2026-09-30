@@ -97,12 +97,12 @@ export function Projects() {
           <h1>
             从想法，
             <br />
-            到可验证的<span>作品。</span>
+            到具体的<span>作品。</span>
           </h1>
           <p className="portfolio-intro-copy">
             用 Web 连接内容，用实验理解模型。
             <br />
-            记录每个项目的问题、实现，以及结果的边界。
+            这里收录在线应用、机器学习实践与视觉实验。
           </p>
           <div className="portfolio-intro-bottom">
             <span>
@@ -186,8 +186,8 @@ export function Projects() {
       <aside className="portfolio-colophon">
         <span aria-hidden="true">↳</span>
         <div>
-          <h2>代码之外，也留下过程。</h2>
-          <p>实现、对照与局限一起记录，让下一次实践有据可循。</p>
+          <h2>探索还在继续。</h2>
+          <p>更多代码与项目更新收录在 GitHub。</p>
         </div>
         <SmartLink href="https://github.com/jordnary">
           继续探索 GitHub <span aria-hidden="true">↗</span>

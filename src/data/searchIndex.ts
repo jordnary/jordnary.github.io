@@ -4,7 +4,7 @@ import { learningNotes } from './notes'
 import { projects } from './projects'
 import { skillCategories } from './skills'
 import { timelineItems } from './timeline'
-import { getRouteHref, siteRoutes } from '../lib/routes'
+import { getProjectHref, getRouteHref, siteRoutes } from '../lib/routes'
 
 export type SearchEntryKind = '页面' | '项目' | '学习' | '笔记' | '时间线' | '联系'
 
@@ -57,7 +57,7 @@ const pageEntries: SearchEntry[] = [
 const projectEntries: SearchEntry[] = projects.map((project) => ({
   title: project.title,
   description: project.description,
-  href: `${getRouteHref('projects')}#${project.id}`,
+  href: getProjectHref(project.id),
   kind: '项目',
   keywords: [
     project.category,

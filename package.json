@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "npm run sync:github && npm run sync:feeds && npm run sync:projects",
-    "prebuild": "npm run sync:github && npm run sync:feeds && npm run sync:projects",
+    "predev": "npm run sync:github && npm run sync:feeds",
+    "prebuild": "npm run sync:github && npm run sync:feeds",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "sync:feeds": "node scripts/sync-rss.mjs",
