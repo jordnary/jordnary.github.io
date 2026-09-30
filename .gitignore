@@ -16,6 +16,7 @@ dist-ssr
 public/data/rss.json
 public/data/github.json
 public/data/github.json.tmp
+/public/data/project-docs/
 
 # Downloaded source assets (runtime assets belong in public/)
 /downloads/

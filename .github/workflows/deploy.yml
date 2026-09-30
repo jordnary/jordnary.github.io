@@ -49,6 +49,9 @@ jobs:
       - name: Validate snapshots
         run: npm run test:snapshots
 
+      - name: Validate project document sync and routes
+        run: npm run test:project-docs
+
       - name: Build with authenticated GitHub snapshot sync
         env:
           GH_TOKEN: ${{ github.token }}

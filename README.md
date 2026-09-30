@@ -20,7 +20,8 @@ Jordnary 的个人网站，用于整理个人叙事、计算机与 AI 学习笔�
 - `/`：首页，展示个人定位、各内容页面入口，以及 GitHub 与 RSS 动态。
 - `/about/`：以个人叙事说明学习背景、当前方向、选择 CS / AI / Web 的原因与长期问题。
 - `/learning/`：按知识分类组织学习方向，沉淀带有“问题—理解—实践—参考”结构的笔记，并记录阶段计划。
-- `/projects/`：复盘可访问的真实项目案例；学习笔记系统和 AI Learning Playground 明确归入计划中 / 实验中。
+- `/projects/`：按 Web 应用、机器学习和视觉实验展示 8 个公开项目，结合网站实景、实验图、原理示意与可展开的实现说明。
+- `/projects/<project-id>/`：独立项目阅读页，包含完整文档、章节目录、数学公式、表格与可放大的文内图片，支持直接访问和刷新。
 - `/contact/`：提供邮箱、GitHub 和网站入口。
 
 项目采用数据驱动的内容结构。个人简介、技能、项目、时间线和联系方式集中维护在 `src/data`；跨页导航与页面元信息集中维护在 `src/lib/routes.ts`；每个页面组合在 `src/pages`。这让新增专题时不必再把所有内容堆到首页。
@@ -59,7 +60,11 @@ http://localhost:5173
 | `npm run build` | 执行 TypeScript 构建检查并生成生产产物。 |
 | `npm run sync:feeds` | 拉取 RSS 源并生成供页面读取的静态数据。 |
 | `npm run sync:github` | 同步 GitHub 公开数据，失败时恢复上一份有效快照。 |
+| `npm run sync:projects` | 同步项目 Markdown 和引用图片，生成站内阅读快照。 |
 | `npm run test:snapshots` | 验证快照同步、离线兜底及历史清理规则。 |
+| `npm run test:projects` | 在本地服务启动后，检查项目筛选、图片预览、键盘操作、搜索定位和响应式布局。 |
+| `npm run test:project-docs` | 验证文档同步、图片路径、失败回退、隐私清理与详情页路由。 |
+| `npm run test:project-details` | 对生产预览检查八个详情页、公式、章节链接、图片缩放、返回恢复及加载失败处理。 |
 | `npm run preview` | 本地预览 `dist` 生产构建结果。 |
 
 ## 站内搜索与动态内容
@@ -81,9 +86,19 @@ http://localhost:5173
 | `src/data/profile.ts` | 维护个人叙事、学习背景、当前方向与长期问题。 |
 | `src/data/skills.ts` | 维护知识分类及每类正在沉淀的主题。 |
 | `src/data/notes.ts` | 维护可筛选的学习笔记、实践说明与参考来源。 |
-| `src/data/projects.ts` | 维护真实项目案例及计划中 / 实验中的方向。 |
+| `src/data/projects.ts` | 维护项目分类、简介、技术栈、图片、成果入口、实现和局限。 |
 | `src/data/timeline.ts` | 维护面向下一步的阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
+
+Projects 的项目 ID 用作稳定锚点；站内搜索可直接定位项目，并在必要时重置分类筛选。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目以完整结果图制作封面；`image.cover` 可单独配置封面，图库仍展示 `image.file` 中的原图。原生对话框支持方向键、Escape 关闭和焦点恢复。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建五张海报，无需 API。
+
+项目浏览器检查沿用现有 Playwright 运行方式，默认使用 Microsoft Edge 和 `http://127.0.0.1:5173/`，可通过 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL` 或 `PROJECTS_BROWSER_EXECUTABLE` 覆盖。先运行 `npm run dev`，再执行 `npm run test:projects`。
+
+项目标题与“阅读文档”打开站内详情页。详情页采用按需加载的 Markdown 阅读组件，支持 GFM 表格、KaTeX 公式、桌面侧边目录和手机折叠目录。封面与正文图片共用原生弹窗，支持 100%–300% 缩放、滚动查看、键盘切图和关闭后的焦点恢复。返回入口与浏览器后退保留项目列表的筛选和滚动位置。
+
+`scripts/sync-project-docs.mjs` 在开发和构建前读取项目的 `source.href`：`blob/HEAD/` 链接对应具体 Markdown，其余项目读取仓库的 `README.md`。脚本同步相对路径、引用式和 HTML 图片，按内容摘要保存到 `public/data/project-docs/assets`；正文和资源清单保存为每个项目一份 JSON。生成内容被 Git 忽略，发布时随静态资源上传。原始 HTML 经白名单清理后才渲染；同步时还会替换本地机器路径、环境名称和 shell 身份信息。
+
+远端文档或图片暂时不可用时，优先恢复完整的本地或已发布快照，并保留原同步时间；没有可用快照时停止构建，避免发布空白文档。首次构建需要联网，更新报告后重新构建即可同步。Vite 从项目数据自动生成各详情页的 HTML 入口和独立元信息，无需手动创建八份页面文件，也无需配置服务器路由回退。详情页浏览器检查默认连接 `http://127.0.0.1:4173/`，先构建并运行 `npm run preview`，再执行 `npm run test:project-details`。
 
 页面路由、导航标签和客户端标题集中维护在 `src/lib/routes.ts`。要增加一个新页面：
 

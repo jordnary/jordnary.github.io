@@ -1,7 +1,7 @@
 import { contactLinks } from './contact'
 import { aboutProfile } from './profile'
 import { learningNotes } from './notes'
-import { experimentalProjects, projects } from './projects'
+import { projects } from './projects'
 import { skillCategories } from './skills'
 import { timelineItems } from './timeline'
 import { getRouteHref, siteRoutes } from '../lib/routes'
@@ -57,22 +57,15 @@ const pageEntries: SearchEntry[] = [
 const projectEntries: SearchEntry[] = projects.map((project) => ({
   title: project.title,
   description: project.description,
-  href: getRouteHref('projects'),
+  href: `${getRouteHref('projects')}#${project.id}`,
   kind: '项目',
   keywords: [
-    ...project.category,
-    ...project.responsibilities,
-    ...project.technicalChoices,
+    project.category,
+    project.subtitle,
+    ...project.stack,
+    ...project.highlights,
     project.status,
   ],
-}))
-
-const experimentalProjectEntries: SearchEntry[] = experimentalProjects.map((project) => ({
-  title: project.title,
-  description: project.description,
-  href: `${getRouteHref('projects')}#experiments`,
-  kind: '项目',
-  keywords: [...project.topics, project.status, project.nextStep],
 }))
 
 const skillEntries: SearchEntry[] = skillCategories.map((category) => ({
@@ -110,7 +103,6 @@ const contactEntries: SearchEntry[] = contactLinks.map((link) => ({
 export const searchEntries = [
   ...pageEntries,
   ...projectEntries,
-  ...experimentalProjectEntries,
   ...skillEntries,
   ...noteEntries,
   ...timelineEntries,

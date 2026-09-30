@@ -1,3 +1,5 @@
+import { projects } from '../data/projects.ts'
+
 export const sitePages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 
 export type SitePage = (typeof sitePages)[number]
@@ -27,7 +29,7 @@ export const siteRoutes: Record<SitePage, SiteRoute> = {
   projects: {
     label: '项目',
     title: '项目案例 | Jordnary',
-    description: '复盘已经可访问的项目案例，并记录仍在验证的实验方向。',
+    description: '探索 Web 应用、机器学习与视觉实验：浏览项目实景、实验图、实现过程和公开代码。',
   },
   contact: {
     label: '联系',
@@ -59,6 +61,7 @@ export function getPageFromDocument() {
 
 /** Match only the static pages this app can render, including their HTML URLs. */
 export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SitePage | null {
+  if (getProjectFromUrl(url, base)) return 'projects'
   const root = base.replace(/\/$/, '')
   for (const page of sitePages) {
     const path = page === 'home' ? `${root}/home` : `${root}/${page}`
@@ -66,6 +69,17 @@ export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SiteP
     if ([portalPath || '/', `${portalPath}/`, `${portalPath}/index.html`, path, `${path}/`, `${path}/index.html`].includes(url.pathname)) return page
   }
   return null
+}
+
+export function getProjectHref(id: string, base = import.meta.env.BASE_URL) {
+  return `${base.replace(/\/$/, '')}/projects/${id}/`
+}
+
+export function getProjectFromUrl(url: URL, base = import.meta.env.BASE_URL) {
+  return projects.find(project => {
+    const path = getProjectHref(project.id, base)
+    return [path, path.slice(0, -1), `${path}index.html`].includes(url.pathname)
+  })
 }
 
 function isSitePage(value: string | undefined): value is SitePage {

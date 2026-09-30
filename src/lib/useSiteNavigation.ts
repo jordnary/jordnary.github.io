@@ -1,14 +1,20 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
-import { getPageFromUrl, type SitePage } from './routes'
+import { getPageFromUrl, getProjectFromUrl, type SitePage } from './routes'
 
 type Position = { left: number; top: number }
-type Navigation = { page: SitePage; position?: Position; focus: boolean; behavior?: ScrollBehavior }
+type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior }
 const historyKey = 'siteNavigationKey'
+const positionKey = 'siteNavigationPosition'
+
+function savedPosition(): Position | undefined {
+  const value = window.history.state?.[positionKey]
+  return value && Number.isFinite(value.left) && Number.isFinite(value.top) ? value : undefined
+}
 
 /** Keep the shared layout alive while retaining independently addressable HTML pages. */
 export function useSiteNavigation(initialPage: SitePage) {
-  const [navigation, setNavigation] = useState<Navigation>({ page: initialPage, focus: false })
+  const [navigation, setNavigation] = useState<Navigation>({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false })
 
   useEffect(() => {
     const previousRestoration = window.history.scrollRestoration
@@ -21,6 +27,10 @@ export function useSiteNavigation(initialPage: SitePage) {
     }
     let currentKey = ensureKey()
     const savePosition = () => positions.set(currentKey, { left: window.scrollX, top: window.scrollY })
+    const persistPosition = () => {
+      savePosition()
+      window.history.replaceState({ ...window.history.state, [positionKey]: positions.get(currentKey) }, '')
+    }
     savePosition()
 
     const click = (event: MouseEvent) => {
@@ -32,30 +42,43 @@ export function useSiteNavigation(initialPage: SitePage) {
       if (url.origin !== window.location.origin) return
       const page = getPageFromUrl(url)
       if (!page) return
+      if (anchor.hasAttribute('data-project-return') && Number.isInteger(window.history.state?.projectReturnDepth) && window.history.state.projectReturnDepth > 0) {
+        event.preventDefault()
+        persistPosition()
+        window.history.go(-window.history.state.projectReturnDepth)
+        return
+      }
       const behavior = url.pathname === window.location.pathname && url.search === window.location.search && url.hash.length > 1
         ? 'smooth' : 'instant'
       event.preventDefault()
-      savePosition()
+      persistPosition()
       if (url.href !== window.location.href) {
+        const currentUrl = new URL(window.location.href)
+        const fromList = getPageFromUrl(currentUrl) === 'projects' && !getProjectFromUrl(currentUrl)
+        const returnDepth = getProjectFromUrl(url)
+          ? (fromList ? 1 : window.history.state?.projectReturnDepth ? window.history.state.projectReturnDepth + 1 : undefined)
+          : undefined
         currentKey = crypto.randomUUID()
-        window.history.pushState({ [historyKey]: currentKey }, '', url)
+        window.history.pushState({ [historyKey]: currentKey, projectReturnDepth: returnDepth }, '', url)
       }
-      setNavigation({ page, focus: true, behavior })
+      setNavigation({ page, href: url.href, focus: true, behavior })
     }
     const pop = () => {
       const page = getPageFromUrl(new URL(window.location.href))
       if (!page) return
       currentKey = ensureKey()
-      setNavigation({ page, position: positions.get(currentKey), focus: true })
+      setNavigation({ page, href: window.location.href, position: positions.get(currentKey) ?? savedPosition(), focus: true })
     }
     document.addEventListener('click', click)
     window.addEventListener('popstate', pop)
     window.addEventListener('scroll', savePosition, { passive: true })
+    window.addEventListener('pagehide', persistPosition)
     return () => {
       window.history.scrollRestoration = previousRestoration
       document.removeEventListener('click', click)
       window.removeEventListener('popstate', pop)
       window.removeEventListener('scroll', savePosition)
+      window.removeEventListener('pagehide', persistPosition)
     }
   }, [])
 
@@ -67,8 +90,25 @@ export function useSiteNavigation(initialPage: SitePage) {
     }
     scroll()
     const frame = window.requestAnimationFrame(scroll)
-    return () => window.cancelAnimationFrame(frame)
+    // A lazy document can arrive after the initial layout. Restore only until
+    // the visitor starts interacting, so loading never pulls them away.
+    let interacted = false
+    const interact = () => { interacted = true }
+    const ready = () => { if (!interacted) scroll() }
+    window.addEventListener('project-document-ready', ready)
+    window.addEventListener('wheel', interact, { passive: true })
+    window.addEventListener('touchstart', interact, { passive: true })
+    window.addEventListener('pointerdown', interact)
+    window.addEventListener('keydown', interact)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('project-document-ready', ready)
+      window.removeEventListener('wheel', interact)
+      window.removeEventListener('touchstart', interact)
+      window.removeEventListener('pointerdown', interact)
+      window.removeEventListener('keydown', interact)
+    }
   }, [navigation])
 
-  return navigation.page
+  return navigation
 }
