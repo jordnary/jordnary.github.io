@@ -94,7 +94,7 @@ try {
   // Use the real search result and close handler for cross-page hash navigation.
   document.querySelector<HTMLButtonElement>('.nav-search-button')!.click()
   await until(() => document.querySelector('.site-search-result'))
-  const searchLink = document.querySelector<HTMLAnchorElement>('.site-search-result[href="/#explore"]')!
+  const searchLink = document.querySelector<HTMLAnchorElement>(`.site-search-result[href="${getRouteHref('home')}#explore"]`)!
   check(!!searchLink, 'Search exposes the home section link')
   searchLink.click()
   await until(() => document.body.dataset.page === 'home' && !document.querySelector('.site-search-backdrop'))
@@ -103,12 +103,12 @@ try {
   check(document.querySelector('.live2d-canvas-wrap canvas') === canvas && !companion.hasAttribute('hidden'), 'Search restoration reuses the visible companion')
 
   const link = document.createElement('a')
-  link.href = '/projects/index.html?source=test#experiments'
+  link.href = `${getRouteHref('projects')}index.html?source=test#vae-gan-digits`
   document.querySelector('main')!.append(link)
   link.click()
   await until(() => document.body.dataset.page === 'projects')
   await delay(100)
-  check(location.search === '?source=test' && location.hash === '#experiments' && window.scrollY > 0, 'HTML aliases, queries and cross-page anchors use the same layout')
+  check(location.search === '?source=test' && location.hash === '#vae-gan-digits' && window.scrollY > 0, 'HTML aliases, queries and cross-page anchors use the same layout')
 
   const sectionLink = document.createElement('a')
   sectionLink.href = '#projects'
