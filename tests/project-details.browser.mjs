@@ -97,7 +97,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await cardLink.click()
     await loaded()
     await page.locator('#project-toc-links a').nth(2).click()
-    await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
+    await page.getByRole('link', { name: '返回项目', exact: true }).click()
     await page.waitForURL(url('projects/'))
     assert.equal(await page.locator('.portfolio-card').count(), projects.filter(project => project.category === '机器学习').length)
     await page.waitForFunction(y => Math.abs(scrollY - y) < 8, position)

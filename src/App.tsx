@@ -24,7 +24,7 @@ function App({ page: initialPage }: { page: SitePage }) {
   }, [page, project, href])
 
   return (
-    <SiteLayout page={page}>{project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} /></Suspense> : getPageContent(page)}</SiteLayout>
+    <SiteLayout page={page} isProjectDetail={Boolean(project)}>{project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} /></Suspense> : getPageContent(page)}</SiteLayout>
   )
 }
 

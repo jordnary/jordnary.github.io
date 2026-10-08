@@ -9,9 +9,10 @@ import type { SitePage } from '../lib/routes'
 type SiteLayoutProps = {
   children: ReactNode
   page: SitePage
+  isProjectDetail?: boolean
 }
 
-export function SiteLayout({ children, page }: SiteLayoutProps) {
+export function SiteLayout({ children, page, isProjectDetail = false }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   // Derive portal mode from the current route on every render. Keeping this as
   // state can leave the fixed homepage portal mode active for one render after
@@ -19,7 +20,7 @@ export function SiteLayout({ children, page }: SiteLayoutProps) {
   const isPortalMode = page === 'home' && isPortalPath()
 
   return (
-    <div className={`app-shell${isSearchOpen ? ' is-search-open' : ''}`}>
+    <div className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${isSearchOpen ? ' is-search-open' : ''}`}>
       <div className="app-shell-content">
         <div className="ambient-bg" />
         <div className="grid-bg" />

@@ -126,7 +126,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await page.keyboard.press('Enter')
     await page.waitForURL(url(`projects/${projects[0].id}/`))
     await page.locator('.project-introduction').waitFor()
-    await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
+    await page.getByRole('link', { name: '返回项目', exact: true }).click()
     await waitForCount(projects.length)
     pass('All cards place the internal introduction on the left and external destination on the right; keyboard navigation works')
 
@@ -168,7 +168,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await page.waitForURL(url('projects/few-shot-learning/'))
     await page.locator('.project-introduction').waitFor()
     assert.equal(await page.getByRole('heading', { level: 1 }).textContent(), 'Few-Shot Learning')
-    await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
+    await page.getByRole('link', { name: '返回项目', exact: true }).click()
     await waitForCount(2)
     assert.equal(await filter('Web 应用').getAttribute('aria-pressed'), 'true')
     pass('Search opens the project introduction and returning preserves the active category')
