@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { projects } from '../src/data/projects.ts'
+import { projectFilters, projects } from '../src/data/projects.ts'
 import { pathToFileURL } from 'node:url'
 
 export async function runProjectChecks(browser, baseURL, report = () => {}) {
@@ -30,18 +30,21 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     )
   try {
     await page.goto(url('projects/'))
-    await waitForCount(8)
+    await waitForCount(projects.length)
     assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
     assert.equal(await page.title(), '项目案例 | Jordnary')
     assert.equal(
       await cards.evaluateAll(
         (nodes) => new Set(nodes.map((node) => node.id)).size,
       ),
-      8,
+      projects.length,
     )
     pass(
-      'Eight distinct projects render with a page heading and stable anchors',
+      'All projects render with a page heading and stable anchors',
     )
+    assert.deepEqual(await cards.evaluateAll(nodes => nodes.map(node => node.id)), projects.map(project => project.id))
+    const categoryGroups = projects.map(project => project.category).filter((category, index, categories) => category !== categories[index - 1])
+    assert.equal(categoryGroups.length, new Set(categoryGroups).size, 'Projects in each category stay together')
 
     for (const preview of await page.locator('.portfolio-image-preview').all()) {
       await preview.scrollIntoViewIfNeeded()
@@ -57,28 +60,25 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
           ),
       )
     }
-    assert.equal(await page.locator('.portfolio-image-preview').count(), 5)
-    pass('All five local poster covers load at 8:5 with descriptive alternatives')
+    assert.equal(await page.locator('.portfolio-image-preview').count(), projects.length)
+    pass('All local poster covers load at 8:5 with descriptive alternatives')
 
-    for (const [name, expected] of [
-      ['Web 应用', 2],
-      ['机器学习', 5],
-      ['视觉实验', 1],
-      ['全部项目', 8],
-    ]) {
+    for (const name of projectFilters) {
+      const expected = name === '全部项目' ? projects.length : projects.filter(project => project.category === name).length
       await filter(name).click()
       await waitForCount(expected)
+      assert.deepEqual(await cards.evaluateAll(nodes => nodes.map(node => node.id)), projects.filter(project => name === '全部项目' || project.category === name).map(project => project.id))
       assert.equal(await filter(name).getAttribute('aria-pressed'), 'true')
       assert.equal(
         await page.locator('.portfolio-result-count').textContent(),
-        `显示 ${expected} / 8 个项目`,
+        `显示 ${expected} / ${projects.length} 个项目`,
       )
     }
     await filter('Web 应用').focus()
     await page.keyboard.press('Space')
     await waitForCount(2)
     await filter('全部项目').click()
-    await waitForCount(8)
+    await waitForCount(projects.length)
     pass('Every category filters correctly and supports keyboard activation')
 
     for (const project of projects) {
@@ -98,10 +98,10 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     }
     await cards.first().locator('.portfolio-primary-link').focus()
     await page.keyboard.press('Enter')
-    await page.waitForURL(url('projects/briefing-atlas/'))
+    await page.waitForURL(url(`projects/${projects[0].id}/`))
     await page.locator('.project-introduction').waitFor()
     await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
-    await waitForCount(8)
+    await waitForCount(projects.length)
     pass('All cards place the internal introduction on the left and external destination on the right; keyboard navigation works')
 
     for (const preview of await page.locator('.portfolio-image-preview').all()) {
@@ -173,7 +173,7 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       const motionPage = await motionContext.newPage()
       await motionPage.goto(url('projects/'))
       const lastSurface = motionPage.locator(
-        '#personal-website .portfolio-card-surface',
+        '.portfolio-card:last-child .portfolio-card-surface',
       )
       await lastSurface.waitFor({ state: 'attached' })
       assert.equal(
@@ -229,17 +229,17 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
 
       await motionPage.goto(url('projects/'))
       await motionPage
-        .locator('#personal-website .portfolio-primary-link')
+        .locator('.portfolio-card:last-child .portfolio-primary-link')
         .focus()
       await motionPage.waitForFunction(
         () =>
           getComputedStyle(
-            document.querySelector('#personal-website .portfolio-card-surface'),
+            document.querySelector('.portfolio-card:last-child .portfolio-card-surface'),
           ).opacity === '1',
       )
       assert.ok(
         await motionPage
-          .locator('#personal-website .portfolio-primary-link')
+          .locator('.portfolio-card:last-child .portfolio-primary-link')
           .evaluate((element) => document.activeElement === element),
       )
       pass(

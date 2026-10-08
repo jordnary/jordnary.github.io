@@ -13,16 +13,15 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   const [tocOpen, setTocOpen] = useState(false)
   const base = import.meta.env.BASE_URL
   const images = useMemo<GalleryImage[]>(() => {
-    if (!project.image) return []
-    const { cover } = project.image
-    const items = cover && cover.file !== project.image.file ? [cover, project.image] : [project.image]
-    return items.map(image => ({
+    const items = [project.image?.cover, project.image, ...sections.flatMap(section => section.figures ?? [])]
+      .filter((image): image is NonNullable<typeof image> => Boolean(image))
+    return [...new Map(items.map(image => [image.file, image])).values()].map(image => ({
       src: `${base}images/projects/${image.file}`,
       alt: image.alt, caption: image.caption, title: project.title,
+      width: image.width, height: image.height,
       source: project.source.href,
     }))
-  }, [base, project])
-  const resultIndex = Math.max(0, images.length - 1)
+  }, [base, project, sections])
   const readingMinutes = Math.max(1, Math.ceil(sections.reduce(
     (length, section) => length + section.title.length + section.paragraphs.join('').length, 0,
   ) / 400))
@@ -95,15 +94,16 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
                 <section key={section.id} id={`project-${section.id}`} aria-labelledby={`project-${section.id}-title`}>
                   <h2 id={`project-${section.id}-title`}>{section.title}</h2>
                   {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-                  {section.figure && project.image && (
-                    <figure className="project-introduction-figure">
+                  {section.figures?.map(figure => {
+                    const resultIndex = images.findIndex(image => image.src === `${base}images/projects/${figure.file}`)
+                    return <figure className="project-introduction-figure" key={figure.file}>
                       <div className="project-introduction-image">
-                        <img src={images[resultIndex].src} alt={project.image.alt} loading="lazy" />
-                        <GalleryTrigger onClick={() => setPreviewIndex(resultIndex)} label={`放大查看 ${project.title} 实验结果`} />
+                        <img src={images[resultIndex].src} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
+                        <GalleryTrigger onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
                       </div>
-                      <figcaption>{project.image.caption}</figcaption>
+                      <figcaption>{figure.caption}</figcaption>
                     </figure>
-                  )}
+                  })}
                 </section>
               ))}
             </div>

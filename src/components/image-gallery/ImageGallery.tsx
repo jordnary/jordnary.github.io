@@ -119,6 +119,8 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const touchButtons = useTouchButtons()
   const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail, width, height })), [images])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
+  // The thumbnail plugin shares this window with the carousel.
+  const preload = Math.min(6, Math.max(0, images.length - 1))
   return <Lightbox
     open={open}
     close={onClose}
@@ -129,7 +131,7 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     className={`image-gallery${images.length < 2 ? ' image-gallery-single' : ''}`}
     portal={{ container: { onKeyDown: containFocus, ...touchButtons } }}
     on={{ view: ({ index }) => { if (index !== activeIndex) onIndexChange(index) } }}
-    carousel={{ finite: true, preload: 1, padding: '16px', spacing: '20%' }}
+    carousel={{ finite: true, preload, padding: '16px', spacing: '20%' }}
     controller={{ closeOnBackdropClick: true }}
     animation={{ fade: reducedMotion ? 0 : 180, swipe: reducedMotion ? 0 : 300, zoom: reducedMotion ? 0 : 220 }}
     zoom={{ maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, doubleClickMaxStops: 2 }}

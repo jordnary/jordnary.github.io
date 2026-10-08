@@ -20,7 +20,7 @@ Jordnary 的个人网站，用于整理个人叙事、计算机与 AI 学习笔�
 - `/`：首页，展示个人定位、各内容页面入口，以及 GitHub 与 RSS 动态。
 - `/about/`：以个人叙事说明学习背景、当前方向、选择 CS / AI / Web 的原因与长期问题。
 - `/learning/`：按知识分类组织学习方向，沉淀带有“问题—理解—实践—参考”结构的笔记，并记录阶段计划。
-- `/projects/`：按 Web 应用、机器学习和视觉实验展示 8 个公开项目，结合项目海报、实验图、原理示意与简洁的项目摘要。
+- `/projects/`：按 Web 应用、机器学习和视觉实验展示 9 个公开项目，结合项目海报、实验图、原理示意与简洁的项目摘要。
 - `/projects/<project-id>/`：独立项目介绍页，说明项目用途、主要实现与实际效果，提供章节目录和可放大的实验图片，支持直接访问和刷新。
 - `/contact/`：提供邮箱、GitHub 和网站入口。
 
@@ -66,7 +66,7 @@ http://localhost:5173
 | `npm run test:projects` | 在本地服务启动后，检查项目入口、筛选、静态封面、入场动效、站内搜索和响应式布局。 |
 | `npm run test:gallery` | 检查图片缩放、拖动、缩略图、全屏、键盘焦点、手机滑动与双指缩放。 |
 | `npm run test:project-docs` | 验证文档同步、图片路径、失败回退、隐私清理与详情页路由。 |
-| `npm run test:project-details` | 对生产预览检查八篇介绍、章节链接、图片缩放、返回恢复和无远端文档依赖的阅读。 |
+| `npm run test:project-details` | 对生产预览检查全部项目介绍、章节链接、图片缩放、返回恢复和无远端文档依赖的阅读。 |
 | `npm run preview` | 本地预览 `dist` 生产构建结果。 |
 
 ## 站内搜索与动态内容
@@ -93,9 +93,11 @@ http://localhost:5173
 | `src/data/timeline.ts` | 维护面向下一步的阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
 
-Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内搜索直接打开相应项目介绍。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目以完整结果图制作封面；`image.cover` 可单独配置封面，详情页图库同时展示封面和 `image.file` 中的原图，并按文件去重。列表封面不再打开图库，也不显示放大图标；原有悬浮效果仍保留。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建五张海报，无需 API。
+Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内搜索直接打开相应项目介绍。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目使用独立设计的海报，并在详情页保留完整结果图；`image.cover` 可单独配置封面，详情页图库同时展示封面和 `image.file` 中的原图，并按文件去重。列表封面不再打开图库，也不显示放大图标；原有悬浮效果仍保留。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建全部项目海报，无需 API。
 
 项目浏览器检查沿用现有 Playwright 运行方式，默认使用 Microsoft Edge 和 `http://127.0.0.1:5173/`，可通过 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL` 或 `PROJECTS_BROWSER_EXECUTABLE` 覆盖。先运行 `npm run dev`，再执行 `npm run test:projects`。
+
+项目按 Web 应用、机器学习、视觉实验连续排列；机器学习内部将 VAE 与 VAE-GAN、Gaussian Image Fitting 与 L2ColorFit 分别相邻展示。列表与分类筛选共用 `src/data/projects.ts` 的顺序。
 
 项目标题与卡片左侧的“项目介绍”打开站内详情页，右侧“访问网站”或“查看仓库”在新标签页打开外部链接。介绍内容保存在 `src/data/project-introductions.ts`，随详情组件一起按需加载；每篇围绕用途、实现和效果单独撰写，不直接展示仓库 README。实验数字依据对应公开报告，适用范围写在相关结果段落中。
 
@@ -103,7 +105,7 @@ Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内�
 
 `scripts/sync-project-docs.mjs` 保留为手动资料同步工具，可读取项目的 `source.href` 并缓存 Markdown 与图片，供核对技术资料使用。它不再参与开发或生产构建的自动流程，远端 README 的更新不会覆盖本站介绍。
 
-Vite 从项目数据自动生成各详情页的 HTML 入口和独立元信息，无需手动创建八份页面文件，也无需配置服务器路由回退。详情页浏览器检查默认连接 `http://127.0.0.1:4173/`，先构建并运行 `npm run preview`，再执行 `npm run test:project-details`。
+Vite 从项目数据自动生成各详情页的 HTML 入口和独立元信息，无需手动创建各项目的页面文件，也无需配置服务器路由回退。详情页浏览器检查默认连接 `http://127.0.0.1:4173/`，先构建并运行 `npm run preview`，再执行 `npm run test:project-details`。
 
 页面路由、导航标签和客户端标题集中维护在 `src/lib/routes.ts`。要增加一个新页面：
 

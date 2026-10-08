@@ -64,6 +64,19 @@ function ProjectArtwork({
   id: string
 }) {
   switch (variant) {
+    case 'attention':
+      return (
+        <svg viewBox="0 0 440 170" fill="none">
+          {Array.from({ length: 48 }, (_, i) => {
+            const row = Math.floor(i / 8)
+            const column = i % 8
+            return <rect key={i} x={60 + column * 22} y={22 + row * 22} width="17" height="17" fill="currentColor" fillOpacity={Math.abs(row - column) < 2 ? 0.85 : 0.12} />
+          })}
+          <path d="M250 85H280" stroke="currentColor" strokeDasharray="4 4" />
+          <text x="310" y="80" fill="currentColor" fontSize="22">Int8</text>
+          <text x="294" y="104" fill="currentColor" fontSize="10">SPARSE QK</text>
+        </svg>
+      )
     case 'fewshot':
       return (
         <div className="portfolio-fewshot-art">

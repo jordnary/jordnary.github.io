@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { projects } from '../src/data/projects.ts'
+import { projectIntroductions } from '../src/data/project-introductions.ts'
 
 export async function runProjectDetailChecks(browser, baseURL, report = () => {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })
@@ -22,7 +23,10 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
       assert.equal(await page.getByRole('heading', { level: 1 }).textContent(), project.title)
       assert.ok((await page.locator('.project-introduction').innerText()).length > 300)
-      assert.equal(await page.locator('.project-introduction section').count(), 3)
+      const { sections } = projectIntroductions[project.id]
+      assert.equal(await page.locator('.project-introduction section').count(), sections.length)
+      const figures = sections.flatMap(section => section.figures ?? [])
+      assert.equal(await page.locator('.project-introduction-figure').count(), figures.length)
       assert.equal(await page.getByText('阅读提示', { exact: true }).count(), 0)
       assert.equal(await page.locator('.project-reader-actions a').nth(1).getAttribute('href'), project.repository)
       const links = await page.locator('#project-toc-links a').evaluateAll(nodes => nodes.map(n => n.hash))
@@ -32,8 +36,25 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
         await image.evaluate(element => element.decode())
         assert.ok(await image.evaluate(element => element.naturalWidth > 0 && new URL(element.src).origin === location.origin))
       }
+      // Each inline figure must open its own image, including the final new asset.
+      for (const figure of await page.locator('.project-introduction-figure').all()) {
+        const expected = await figure.locator('img').getAttribute('src')
+        await figure.locator('button').click()
+        const dialog = page.getByRole('dialog')
+        await dialog.waitFor()
+        await page.waitForFunction(src => document.querySelector('.yarl__slide_current img')?.getAttribute('src') === src, expected)
+        await page.keyboard.press('Escape')
+        await dialog.waitFor({ state: 'hidden' })
+      }
+      for (const width of [320, 390, 768, 1440]) {
+        await page.setViewportSize({ width, height: 1000 })
+        for (const theme of ['dark', 'light']) {
+          await page.evaluate(value => document.documentElement.dataset.theme = value, theme)
+          assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${project.id}: ${width}px ${theme} overflow`)
+        }
+      }
     }
-    pass('All eight static detail URLs serve individual introductions, valid chapters and same-origin images')
+    pass('All static detail URLs serve individual introductions, valid chapters and same-origin images')
 
     await page.goto(url('projects/vae-gan-digits/'))
     await loaded()
@@ -78,7 +99,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await page.locator('#project-toc-links a').nth(2).click()
     await page.getByRole('link', { name: '← 返回项目', exact: true }).click()
     await page.waitForURL(url('projects/'))
-    assert.equal(await page.locator('.portfolio-card').count(), 5)
+    assert.equal(await page.locator('.portfolio-card').count(), projects.filter(project => project.category === '机器学习').length)
     await page.waitForFunction(y => Math.abs(scrollY - y) < 8, position)
     await cardLink.click()
     await loaded()
@@ -86,7 +107,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await loaded()
     await page.goBack()
     await page.locator('.portfolio-card').first().waitFor()
-    assert.equal(await page.locator('.portfolio-card').count(), 5)
+    assert.equal(await page.locator('.portfolio-card').count(), projects.filter(project => project.category === '机器学习').length)
     await page.waitForFunction(y => Math.abs(scrollY - y) < 8, position)
     pass('Return links and browser Back restore the project filter and position, even after a detail reload')
 

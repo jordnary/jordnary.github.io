@@ -204,6 +204,10 @@
   --project-accent: #c4b5fd;
   --project-tint: #221e3f;
 }
+.portfolio-tone-attention {
+  --project-accent: #d8ed46;
+  --project-tint: #232d1b;
+}
 .portfolio-tone-generative {
   --project-accent: #a5b4fc;
   --project-tint: #1c2440;
@@ -636,6 +640,10 @@
 :root[data-theme='light'] .portfolio-tone-fewshot {
   --project-accent: #72549d;
   --project-tint: #f0eaf8;
+}
+:root[data-theme='light'] .portfolio-tone-attention {
+  --project-accent: #566b16;
+  --project-tint: #f0f4d9;
 }
 :root[data-theme='light'] .portfolio-tone-generative {
   --project-accent: #4f5f99;
