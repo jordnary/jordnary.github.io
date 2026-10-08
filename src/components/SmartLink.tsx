@@ -1,6 +1,6 @@
-import type { AnchorHTMLAttributes } from 'react'
+import type { ComponentPropsWithRef } from 'react'
 
-type SmartLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+type SmartLinkProps = ComponentPropsWithRef<'a'> & {
   href: string
 }
 

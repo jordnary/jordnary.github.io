@@ -63,7 +63,7 @@ http://localhost:5173
 | `npm run sync:github` | 同步 GitHub 公开数据，失败时恢复上一份有效快照。 |
 | `npm run sync:projects` | 手动同步仓库文档与图片，供资料核对；站内介绍不依赖此命令。 |
 | `npm run test:snapshots` | 验证快照同步、离线兜底及历史清理规则。 |
-| `npm run test:projects` | 在本地服务启动后，检查项目入口、筛选、静态封面、入场动效、站内搜索和响应式布局。 |
+| `npm run test:projects` | 在本地服务启动后，检查项目入口、筛选、封面定位与中断、键盘及触屏操作、入场动效、站内搜索和响应式布局。 |
 | `npm run test:gallery` | 检查图片缩放、拖动、缩略图、全屏、键盘焦点、手机滑动与双指缩放。 |
 | `npm run test:project-docs` | 验证文档同步、图片路径、失败回退、隐私清理与详情页路由。 |
 | `npm run test:project-details` | 对生产预览检查全部项目介绍、章节链接、图片缩放、返回恢复和无远端文档依赖的阅读。 |
@@ -98,6 +98,25 @@ Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内�
 项目浏览器检查沿用现有 Playwright 运行方式，默认使用 Microsoft Edge 和 `http://127.0.0.1:5173/`，可通过 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL` 或 `PROJECTS_BROWSER_EXECUTABLE` 覆盖。先运行 `npm run dev`，再执行 `npm run test:projects`。
 
 项目按 Web 应用、机器学习、视觉实验连续排列；机器学习内部将 VAE 与 VAE-GAN、Gaussian Image Fitting 与 L2ColorFit 分别相邻展示。列表与分类筛选共用 `src/data/projects.ts` 的顺序。
+
+点击列表封面会平滑滚动到该卡片的“项目介绍”按钮，随后转移键盘焦点并短暂高亮；按 Enter 或 Space 也可触发。桌面端尽量让按钮对齐点击时的纵向位置，触屏与键盘操作则将按钮放在导航栏下方的视口中部。网页不能移动系统鼠标，此交互通过滚动与焦点提示引导下一步操作。手动滚动、再次点击、按键或切换筛选会中断旧动效；开启“减少动态效果”后直接定位。
+
+鼠标悬停图片时，右下角会淡入小型半透明蓝灰色线框图标，由双圆环、空心向下箭头和少量装饰线点组成。箭头轻柔上下浮动，圆环同步呼吸；不使用高光扫过、发光或实色衬底。深色封面使用浅蓝灰线条，浅色封面使用深蓝灰线条，切换页面主题时保持图片上的对比度。封面图片的 `cueTone` 可设为 `light`（默认）或 `dark`，按图标所在区域的背景选择。键盘聚焦时也可见，减少动态效果时保留静态提示。封面上方使用静态“项目预览”标签。
+
+其他组件可复用 `src/lib/useScrollFocus.ts`：将 `focusTarget` 绑定到原生按钮的 `onClick`，将 `targetRef` 传给目标链接或按钮。目标通过 `scroll-margin-top` / `scroll-margin-bottom` 为固定导航与视口边缘留出空间，通过 `[data-scroll-focus='arrived']` 定义到达后的高亮样式。例如，在组件中使用：
+
+```tsx
+const { targetRef, focusTarget } = useScrollFocus<HTMLAnchorElement>()
+
+return (
+  <>
+    <button type="button" onClick={focusTarget} aria-controls="details-link">查看介绍</button>
+    <a ref={targetRef} id="details-link" href="/details/">项目介绍</a>
+  </>
+)
+```
+
+非 React 场景可调用 `scrollAndFocus(target, { viewportY })`，并在移除组件时调用返回的清理函数；`viewportY` 可省略。所有实例共用一个活动滚动任务，重复操作不会叠加动画，也不会改变 URL 或浏览历史。
 
 项目标题与卡片左侧的“项目介绍”打开站内详情页，右侧“访问网站”或“查看仓库”在新标签页打开外部链接。介绍内容保存在 `src/data/project-introductions.ts`，随详情组件一起按需加载；每篇围绕用途、实现和效果单独撰写，不直接展示仓库 README。实验数字依据对应公开报告，适用范围写在相关结果段落中。
 

@@ -8,11 +8,43 @@
 }
 
 .portfolio-intro {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 2rem;
   padding-bottom: 4rem;
+}
+.portfolio-intro-lines {
+  position: absolute;
+  z-index: -1;
+  inset: -1.5rem 0 2rem;
+  width: 100%;
+  height: calc(100% - 0.5rem);
+  fill: none;
+  stroke: var(--color-primary-cyan);
+  stroke-width: 0.8;
+  opacity: 0.2;
+  pointer-events: none;
+}
+.portfolio-intro-lines path,
+.portfolio-intro-lines circle {
+  vector-effect: non-scaling-stroke;
+}
+.portfolio-intro-line-main {
+  stroke-width: 1.2;
+}
+.portfolio-intro-line-guide {
+  stroke: var(--color-secondary-violet);
+  stroke-dasharray: 3 8;
+  opacity: 0.65;
+}
+.portfolio-intro-line-marks {
+  stroke-width: 1.3;
+}
+.portfolio-intro-text {
+  min-width: 0;
 }
 .portfolio-eyebrow {
   display: flex;
@@ -30,16 +62,58 @@
   background: var(--color-primary-cyan);
   box-shadow: 0 0 0 4px var(--color-primary-cyan-soft);
 }
-.portfolio-intro h1 {
-  margin: 1.4rem 0 1.3rem;
+.portfolio-intro-title {
+  margin: 1.55rem 0 1.75rem;
   color: var(--color-text);
-  font-size: clamp(2.35rem, 4.3vw, 3.8rem);
-  font-weight: 780;
-  letter-spacing: -0.055em;
-  line-height: 1.22;
+  font-family: 'Noto Serif SC', 'Songti SC', 'STSong', 'Source Han Serif SC', SimSun, serif;
+  font-size: clamp(2.5rem, 4.6vw, 4.15rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.42;
 }
-.portfolio-intro h1 > span {
+.portfolio-title-line {
+  display: block;
+  width: fit-content;
+  white-space: nowrap;
+}
+.portfolio-title-idea {
+  display: inline-block;
+  margin-left: 0.055em;
+  font-weight: 400;
+  transform: rotate(-4deg);
+}
+.portfolio-title-punctuation {
+  color: var(--color-text-muted);
+}
+.portfolio-title-work {
+  position: relative;
+  display: inline-block;
+  margin-left: 0.04em;
+}
+.portfolio-title-color {
   color: var(--color-primary-cyan-strong);
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .portfolio-title-color {
+    background: linear-gradient(115deg, var(--color-primary-cyan-text), var(--color-primary-cyan-strong) 46%, var(--color-secondary-violet));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+.portfolio-title-work svg {
+  position: absolute;
+  left: -3%;
+  bottom: -0.09em;
+  width: 103%;
+  height: 0.32em;
+  fill: none;
+  stroke: var(--color-primary-cyan);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.75;
+  transform: rotate(-3deg);
+  pointer-events: none;
 }
 .portfolio-intro-copy {
   margin: 0;
@@ -48,13 +122,16 @@
   line-height: 1.9;
 }
 .portfolio-intro-bottom {
+  margin-top: 1.5rem;
+  max-width: 30rem;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+}
+.portfolio-intro-stats {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
-  margin-top: 1.65rem;
-  color: var(--color-text-muted);
-  font-size: 0.8125rem;
 }
 .portfolio-intro-bottom strong {
   margin-right: 0.2rem;
@@ -68,9 +145,96 @@
   height: 0.85rem;
   background: var(--color-border);
 }
-.portfolio-intro-bottom a {
+.portfolio-source-access {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.portfolio-source-note {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.12rem;
+  font-style: italic;
+  letter-spacing: -0.025em;
+}
+.portfolio-source-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-border), var(--color-border-strong));
+}
+.portfolio-github-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-shrink: 0;
+  border-radius: 2rem;
   color: var(--color-primary-cyan-text);
-  font-weight: 700;
+}
+.portfolio-github-label {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+.portfolio-github-label > span {
+  display: inline-block;
+  margin-left: 0.2rem;
+  color: var(--color-secondary-violet);
+  transition: transform 280ms ease;
+}
+.portfolio-github-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  color: var(--color-primary-cyan-text);
+  background: var(--color-primary-cyan-soft);
+  transition: transform 280ms ease, border-color 280ms ease, box-shadow 280ms ease;
+}
+.portfolio-github-disc::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid transparent;
+  border-top-color: var(--color-primary-cyan);
+  border-bottom-color: var(--color-secondary-violet);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 280ms ease;
+}
+.portfolio-github-icon,
+.portfolio-github-icon svg {
+  display: block;
+  width: 23px;
+  height: 23px;
+}
+.portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-disc {
+  border-color: var(--color-primary-cyan);
+  box-shadow: 0 0 22px var(--color-primary-cyan-soft), 0 6px 16px var(--color-secondary-violet-soft);
+  transform: translateY(-2px);
+}
+.portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-disc::before {
+  opacity: 0.8;
+  animation: portfolio-github-orbit 3s linear infinite;
+}
+.portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-icon {
+  animation: portfolio-github-wave 650ms ease-in-out;
+}
+.portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-label > span {
+  transform: translate(2px, -2px);
+}
+@keyframes portfolio-github-orbit {
+  to { transform: rotate(360deg); }
+}
+@keyframes portfolio-github-wave {
+  0%, 100% { transform: rotate(0) scale(1); }
+  30% { transform: rotate(-13deg) scale(1.1); }
+  65% { transform: rotate(9deg) scale(1.1); }
 }
 .portfolio-hero-art {
   position: relative;
@@ -92,6 +256,15 @@
     var(--color-primary-cyan-soft),
     transparent 70%
   );
+}
+.portfolio-hero-orbit::after {
+  content: '';
+  position: absolute;
+  inset: -7% 7%;
+  border: 1px solid var(--color-border-strong);
+  border-radius: inherit;
+  opacity: 0.45;
+  transform: rotate(22deg);
 }
 .portfolio-hero-print {
   position: absolute;
@@ -246,16 +419,112 @@
   font-weight: 700;
   font-variant-numeric: lining-nums tabular-nums;
 }
+.portfolio-preview-trigger {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.portfolio-page .portfolio-preview-trigger:focus-visible {
+  outline-offset: -5px;
+}
+.portfolio-cover-cue {
+  position: absolute;
+  right: 12px;
+  bottom: 14px;
+  width: 44px;
+  height: 44px;
+  color: var(--color-primary-cyan-text);
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 280ms ease;
+}
+.portfolio-cover-cue[data-tone='light'] {
+  color: rgb(206 230 241 / 0.9);
+}
+.portfolio-cover-cue[data-tone='dark'] {
+  color: rgb(43 79 98 / 0.9);
+}
+.portfolio-cover-symbol {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.portfolio-cover-rings {
+  opacity: 0.8;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: portfolio-cover-breathe 1.9s ease-in-out infinite paused;
+}
+.portfolio-cover-arrow {
+  stroke-width: 1.9;
+  animation: portfolio-cover-nudge 1.9s ease-in-out infinite paused;
+}
+.portfolio-cover-accents {
+  opacity: 0.65;
+  stroke-width: 1.4;
+}
+.portfolio-preview-trigger:focus-visible .portfolio-cover-cue {
+  opacity: 1;
+  transform: translateY(0);
+}
+.portfolio-preview-trigger:focus-visible :is(.portfolio-cover-rings, .portfolio-cover-arrow) {
+  animation-play-state: running;
+}
+@media (hover: hover) and (pointer: fine) {
+  .portfolio-preview-trigger:hover .portfolio-cover-cue {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .portfolio-preview-trigger:hover :is(.portfolio-cover-rings, .portfolio-cover-arrow) {
+    animation-play-state: running;
+  }
+}
+@keyframes portfolio-cover-breathe {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.03);
+  }
+}
+@keyframes portfolio-cover-nudge {
+  0%, 100% {
+    transform: translateY(-1px);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
 .portfolio-preview-top > span:last-child {
   opacity: 0.8;
   letter-spacing: 0.06em;
+}
+.portfolio-art-frame {
+  position: relative;
+  margin: 0.9rem 0 2.5rem;
 }
 .portfolio-art {
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 8 / 5;
-  margin: 0.9rem 0 2.5rem;
 }
 .portfolio-art > svg {
   display: block;
@@ -295,6 +564,7 @@
   background: none;
 }
 .portfolio-image-frame {
+  position: relative;
   display: grid;
   place-items: center;
   min-width: 0;
@@ -313,7 +583,7 @@
     transform 0.28s ease,
     box-shadow 0.28s ease;
 }
-.portfolio-image-preview:hover img {
+.portfolio-preview:has(.portfolio-preview-trigger:is(:hover, :focus-visible)) .portfolio-image-frame > img {
   transform: translateY(-3px);
   box-shadow: 0 18px 32px -14px rgb(2 6 23 / 0.35);
 }
@@ -432,8 +702,27 @@
   font-weight: 650;
 }
 .portfolio-primary-link {
+  position: relative;
   padding: 0.55rem 0.9rem;
   border-radius: 0.45rem;
+  scroll-margin-top: calc(var(--nav-height) + 1.5rem);
+  scroll-margin-bottom: 2rem;
+}
+.portfolio-primary-link::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 2px solid var(--project-accent);
+  border-radius: 0.7rem;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--project-accent) 25%, transparent);
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 240ms ease, transform 320ms ease;
+}
+.portfolio-primary-link[data-scroll-focus='arrived']::after {
+  opacity: 1;
+  transform: scale(1);
 }
 .portfolio-source-link {
   color: var(--color-text-soft);
@@ -464,11 +753,78 @@
   font-size: 0.78rem;
   line-height: 1.7;
 }
-.portfolio-colophon > a {
+.portfolio-explore-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 44px;
   margin-left: auto;
   flex-shrink: 0;
+  border-radius: 0.25rem;
   color: var(--color-primary-cyan-text);
-  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.portfolio-explore-lettering {
+  position: relative;
+  padding: 0.3rem 0.15rem 0.65rem;
+}
+.portfolio-explore-label {
+  display: inline-block;
+  color: var(--color-primary-cyan-text);
+  font-family: 'Noto Serif SC', 'Songti SC', SimSun, serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  background: linear-gradient(110deg, var(--color-primary-cyan-text) 5%, var(--color-primary-cyan-strong) 30%, var(--color-secondary-violet) 55%, var(--color-primary-cyan-text) 80%);
+  background-size: 220% 100%;
+  transition: background-position 700ms ease;
+}
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .portfolio-explore-label {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+.portfolio-explore-wordmark {
+  margin-left: 0.15rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.4em;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: -0.045em;
+}
+.portfolio-explore-stroke {
+  position: absolute;
+  bottom: 0.2rem;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--color-primary-cyan);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0.18;
+  opacity: 0.55;
+  transition: stroke-dashoffset 600ms ease, opacity 300ms ease;
+}
+.portfolio-explore-arrow {
+  color: var(--color-secondary-violet);
+  font-size: 1.35rem;
+  transition: transform 300ms ease;
+}
+.portfolio-explore-link:is(:hover, :focus-visible) .portfolio-explore-label {
+  background-position: 100% 50%;
+}
+.portfolio-explore-link:is(:hover, :focus-visible) .portfolio-explore-stroke {
+  stroke-dashoffset: 0;
+  opacity: 0.9;
+}
+.portfolio-explore-link:is(:hover, :focus-visible) .portfolio-explore-arrow {
+  transform: translate(3px, -3px);
 }
 .portfolio-page :is(button, a, summary):focus-visible {
   outline: 3px solid var(--color-primary-cyan-strong);
@@ -702,8 +1058,25 @@
     gap: 0.8rem;
     padding-bottom: 1.75rem;
   }
-  .portfolio-intro h1 {
-    font-size: clamp(2.2rem, 8.8vw, 3.2rem);
+  .portfolio-intro-title {
+    font-size: clamp(2.15rem, 8.2vw, 3.5rem);
+  }
+  .portfolio-intro-lines {
+    inset: 0;
+    height: 100%;
+    opacity: 0.14;
+  }
+  .portfolio-intro-line-guide {
+    display: none;
+  }
+  .portfolio-intro-bottom {
+    max-width: none;
+  }
+  .portfolio-source-access {
+    gap: 0.7rem;
+  }
+  .portfolio-source-note {
+    font-size: 1rem;
   }
   .portfolio-intro-copy {
     font-size: 0.88rem;
@@ -810,6 +1183,11 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-disc,
+  .portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-label > span,
+  .portfolio-explore-link:is(:hover, :focus-visible) .portfolio-explore-arrow {
+    transform: none;
+  }
   .portfolio-page *,
   .portfolio-page *::before,
   .portfolio-page *::after {

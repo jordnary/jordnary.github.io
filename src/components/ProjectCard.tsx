@@ -10,6 +10,7 @@ import {
 import { ProjectPreview } from './ProjectPreview'
 import { SmartLink } from './SmartLink'
 import { getProjectHref } from '../lib/routes'
+import { useScrollFocus } from '../lib/useScrollFocus'
 
 export function ProjectCard({
   project,
@@ -20,6 +21,8 @@ export function ProjectCard({
 }) {
   const reducedMotion = useReducedMotion()
   const [focused, setFocused] = useState(false)
+  const { targetRef, focusTarget } = useScrollFocus<HTMLAnchorElement>()
+  const introductionId = `${project.id}-introduction`
   return (
     <article
       aria-labelledby={`${project.id}-title`}
@@ -37,7 +40,12 @@ export function ProjectCard({
         }
         onFocusCapture={() => setFocused(true)}
       >
-        <ProjectPreview project={project} index={index} />
+        <ProjectPreview
+          project={project}
+          index={index}
+          introductionId={introductionId}
+          onActivate={focusTarget}
+        />
         <div className="portfolio-card-body">
           <div className="portfolio-card-meta">
             <span>{project.category}</span>
@@ -63,6 +71,8 @@ export function ProjectCard({
           </ul>
           <div className="portfolio-card-actions">
             <SmartLink
+              ref={targetRef}
+              id={introductionId}
               className="portfolio-primary-link btn-primary"
               href={getProjectHref(project.id)}
               aria-label={`${project.title}：项目介绍`}

@@ -1,15 +1,47 @@
-import { useState } from 'react'
+import { useState, type MouseEventHandler } from 'react'
 import type { ProjectCase } from '../data/projects'
 
 export function ProjectPreview({
   project,
   index,
+  introductionId,
+  onActivate,
 }: {
   project: ProjectCase
   index: number
+  introductionId: string
+  onActivate: MouseEventHandler<HTMLButtonElement>
 }) {
   const [imageFailed, setImageFailed] = useState(false)
   const image = imageFailed ? undefined : project.image?.cover ?? project.image
+  const previewTrigger = (
+    <button
+      type="button"
+      className="portfolio-preview-trigger"
+      aria-label={`${project.title}：定位到项目介绍`}
+      aria-controls={introductionId}
+      onClick={onActivate}
+    >
+      <span
+        className="portfolio-cover-cue"
+        data-tone={image ? image.cueTone ?? 'light' : undefined}
+        aria-hidden="true"
+      >
+        <svg className="portfolio-cover-symbol" viewBox="0 0 56 56" focusable="false">
+          <g className="portfolio-cover-rings">
+            <circle cx="28" cy="28" r="21" />
+            <circle cx="28" cy="28" r="18" />
+          </g>
+          <path className="portfolio-cover-arrow" d="m17 25 4-4 7 7 7-7 4 4-11 11Z" />
+          <g className="portfolio-cover-accents">
+            <circle cx="8" cy="7" r="1.4" />
+            <circle cx="43" cy="15" r="1.1" />
+            <path d="M43 3h5m-2 3h5M8 45v4m-2-2h4" />
+          </g>
+        </svg>
+      </span>
+    </button>
+  )
   return (
     <div className={`portfolio-preview${image ? ' has-image' : ''}`}>
       <div className="portfolio-preview-top" aria-hidden="true">
@@ -31,17 +63,21 @@ export function ProjectPreview({
               decoding="async"
               onError={() => setImageFailed(true)}
             />
+            {previewTrigger}
           </span>
           <span className="portfolio-image-caption">
             {image.caption}
           </span>
         </div>
       ) : (
-        <div
-          aria-hidden="true"
-          className={`portfolio-art portfolio-art-${project.visual}`}
-        >
-          <ProjectArtwork variant={project.visual} id={project.id} />
+        <div className="portfolio-art-frame">
+          <div
+            aria-hidden="true"
+            className={`portfolio-art portfolio-art-${project.visual}`}
+          >
+            <ProjectArtwork variant={project.visual} id={project.id} />
+          </div>
+          {previewTrigger}
         </div>
       )}
       <div className="portfolio-pipeline" aria-label="项目流程">

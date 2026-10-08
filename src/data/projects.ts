@@ -8,7 +8,7 @@ export const projectFilters = [
 export type ProjectFilter = (typeof projectFilters)[number]
 export type ProjectCategory = Exclude<ProjectFilter, '全部项目'>
 
-export type ProjectImage = { file: string; width: number; height: number; alt: string; caption: string }
+export type ProjectImage = { file: string; width: number; height: number; alt: string; caption: string; cueTone?: 'light' | 'dark' }
 
 export type ProjectCase = {
   id: string
@@ -62,6 +62,7 @@ export const projects: ProjectCase[] = [
     visual: 'atlas',
     image: {
       file: 'briefing-atlas.webp',
+      cueTone: 'dark',
       width: 1600, height: 1000,
       alt: 'Briefing Atlas 项目海报：指南针标识、往期简报卡片与科技主题归档',
       caption: '项目海报 · 让知识有迹可循',
@@ -155,6 +156,7 @@ export const projects: ProjectCase[] = [
       caption: '实验结果 · 三条 CLIP 特征路线的分类表现',
       cover: {
         file: 'fewshot-poster.webp',
+        cueTone: 'dark',
         width: 1600, height: 1000,
         alt: 'Few-Shot Learning 标本档案海报：暖白纸张上排列五类抽象样本，右侧标注每类 1 或 5 个样本',
         caption: '项目海报 · 标本档案与少样本识别',
@@ -221,6 +223,7 @@ export const projects: ProjectCase[] = [
       caption: '实验原图 · 先验生成对照',
       cover: {
         file: 'vaegan-poster.webp',
+        cueTone: 'dark',
         width: 1600, height: 1000,
         alt: 'VAE-GAN 双向博弈海报：深浅分屏中的 G 与 D 字母，示意生成器和判别器共同学习',
         caption: '项目海报 · 重构与对抗的双向博弈',
@@ -320,6 +323,7 @@ export const projects: ProjectCase[] = [
       caption: '汇总统计 · 方位差与辨别正确率；由报告汇总计数重绘',
       cover: {
         file: 'orientation-poster.webp',
+        cueTone: 'dark',
         width: 1600, height: 1000,
         alt: 'Orientation JND 视觉错觉海报：黑白 Gabor 条纹呈现细微方向差异，搭配“看见差异”标题',
         caption: '项目海报 · 细微方位差的视觉示意',
