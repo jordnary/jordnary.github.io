@@ -1,5 +1,5 @@
-import { useMemo, useRef, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
-import Lightbox, { createModule, useLightboxState, useMotionPreference, type Plugin, type ZoomRef } from 'yet-another-react-lightbox'
+import { useMemo, useRef, useSyncExternalStore, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
+import Lightbox, { createModule, useLightboxProps, useLightboxState, useMotionPreference, type Plugin, type ZoomRef } from 'yet-another-react-lightbox'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
@@ -11,7 +11,18 @@ import 'yet-another-react-lightbox/plugins/thumbnails.css'
 import './ImageGallery.css'
 
 function GalleryStage({ children }: PropsWithChildren) {
-  return <div className="gallery-stage">{children}</div>
+  const { controller } = useLightboxProps()
+  return <div className="gallery-stage" onWheel={event => {
+    // The lightbox's swipe setting only covers pointers, not trackpad gestures.
+    if (controller.disableSwipeNavigation && Math.abs(event.deltaX) > Math.abs(event.deltaY)) event.stopPropagation()
+  }}>{children}</div>
+}
+
+const touchNavigationQuery = '(pointer: coarse)'
+function subscribeTouchNavigation(callback: () => void) {
+  const query = window.matchMedia(touchNavigationQuery)
+  query.addEventListener('change', callback)
+  return () => query.removeEventListener('change', callback)
 }
 
 // Clip neighboring slides without clipping the toolbar outside the measured stage.
@@ -33,6 +44,15 @@ const labels = {
   'Show thumbnails': '显示缩略图',
   'Hide thumbnails': '隐藏缩略图',
   '{index} of {total}': '第 {index} 张，共 {total} 张',
+}
+
+function releaseNavigationFocus(event: KeyboardEvent<HTMLDivElement>) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+  if (!(event.target instanceof Element) || !event.target.closest('.yarl__navigation_prev, .yarl__navigation_next')) return
+  // Arrow shortcuts belong to the viewer. A previously clicked button must not
+  // retain a keyboard highlight; Tab and Enter still operate the buttons.
+  event.preventDefault()
+  event.currentTarget.querySelector<HTMLElement>('.yarl__container')?.focus({ preventScroll: true })
 }
 
 // Keep Tab within the entire portal, including the thumbnail strip.
@@ -116,6 +136,7 @@ function ZoomControls({ zoom, minZoom, maxZoom, disabled, zoomIn, zoomOut, chang
 /** Controlled, project-independent viewer. Null or an invalid index closes it. */
 export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: ImageGalleryProps) {
   const reducedMotion = useMotionPreference()
+  const touchNavigation = useSyncExternalStore(subscribeTouchNavigation, () => window.matchMedia(touchNavigationQuery).matches, () => false)
   const touchButtons = useTouchButtons()
   const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail, width, height })), [images])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
@@ -129,10 +150,10 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     plugins={plugins}
     labels={labels}
     className={`image-gallery${images.length < 2 ? ' image-gallery-single' : ''}`}
-    portal={{ container: { onKeyDown: containFocus, ...touchButtons } }}
+    portal={{ container: { onKeyDownCapture: releaseNavigationFocus, onKeyDown: containFocus, ...touchButtons } }}
     on={{ view: ({ index }) => { if (index !== activeIndex) onIndexChange(index) } }}
     carousel={{ finite: true, preload, padding: '16px', spacing: '20%' }}
-    controller={{ closeOnBackdropClick: true }}
+    controller={{ closeOnBackdropClick: true, disableSwipeNavigation: !touchNavigation }}
     animation={{ fade: reducedMotion ? 0 : 180, swipe: reducedMotion ? 0 : 300, zoom: reducedMotion ? 0 : 220 }}
     zoom={{ maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, doubleClickMaxStops: 2 }}
     thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: images.length > 1 }}
