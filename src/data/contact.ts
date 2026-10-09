@@ -6,11 +6,10 @@ export type ContactLink = {
 }
 
 export const contactProfile = {
-  title: '欢迎交流学习、项目和技术想法。',
   description:
-    '如果你想交流计算机学习、AI、大模型、Web 开发或个人网站搭建，可以通过邮箱或 GitHub 联系我。',
+    '关于代码、AI、个人网站，或一个尚未成形的灵感。欢迎分享你的探索，也期待一起把想法变成有趣的作品。',
   email: 'jordnary@gmail.com',
-  availability: 'Open to learning discussions and project ideas',
+  availability: '欢迎学习交流与项目讨论',
 }
 
 export const contactLinks: ContactLink[] = [
