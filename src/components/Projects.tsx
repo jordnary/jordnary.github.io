@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { motion, useReducedMotion, type MotionProps } from 'motion/react'
 import { ProjectCard } from './ProjectCard'
 import { FilterBar } from './FilterBar'
 import { SmartLink } from './SmartLink'
@@ -6,6 +7,7 @@ import { ContactIcon } from './icons'
 import { projectFilters, projects, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl } from '../lib/routes'
+import { fadeUpHidden, fadeUpVisible, getRevealTransition } from '../lib/animations'
 import './Projects.css'
 
 const filterOptions = projectFilters.map((value) => ({
@@ -20,6 +22,12 @@ const galleryProjects = projects.filter((project) => project.image)
 const heroProjects = galleryProjects.filter((project) => project.demo).slice(0, 2)
 
 export function Projects() {
+  const reducedMotion = useReducedMotion()
+  const introReveal = (index = 0, baseDelay = 0): MotionProps => ({
+    initial: reducedMotion ? false : fadeUpHidden,
+    animate: fadeUpVisible,
+    transition: reducedMotion ? { duration: 0 } : getRevealTransition(index, baseDelay),
+  })
   const [activeFilter, setActiveFilter] = useState<ProjectFilter>(() => {
     const saved = window.history.state?.projectFilter
     return projectFilters.includes(saved) ? saved : '全部项目'
@@ -83,40 +91,46 @@ export function Projects() {
     <div className="portfolio-page site-container" id="projects">
       <header className="portfolio-intro">
         <svg className="portfolio-intro-lines" viewBox="0 0 1160 480" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-          <path className="portfolio-intro-line-main" d="M8 338C126 282 261 449 421 394S563 193 714 145 1032 155 1148 44" />
-          <path d="M8 351C143 294 273 468 435 407S578 208 729 160 1044 170 1156 62" />
-          <path className="portfolio-intro-line-guide" d="M420 28H1136M1086 8V448M618 424H1148" />
-          <g className="portfolio-intro-line-marks">
-            <path d="M486 81h16m-8-8v16M1007 397h16m-8-8v16" />
-            <circle cx="421" cy="394" r="4" />
-            <circle cx="714" cy="145" r="5" />
-            <circle cx="1086" cy="28" r="4" />
-          </g>
+          <motion.g
+            initial={reducedMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={reducedMotion ? { duration: 0 } : getRevealTransition(0, 0.12)}
+          >
+            <path className="portfolio-intro-line-main" d="M8 338C126 282 261 449 421 394S563 193 714 145 1032 155 1148 44" />
+            <path d="M8 351C143 294 273 468 435 407S578 208 729 160 1044 170 1156 62" />
+            <path className="portfolio-intro-line-guide" d="M420 28H1136M1086 8V448M618 424H1148" />
+            <g className="portfolio-intro-line-marks">
+              <path d="M486 81h16m-8-8v16M1007 397h16m-8-8v16" />
+              <circle cx="421" cy="394" r="4" />
+              <circle cx="714" cy="145" r="5" />
+              <circle cx="1086" cy="28" r="4" />
+            </g>
+          </motion.g>
         </svg>
         <div className="portfolio-intro-text">
-          <p className="portfolio-eyebrow">
+          <motion.p className="portfolio-eyebrow" {...introReveal()}>
             <span aria-hidden="true" /> PROJECTS / SELECTED WORK
-          </p>
+          </motion.p>
           <h1 className="portfolio-intro-title">
-            <span className="portfolio-title-line">
+            <motion.span className="portfolio-title-line" {...introReveal(1)}>
               从<span className="portfolio-title-idea">想法</span><span className="portfolio-title-punctuation">，</span>
-            </span>
-            <span className="portfolio-title-line">
+            </motion.span>
+            <motion.span className="portfolio-title-line" {...introReveal(2)}>
               到具体的<span className="portfolio-title-work">
                 <span className="portfolio-title-color">作品。</span>
                 <svg viewBox="0 0 210 22" preserveAspectRatio="none" aria-hidden="true" focusable="false">
                   <path d="M4 13C49 3 132 2 203 8M117 18l66-4" />
                 </svg>
               </span>
-            </span>
+            </motion.span>
           </h1>
-          <p className="portfolio-intro-copy">
+          <motion.p className="portfolio-intro-copy" {...introReveal(3)}>
             用 Web 连接内容，用实验理解模型。
             <br />
             这里收录在线应用、机器学习实践与视觉实验。
-          </p>
+          </motion.p>
           <div className="portfolio-intro-bottom">
-            <div className="portfolio-intro-stats">
+            <motion.div className="portfolio-intro-stats" {...introReveal(4)}>
               <span>
                 <strong>{String(projects.length).padStart(2, '0')}</strong>{' '}
                 项公开实践
@@ -125,8 +139,8 @@ export function Projects() {
               <span>
                 <strong>{projectFilters.length - 1}</strong> 个探索方向
               </span>
-            </div>
-            <div className="portfolio-source-access">
+            </motion.div>
+            <motion.div className="portfolio-source-access" {...introReveal(5)}>
               <span className="portfolio-source-note" aria-hidden="true">Ideas into form.</span>
               <span className="portfolio-source-rule" aria-hidden="true" />
               <SmartLink
@@ -142,15 +156,17 @@ export function Projects() {
                   </span>
                 </span>
               </SmartLink>
-            </div>
+            </motion.div>
           </div>
         </div>
         <div className="portfolio-hero-art" aria-hidden="true">
-          <span className="portfolio-hero-orbit" />
+          <motion.span className="portfolio-hero-orbit" {...introReveal(0, 0.12)} style={{ rotate: -18 }} />
           {heroProjects.map((project, index) => (
-            <div
+            <motion.div
               className={`portfolio-hero-print${index === 1 ? ' is-secondary' : ''}`}
               key={project.id}
+              {...introReveal(index * 2, 0.22)}
+              style={{ rotate: index === 1 ? 7 : -5 }}
             >
               <img
                 alt=""
@@ -159,7 +175,7 @@ export function Projects() {
                 height="1000"
                 fetchPriority={index === 0 ? 'high' : 'auto'}
               />
-            </div>
+            </motion.div>
           ))}
         </div>
       </header>

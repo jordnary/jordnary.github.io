@@ -151,6 +151,10 @@
   gap: 1rem;
   margin-top: 1.25rem;
 }
+.portfolio-source-access:focus-within {
+  opacity: 1 !important;
+  transform: none !important;
+}
 .portfolio-source-note {
   flex-shrink: 0;
   color: var(--color-text-muted);
@@ -1183,6 +1187,28 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .portfolio-eyebrow,
+  .portfolio-title-line,
+  .portfolio-intro-copy,
+  .portfolio-intro-stats,
+  .portfolio-source-access {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .portfolio-intro-lines > g,
+  .portfolio-hero-orbit,
+  .portfolio-hero-print {
+    opacity: 1 !important;
+  }
+  .portfolio-hero-orbit {
+    transform: rotate(-18deg) !important;
+  }
+  .portfolio-hero-print {
+    transform: rotate(-5deg) !important;
+  }
+  .portfolio-hero-print.is-secondary {
+    transform: rotate(7deg) !important;
+  }
   .portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-disc,
   .portfolio-github-link:is(:hover, :focus-visible) .portfolio-github-label > span,
   .portfolio-explore-link:is(:hover, :focus-visible) .portfolio-explore-arrow {
