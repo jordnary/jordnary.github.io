@@ -1,126 +1,153 @@
-import { PageSection } from './PageSection'
-import { Reveal } from './Reveal'
+import { useRef } from 'react'
 import { SmartLink } from './SmartLink'
+import { AboutJourneyPath } from './AboutJourneyPath'
 import { aboutProfile } from '../data/profile'
 import { getRouteHref } from '../lib/routes'
+import './About.css'
 
-const contentFlow = [
+const chapters = [
   {
-    label: '关于页',
-    title: '个人叙事',
-    description: '保留学习背景、当前方向与驱动我持续记录的问题。',
-    href: getRouteHref('about'),
+    ...aboutProfile.background,
+    paragraphs: [aboutProfile.background.description],
+    caption: 'THE BEGINNING',
+    symbol: '01',
+    tags: ['计算机基础', '数据库', '机器学习'],
   },
   {
-    label: '学习笔记',
-    title: '学习笔记',
-    description: '用问题、理解、实践和参考，沉淀可继续修订的知识。',
-    href: `${getRouteHref('learning')}#notes`,
+    ...aboutProfile.narratives[0],
+    caption: 'THE CURIOSITY',
+    symbol: '02',
+    tags: ['CS', 'AI', 'Web'],
   },
   {
-    label: '项目复盘',
-    title: '项目案例',
-    description: '从背景、选择与实现出发，记录结果、问题和下一步。',
-    href: getRouteHref('projects'),
+    ...aboutProfile.narratives[1],
+    caption: 'THE PRACTICE',
+    symbol: '03',
+    tags: ['提问', '记录', '验证'],
+  },
+  {
+    ...aboutProfile.direction,
+    paragraphs: [aboutProfile.direction.description],
+    caption: 'THE PRESENT',
+    symbol: '04',
+    tags: ['基础知识', 'AI 学习', '小型体验'],
+  },
+  {
+    ...aboutProfile.narratives[2],
+    caption: 'THE NEXT CHAPTER',
+    symbol: '05',
+    tags: ['知识表达', '独立判断', '长期维护'],
   },
 ]
 
 export function About() {
+  const journeyRef = useRef<HTMLOListElement>(null)
+
   return (
-    <PageSection
-      id="about"
-      eyebrow="Narrative"
-      title="个人叙事"
-      description="这里讲我是谁、为什么选择 CS / AI / Web，以及我希望用什么方式持续学习和创造。"
-    >
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-8">
-        <Reveal as="article" className="about-narrative-card self-start">
-          <p className="about-narrative-intro">{aboutProfile.intro}</p>
-
-          <div className="about-narrative-copy mt-7 space-y-7">
-            <NarrativeLead
-              label={aboutProfile.background.label}
-              title={aboutProfile.background.title}
-              description={aboutProfile.background.description}
-            />
-            <NarrativeLead
-              label={aboutProfile.direction.label}
-              title={aboutProfile.direction.title}
-              description={aboutProfile.direction.description}
-            />
-          </div>
-
-          <ul aria-label="个人叙事关键词" className="about-keyword-list about-narrative-keywords">
-            {aboutProfile.keywords.map((keyword) => (
-              <li className="about-keyword-chip" key={keyword}>
-                {keyword}
-              </li>
-            ))}
-          </ul>
-        </Reveal>
-
-        <div className="about-story-stack">
-          {aboutProfile.narratives.map((item, index) => (
-            <Reveal
-              as="article"
-              className="about-highlight-card about-story-card group p-5"
-              index={index + 1}
-              key={item.label}
-              baseDelay={0.04}
-              whileHover={{ scale: 1.01, y: -4 }}
-            >
-              <p className="meta-label">{item.label}</p>
-              <h3 className="card-title mt-2 text-lg sm:text-xl">{item.title}</h3>
-              <div className="about-story-copy mt-3 space-y-3">
-                {item.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
-              </div>
-            </Reveal>
-          ))}
-        </div>
+    <section className="about-journey site-container" id="about" aria-labelledby="about-title">
+      <div className="journey-masthead">
+        <p><span aria-hidden="true" /> ABOUT ME / MY JOURNEY</p>
+        <span>保持好奇，持续生长</span>
       </div>
 
-      <Reveal as="aside" className="content-flow-panel mt-6" baseDelay={0.08} index={4}>
-        <div className="content-flow-heading">
-          <p className="meta-label">Content flow</p>
-          <p>同一主题可以互相链接，但每个页面只回答自己的问题。</p>
+      <header className="journey-intro">
+        <div className="journey-intro-heading">
+          <p className="journey-eyebrow">每一步，都算数。</p>
+          <h1 id="about-title">关于我，<br />和一路的<em>探索<svg viewBox="0 0 240 22" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M4 15Q106 0 235 9M147 19l74-5" /></svg></em><span className="journey-title-period">。</span></h1>
+          <a className="journey-scroll-link" href="#journey-start">
+            <span className="journey-scroll-icon" aria-hidden="true">↓</span>
+            沿着好奇心，往下走
+          </a>
         </div>
-        <ol className="content-flow-list">
-          {contentFlow.map((item, index) => (
-            <li className="content-flow-item" key={item.label}>
-              <span className="content-flow-index">0{index + 1}</span>
-              <div>
-                <p className="meta-label-muted">{item.label}</p>
-                <h3>{item.title}</h3>
-                <p>{item.description}</p>
-                <SmartLink className="accent-link content-flow-link mt-3" href={item.href}>
-                  <span>前往阅读</span>
-                  <span aria-hidden="true">→</span>
-                </SmartLink>
-              </div>
+        <div className="journey-intro-aside">
+          <div className="journey-monogram" aria-hidden="true">
+            <svg viewBox="0 0 240 112" fill="none" focusable="false">
+              <path d="M20 71C-10 4 164-11 210 42S135 128 67 87 119 6 185 28" />
+              <circle cx="20" cy="71" r="4" /><circle cx="185" cy="28" r="4" />
+            </svg>
+            <span>CS</span><span>AI</span><span>Web</span>
+          </div>
+          <p className="journey-intro-copy">{aboutProfile.intro}</p>
+          <ul className="journey-keywords" aria-label="个人叙事关键词">
+            {aboutProfile.keywords.map(keyword => <li key={keyword}>{keyword}</li>)}
+          </ul>
+        </div>
+      </header>
+
+      <div className="journey-chapter-heading" id="journey-start">
+        <p>一点背景，一些想法，一段仍在继续的旅程。</p>
+        <span aria-hidden="true">SCROLL TO EXPLORE ↘</span>
+      </div>
+
+      <div className="journey-canvas">
+        <ol className="journey-chapters" ref={journeyRef} aria-label="我的探索旅程">
+          {chapters.map((chapter, index) => (
+            <li className="journey-chapter" key={chapter.caption}>
+              <span className="journey-node" aria-hidden="true"><span /></span>
+              <span className="journey-rail" aria-hidden="true" />
+              <article className="journey-card" aria-labelledby={`journey-title-${index}`}>
+                <div className="journey-card-heading">
+                  <JourneyNumber value={chapter.symbol} />
+                  <div>
+                    <p className="journey-card-caption">{chapter.caption}</p>
+                    <p className="journey-card-label">{chapter.label}</p>
+                  </div>
+                  <JourneySymbol index={index} />
+                </div>
+                <h2 id={`journey-title-${index}`}>{chapter.title}</h2>
+                <div className="journey-card-copy">
+                  {chapter.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+                </div>
+                <ul className="journey-card-tags" aria-label={`${chapter.label}关键词`}>
+                  {chapter.tags.map(tag => <li key={tag}>{tag}</li>)}
+                </ul>
+              </article>
             </li>
           ))}
         </ol>
-      </Reveal>
-    </PageSection>
+        {/* The list ref must be attached before the controller's layout effect. */}
+        <AboutJourneyPath containerRef={journeyRef} />
+      </div>
+
+      <footer className="journey-outro">
+        <p className="journey-outro-kicker"><span aria-hidden="true" /> TO BE CONTINUED</p>
+        <h2>故事还在继续<span>，下一步见。</span></h2>
+        <p className="journey-outro-copy">把沿途的思考写成笔记，把新的理解做成作品。</p>
+        <div className="journey-next-links">
+          <SmartLink href={`${getRouteHref('learning')}#notes`}><span><small>KEEP LEARNING</small>阅读学习笔记</span><span aria-hidden="true">↗</span></SmartLink>
+          <SmartLink href={getRouteHref('projects')}><span><small>KEEP BUILDING</small>看看项目实践</span><span aria-hidden="true">↗</span></SmartLink>
+        </div>
+      </footer>
+    </section>
   )
 }
 
-function NarrativeLead({
-  description,
-  label,
-  title,
-}: {
-  description: string
-  label: string
-  title: string
-}) {
+function JourneyNumber({ value }: { value: string }) {
   return (
-    <section>
-      <p className="meta-label-muted">{label}</p>
-      <h3 className="card-title mt-2 text-base sm:text-lg">{title}</h3>
-      <p className="mt-3 text-sm leading-7 md:text-base md:leading-8">{description}</p>
-    </section>
+    <span className="journey-number" aria-hidden="true">
+      <span className="journey-number-static">{value}</span>
+      <span className="journey-number-reels">
+        {Array.from(value, (digit, index) => (
+          <span className="journey-digit-window" key={index}>
+            <span className="journey-digit-reel">
+              {Array.from({ length: 3 }, (_, step) => (
+                <span className="journey-digit" key={step}>{(Number(digit) + 8 + step) % 10}</span>
+              ))}
+            </span>
+          </span>
+        ))}
+      </span>
+    </span>
   )
+}
+
+function JourneySymbol({ index }: { index: number }) {
+  const paths = [
+    'M8 10h9c5 0 7 3 7 5v25c0-4-4-6-8-6H8V10Zm32 0h-9c-5 0-7 3-7 5v25c0-4 4-6 8-6h8V10Z',
+    'M24 5v9m0 20v9M5 24h9m20 0h9M10 10l7 7m14 14 7 7M10 38l7-7m14-14 7-7M24 16l8 8-8 8-8-8 8-8Z',
+    'm16 13-11 11 11 11m16-22 11 11-11 11M27 8l-6 32',
+    'M24 6a18 18 0 1 0 18 18M24 13a11 11 0 1 0 11 11M24 24 42 6M32 6h10v10',
+    'M24 42V25M24 30C10 30 7 18 8 10c12 0 19 6 16 20ZM24 24C24 11 32 6 42 7c0 11-6 18-18 17Z',
+  ]
+  return <svg className="journey-symbol" viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false"><path d={paths[index]} /></svg>
 }
