@@ -2,6 +2,11 @@
   --contact-accent: #c4b5fd;
   --contact-rule: rgb(196 181 253 / 0.24);
   --contact-soft: rgb(196 181 253 / 0.055);
+  --contact-paper: #23202f;
+  --contact-paper-ink: #eee8f5;
+  --contact-paper-muted: #b7adca;
+  --contact-blue: #8da7c4;
+  --contact-display-font: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
   max-width: calc(var(--max-page-width) + var(--page-gutter) * 2);
   padding: clamp(2rem, 4vw, 3.5rem) var(--page-gutter) 1.75rem;
   scroll-margin-top: 6rem;
@@ -11,6 +16,10 @@
   --contact-accent: #6d52a3;
   --contact-rule: rgb(86 66 130 / 0.23);
   --contact-soft: rgb(109 82 163 / 0.04);
+  --contact-paper: #f7f5ef;
+  --contact-paper-ink: #30293e;
+  --contact-paper-muted: #736780;
+  --contact-blue: #7b9db9;
 }
 
 .correspondence-masthead,
@@ -45,11 +54,9 @@
 
 .correspondence-intro { min-width: 0; animation: correspondence-arrive 700ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both; }
 .correspondence-preface { display: flex; align-items: center; gap: 0.7rem; max-width: 29rem; color: var(--color-text-muted); font-family: 'Noto Serif SC', 'Songti SC', SimSun, serif; font-size: 0.8125rem; letter-spacing: 0.08em; }
-.correspondence-note-star { color: var(--contact-accent); font-size: 1.25rem; line-height: 1; }
-.correspondence-note-rule { flex: 1; min-width: 1.25rem; max-width: 5rem; border-top: 1px dashed var(--contact-rule); transform: rotate(-4deg); }
-.correspondence-note { position: relative; max-width: 27rem; padding-left: 1.35rem; border-left: 1px dashed var(--contact-rule); }
+.correspondence-note-rule { flex: 1; min-width: 1.25rem; max-width: 3rem; border-top: 1px solid var(--contact-rule); }
+.correspondence-note { position: relative; max-width: 27rem; padding-left: 1.35rem; border-left: 1px solid var(--contact-rule); }
 .correspondence-note-label { display: block; margin-bottom: 0.4rem; color: var(--contact-accent); font-family: Georgia, 'Times New Roman', serif; font-size: 0.875rem; font-style: italic; transform: rotate(-7deg); transform-origin: left center; }
-.correspondence-note::after { content: ''; position: absolute; left: -3px; bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--contact-accent); }
 
 .correspondence-airmail {
   position: absolute;
@@ -65,12 +72,6 @@
 .correspondence-airmail-scene { position: relative; }
 .correspondence-airmail-decoration { display: block; width: 100%; overflow: visible; animation: correspondence-lines-reveal 950ms cubic-bezier(0.22, 1, 0.36, 1) 650ms both; }
 .correspondence-airmail-trail { stroke: currentColor; stroke-width: 1.1; stroke-dasharray: 3 7; stroke-linecap: round; opacity: 0.65; }
-.correspondence-airmail-guide { stroke: currentColor; stroke-width: 0.7; opacity: 0.2; }
-.correspondence-airmail-origin { fill: currentColor; opacity: 0.65; }
-.correspondence-airmail-dot { fill: currentColor; opacity: 0.45; }
-.correspondence-doodle-star { stroke: currentColor; stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; animation: correspondence-star-twinkle 4800ms ease-in-out infinite; }
-.correspondence-doodle-star--small { animation-delay: -1700ms; animation-duration: 5600ms; stroke-width: 1; }
-.correspondence-doodle-star--late { animation-delay: -2900ms; animation-duration: 6200ms; stroke-width: 0.9; }
 .correspondence-airmail-wake { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .correspondence-flight-wake { stroke: var(--contact-accent); stroke-width: 1.5; stroke-linecap: round; stroke-dasharray: 0.14 1; stroke-dashoffset: 0.14; opacity: 0; filter: drop-shadow(0 0 3px var(--contact-accent)); }
 .correspondence-plane-button {
@@ -133,9 +134,6 @@
 
 .correspondence-orbits { position: absolute; inset: 0; width: 100%; height: 100%; stroke: var(--contact-accent); stroke-width: 0.7; }
 .correspondence-orbits ellipse { opacity: 0.22; }
-.correspondence-flight { stroke-dasharray: 3 6; opacity: 0.55; }
-.correspondence-cross { stroke-width: 1.2; opacity: 0.75; }
-.correspondence-orbits circle { fill: var(--contact-accent); stroke: none; }
 
 .correspondence-envelope {
   position: absolute;
@@ -195,34 +193,59 @@
 .correspondence-seal strong { font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.5rem, 3vw, 2.75rem); font-style: italic; font-weight: 400; line-height: 1.15; }
 .correspondence-art-caption { position: absolute; bottom: 0; left: 16%; color: var(--color-text-muted); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(0.7rem, 1.1vw, 0.9375rem); font-style: italic; letter-spacing: 0.025em; }
 
+.correspondence-connect { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 1.3rem clamp(2rem, 4vw, 3.5rem); padding-top: 1rem; }
+.correspondence-connect-heading { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 1rem; color: var(--contact-accent); font-size: 0.625rem; letter-spacing: 0.15em; }
+.correspondence-connect-heading > span:last-child { color: var(--color-text-muted); }
 .correspondence-email {
-  display: grid;
-  grid-template-columns: minmax(10rem, 0.8fr) minmax(0, 2fr) auto;
-  align-items: center;
-  gap: 1.5rem;
-  padding-block: 2rem;
-  border-block: 1px solid var(--contact-rule);
-  background: linear-gradient(90deg, transparent, var(--contact-soft), transparent);
+  position: relative;
+  min-width: 0;
+  container-type: inline-size;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  color: var(--contact-paper-ink);
+  border: 1px solid var(--contact-rule);
+  background: var(--contact-paper);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgb(133 116 149 / 0.018) 3px, rgb(133 116 149 / 0.018) 4px);
+  box-shadow: 0 16px 36px -26px rgb(20 12 38 / 0.35);
 }
-.correspondence-email-heading > span,
-.correspondence-elsewhere-heading > span { color: var(--contact-accent); font-size: 0.625rem; letter-spacing: 0.16em; }
-.correspondence-email-heading p,
-.correspondence-elsewhere-heading p { margin-top: 0.6rem; color: var(--color-text-muted); font-size: 0.75rem; line-height: 1.8; }
-.correspondence-address { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; min-height: 3rem; color: var(--color-text); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.35rem, 2.7vw, 2.4rem); letter-spacing: -0.045em; transition: color 180ms ease; }
-.correspondence-address > span:first-child { overflow-wrap: anywhere; }
-.correspondence-email-arrow { display: grid; flex: 0 0 2.8rem; height: 2.8rem; place-items: center; color: var(--contact-accent); border: 1px solid var(--contact-rule); border-radius: 50%; font-family: system-ui, sans-serif; font-size: 1.65rem; transition: transform 200ms ease, background 200ms ease; }
-.correspondence .contact-copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-width: 6.5rem; min-height: 2.75rem; padding: 0.65rem 0.75rem; border: 1px solid var(--contact-rule); border-radius: 2px; color: var(--color-text-soft); background: transparent; box-shadow: none; font-size: 0.75rem; cursor: pointer; transition: color 180ms ease, background 180ms ease; }
-.correspondence .contact-copy-button svg { width: 0.9rem; height: 0.9rem; }
+.correspondence-email::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 6px; background: repeating-linear-gradient(145deg, var(--contact-accent) 0 12px, transparent 12px 24px, var(--contact-blue) 24px 36px, transparent 36px 48px); opacity: 0.6; pointer-events: none; }
+.correspondence-email-top { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.8rem; }
+.correspondence-email-heading { display: flex; align-items: center; gap: 1rem; }
+.correspondence-to { color: var(--contact-accent); font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 2.75rem; line-height: 1; }
+.correspondence-email-heading > div > span { font-size: 0.625rem; letter-spacing: 0.14em; }
+.correspondence-email-heading p { margin-top: 0.35rem; color: var(--contact-paper-muted); font-size: 0.75rem; line-height: 1.8; }
+.correspondence-mail-postage { position: relative; flex: 0 0 4.75rem; width: 4.75rem; pointer-events: none; }
+.correspondence-mail-postmark { position: absolute; top: 0.55rem; right: 2.2rem; width: 8rem; color: var(--contact-paper-muted); stroke: currentColor; stroke-width: 0.8; opacity: 0.3; transform: rotate(-8deg); }
+.correspondence-mail-mark { position: relative; display: block; width: 100%; height: auto; transform: rotate(4deg); }
+.correspondence-address { display: block; width: fit-content; max-width: 100%; min-height: 2.75rem; color: var(--contact-paper-ink); font-family: Georgia, 'Times New Roman', serif; font-size: clamp(1.35rem, 7.3cqw, 2.85rem); line-height: 1.3; letter-spacing: -0.035em; overflow-wrap: anywhere; transition: color 180ms ease; }
+.correspondence-email-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.75rem 1.5rem; margin-top: 1.4rem; padding-top: 1.25rem; border-top: 1px solid var(--contact-rule); }
+.correspondence-send-button,
+.correspondence .contact-copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; min-height: 2.75rem; padding: 0.7rem 1.1rem; border: 1px solid transparent; border-radius: 2px; box-shadow: none; font-size: 0.75rem; line-height: 1.5; cursor: pointer; transition: color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+.correspondence-send-button { color: var(--contact-paper); background: var(--contact-paper-ink); }
+.correspondence-send-button svg { width: 1rem; height: 1rem; stroke: currentColor; stroke-width: 1.4; stroke-linejoin: round; transition: transform 240ms ease; }
+.correspondence .contact-copy-button { min-width: 6.5rem; padding-inline: 0.75rem; color: var(--contact-paper-muted); background: transparent; }
+.correspondence .contact-copy-button svg,
+.correspondence-copy-check { width: 1rem; height: 1rem; line-height: 1; }
+.correspondence .contact-copy-button[data-copied="true"] { color: var(--contact-accent); background: var(--contact-soft); }
+.correspondence-copy-check { animation: correspondence-copy-arrive 220ms ease-out both; }
+.correspondence-email-signoff { margin-left: auto; color: var(--contact-paper-muted); font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 0.8125rem; line-height: 1.6; text-align: right; }
+.correspondence-send-button:active,
+.correspondence .contact-copy-button:active { transform: translateY(1px) scale(0.98); }
 
-.correspondence-elsewhere { display: grid; grid-template-columns: minmax(10rem, 0.8fr) minmax(0, 2fr) 6.5rem; gap: 1.5rem; padding-top: 2rem; }
-.correspondence-links { grid-column: 2 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; }
-.correspondence-link { display: flex; align-items: flex-start; gap: 0.875rem; min-width: 0; padding: 0.25rem 0 1.25rem; border-bottom: 1px solid var(--contact-rule); transition: border-color 180ms ease; }
-.correspondence-link-number { padding-top: 0.4rem; color: var(--color-text-muted); font-family: Georgia, 'Times New Roman', serif; font-size: 0.7rem; }
+.correspondence-elsewhere { min-width: 0; }
+.correspondence-links { display: grid; grid-template-rows: 1fr 1fr; gap: 1.5rem; height: 100%; }
+.correspondence-link { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 0.5rem 0 1.25rem; border-bottom: 1px solid var(--contact-rule); transition: border-color 180ms ease; }
+.correspondence-link::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 1px; background: var(--contact-accent); transform: scaleX(0); transform-origin: left center; transition: transform 300ms ease; }
+.correspondence-link-kicker { display: block; margin-bottom: 0.7rem; color: var(--contact-accent); font-size: 0.625rem; letter-spacing: 0.13em; }
+.correspondence-link-kicker > span { font-variant-numeric: tabular-nums; }
+.correspondence-link-body { display: flex; align-items: center; gap: 1.5rem; }
 .correspondence-link-content { min-width: 0; flex: 1; }
-.correspondence-link-title { display: flex; align-items: center; gap: 0.65rem; color: var(--color-text-soft); font-size: 1.1rem; letter-spacing: -0.02em; }
-.correspondence-link-title svg { width: 1rem; height: 1rem; color: var(--contact-accent); }
-.correspondence-link-description { display: block; margin-top: 0.6rem; color: var(--color-text-muted); font-size: 0.75rem; line-height: 1.9; }
-.correspondence-link-arrow { padding-top: 0.15rem; color: var(--contact-accent); font-size: 1.2rem; transition: transform 180ms ease; }
+.correspondence-link-title { display: block; color: var(--color-text-soft); font-family: var(--contact-display-font); font-size: clamp(1.4rem, 2.4vw, 1.85rem); }
+.correspondence-link-title .artistic-label { padding: 0 0 0.18em; font-family: var(--contact-display-font); font-weight: 500; letter-spacing: 0.035em; }
+.correspondence-link-title .artistic-label-text { color: var(--color-text); background: none; transition: color 180ms ease; }
+.correspondence-link-title .artistic-label-stroke { bottom: -0.02em; height: 0.3em; color: var(--contact-accent); stroke: currentColor; opacity: 0.45; transform: scaleX(0.72) rotate(-1deg); transform-origin: left center; transition: transform 280ms ease, opacity 280ms ease; }
+.correspondence-link-title .artistic-label-stroke path:last-child { stroke: currentColor; }
+.correspondence-link-description { display: block; margin-top: 0.5rem; color: var(--color-text-muted); font-size: 0.75rem; line-height: 1.9; }
+.correspondence-link-arrow { display: grid; place-items: center; flex: 0 0 2.6rem; height: 2.6rem; color: var(--contact-accent); font-family: Georgia, 'Times New Roman', serif; font-size: 1.75rem; transition: transform 220ms ease; }
 .correspondence-colophon { justify-content: space-between; gap: 1rem; margin-top: 2.75rem; color: var(--color-text-muted); font-size: 0.625rem; letter-spacing: 0.06em; }
 .correspondence-colophon > span:last-child { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 0.8rem; }
 
@@ -232,10 +255,21 @@
 @media (hover: hover) {
   .correspondence-plane-button:not([aria-disabled="true"]):hover .correspondence-plane-model { transform: perspective(480px) translateY(-3px) rotateX(4deg) rotateY(-6deg); filter: drop-shadow(4px 13px 6px rgb(34 22 61 / 0.3)); }
   .correspondence-address:hover { color: var(--contact-accent); }
-  .correspondence-address:hover .correspondence-email-arrow { transform: rotate(45deg); background: var(--contact-soft); }
-  .correspondence .contact-copy-button:hover { color: var(--contact-accent); background: var(--contact-soft); transform: none; }
+  .correspondence-send-button:hover { color: var(--contact-paper); background: var(--contact-accent); transform: translateY(-2px); box-shadow: 0 6px 16px -8px var(--contact-accent); }
+  .correspondence-send-button:hover svg { transform: translate(3px, -3px) rotate(-7deg); }
+  .correspondence .contact-copy-button:hover { color: var(--contact-accent); background: var(--contact-soft); transform: translateY(-1px); }
   .correspondence-link:hover { border-color: var(--contact-accent); }
-  .correspondence-link:hover .correspondence-link-arrow { transform: translate(3px, -3px); }
+  .correspondence-link:hover .correspondence-link-arrow { transform: translateX(4px); }
+  .correspondence-link[data-external="true"]:hover .correspondence-link-arrow { transform: translate(3px, -3px); }
+  .correspondence-link:hover::after { transform: scaleX(1); }
+  .correspondence-link:hover .artistic-label-text { color: var(--contact-accent); }
+  .correspondence-link:hover .artistic-label-stroke { transform: scaleX(1) rotate(-1deg); opacity: 0.8; }
+}
+
+.correspondence-link:focus-visible::after { transform: scaleX(1); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .correspondence:has(.correspondence-airmail[data-flying="true"]) .correspondence-mail-mark { animation: correspondence-mark-receive 4400ms ease both; }
 }
 
 @media (min-width: 601px) and (max-width: 1100px) {
@@ -246,14 +280,23 @@
 @media (max-width: 900px) {
   .correspondence-hero { gap: 1rem; }
   .correspondence-note { max-width: 24rem; }
-  .correspondence-email { grid-template-columns: minmax(0, 1fr) auto; gap: 0.75rem 1.5rem; }
-  .correspondence-email-heading { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-  .correspondence-email-heading p { margin: 0; }
-  .correspondence-address { font-size: clamp(1.4rem, 4vw, 2.2rem); }
-  .correspondence-elsewhere { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
-  .correspondence-links { grid-column: auto; }
-  .correspondence-elsewhere-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
-  .correspondence-elsewhere-heading p { margin: 0; }
+}
+
+@media (max-width: 760px) {
+  .correspondence-connect { grid-template-columns: minmax(0, 1fr); }
+  .correspondence-links { grid-template-columns: 1fr 1fr; grid-template-rows: auto; gap: 2rem; }
+}
+
+@container (max-width: 34rem) {
+  .correspondence-email-signoff { flex-basis: 100%; padding-top: 0.25rem; }
+}
+
+@container (max-width: 28rem) {
+  .correspondence-mail-postmark { width: 5rem; right: 1.8rem; top: 0.7rem; }
+}
+
+@container (max-width: 17rem) {
+  .correspondence-mail-postmark { display: none; }
 }
 
 @media (max-width: 600px) {
@@ -271,13 +314,20 @@
   .correspondence-airmail-caption { display: block; left: -15%; top: 74%; font-size: 0.625rem; }
   .correspondence-art { width: 85%; max-width: 24rem; margin-top: 0.3rem; }
   .correspondence-seal strong { font-size: clamp(1.6rem, 7vw, 2.2rem); }
-  .correspondence-email { padding-block: 1.35rem; gap: 1rem; }
-  .correspondence-address { grid-column: 1 / -1; justify-content: flex-start; font-size: clamp(1.35rem, 6.5vw, 2rem); gap: 0.75rem; }
-  .correspondence-email-arrow { flex-basis: 2.5rem; height: 2.5rem; font-size: 1.4rem; }
-  .correspondence .contact-copy-button { justify-self: start; }
-  .correspondence-elsewhere { padding-top: 1.5rem; }
+  .correspondence-connect-heading > span:last-child { display: none; }
+  .correspondence-email { padding: 1.4rem 1.25rem 1.25rem; }
+  .correspondence-email::before { width: 4px; }
+  .correspondence-email-top { gap: 0.75rem; margin-bottom: 1.4rem; }
+  .correspondence-email-heading { gap: 0.7rem; }
+  .correspondence-email-heading > div > span { font-size: 0.6rem; }
+  .correspondence-email-heading p { font-size: 0.6875rem; }
+  .correspondence-to { font-size: 2rem; }
+  .correspondence-mail-postage { width: 3.25rem; flex-basis: 3.25rem; }
+  .correspondence-email-actions { gap: 0.6rem; margin-top: 1.1rem; padding-top: 1rem; }
+  .correspondence-send-button { padding-inline: 0.85rem; }
+  .correspondence-elsewhere { padding-top: 0.25rem; }
   .correspondence-links { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-  .correspondence-link { gap: 1rem; padding-bottom: 1rem; }
+  .correspondence-link { padding-bottom: 1.2rem; }
   .correspondence-colophon { flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
 }
 
@@ -296,6 +346,17 @@
   to { opacity: 1; }
 }
 
+@keyframes correspondence-copy-arrive {
+  from { opacity: 0; transform: scale(0.65) rotate(-12deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes correspondence-mark-receive {
+  0%, 65%, 100% { transform: rotate(4deg); }
+  73% { transform: translateY(-2px) rotate(1deg); }
+  82% { transform: translateY(1px) rotate(5deg); }
+}
+
 @keyframes correspondence-drift {
   0%, 100% { transform: translateY(0) rotate(-9deg); }
   50% { transform: translateY(-7px) rotate(-7deg); }
@@ -311,11 +372,6 @@
 
 @keyframes correspondence-trail-flight {
   to { stroke-dashoffset: -20; }
-}
-
-@keyframes correspondence-star-twinkle {
-  0%, 100% { opacity: 0.32; transform: scale(0.85) rotate(-7deg); }
-  50% { opacity: 0.85; transform: scale(1.08) rotate(7deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

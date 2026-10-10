@@ -1,3 +1,5 @@
+import { getRouteHref } from '../lib/routes'
+
 export type ContactLink = {
   description: string
   href: string
@@ -23,12 +25,12 @@ export const contactLinks: ContactLink[] = [
     title: 'GitHub',
     label: 'github.com/jordnary',
     href: 'https://github.com/jordnary',
-    description: '查看我的代码仓库、学习记录和项目迭代。',
+    description: '代码、实验与持续迭代。',
   },
   {
-    title: 'Website',
-    label: 'jordnary.github.io',
-    href: 'https://jordnary.github.io',
-    description: '回到这个个人主页，查看后续更新。',
+    title: '回到首页',
+    label: '继续探索个人主页',
+    href: getRouteHref('home'),
+    description: '继续探索这个小小站点。',
   },
 ]

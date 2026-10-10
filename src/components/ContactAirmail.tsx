@@ -89,18 +89,6 @@ export function ContactAirmail() {
       <div className="correspondence-airmail-scene">
         <svg className="correspondence-airmail-decoration" viewBox="0 0 360 290" fill="none" aria-hidden="true" focusable="false">
           <path className="correspondence-airmail-trail" d="M18 239C82 260 154 264 177 226S140 151 123 186 191 260 239 196 226 122 236 89" />
-          <path className="correspondence-airmail-guide" d="M37 253C86 271 117 272 152 258" />
-          <circle className="correspondence-airmail-origin" cx="18" cy="239" r="3" />
-          <circle className="correspondence-airmail-dot" cx="306" cy="125" r="2" />
-          <g transform="translate(92 94)">
-            <path className="correspondence-doodle-star" d="M0-17Q2-2 15 0Q2 2 0 18Q-2 3-14 1Q-2-1 0-17ZM-21-10l-3-3M19 11l3 2" />
-          </g>
-          <g transform="translate(145 -35)">
-            <path className="correspondence-doodle-star correspondence-doodle-star--small" d="M0-10Q1-1 9 0Q1 2-1 11Q-2 2-10 0Q-1-1 0-10Z" />
-          </g>
-          <g transform="translate(294 179)">
-            <path className="correspondence-doodle-star correspondence-doodle-star--late" d="M0-8 1-1 9 1 1 2-1 10-2 2-9 0-2-1Z" />
-          </g>
         </svg>
         <svg className="correspondence-airmail-wake" viewBox="0 0 360 290" fill="none" aria-hidden="true" focusable="false">
           <path className="correspondence-flight-wake" ref={wakeRef} pathLength="1" />
