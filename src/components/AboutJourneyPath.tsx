@@ -63,7 +63,7 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
       const bounds = container.getBoundingClientRect()
       const chapterBounds = chapters.map(chapter => chapter.getBoundingClientRect())
       const center = bounds.width / 2
-      const amplitude = bounds.width * 0.4
+      const amplitude = bounds.width * 0.46
       // Fewer bends than cards let adjacent chapters share a sweep, instead of
       // forming two columns at the extrema. All full bends use the same geometry.
       const turns = Math.max(2, Math.ceil(chapters.length / 2) - 1)
@@ -100,7 +100,9 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
         const y = rect.bottom - bounds.top + 14
         const point = progress.getPointAtLength(distanceAtY(y))
         if (!compact) {
-          const cardLeft = point.x < center ? point.x + 28 : point.x - rect.width - 28
+          const preferredLeft = point.x < center ? point.x + 28 : point.x - rect.width - 28
+          // Keep the rotated card inside the canvas when a node approaches the center.
+          const cardLeft = Math.max(8, Math.min(bounds.width - rect.width - 8, preferredLeft))
           chapters[index].style.setProperty('--chapter-offset', `${cardLeft}px`)
           chapters[index].style.setProperty('--node-offset', `${point.x - cardLeft}px`)
         }
