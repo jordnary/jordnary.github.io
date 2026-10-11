@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { SmartLink } from './SmartLink'
 import { AboutJourneyPath } from './AboutJourneyPath'
+import { AboutExplorationArt } from './AboutExplorationArt'
 import { aboutProfile } from '../data/profile'
 import { getRouteHref } from '../lib/routes'
 import './About.css'
@@ -45,33 +46,49 @@ export function About() {
 
   return (
     <section className="about-journey site-container" id="about" aria-labelledby="about-title">
-      <div className="journey-masthead">
-        <p><span aria-hidden="true" /> ABOUT ME / MY JOURNEY</p>
-        <span>保持好奇，持续生长</span>
-      </div>
+      <header className="journey-cover">
+        <div className="journey-masthead">
+          <p><span aria-hidden="true">✳</span> ABOUT ME / MY JOURNEY</p>
+          <span>保持好奇，让探索发生</span>
+        </div>
 
-      <header className="journey-intro">
-        <div className="journey-intro-heading">
-          <p className="journey-eyebrow">每一步，都算数。</p>
-          <h1 id="about-title">关于我，<br />和一路的<em>探索<svg viewBox="0 0 240 22" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M4 15Q106 0 235 9M147 19l74-5" /></svg></em><span className="journey-title-period">。</span></h1>
-          <a className="journey-scroll-link" href="#journey-start">
-            <span className="journey-scroll-icon" aria-hidden="true">↓</span>
-            沿着好奇心，往下走
-          </a>
-        </div>
-        <div className="journey-intro-aside">
-          <div className="journey-monogram" aria-hidden="true">
-            <svg viewBox="0 0 240 112" fill="none" focusable="false">
-              <path d="M20 71C-10 4 164-11 210 42S135 128 67 87 119 6 185 28" />
-              <circle cx="20" cy="71" r="4" /><circle cx="185" cy="28" r="4" />
-            </svg>
-            <span>CS</span><span>AI</span><span>Web</span>
+        <div className="journey-intro">
+          <div className="journey-intro-heading">
+            <p className="journey-eyebrow"><span aria-hidden="true" /> 每一步，都算数。</p>
+            <h1 id="about-title">
+              <span>关于我，</span>
+              <span>和一路的<em>探索<svg viewBox="0 0 240 22" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false"><path d="M4 15Q106 0 235 9M147 19l74-5" /></svg></em><span className="journey-title-period">。</span></span>
+            </h1>
+            <p className="journey-handwritten" aria-hidden="true">Always becoming<span>↗</span></p>
           </div>
-          <p className="journey-intro-copy">{aboutProfile.intro}</p>
-          <ul className="journey-keywords" aria-label="个人叙事关键词">
-            {aboutProfile.keywords.map(keyword => <li key={keyword}>{keyword}</li>)}
-          </ul>
+          <AboutExplorationArt />
         </div>
+
+        <div className="journey-cover-notes">
+          <div className="journey-prologue">
+            <span className="journey-prologue-glyph" aria-hidden="true">序</span>
+            <p className="journey-prologue-label">THE JOURNEY BEGINS</p>
+            <a className="journey-scroll-link" href="#journey-start">
+              <span className="journey-scroll-title">沿着<em>好奇心</em>，<br />往下走<span className="journey-scroll-icon" aria-hidden="true">↘</span></span>
+            </a>
+            <svg className="journey-prologue-trail" viewBox="0 0 320 62" fill="none" aria-hidden="true" focusable="false">
+              <path d="M2 47C54 47 70 12 126 21S202 65 258 29S302 10 317 14" />
+              <path d="M2 55C60 55 79 25 127 31S208 70 269 37" />
+              <circle cx="126" cy="21" r="3.5" />
+              <path d="M282 5c0 9-3 12-12 12 9 0 12 3 12 12 0-9 3-12 12-12-9 0-12-3-12-12Z" />
+            </svg>
+          </div>
+          <div className="journey-intro-aside">
+            <p className="journey-note-index"><span aria-hidden="true">✳</span> 写在旅程开始前</p>
+            <p className="journey-intro-copy">{aboutProfile.intro}</p>
+            <ul className="journey-keywords" aria-label="个人叙事关键词">
+              {aboutProfile.keywords.map((keyword, index) => (
+                <li key={keyword}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{keyword}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="journey-cover-colophon" aria-hidden="true"><span>保持好奇 · 持续生长</span><span>A WORK IN PROGRESS</span></div>
       </header>
 
       <div className="journey-chapter-heading" id="journey-start">
