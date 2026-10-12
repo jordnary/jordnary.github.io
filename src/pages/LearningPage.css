@@ -206,14 +206,14 @@
 .learning-studio .knowledge-card { display: flex; flex-direction: column; min-width: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; }
 .learning-studio .knowledge-card + .knowledge-card { border-left: 1px solid var(--study-rule); }
 .learning-studio .knowledge-card::before, .learning-studio .knowledge-card::after { display: none; }
-.learning-studio .knowledge-card-header { min-height: 9.5rem; padding: 1.65rem 1.5rem 1rem; border: 0; }
-.learning-studio .knowledge-card .card-title { color: var(--study-ink); font-family: inherit; font-size: 1.35rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.035em; }
-.learning-studio .knowledge-card .card-copy { font-size: 0.79rem; line-height: 1.9; color: var(--study-muted); }
-.learning-studio .knowledge-item-list { display: grid; gap: 0; padding: 0 1.5rem 1.5rem; margin-top: 0; }
-.learning-studio .knowledge-item { position: relative; padding: 0.7rem 0 0.7rem 0.75rem; border: 0; border-top: 1px dashed var(--study-rule); border-radius: 0; background: none; }
-.learning-studio .knowledge-item::before { content: ''; position: absolute; top: 1.2rem; left: 0; width: 3px; height: 3px; background: var(--study-muted); opacity: 0.5; }
-.learning-studio .knowledge-item strong { color: var(--study-ink); font-size: 0.8rem; font-weight: 500; }
-.learning-studio .knowledge-item span { margin-top: 0.3rem; color: var(--study-muted); font-size: 0.7rem; }
+.learning-studio .knowledge-card-header { flex: 1; padding: 1.5rem clamp(1.1rem, 1.8vw, 2rem) 1.1rem; border: 0; }
+.learning-studio .knowledge-card .card-title { margin: 0; color: var(--study-ink); font-family: inherit; font-size: clamp(1.5rem, 2.1vw, 2rem); font-weight: 600; line-height: 1.35; letter-spacing: -0.025em; text-wrap: balance; }
+.learning-studio .knowledge-card .card-copy { margin-top: 0.85rem; font-size: clamp(1rem, 1.15vw, 1.125rem); line-height: 1.75; color: var(--study-muted); text-wrap: pretty; }
+.learning-studio .knowledge-item-list { display: grid; gap: 0; padding: 0 clamp(1.1rem, 1.8vw, 2rem) 1.25rem; margin-top: 0; }
+.learning-studio .knowledge-item { position: relative; gap: 0.3rem; padding: 0.8rem 0 0.8rem 0.85rem; border: 0; border-top: 1px dashed var(--study-rule); border-radius: 0; background: none; }
+.learning-studio .knowledge-item::before { content: ''; position: absolute; top: 1.45rem; left: 0; width: 3px; height: 3px; background: var(--study-muted); opacity: 0.5; }
+.learning-studio .knowledge-item strong { color: var(--study-ink); font-size: clamp(1.0625rem, 1.2vw, 1.1875rem); font-weight: 600; line-height: 1.5; }
+.learning-studio .knowledge-item span { margin: 0; color: var(--study-muted); font-size: clamp(0.9375rem, 1.05vw, 1.0625rem); line-height: 1.65; text-wrap: pretty; }
 
 .notes-gallery { --notes-top: 80px; --note-width: clamp(320px, 30vw, 420px); --notes-gutter: max(var(--page-gutter), calc((100vw - var(--max-page-width)) / 2)); position: relative; scroll-margin-top: 80px; padding-bottom: 2rem; background: transparent; }
 .notes-sticky { padding-top: 1.5rem; padding-bottom: 1.1rem; }
@@ -288,17 +288,18 @@
 .learning-studio .timeline-card { display: flex; flex: 1; flex-direction: column; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .learning-studio .timeline-card:hover { background: none; box-shadow: none; transform: none; }
 .learning-studio .timeline-card::before, .learning-studio .timeline-card::after { display: none; }
-.learning-studio .timeline-card-content { display: flex; flex: 1; flex-direction: column; padding: 1.65rem 1.5rem 1.5rem; }
-.learning-studio .timeline-card .card-title { min-height: 2.8em; color: var(--study-ink); font-family: inherit; font-size: 1.35rem; font-weight: 600; line-height: 1.4; letter-spacing: -0.035em; text-wrap: balance; }
-.learning-studio .timeline-card .card-copy { font-size: 0.82rem; color: var(--study-muted); line-height: 1.9; }
-.learning-studio .timeline-tag { border: 0; background: none; padding: 0; color: var(--study-accent); font-weight: 400; font-size: 0.62rem; }
-.learning-studio .timeline-tag + .timeline-tag::before { content: '/'; margin-right: 0.45rem; color: var(--study-muted); }
-.learning-studio .timeline-points { display: grid; gap: 0.6rem; padding-top: 1.3rem; margin-top: auto; color: var(--study-muted); list-style: none; font-size: 0.7rem; }
+.learning-studio .timeline-card-content { display: flex; flex: 1; flex-direction: column; padding: 1.5rem clamp(1.1rem, 1.8vw, 2rem); }
+.learning-studio .timeline-card .card-title { margin: 0; color: var(--study-ink); font-family: inherit; font-size: clamp(1.5rem, 2.2vw, 2.25rem); font-weight: 600; line-height: 1.35; letter-spacing: -0.025em; white-space: pre-line; text-wrap: balance; }
+.learning-studio .timeline-card .card-copy { margin-top: 0.9rem; font-size: clamp(1rem, 1.15vw, 1.125rem); color: var(--study-muted); line-height: 1.8; text-wrap: pretty; }
+.learning-studio .timeline-tag-list { gap: 0.5rem; margin-top: 0.8rem; }
+.learning-studio .timeline-tag { min-height: 0; border: 0; background: none; padding: 0; color: var(--study-accent); font-weight: 500; font-size: 0.8125rem; line-height: 1.6; letter-spacing: 0.04em; }
+.learning-studio .timeline-tag + .timeline-tag::before { content: '/'; margin-right: 0.5rem; color: var(--study-muted); }
+.learning-studio .timeline-points { display: grid; gap: 0.5rem; padding-top: 1.1rem; margin-top: auto; color: var(--study-ink); list-style: none; font-size: clamp(0.9375rem, 1.05vw, 1.0625rem); line-height: 1.65; }
 .timeline-points li { display: flex; align-items: baseline; gap: 0.65rem; }
-.timeline-points li::before { content: '+'; color: var(--study-muted); font: 0.9rem monospace; }
+.timeline-points li::before { content: '+'; flex-shrink: 0; color: var(--study-muted); font: 1em monospace; }
 
 .learning-blueprint-panel { position: relative; isolation: isolate; overflow: hidden; transition: background 250ms; }
-.learning-panel-meta { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.9rem 1.5rem; border-bottom: 1px dashed var(--study-rule); color: var(--study-ink); font: 0.63rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.04em; }
+.learning-panel-meta { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; padding: 0.9rem 1.5rem; border-bottom: 1px dashed var(--study-rule); color: var(--study-ink); font: 0.75rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.04em; }
 .learning-panel-meta::before { content: ''; position: absolute; top: calc(50% - 2.5px); left: 0.6rem; width: 5px; height: 5px; background: var(--geometry-signal); opacity: 0; transition: opacity 250ms; }
 .learning-panel-number { flex-shrink: 0; color: var(--study-muted); font-variant-numeric: tabular-nums; opacity: 0.6; }
 .learning-panel-diagram { position: relative; height: 240px; border-bottom: 1px dashed var(--study-rule); }
@@ -413,8 +414,8 @@
 
 @media (min-width: 701px) and (max-width: 1000px) {
   .learning-studio .timeline-card-content { padding-inline: 1rem; }
-  .learning-studio .timeline-time { padding-inline: 1rem; font-size: 0.55rem; }
-  .learning-studio .timeline-card .card-title { font-size: 1.1rem; }
+  .learning-studio .timeline-time { padding-inline: 1rem; font-size: 0.6875rem; }
+  .learning-studio .timeline-card .card-title { font-size: clamp(1.3125rem, 2.9vw, 1.5rem); }
   .learning-studio #timeline .learning-panel-diagram { height: 212px; }
 }
 
@@ -453,13 +454,9 @@
   .learning-studio .section-description { font-size: 0.8rem; }
   .learning-studio .knowledge-card-header { padding: 1.35rem 1.1rem 0.85rem; }
   .learning-studio .knowledge-item-list { padding-inline: 1.1rem; }
-  .learning-panel-meta, .learning-studio .timeline-time { padding: 0.9rem 1.1rem; font-size: 0.6rem; }
+  .learning-panel-meta, .learning-studio .timeline-time { padding: 0.9rem 1.1rem; font-size: 0.75rem; }
   .learning-panel-meta::before { left: 0.4rem; }
   .learning-panel-diagram { height: 220px; }
-  .learning-studio .knowledge-card .card-title { font-size: 1.25rem; }
-  .learning-studio .knowledge-card .card-copy { font-size: 0.75rem; }
-  .learning-studio .knowledge-item strong { font-size: 0.75rem; }
-  .learning-studio .knowledge-item span { font-size: 0.67rem; }
   .notes-gallery { --note-width: min(82vw, 360px); }
   .notes-heading-row { display: block; }
   .notes-heading-row > p { margin-top: 0.7rem; font-size: 0.73rem; }
@@ -477,7 +474,6 @@
   .learning-studio .timeline-list { grid-template-columns: 1fr; }
   .learning-studio .timeline-row + .timeline-row { border-left: 0; border-top: 1px solid var(--study-rule); }
   .learning-studio .timeline-card-content { padding: 1.35rem 1.1rem 1.5rem; }
-  .learning-studio .timeline-card .card-title { min-height: 0; font-size: 1.25rem; }
   .learning-loop-note { flex-wrap: wrap; font-size: 0.7rem; }
   .learning-loop-note a { width: 100%; margin-left: 2rem; }
   .learning-note-reader { width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); }
@@ -486,7 +482,6 @@
 @media (max-width: 600px) {
   .learning-studio .knowledge-card-grid { grid-template-columns: 1fr; }
   .learning-studio .knowledge-card + .knowledge-card { border-left: 0; border-top: 1px solid var(--study-rule); }
-  .learning-studio .knowledge-card-header { min-height: 0; }
   .learning-panel-diagram { height: 240px; }
 }
 

@@ -26,11 +26,11 @@ export function Timeline() {
             <article className="timeline-card">
               <LearningGeometry kind={stageDiagrams[item.period]?.kind ?? 'experiment'} />
               <div className="timeline-card-content">
-                <h3 className="card-title text-lg sm:text-xl">{item.title}</h3>
+                <h3 className="card-title">{item.title}</h3>
                 <div className="timeline-tag-list">
                   {item.tags.map(tag => <span className="timeline-tag" key={tag}>{tag}</span>)}
                 </div>
-                <p className="card-copy mt-3 text-sm leading-7 md:text-base">{item.description}</p>
+                <p className="card-copy">{item.description}</p>
                 <ul className="timeline-points">
                   {item.points.map(point => <li key={point}>{point}</li>)}
                 </ul>

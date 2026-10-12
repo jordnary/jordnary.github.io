@@ -29,8 +29,8 @@ export function Skills() {
             </div>
             <LearningGeometry kind={knowledgeDiagrams[group.icon]?.kind ?? 'foundation'} />
             <header className="knowledge-card-header">
-              <h3 className="card-title text-lg sm:text-xl">{group.title}</h3>
-              <p className="card-copy mt-3 text-sm leading-6">{group.description}</p>
+              <h3 className="card-title">{group.title}</h3>
+              <p className="card-copy">{group.description}</p>
             </header>
 
             <ul className="knowledge-item-list">
