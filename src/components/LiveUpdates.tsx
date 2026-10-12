@@ -111,9 +111,14 @@ export function LiveUpdates() {
       description="这里汇集我公开的代码动态与最近在读的内容，记录持续学习、动手实践和整理思考的日常足迹。"
       eyebrow="Now & Notes"
       id="live"
-      title="最近在做什么"
+      title={<>最近在<span className="live-title-accent">做什么
+        <svg viewBox="0 0 160 12" fill="none" aria-hidden="true">
+          <path d="M3 8C41 2 105 2 157 6M88 10c23-3 43-3 62-2" />
+        </svg>
+      </span></>}
     >
       <div className="live-updates-toolbar">
+        <p className="home-live-caption"><span aria-hidden="true" />学习与创作，持续发生中</p>
         <button
           className="live-refresh-button"
           disabled={isRefreshing}
@@ -138,11 +143,12 @@ export function LiveUpdates() {
       </div>
 
       <div className="live-updates-grid">
-        <Reveal as="article" className="live-panel glass-card" whileHover={{ y: -5 }}>
+        <Reveal as="article" className="live-panel live-panel--code glass-card">
           <PanelHeader
             actionHref={githubProfileUrl}
             actionLabel="前往 GitHub"
             eyebrow="Code Activity"
+            kind="code"
             title="我最近在维护"
           />
           {githubState.data ? (
@@ -163,16 +169,10 @@ export function LiveUpdates() {
         <Reveal
           as="article"
           baseDelay={0.08}
-          className="live-panel glass-card"
+          className="live-panel live-panel--reading glass-card"
           index={1}
-          whileHover={{ y: -5 }}
         >
-          <header className="live-panel-header">
-            <div>
-              <p className="meta-label">Reading Notes</p>
-              <h3>我最近在关注</h3>
-            </div>
-          </header>
+          <PanelHeader eyebrow="Reading Notes" kind="reading" title="我最近在关注" />
           {feedState.status === 'ready' && feedState.data ? (
             <RssContent feed={feedState.data} />
           ) : (
@@ -191,30 +191,37 @@ function PanelHeader({
   actionHref,
   actionLabel,
   eyebrow,
+  kind,
   title,
 }: {
-  actionHref: string
-  actionLabel: string
+  actionHref?: string
+  actionLabel?: string
   eyebrow: string
+  kind: 'code' | 'reading'
   title: string
 }) {
-  const isExternal = actionHref.startsWith('http')
+  const isExternal = actionHref?.startsWith('http')
 
   return (
     <header className="live-panel-header">
-      <div>
-        <p className="meta-label">{eyebrow}</p>
-        <h3>{title}</h3>
+      <div className="live-panel-heading">
+        <span className="live-panel-symbol"><JournalIcon kind={kind} /></span>
+        <div>
+          <p className="meta-label">{eyebrow}</p>
+          <h3>{title}</h3>
+        </div>
       </div>
-      <a
-        className="live-panel-link"
-        href={actionHref}
-        rel={isExternal ? 'noreferrer' : undefined}
-        target={isExternal ? '_blank' : undefined}
-      >
-        {actionLabel}
-        <span aria-hidden="true">↗</span>
-      </a>
+      {actionHref && (
+        <a
+          className="live-panel-link"
+          href={actionHref}
+          rel={isExternal ? 'noreferrer' : undefined}
+          target={isExternal ? '_blank' : undefined}
+        >
+          {actionLabel}
+          <span aria-hidden="true">↗</span>
+        </a>
+      )}
     </header>
   )
 }
@@ -243,19 +250,24 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
             <li key={repository.url}>
               <a
                 className="github-repository"
+                data-language={repository.language ?? undefined}
                 href={repository.url}
                 rel="noreferrer"
                 target="_blank"
               >
-                <span className="github-repository-main">
-                  <strong>{repository.name}</strong>
-                  <span>{repository.description || '这个项目暂时还没有简介。'}</span>
+                <span className="github-repository-icon"><JournalIcon kind="repository" /></span>
+                <span className="github-repository-body">
+                  <span className="github-repository-main">
+                    <strong>{repository.name}</strong>
+                    <span>{repository.description || '这个项目暂时还没有简介。'}</span>
+                  </span>
+                  <span className="github-repository-meta">
+                    <span className="github-language">{repository.language || 'Code'}</span>
+                    <span>★ {formatNumber(repository.stars)}</span>
+                    <span>{formatDate(repository.updatedAt)} 更新</span>
+                  </span>
                 </span>
-                <span className="github-repository-meta">
-                  <span>{repository.language || 'Code'}</span>
-                  <span>★ {formatNumber(repository.stars)}</span>
-                  <span>{formatDate(repository.updatedAt)} 更新</span>
-                </span>
+                <span className="github-repository-arrow" aria-hidden="true">↗</span>
               </a>
             </li>
           ))}
@@ -278,15 +290,18 @@ function RssContent({ feed }: { feed: RssFeed }) {
   return (
     <>
       <ul className="live-list rss-list">
-        {items.map((item) => (
+        {items.map((item, index) => (
           <li key={item.id}>
             <a
-              className="rss-item"
+              className={`rss-item${index === 0 ? ' rss-item--featured' : ''}`}
               href={item.url}
               rel="noreferrer"
               target="_blank"
             >
-              <span className="rss-item-source">{item.source}</span>
+              <span className="rss-item-source">
+                {index === 0 && <span className="rss-feature-label">最新收录</span>}
+                {item.source}
+              </span>
               <span className="rss-item-copy">
                 <strong>{item.title}</strong>
                 <span>{item.description || '打开原文查看完整内容。'}</span>
@@ -308,6 +323,31 @@ function RssContent({ feed }: { feed: RssFeed }) {
       </div>
       <p className="live-sync-note">整理于：{formatTime(feed.generatedAt)}</p>
     </>
+  )
+}
+
+function JournalIcon({ kind }: { kind: 'code' | 'reading' | 'repository' }) {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      {kind === 'code' ? (
+        <>
+          <circle cx="6" cy="5" r="2.5" />
+          <circle cx="6" cy="19" r="2.5" />
+          <circle cx="18" cy="6" r="2.5" />
+          <path d="M6 7.5v9M18 8.5v1A6.5 6.5 0 0 1 11.5 16H6" />
+        </>
+      ) : kind === 'reading' ? (
+        <>
+          <path d="M12 6C9.5 4.4 6.5 4 3 4.5v14c3.5-.5 6.5 0 9 1.5 2.5-1.5 5.5-2 9-1.5v-14c-3.5-.5-6.5 0-9 1.5ZM12 6v14" />
+          <path d="m6 9 3 1m6 0 3-1M6 13l3 1m6 0 3-1" />
+        </>
+      ) : (
+        <>
+          <path d="M5 3.5h13v17H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Zm0 0v13m-2 2a2 2 0 0 1 2-2h13" />
+          <path d="m9 7-2 2 2 2m4-4 2 2-2 2" />
+        </>
+      )}
+    </svg>
   )
 }
 

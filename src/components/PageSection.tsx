@@ -7,7 +7,7 @@ type PageSectionProps = {
   description: string
   eyebrow: string
   id: string
-  title: string
+  title: ReactNode
 }
 
 export function PageSection({
