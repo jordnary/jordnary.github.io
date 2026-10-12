@@ -8,8 +8,8 @@ export function Skills() {
     <PageSection
       id="skills"
       eyebrow="Knowledge Map"
-      title="知识沉淀的分类"
-      description="这些分类用于定位正在积累的问题和方法，不把学习过程压缩成技能等级。"
+      title={<>循着兴趣，<em>画一张地图。</em></>}
+      description="四条仍在延伸的学习路径。把零散的概念连起来，也为下一个问题留出位置。"
     >
       <div className="knowledge-card-grid">
         {skillCategories.map((group, index) => (

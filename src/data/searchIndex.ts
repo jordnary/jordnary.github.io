@@ -81,7 +81,7 @@ const noteEntries: SearchEntry[] = learningNotes.map((note) => ({
   description: note.summary,
   href: `${getRouteHref('learning')}#notes`,
   kind: '笔记',
-  keywords: [note.topic, note.progress, note.difficulty, note.question],
+  keywords: [note.topic, note.progress, note.difficulty, note.question, ...note.keyPoints, note.example.title],
 }))
 
 const timelineEntries: SearchEntry[] = timelineItems.map((item) => ({

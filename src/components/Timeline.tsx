@@ -32,8 +32,8 @@ export function Timeline() {
     <PageSection
       id="timeline"
       eyebrow="Stage Plan"
-      title="学习阶段计划"
-      description="这是一条面向下一步的计划线：明确当前正在夯实什么、接下来准备验证什么，而不是罗列履历。"
+      title={<>学到这里，<em>然后呢？</em></>}
+      description="把理解带进实践，再带着新的问题回来。下一页，从这些小计划开始。"
     >
       <div className="timeline-shell">
         <div

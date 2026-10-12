@@ -87,11 +87,16 @@ http://localhost:5173
 | --- | --- |
 | `src/data/profile.ts` | 维护个人叙事、学习背景、当前方向与长期问题。 |
 | `src/data/skills.ts` | 维护知识分类及每类正在沉淀的主题。 |
-| `src/data/notes.ts` | 维护可筛选的学习笔记、实践说明与参考来源。 |
+| `src/data/notes.ts` | 维护可筛选的学习笔记、概念要点、代码示例、误区、自测与参考来源。 |
+| `src/data/note-covers.ts` | 维护笔记封面标题、本地照片配置与摄影来源。 |
 | `src/data/projects.ts` | 维护项目分类、简介、技术栈、图片与站内外入口。 |
 | `src/data/project-introductions.ts` | 为每个项目维护独立介绍的章节、段落与实验配图。 |
 | `src/data/timeline.ts` | 维护面向下一步的阶段计划。 |
 | `src/data/contact.ts` | 维护邮箱、GitHub、网站链接和联系说明。 |
+
+Learning 目前包含 15 篇笔记，覆盖数据库、机器学习、LLM、前端工程化与学习方法。每篇提供问题、理解与要点、实践示例、常见误区、自测和参考资料；自测答案点击展开，代码块可以横向滚动。桌面继续采用随滚动横向翻阅的布局，手机端使用原生左右滑动，打开笔记后保留阅读位置并恢复封面焦点。
+
+学习页主视觉与笔记封面读取 `public/images/learning` 中的本地 WebP 摄影作品；来源与许可见 [素材说明](public/images/learning/README.md)。照片使用缓慢缩放与平移动效，封面仅在当前选中、悬停或聚焦时播放；减少动态效果偏好会禁用动画。素材已经随项目保存，日常构建无需联网下载照片。运行 `node --use-env-proxy scripts/sync-learning-covers.mjs` 可手动重新获取封面；运行 `npm run test:learning` 可在本地预览启动后检查笔记、图片、组合筛选、键盘操作、手机滑动与减少动态效果。
 
 Projects 的项目 ID 同时用于列表锚点与独立介绍页地址；站内搜索直接打开相应项目介绍。项目图保存在 `public/images/projects`，采用 WebP 与延迟加载。两个网站使用包含各自网站元素的本地合成海报，实验项目使用独立设计的海报，并在详情页保留完整结果图；`image.cover` 可单独配置封面，详情页图库同时展示封面和 `image.file` 中的原图，并按文件去重。列表封面不再打开图库，也不显示放大图标；原有悬浮效果仍保留。卡片复用全站 Motion 入场动画，并尊重减少动态效果的系统设置。原理示意单独标注，不能代替实验结果。素材来源与处理方式见该目录的 `README.md`；更新内容时应同时核对来源、可访问状态和图片。运行 `npm run posters:render` 可在本地重建全部项目海报，无需 API。
 

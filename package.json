@@ -13,6 +13,7 @@
     "sync:projects": "node --use-env-proxy scripts/sync-project-docs.mjs",
     "test:homepage": "node tests/homepage-touch.browser.mjs",
     "test:projects": "node tests/projects.browser.mjs",
+    "test:learning": "node tests/learning.browser.mjs",
     "test:gallery": "node tests/image-gallery.browser.mjs",
     "test:project-details": "node tests/project-details.browser.mjs",
     "test:project-docs": "node --test tests/project-docs.test.mjs tests/routes.test.ts",
