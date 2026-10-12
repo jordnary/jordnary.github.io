@@ -88,7 +88,6 @@ function NoteFilter({ label, onChange, options, value }: { label: string; onChan
 
 function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const photo = learningPhotos[noteCovers[note.id]?.photo ?? 'studyDesk']
   useEffect(() => {
     const dialog = dialogRef.current
     const previousOverflow = document.body.style.overflow
@@ -127,7 +126,7 @@ function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void
           </section>
           <section><h3><span>06</span>回到参考资料</h3><a href={note.reference.href} target="_blank" rel="noreferrer">{note.reference.label} <span aria-hidden="true">↗</span></a></section>
         </div>
-        <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><a href={photo.href} target="_blank" rel="noreferrer">封面摄影：{photo.author} / Unsplash <span aria-hidden="true">↗</span></a></footer>
+        <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><span>KEEP LEARNING ↗</span></footer>
       </article>
     </dialog>, document.body,
   )

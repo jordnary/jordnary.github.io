@@ -1,7 +1,13 @@
 import { PageSection } from './PageSection'
-import { Reveal } from './Reveal'
-import { SkillIcon } from './icons'
+import { LearningGeometry, type LearningGeometryKind } from './LearningGeometry'
 import { skillCategories } from '../data/skills'
+
+const knowledgeDiagrams: Record<string, { kind: LearningGeometryKind; label: string }> = {
+  'Computer Science': { kind: 'foundation', label: 'FOUNDATIONS' },
+  'AI & Machine Learning': { kind: 'network', label: 'MACHINE LEARNING' },
+  'Web Development': { kind: 'layers', label: 'WEB DEVELOPMENT' },
+  'Tools & Workflow': { kind: 'orbit', label: 'NOTES & WORKFLOW' },
+}
 
 export function Skills() {
   return (
@@ -13,20 +19,16 @@ export function Skills() {
     >
       <div className="knowledge-card-grid">
         {skillCategories.map((group, index) => (
-          <Reveal
-            as="article"
-            className="knowledge-card glass-card interactive-card"
-            index={index}
+          <article
+            className="knowledge-card learning-blueprint-panel"
             key={group.title}
-            whileHover={{ y: -5 }}
           >
+            <div className="learning-panel-meta">
+              <span>{knowledgeDiagrams[group.icon]?.label ?? 'KEEP LEARNING'}</span>
+              <span className="learning-panel-number">[{String(index + 1).padStart(2, '0')}]</span>
+            </div>
+            <LearningGeometry kind={knowledgeDiagrams[group.icon]?.kind ?? 'foundation'} />
             <header className="knowledge-card-header">
-              <div className="skill-card-header-row">
-                <span className="skill-card-icon" aria-hidden="true">
-                  <SkillIcon title={group.icon} />
-                </span>
-                <span className="skill-card-kicker">{String(index + 1).padStart(2, '0')}</span>
-              </div>
               <h3 className="card-title text-lg sm:text-xl">{group.title}</h3>
               <p className="card-copy mt-3 text-sm leading-6">{group.description}</p>
             </header>
@@ -39,9 +41,10 @@ export function Skills() {
                 </li>
               ))}
             </ul>
-          </Reveal>
+          </article>
         ))}
       </div>
+      <div className="learning-blueprint-ruler" aria-hidden="true"><span>从概念出发，向理解延伸</span><span>01 — 04</span></div>
     </PageSection>
   )
 }

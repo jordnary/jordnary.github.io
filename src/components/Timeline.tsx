@@ -1,30 +1,11 @@
-import { motion } from 'motion/react'
 import { PageSection } from './PageSection'
+import { LearningGeometry, type LearningGeometryKind } from './LearningGeometry'
 import { timelineItems } from '../data/timeline'
-import { viewportOnce } from '../lib/animations'
 
-const timelineRowHidden = {
-  y: 16,
-} as const
-
-const timelineRowVisible = {
-  y: 0,
-} as const
-
-const timelineFadeHidden = {
-  opacity: 0,
-} as const
-
-const timelineFadeVisible = {
-  opacity: 1,
-} as const
-
-function getTimelineTransition(index = 0, duration = 0.42) {
-  return {
-    delay: index * 0.06,
-    duration,
-    ease: 'easeOut',
-  } as const
+const stageDiagrams: Record<string, { kind: LearningGeometryKind; label: string }> = {
+  Now: { kind: 'framework', label: 'UNDERSTAND' },
+  Recently: { kind: 'assembly', label: 'BUILD' },
+  Next: { kind: 'experiment', label: 'EXPLORE' },
 }
 
 export function Timeline() {
@@ -35,87 +16,34 @@ export function Timeline() {
       title={<>学到这里，<em>然后呢？</em></>}
       description="把理解带进实践，再带着新的问题回来。下一页，从这些小计划开始。"
     >
-      <div className="timeline-shell">
-        <div
-          aria-hidden="true"
-          className="timeline-line"
-        />
-        <motion.ol className="timeline-list">
-          {timelineItems.map((item, index) => {
-            const rowTransition = getTimelineTransition(index)
-            const fadeTransition = getTimelineTransition(index, 0.36)
-
-            return (
-              <motion.li
-                className="timeline-row"
-                initial={timelineRowHidden}
-                key={item.period}
-                transition={rowTransition}
-                viewport={viewportOnce}
-                whileInView={timelineRowVisible}
-              >
-                <motion.div
-                  className="timeline-time"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
-                >
-                  <p className="meta-label">
-                    {item.period}
-                  </p>
-                  <p className="timeline-index">
-                    {String(index + 1).padStart(2, '0')}
-                  </p>
-                </motion.div>
-
-                <motion.span
-                  aria-hidden="true"
-                  className="timeline-dot"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
-                />
-
-                <motion.article
-                  className="timeline-card glass-card interactive-card"
-                  initial={timelineFadeHidden}
-                  transition={fadeTransition}
-                  viewport={viewportOnce}
-                  whileInView={timelineFadeVisible}
-                >
-                  <h3 className="card-title text-lg sm:text-xl">
-                    {item.title}
-                  </h3>
-                  <div className="timeline-tag-list">
-                    {item.tags.map((tag) => (
-                      <span
-                        className="timeline-tag"
-                        key={tag}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="card-copy mt-3 text-sm leading-7 md:text-base">
-                    {item.description}
-                  </p>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {item.points.map((point) => (
-                      <span
-                        className="tag-pill"
-                        key={point}
-                      >
-                        {point}
-                      </span>
-                    ))}
-                  </div>
-                </motion.article>
-              </motion.li>
-            )
-          })}
-        </motion.ol>
+      <ol className="timeline-list">
+        {timelineItems.map((item, index) => (
+          <li className="timeline-row learning-blueprint-panel" key={item.period}>
+            <div className="timeline-time learning-panel-meta">
+              <p className="meta-label">{item.period} <span>/ {stageDiagrams[item.period]?.label}</span></p>
+              <span className="learning-panel-number">[{String(index + 1).padStart(2, '0')}]</span>
+            </div>
+            <article className="timeline-card">
+              <LearningGeometry kind={stageDiagrams[item.period]?.kind ?? 'experiment'} />
+              <div className="timeline-card-content">
+                <h3 className="card-title text-lg sm:text-xl">{item.title}</h3>
+                <div className="timeline-tag-list">
+                  {item.tags.map(tag => <span className="timeline-tag" key={tag}>{tag}</span>)}
+                </div>
+                <p className="card-copy mt-3 text-sm leading-7 md:text-base">{item.description}</p>
+                <ul className="timeline-points">
+                  {item.points.map(point => <li key={point}>{point}</li>)}
+                </ul>
+              </div>
+            </article>
+          </li>
+        ))}
+      </ol>
+      <div className="learning-blueprint-ruler" aria-hidden="true"><span>理解 → 实践 → 再探索</span><span>01 — 03</span></div>
+      <div className="learning-loop-note">
+        <span aria-hidden="true">↺</span>
+        <p>理解 · 实践 · 记录，再带着问题出发。</p>
+        <a href="#notes">回到学习笔记 <span aria-hidden="true">↗</span></a>
       </div>
     </PageSection>
   )
