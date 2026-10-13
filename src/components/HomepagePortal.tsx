@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type TouchEvent, type TransitionEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type AnimationEvent, type CSSProperties, type TouchEvent } from 'react'
 import { homepageTransitionTiming, type HomepageTransitionPhase } from '../lib/homepage-transition'
 import { HomepageHub } from './HomepageHub'
 import { LaunchIntro } from './LaunchIntro'
@@ -6,28 +6,43 @@ import { TransitionWipeOverlay } from './TransitionWipeOverlay'
 
 export function HomepagePortal() {
   const [phase, setPhase] = useState<HomepageTransitionPhase>('intro')
-  const [hubRevealed, setHubRevealed] = useState(false)
   const hasEntered = useRef(false)
-  const trackRef = useRef<HTMLDivElement>(null)
+  const portalRef = useRef<HTMLDivElement>(null)
   const hubRef = useRef<HTMLDivElement>(null)
   const touchStart = useRef<{ identifier: number; x: number; y: number } | null>(null)
 
   const enter = useCallback(() => {
     if (hasEntered.current) return
     hasEntered.current = true
-    // Establish the initial position even when input arrives before the first paint.
-    trackRef.current?.getBoundingClientRect()
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion) setHubRevealed(true)
     setPhase(reducedMotion ? 'hub' : 'pushing')
   }, [])
+
+  const complete = useCallback(() => {
+    setPhase('hub')
+  }, [])
+
+  useEffect(() => {
+    if (phase !== 'pushing') return
+    const intro = portalRef.current?.querySelector('.homepage-portal-intro')
+    const cancelPush = afterAnimationTime(intro, 'portal-screen-push', homepageTransitionTiming.pushDurationMs, () => {
+      setPhase((current) => current === 'pushing' ? 'settling' : current)
+    }, homepageTransitionTiming.pushDurationMs + homepageTransitionTiming.completionGraceMs)
+    return cancelPush
+  }, [phase])
+
+  useEffect(() => {
+    if (phase !== 'settling') return
+    return afterAnimationTime(portalRef.current?.querySelector('.transition-wipe-overlay'),
+      'portal-wave-exit', homepageTransitionTiming.waveDurationMs, complete, homepageTransitionTiming.waveDurationMs
+      - homepageTransitionTiming.pushDurationMs + homepageTransitionTiming.completionGraceMs)
+  }, [complete, phase])
 
   useEffect(() => {
     document.body.classList.add('homepage-portal-active')
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const handleMotionChange = () => {
       if (motionPreference.matches && hasEntered.current) {
-        setHubRevealed(true)
         setPhase('hub')
       }
     }
@@ -83,46 +98,60 @@ export function HomepagePortal() {
     if (deltaY >= 50 && deltaY > Math.abs(deltaX)) enter()
   }
 
-  const handlePushEnd = (event: TransitionEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget && event.propertyName === 'transform' && phase === 'pushing') {
-      // The hub is already in place behind the wave. Start its staggered
-      // reveal as soon as the wave begins shrinking away.
-      setHubRevealed(true)
+  const handlePushEnd = (event: AnimationEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget && event.animationName === 'portal-screen-push' && phase === 'pushing') {
       setPhase('settling')
     }
   }
 
   const style = {
     '--portal-push-duration': `${homepageTransitionTiming.pushDurationMs}ms`,
-    '--portal-wave-push-duration': `${homepageTransitionTiming.pushDurationMs}ms`,
-    '--portal-wave-exit-duration': `${homepageTransitionTiming.waveExitDurationMs}ms`,
-    '--portal-push-easing': homepageTransitionTiming.easing,
+    '--portal-wave-duration': `${homepageTransitionTiming.waveDurationMs}ms`,
+    '--portal-reveal-delay': `${homepageTransitionTiming.revealDelayMs}ms`,
   } as CSSProperties
 
   return (
-    <div className="homepage-portal" data-phase={phase} style={style}>
-      {/* Both screens share one transform. Their common edge cannot drift apart. */}
-      <div className="homepage-portal-track" onTransitionEnd={handlePushEnd} ref={trackRef}>
+    <div className="homepage-portal" data-phase={phase} ref={portalRef} style={style}>
+      <div className="homepage-portal-track">
         {phase !== 'hub' && (
           <div
             className="homepage-portal-intro"
             inert={phase !== 'intro'}
+            onAnimationEnd={handlePushEnd}
             onTouchCancel={() => { touchStart.current = null }}
             onTouchEnd={handleTouchEnd}
             onTouchStart={handleTouchStart}
           >
-            <LaunchIntro onEnter={enter} />
+            <LaunchIntro active={phase === 'intro'} onEnter={enter} />
           </div>
         )}
         <div className="homepage-portal-hub" inert={phase !== 'hub'} ref={hubRef} tabIndex={-1}>
-          <HomepageHub active={phase !== 'intro'} revealed={hubRevealed} />
+          <HomepageHub active={phase === 'hub'} revealed={phase !== 'intro'} />
         </div>
       </div>
       {phase !== 'hub' && (
         <div className="homepage-portal-wave">
-          <TransitionWipeOverlay onComplete={() => setPhase('hub')} phase={phase} />
+          <TransitionWipeOverlay onComplete={complete} />
         </div>
       )}
     </div>
   )
+}
+
+// A cold first paint can start CSS animations later than the input event.
+// Check the browser's animation clock so a watchdog never cuts a slow start short.
+function afterAnimationTime(element: Element | null | undefined, name: string, time: number,
+  callback: () => void, initialDelay = time) {
+  let timer = 0
+  const check = () => {
+    const animation = element?.getAnimations().find(item => 'animationName' in item && item.animationName === name)
+    const elapsed = typeof animation?.currentTime === 'number' ? animation.currentTime : 0
+    if (animation && elapsed < time) {
+      timer = window.setTimeout(check, Math.max(16, time - elapsed))
+    } else {
+      callback()
+    }
+  }
+  timer = window.setTimeout(check, initialDelay)
+  return () => window.clearTimeout(timer)
 }

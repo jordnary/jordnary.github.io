@@ -4916,20 +4916,15 @@ a {
     color-scheme: dark;
   }
 
-  body.homepage-portal-active {
-    overflow: hidden;
-  }
+  body.homepage-portal-active { overflow: hidden; }
 
   .homepage-portal-track {
     position: absolute;
     inset: 0;
-    transform: translate3d(0, 0, 0);
-    transition: transform var(--portal-push-duration) var(--portal-push-easing);
-    will-change: transform;
   }
 
-  .homepage-portal:not([data-phase="intro"]) .homepage-portal-track {
-    transform: translate3d(0, -100%, 0);
+  .homepage-portal:is([data-phase="pushing"], [data-phase="settling"]) .homepage-portal-intro {
+    animation: portal-screen-push var(--portal-push-duration) linear both;
   }
 
   .homepage-portal-intro,
@@ -4942,63 +4937,132 @@ a {
 
   .homepage-portal-intro {
     top: 0;
-    /* Handle intro swipes here while preserving browser pinch zoom. */
+    z-index: 4;
+    contain: paint;
+    will-change: transform;
     touch-action: pinch-zoom;
   }
+
   .homepage-portal-hub {
-    top: 100%;
+    top: 0;
+    transform: translate3d(0, 128%, 0);
     overflow-x: hidden;
     overflow-y: auto;
     background: #030303;
     outline: none;
     overscroll-behavior: contain;
   }
-  /* Keep the wave independent from the shared screen track so it is already
-     moving into view when the push starts. */
+
+  /* The wave keeps travelling after the first screen has left. */
   .homepage-portal-wave {
-    inset: 0;
+    top: 0;
     z-index: 3;
     pointer-events: none;
   }
 
-  .homepage-portal[data-phase="hub"] .homepage-portal-track { transition: none; will-change: auto; }
+  .homepage-portal[data-phase="hub"] .homepage-portal-hub {
+    transform: none;
+  }
+
+  .homepage-portal:not([data-phase="hub"]) .homepage-portal-hub {
+    will-change: transform;
+  }
 
   .transition-wipe-overlay {
     position: absolute;
     inset: 0;
-    /* The long wave needs a full-height stage while it stretches.  Keeping
-       this at half-height clips the expanded path before it can cover the
-       screen during the push. */
-    height: 100%;
-    overflow: hidden;
-    pointer-events: none;
     transform: translate3d(0, 100%, 0);
-    transition: transform var(--portal-wave-push-duration) var(--portal-push-easing);
     will-change: transform;
   }
 
-  .homepage-portal[data-phase="pushing"] .transition-wipe-overlay {
-    transform: translate3d(0, 0, 0);
+  .transition-wipe-shape {
+    position: absolute;
+    inset: 0;
+    transform: scaleY(0.025);
+    transform-origin: 50% 0;
+    will-change: transform;
   }
 
-  .homepage-portal[data-phase="settling"] .transition-wipe-overlay {
-    transform: translate3d(0, -100%, 0);
-    transition-duration: var(--portal-wave-exit-duration);
-  }
-
-  .transition-wipe-overlay svg {
+  .transition-wipe-shape svg {
+    display: block;
     width: 100%;
     height: 100%;
-    display: block;
     overflow: visible;
-    transform-origin: 50% 0%;
-    will-change: transform;
   }
 
-  .transition-wipe-overlay path {
-    fill: url(#transition-surface);
-    stroke: rgb(255 255 255 / 0.08);
-    stroke-width: 1;
+  .transition-wipe-overlay path { fill: #141414; }
+
+  .homepage-portal:is([data-phase="pushing"], [data-phase="settling"]) .transition-wipe-overlay {
+    animation: portal-wave-exit var(--portal-wave-duration) linear both;
+  }
+
+  .homepage-portal:is([data-phase="pushing"], [data-phase="settling"]) .transition-wipe-shape {
+    animation: portal-wave-stretch var(--portal-wave-duration) linear both;
+  }
+
+  /* Sampled from the reference at 0.1-second intervals. All movement is
+     transform-only; the silhouette is painted once, not morphed per frame. */
+  @keyframes portal-screen-push {
+    0% { transform: translate3d(0, 0, 0); }
+    18.182% { transform: translate3d(0, -3.6%, 0); }
+    36.364% { transform: translate3d(0, -19.5%, 0); }
+    54.545% { transform: translate3d(0, -42.8%, 0); }
+    72.727% { transform: translate3d(0, -65.7%, 0); }
+    90.909% { transform: translate3d(0, -92.8%, 0); }
+    100% { transform: translate3d(0, -100%, 0); }
+  }
+
+  @keyframes portal-wave-exit {
+    0% { transform: translate3d(0, 100%, 0); }
+    11.111% { transform: translate3d(0, 96.4%, 0); }
+    22.222% { transform: translate3d(0, 81.48%, 0); }
+    33.333% { transform: translate3d(0, 58.76%, 0); }
+    44.444% { transform: translate3d(0, 35.85%, 0); }
+    55.556% { transform: translate3d(0, 8.79%, 0); }
+    66.667% { transform: translate3d(0, -25%, 0); }
+    77.778% { transform: translate3d(0, -49%, 0); }
+    88.889% { transform: translate3d(0, -77.18%, 0); }
+    100% { transform: translate3d(0, -105%, 0); }
+  }
+
+  @keyframes portal-wave-stretch {
+    0% { transform: scaleY(0.025); }
+    11.111% { transform: scaleY(0.1); }
+    22.222% { transform: scaleY(0.3451); }
+    33.333% { transform: scaleY(0.5885); }
+    44.444% { transform: scaleY(0.8541); }
+    55.556% { transform: scaleY(1.2143); }
+    66.667% { transform: scaleY(1.2914); }
+    77.778% { transform: scaleY(1.2077); }
+    88.889% { transform: scaleY(1.159); }
+    100% { transform: scaleY(1.1); }
+  }
+
+  .homepage-portal:is([data-phase="pushing"], [data-phase="settling"]) .homepage-portal-hub {
+    animation: portal-hub-arrive var(--portal-wave-duration) linear both;
+  }
+
+  @keyframes portal-hub-arrive {
+    0% { transform: translate3d(0, 128%, 0); }
+    11.111% { transform: translate3d(0, 124.4%, 0); }
+    22.222% { transform: translate3d(0, 108.5%, 0); }
+    33.333% { transform: translate3d(0, 85.2%, 0); }
+    44.444% { transform: translate3d(0, 62.3%, 0); }
+    55.556% { transform: translate3d(0, 23.2%, 0); }
+    66.667% { transform: translate3d(0, 8%, 0); }
+    77.778% { transform: translate3d(0, 3%, 0); }
+    88.889% { transform: translate3d(0, 0.5%, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+  }
+
+  /* Freeze the painted scene while leaving or while the tab is hidden. */
+  .homepage-portal:not([data-phase="intro"]) .launch-intro *,
+  .homepage-portal:not([data-phase="intro"]) .launch-intro *::before,
+  .homepage-portal:not([data-phase="intro"]) .launch-intro *::after,
+  .launch-intro[data-running="false"] *,
+  .launch-intro[data-running="false"] *::before,
+  .launch-intro[data-running="false"] *::after {
+    animation-play-state: paused;
   }
 
   .launch-intro {
@@ -5058,6 +5122,7 @@ a {
     filter: blur(28px) saturate(1.6);
     mix-blend-mode: screen;
     border-radius: 48% 52% 63% 37% / 38% 44% 56% 62%;
+    will-change: transform;
     animation: launch-fluid-drift 12s ease-in-out infinite alternate;
   }
 
@@ -5082,22 +5147,18 @@ a {
     aspect-ratio: 1;
     border-radius: 50%;
     pointer-events: none;
-    offset-path: ellipse(50% 50% at 50% 50%);
-    offset-rotate: 0deg;
-    will-change: offset-distance;
+    will-change: transform;
   }
   .launch-intro-planet-one {
     width: clamp(0.45rem, 0.9vw, 0.72rem);
     background: radial-gradient(circle at 34% 30%, #fff 0 12%, #a5f3fc 34%, #22d3ee 68%, transparent 100%);
     box-shadow: 0 0 0.45rem rgb(165 243 252 / 0.9), 0 0 1.2rem rgb(34 211 238 / 0.72);
-    offset-distance: 12%;
   }
   .launch-intro-orbit-two { width: min(48vw, 38rem); height: min(21vw, 16rem); opacity: 0.6; transform: rotate(22deg); animation: launch-orbit-two 11s ease-in-out infinite alternate; }
   .launch-intro-planet-two {
     width: clamp(0.4rem, 0.78vw, 0.62rem);
     background: radial-gradient(circle at 34% 30%, #fff 0 12%, #fde68a 34%, #f59e0b 68%, transparent 100%);
     box-shadow: 0 0 0.45rem rgb(253 230 138 / 0.95), 0 0 1.2rem rgb(245 158 11 / 0.78);
-    offset-distance: 58%;
   }
 
   .launch-intro-core {
@@ -5141,10 +5202,10 @@ a {
   .launch-intro-footer a { color: inherit; transition: color 180ms ease; }
   .launch-intro-footer a:hover { color: #fff; }
   .launch-intro-kicker { margin: 0; color: rgb(165 243 252 / 0.6); font-size: clamp(0.58rem, 1.1vw, 0.72rem); font-weight: 600; letter-spacing: 0.38em; }
-  .launch-intro h1 { margin: 1.4rem 0 1.1rem; color: #f5f7f8; font-size: clamp(3.5rem, 11vw, 8.5rem); font-weight: 300; letter-spacing: -0.075em; line-height: 0.9; animation: white-shadow 1.5s ease-in-out infinite alternate; }
+  .launch-intro h1 { margin: 1.4rem 0 1.1rem; color: #f5f7f8; font-size: clamp(3.5rem, 11vw, 8.5rem); font-weight: 300; letter-spacing: -0.075em; line-height: 0.9; text-shadow: 0 0 1px #fff, 0 0 3px #fff, 0 0 7px #333, 0 0 14px #333; animation: launch-title-glow 1.5s ease-in-out infinite alternate; }
   .launch-intro h1 span { color: var(--color-primary-cyan); padding-inline: 0.08em; text-shadow: 0 0 24px rgb(103 232 249 / 0.75); }
   .launch-intro-description { color: rgb(226 232 240 / 0.62); font-size: clamp(0.92rem, 1.8vw, 1.18rem); letter-spacing: 0.05em; line-height: 1.8; }
-  .launch-intro-description span { display: inline-block; white-space: pre; animation: letter-glow 0.7s ease both; }
+  .launch-intro-description span { display: inline-block; white-space: pre; text-shadow: 0 0 14px rgb(255 255 255 / 0.2); animation: letter-glow 0.7s ease both; }
   .launch-intro-description span:nth-child(1) { animation-delay: 0.05s; }
   .launch-intro-description span:nth-child(2) { animation-delay: 0.1s; }
   .launch-intro-description span:nth-child(3) { animation-delay: 0.15s; }
@@ -5164,7 +5225,7 @@ a {
   .launch-intro-enter { display: inline-flex; align-items: center; gap: 1.1rem; margin-top: 1.7rem; padding: 0.45rem 0.7rem; color: rgb(226 232 240 / 0.56); border: 0; border-radius: 0.15rem; background: transparent; cursor: pointer; transition: transform 220ms ease, color 220ms ease, text-shadow 220ms ease; }
   .launch-intro-enter:hover { transform: translateY(-2px); color: #f8fafc; text-shadow: 0 0 16px rgb(255 255 255 / 0.5); }
   .launch-intro-enter:focus-visible { outline: 1px solid rgb(165 243 252 / 0.6); outline-offset: 0.3rem; }
-  .launch-intro-enter-label { font-size: 0.78rem; font-weight: 400; letter-spacing: 0.34em; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.82), transparent); background-size: 200% 100%; background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 2s linear infinite; }
+  .launch-intro-enter-label { font-size: 0.78rem; font-weight: 400; letter-spacing: 0.34em; color: rgb(255 255 255 / 0.82); text-shadow: 0 0 14px rgb(255 255 255 / 0.4); animation: launch-enter-glow 2s ease-in-out infinite; }
   .launch-intro-enter-key { color: rgb(165 243 252 / 0.48); font-size: 0.68rem; letter-spacing: 0.12em; }
 
   .launch-intro-scroll { position: absolute; left: 50%; top: 50%; width: 2.5rem; height: 2.5rem; justify-content: center; border: 0; background: transparent; cursor: pointer; transform: translate(-50%, -50%); }
@@ -5176,16 +5237,16 @@ a {
 
   @keyframes launch-intro-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 
-  @keyframes white-shadow { from { text-shadow: 0 0 1px #fff, 0 0 3px #fff, 0 0 7px #333, 0 0 14px #333; } to { text-shadow: 0 0 0.5px #fff, 0 0 1.5px #fff, 0 0 4px #333, 0 0 9px #333; } }
-  @keyframes letter-glow { 0% { opacity: 0; text-shadow: 0 0 1px rgb(255 255 255 / 0.1); } 66% { opacity: 1; text-shadow: 0 0 18px rgb(255 255 255 / 0.82); } 100% { opacity: 0.7; text-shadow: 0 0 14px rgb(255 255 255 / 0.2); } }
+  @keyframes launch-title-glow { from { opacity: 1; } to { opacity: 0.88; } }
+  @keyframes letter-glow { 0% { opacity: 0; } 66% { opacity: 1; } 100% { opacity: 0.7; } }
   @keyframes launch-orbit { from { transform: rotate(-24deg) translate(-2%, -1%); } to { transform: rotate(-18deg) translate(2%, 2%); } }
   @keyframes launch-orbit-two { from { transform: rotate(22deg) translate(2%, 1%); } to { transform: rotate(30deg) translate(-2%, -2%); } }
-  @keyframes launch-core-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 130px rgb(34 211 238 / 0.3), inset 0 0 60px rgb(103 232 249 / 0.18); } }
+  @keyframes launch-core-pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.06); opacity: 1; } }
   @keyframes launch-spin { to { transform: rotate(360deg); } }
   @keyframes launch-dot { 50% { transform: scale(1.5); opacity: 0.7; } }
-  @keyframes shimmer { 0% { background-position: 200% center; text-shadow: 0 0 10px rgb(255 255 255 / 0.3); } 50% { text-shadow: 0 0 20px rgb(255 255 255 / 0.6); } 100% { background-position: -200% center; text-shadow: 0 0 10px rgb(255 255 255 / 0.3); } }
+  @keyframes launch-enter-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
   @keyframes launch-chevron { 0%, 100% { opacity: 0.25; transform: translateY(-0.14rem) rotate(45deg); } 50% { opacity: 0.95; transform: translateY(0.16rem) rotate(45deg); } }
-  @keyframes launch-fluid-drift { from { border-radius: 48% 52% 63% 37% / 38% 44% 56% 62%; transform: translate3d(-3%, 2%, 0) rotate(-18deg) scale(1); } to { border-radius: 63% 37% 42% 58% / 54% 64% 36% 46%; transform: translate3d(5%, -4%, 0) rotate(14deg) scale(1.12); } }
+  @keyframes launch-fluid-drift { from { transform: translate3d(-3%, 2%, 0) rotate(-18deg) scale(1); } to { transform: translate3d(5%, -4%, 0) rotate(14deg) scale(1.12); } }
 
   @media (max-width: 640px) {
     .launch-intro-topline, .launch-intro-footer { font-size: 0.52rem; letter-spacing: 0.12em; }
@@ -5202,9 +5263,8 @@ a {
 
 @layer components {
   @keyframes homepage-hub-item-reveal {
-    0% { opacity: 0; transform: translate3d(0, 1.5rem, 0) scale(0.96); filter: blur(8px); }
-    60% { opacity: 1; filter: blur(0); }
-    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+    0% { opacity: 0; transform: translate3d(0, 1.5rem, 0) scale(0.96); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
   }
 
   .homepage-hub {
@@ -5295,20 +5355,31 @@ a {
   .homepage-hub-github,
   .homepage-hub-status { position: relative; z-index: 2; }
   .homepage-hub-reveal-item {
+    --hub-reveal-stagger: 0ms;
+    --hub-reveal-delay: calc(var(--portal-reveal-delay, 400ms) + var(--hub-reveal-stagger));
     opacity: 0;
     transform: translate3d(0, 1.5rem, 0) scale(0.96);
-    filter: blur(8px);
   }
   .homepage-hub[data-revealed="true"] .homepage-hub-reveal-item {
-    animation: homepage-hub-item-reveal 360ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    /* Start with the wave, stagger the entrances, and share its finish time. */
+    animation: homepage-hub-item-reveal
+      calc(var(--portal-wave-duration, 900ms) - var(--hub-reveal-delay))
+      cubic-bezier(0.33, 0, 0.67, 1) var(--hub-reveal-delay) both;
   }
-  .homepage-hub[data-revealed="true"] .homepage-hub-avatar { animation-delay: 0ms; }
-  .homepage-hub[data-revealed="true"] .homepage-hub-kicker { animation-delay: 35ms; }
-  .homepage-hub[data-revealed="true"] h1 { animation-delay: 60ms; }
-  .homepage-hub[data-revealed="true"] .homepage-hub-tagline { animation-delay: 90ms; }
-  .homepage-hub[data-revealed="true"] .homepage-hub-nav { animation-delay: 125ms; }
-  .homepage-hub[data-revealed="true"] .homepage-hub-github { animation-delay: 50ms; }
-  .homepage-hub[data-revealed="true"] .homepage-hub-status { animation-delay: 170ms; }
+  .homepage-hub[data-revealed="true"][data-background-active="false"] .homepage-hub-reveal-item {
+    will-change: transform, opacity;
+  }
+  .homepage-hub[data-background-active="true"] .homepage-hub-reveal-item {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .homepage-hub-kicker { --hub-reveal-stagger: 35ms; }
+  .homepage-hub h1 { --hub-reveal-stagger: 60ms; }
+  .homepage-hub-tagline { --hub-reveal-stagger: 90ms; }
+  .homepage-hub-nav { --hub-reveal-stagger: 125ms; }
+  .homepage-hub-github { --hub-reveal-stagger: 50ms; }
+  .homepage-hub-status { --hub-reveal-stagger: 170ms; }
   .homepage-hub-content { width: min(100% - 2rem, 54rem); margin-top: 2rem; text-align: center; }
   .homepage-hub-avatar { display: grid; width: clamp(5rem, 11vw, 7.5rem); aspect-ratio: 1; place-items: center; margin-inline: auto; overflow: hidden; border: 1px solid rgb(248 250 252 / 0.72); border-radius: 50%; color: #e0f2fe; background: radial-gradient(circle at 32% 22%, rgb(255 255 255 / 0.34), transparent 16%), linear-gradient(135deg, #0e7490, #312e81 72%); box-shadow: 0 0 0 0.35rem rgb(103 232 249 / 0.08), 0 0 44px rgb(34 211 238 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.4); font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 300; letter-spacing: -0.1em; }
   .homepage-hub-avatar img { width: 100%; height: 100%; object-fit: cover; }

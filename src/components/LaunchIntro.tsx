@@ -1,38 +1,70 @@
 import { useEffect, useRef } from 'react'
 
-export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
+export function LaunchIntro({ active = true, onEnter }: { active?: boolean; onEnter: () => void }) {
+  const introRef = useRef<HTMLDivElement>(null)
   const firstPlanetRef = useRef<HTMLSpanElement>(null)
   const secondPlanetRef = useRef<HTMLSpanElement>(null)
+  const syncPlaybackRef = useRef<() => void>(() => {})
 
   useEffect(() => {
-    const firstPlanet = firstPlanetRef.current
-    const secondPlanet = secondPlanetRef.current
-    if (!firstPlanet || !secondPlanet || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const intro = introRef.current
+    const planets = [firstPlanetRef.current, secondPlanetRef.current]
+    if (!intro || planets.some(planet => !planet)) return
 
-    const speeds = [1 / 9000, -1 / 12000]
-    let progress = [0.12, 0.58]
-    let lastTime = performance.now()
-    let frame = 0
-
-    const animate = (time: number) => {
-      const delta = Math.min(40, Math.max(0, time - lastTime))
-      lastTime = time
-
-      progress = progress.map((value, index) => (value + speeds[index] * delta + 1) % 1)
-      firstPlanet.style.setProperty('offset-distance', `${progress[0] * 100}%`)
-      secondPlanet.style.setProperty('offset-distance', `${progress[1] * 100}%`)
-      frame = requestAnimationFrame(animate)
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const animations: Array<Animation | undefined> = []
+    const syncPlayback = () => {
+      const running = intro.dataset.active === 'true' && !document.hidden && !motionPreference.matches
+      intro.dataset.running = String(running)
+      for (const animation of animations) {
+        if (running) animation?.play()
+        else animation?.pause()
+      }
     }
+    syncPlaybackRef.current = syncPlayback
 
-    frame = requestAnimationFrame(animate)
-    return () => cancelAnimationFrame(frame)
+    // Rebuild only when an orbit changes size. The browser interpolates the
+    // transform keyframes on the compositor without per-frame DOM writes.
+    const resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+        const index = planets.findIndex(planet => planet?.parentElement === entry.target)
+        const planet = planets[index]
+        if (!planet) return
+        const duration = index === 0 ? 9000 : 12000
+        const currentTime = animations[index]?.currentTime ?? duration * (index === 0 ? 0.12 : 0.42)
+        animations[index]?.cancel()
+        const animation = planet.animate(orbitKeyframes(entry.contentRect.width, entry.contentRect.height), {
+          duration, iterations: Infinity, easing: 'linear', direction: index === 0 ? 'normal' : 'reverse',
+        })
+        animation.currentTime = currentTime
+        animations[index] = animation
+      })
+      syncPlayback()
+    })
+    planets.forEach(planet => { if (planet?.parentElement) resizeObserver.observe(planet.parentElement) })
+    document.addEventListener('visibilitychange', syncPlayback)
+    motionPreference.addEventListener('change', syncPlayback)
+    syncPlayback()
+    return () => {
+      resizeObserver.disconnect()
+      animations.forEach(animation => animation?.cancel())
+      document.removeEventListener('visibilitychange', syncPlayback)
+      motionPreference.removeEventListener('change', syncPlayback)
+      syncPlaybackRef.current = () => {}
+    }
   }, [])
+
+  useEffect(() => {
+    syncPlaybackRef.current()
+  }, [active])
 
   return (
     <div
       aria-labelledby="launch-intro-title"
       aria-modal="true"
       className="launch-intro"
+      data-active={active}
+      ref={introRef}
       role="dialog"
     >
       <div className="launch-intro-noise" aria-hidden="true" />
@@ -83,4 +115,21 @@ export function LaunchIntro({ onEnter }: { onEnter: () => void }) {
       </div>
     </div>
   )
+}
+
+function orbitKeyframes(width: number, height: number): Keyframe[] {
+  let distance = 0
+  const points = Array.from({ length: 121 }, (_, index) => {
+    const angle = index / 120 * Math.PI * 2
+    return { x: width / 2 * (1 + Math.cos(angle)), y: height / 2 * (1 + Math.sin(angle)), distance: 0 }
+  })
+  points.forEach((point, index) => {
+    if (index > 0) distance += Math.hypot(point.x - points[index - 1].x, point.y - points[index - 1].y)
+    point.distance = distance
+  })
+  // Arc-length offsets preserve a constant orbital speed on an ellipse.
+  return points.map((point, index) => ({
+    offset: distance ? point.distance / distance : index / 120,
+    transform: `translate3d(${point.x}px, ${point.y}px, 0) translate(-50%, -50%)`,
+  }))
 }

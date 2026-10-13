@@ -35,24 +35,8 @@ const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
 
 export function HomepageHub({ active = true, revealed = true }: { active?: boolean; revealed?: boolean }) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [backgroundActive, setBackgroundActive] = useState(false)
-
-  useEffect(() => {
-    if (!active) return
-
-    // Wait until the last foreground item (status, 170ms delay + 360ms
-    // animation) has settled before starting the grid, blocks and trail.
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reducedMotion || !revealed) {
-      if (reducedMotion && revealed) {
-        const timer = window.setTimeout(() => setBackgroundActive(true), 0)
-        return () => window.clearTimeout(timer)
-      }
-      return
-    }
-    const timer = window.setTimeout(() => setBackgroundActive(true), 560)
-    return () => window.clearTimeout(timer)
-  }, [active, revealed])
+  // The foreground and wave finish together; start the background on that commit.
+  const backgroundActive = active && revealed
 
   useEffect(() => {
     let active = true
