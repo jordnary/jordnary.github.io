@@ -309,8 +309,8 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       return {
         start: copy.top + scrollY - innerHeight * 0.82,
         travel: copy.height * 0.5 + innerHeight * 0.22,
-        artStart: art.top + scrollY - innerHeight * 0.82,
-        end: art.bottom + scrollY - innerHeight * 0.72,
+        artStart: art.top + scrollY - innerHeight * 0.65,
+        end: art.bottom + scrollY - innerHeight * 0.55,
       }
     })
     const heroState = () => story.evaluate(element => ({
@@ -342,10 +342,10 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-character')).opacity) < 0.25)
     const sketch = await heroState()
     await page.mouse.move(900, 400)
-    await page.mouse.wheel(0, Math.round(heroRange.travel * 0.3))
+    await page.mouse.wheel(0, Math.round(heroRange.travel * 0.75))
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-character')).opacity) > 0.99)
     const developing = await heroState()
-    assert.ok(developing.y > sketch.y + heroRange.travel * 0.25)
+    assert.ok(developing.y > sketch.y + heroRange.travel * 0.7)
     assertNormalHeroFlow(sketch, developing)
     assert.notEqual(developing.transform, sketch.transform)
     assert.equal(developing.mask, sketch.mask)

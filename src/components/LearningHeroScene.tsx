@@ -169,7 +169,9 @@ export function LearningHeroScene() {
   const artRef = useRef<HTMLDivElement>(null)
   const narrativeRef = useRef<HTMLDivElement>(null)
   const staticScene = useSyncExternalStore(subscribeMotionPreference, () => window.matchMedia(reducedMotionQuery).matches, () => true)
-  const { scrollYProgress } = useScroll({ target: artRef, offset: ['start 82%', 'end 72%'] })
+  // Shift both ends equally so the tower starts alongside the third-to-last
+  // text line while retaining its original scroll distance and reveal speed.
+  const { scrollYProgress } = useScroll({ target: artRef, offset: ['start 65%', 'end 55%'] })
   const { scrollYProgress: textProgress } = useScroll({ target: narrativeRef, offset: ['start 82%', 'center 60%'] })
   // Opposing transforms keep the architecture still. The erosion phase follows
   // scroll position, so stopping freezes the edge and scrolling back retraces it.
