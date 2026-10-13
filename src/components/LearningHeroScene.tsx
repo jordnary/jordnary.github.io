@@ -2,9 +2,14 @@ import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } 
 import { motion, useScroll, useTransform, type MotionStyle, type MotionValue } from 'motion/react'
 import { LearningCoverOutline } from './LearningCoverOutline'
 import { LearningToolkit } from './LearningToolkit'
+import { LearningPixelFill } from './LearningPixelFill'
+import { LearningPixelArrow } from './LearningPixelArrow'
+import { LearningPixelLabel } from './LearningPixelLabel'
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 const imageRoot = `${import.meta.env.BASE_URL}images/learning/`
+const learningStatement = '从一个问题出发，拆开复杂的概念，用代码验证猜想。在阅读与实践之间，连接零散的线索。把每一次尝试写进笔记，让新的发现慢慢长成自己的理解。'
+const learningCharacters = Array.from(learningStatement)
 
 function subscribeMotionPreference(callback: () => void) {
   const media = window.matchMedia(reducedMotionQuery)
@@ -12,9 +17,10 @@ function subscribeMotionPreference(callback: () => void) {
   return () => media.removeEventListener('change', callback)
 }
 
-function InkLine({ children, index, progress, staticScene }: { children: string; index: number; progress: MotionValue<number>; staticScene: boolean }) {
-  const opacity = useTransform(progress, [0.04 + index * 0.11, 0.24 + index * 0.11], [0.2, 1])
-  return <motion.span className="learning-ink-line" style={{ opacity: staticScene ? 1 : opacity }}>{children}</motion.span>
+function InkCharacter({ children, index, progress, staticScene }: { children: string; index: number; progress: MotionValue<number>; staticScene: boolean }) {
+  const start = 0.04 + index / Math.max(1, learningCharacters.length - 1) * 0.7
+  const opacity = useTransform(progress, [start, start + 0.2], [0.2, 1])
+  return <motion.span className="learning-ink-character" aria-hidden="true" style={{ opacity: staticScene ? 1 : opacity }}>{children}</motion.span>
 }
 
 function DrawingGuides() {
@@ -173,66 +179,80 @@ export function LearningHeroScene() {
   const outlineOpacity = useTransform(scrollYProgress, [0, 0.88, 1], [1, 1, 0])
   const signalOpacity = useTransform(scrollYProgress, [0.06, 0.3], [0, 0.86])
   const sunOpacity = useTransform(scrollYProgress, [0.04, 0.52], [0, 0.94])
-  const detailOpacity = useTransform(textProgress, [0.35, 0.8], [0.35, 1])
 
   return (
     <>
       <LearningCover staticScene={staticScene} />
 
-      <div className="learning-cover-heading">
-        <div className="learning-cover-title"><p>STAY CURIOUS. KEEP BUILDING.</p><h1>把好奇，<br />变成<em>理解。</em><span aria-hidden="true">↘</span></h1></div>
-        <div className="learning-cover-intro">
-          <span className="learning-intro-index">学 / 习 / 手 / 记</span>
-          <p className="learning-cover-copy">拆开复杂的概念，连接零散的线索。<br />从计算机基础到机器学习，<br />在每一次动手里，让知识成为自己的。</p>
-          <a className="learning-cover-link" href="#notes">翻开学习笔记 <span aria-hidden="true">↗</span></a>
-          <div className="learning-cover-topics"><span>01 / 基础</span><span>02 / 智能</span><span>03 / 实践</span></div>
-        </div>
-      </div>
-
-      <section className="learning-hero-story" data-static={staticScene} aria-labelledby="learning-hero-story-title">
-        <figure className="learning-hero-scene">
-          <div className="learning-hero-scene-meta"><span>01 / A CLOSER LOOK</span><span>从线索到理解</span></div>
-          <div className="learning-ink-art" ref={artRef} role="img" aria-label="红日与景观树之间的高层建筑，从纯结构线逐渐显影为细致的黑白素描">
-            <DrawingGuides />
-            <motion.div className="learning-ink-signal" style={{ opacity: staticScene ? 0.86 : signalOpacity }}><span>STRUCTURE / 01</span><i /></motion.div>
-            <motion.img className="learning-ink-outline" src={`${imageRoot}hero-tower-outline.svg`} alt="" width={1000} height={1200} style={{ opacity: staticScene ? 0 : outlineOpacity }} />
-            <motion.div className="learning-ink-reveal" style={{ y: staticScene ? '0%' : revealY, '--ink-frame': staticScene ? 0 : erosionFrame } as MotionStyle}>
-              <motion.div className="learning-ink-composition" style={{ y: staticScene ? '0%' : compositionY }}>
-                <img className="learning-ink-texture" src={`${imageRoot}hero-tower-sketch.webp`} alt="" width={1000} height={1200} />
-                <motion.div className="learning-ink-sun" style={{ opacity: staticScene ? 0.94 : sunOpacity }} aria-hidden="true" />
-                <div className="learning-ink-trees" aria-hidden="true">
-                  <img className="learning-ink-landscape" src={`${imageRoot}hero-tower-trees.webp`} alt="" width={1000} height={1200} />
-                </div>
-              </motion.div>
-            </motion.div>
-            <span className="learning-art-coordinate learning-art-coordinate-top">INPUT / 好奇</span>
-            <span className="learning-art-coordinate learning-art-coordinate-bottom">OUTPUT / 新的理解</span>
+      <div className="learning-journal-frame">
+        <div className="learning-cover-heading">
+          <div className="learning-cover-title">
+            <h1 lang="en"><span>Turn every spark of curiosity</span><span>into deeper understanding.</span></h1>
           </div>
-          <figcaption className="learning-hero-art-caption"><span>一条线索，慢慢有了形状。</span><span>SCROLL TO DEVELOP ↓</span></figcaption>
-        </figure>
-
-        <div className="learning-hero-narrative" ref={narrativeRef}>
-          <div className="learning-hero-editorial">
-            <p className="learning-kicker">在问题与答案之间 <span lang="en">A PRACTICE IN CURIOSITY</span></p>
-            <div className="learning-story-heading">
-              <h2 id="learning-hero-story-title">
-                {['拆解问题，', '连接线索，', '让理解成形。'].map((line, index) => (
-                  <InkLine key={line} index={index} progress={textProgress} staticScene={staticScene}>{line}</InkLine>
-                ))}
-              </h2>
-              <p className="learning-story-english" lang="en">Think deeply.<br />Build small.<br /><em>Keep connecting.</em></p>
+          <div className="learning-cover-intro">
+            <div className="learning-intro-heading">
+              <h2 className="learning-intro-index">学习手记</h2>
+              <a className="learning-cover-link" href="#notes">翻开学习笔记 <span aria-hidden="true">↗</span></a>
             </div>
-            <motion.p className="learning-hero-story-copy" style={{ opacity: staticScene ? 1 : detailOpacity }}>从计算机基础到机器学习，从纸上的推导到运行的代码。<br />把问题拆小，亲手实验，再把新的理解写进笔记。<br />知识就在这一来一回里，慢慢有了自己的结构。</motion.p>
-            <ol className="learning-story-process" aria-label="我的学习过程">
-              <li><span lang="en">01 / READ</span><p>从概念出发</p></li>
-              <li><span lang="en">02 / BUILD</span><p>用代码验证</p></li>
-              <li><span lang="en">03 / REFLECT</span><p>把经验留下</p></li>
-            </ol>
-            <a className="learning-story-link" href="#skills">循着兴趣，继续探索 <span aria-hidden="true">↗</span></a>
+            <p className="learning-cover-copy">拆解概念，串联线索。<br />从计算机基础到机器学习，在实践中理解。</p>
+            <div className="learning-cover-topics"><span><b>01</b> 基础</span><span><b>02</b> 智能</span><span><b>03</b> 实践</span></div>
           </div>
-          <LearningToolkit reducedMotion={staticScene} />
         </div>
-      </section>
+
+        <section className="learning-hero-story" data-static={staticScene} aria-labelledby="learning-hero-story-title">
+          <figure className="learning-hero-scene">
+            <div className="learning-hero-scene-meta"><span>01 / A CLOSER LOOK</span><span>从线索到理解</span></div>
+            <div className="learning-ink-art" ref={artRef} role="img" aria-label="红日与景观树之间的高层建筑，从纯结构线逐渐显影为细致的黑白素描">
+              <DrawingGuides />
+              <motion.div className="learning-ink-signal" style={{ opacity: staticScene ? 0.86 : signalOpacity }}><span>STRUCTURE / 01</span><i /></motion.div>
+              <motion.img className="learning-ink-outline" src={`${imageRoot}hero-tower-outline.svg`} alt="" width={1000} height={1200} style={{ opacity: staticScene ? 0 : outlineOpacity }} />
+              <motion.div className="learning-ink-reveal" style={{ y: staticScene ? '0%' : revealY, '--ink-frame': staticScene ? 0 : erosionFrame } as MotionStyle}>
+                <motion.div className="learning-ink-composition" style={{ y: staticScene ? '0%' : compositionY }}>
+                  <img className="learning-ink-texture" src={`${imageRoot}hero-tower-sketch.webp`} alt="" width={1000} height={1200} />
+                  <motion.div className="learning-ink-sun" style={{ opacity: staticScene ? 0.94 : sunOpacity }} aria-hidden="true" />
+                  <div className="learning-ink-trees" aria-hidden="true">
+                    <img className="learning-ink-landscape" src={`${imageRoot}hero-tower-trees.webp`} alt="" width={1000} height={1200} />
+                  </div>
+                </motion.div>
+              </motion.div>
+              <span className="learning-art-coordinate learning-art-coordinate-top">INPUT / 好奇</span>
+              <span className="learning-art-coordinate learning-art-coordinate-bottom">OUTPUT / 新的理解</span>
+            </div>
+            <figcaption className="learning-hero-art-caption"><span>一条线索，慢慢有了形状。</span><span>SCROLL TO DEVELOP ↓</span></figcaption>
+          </figure>
+
+          <div className="learning-hero-narrative" ref={narrativeRef}>
+            <div className="learning-hero-editorial">
+              <div className="learning-story-content">
+                <p className="learning-kicker">在问题与答案之间 <span lang="en">A PRACTICE IN CURIOSITY</span></p>
+                <div className="learning-story-heading">
+                  <h2 id="learning-hero-story-title" lang="zh-CN" aria-label={learningStatement}>
+                    {learningCharacters.map((character, index) => (
+                      <InkCharacter key={index} index={index} progress={textProgress} staticScene={staticScene}>{character}</InkCharacter>
+                    ))}
+                  </h2>
+                </div>
+                <div className="learning-story-footer">
+                  <a className="learning-story-link learning-pixel-button" href="#notes"><LearningPixelFill /><span className="learning-story-link-label"><LearningPixelLabel>翻开学习笔记</LearningPixelLabel></span><span className="learning-story-link-arrow"><LearningPixelArrow /></span></a>
+                  <svg className="learning-story-diagram" viewBox="0 0 112 64" fill="none" aria-hidden="true" focusable="false">
+                    <path className="learning-story-diagram-guide" d="M8 46H104M28 8V56M28 33L76 18L94 48" />
+                    <path d="M16 21H40V45H16ZM94 40L102 48L94 56L86 48ZM98 8H108M103 3V13" />
+                    <circle cx="76" cy="18" r="11" />
+                    <circle className="learning-story-diagram-point" cx="28" cy="33" r="2.5" />
+                    <circle className="learning-story-diagram-point" cx="76" cy="18" r="2" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <LearningToolkit reducedMotion={staticScene} />
+          </div>
+        </section>
+        <nav className="learning-contents" aria-label="学习页目录">
+          <a href="#skills"><span>01</span> 知识地图 <span aria-hidden="true">↗</span></a>
+          <a href="#notes"><span>02</span> 学习笔记 <span aria-hidden="true">↗</span></a>
+          <a href="#timeline"><span>03</span> 下一步 <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
     </>
   )
 }

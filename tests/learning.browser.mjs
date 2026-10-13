@@ -110,7 +110,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
         const transform = getComputedStyle(element).transform
         return transform !== 'none' && Math.abs(new DOMMatrixReadOnly(transform).m11 - 0.9) < 0.01
       }), 'Reduced motion preserves the fixed architectural scale')
-      assert.ok(await reducedPage.locator('.learning-ink-line').evaluateAll(lines => lines.every(line => Number(getComputedStyle(line).opacity) === 1)))
+      assert.ok(await reducedPage.locator('.learning-ink-character').evaluateAll(lines => lines.every(line => Number(getComputedStyle(line).opacity) === 1)))
       assert.ok(await reducedPage.locator('.learning-cover-trees, .learning-ink-trees').evaluateAll(layers => layers.length === 2 && layers.every(layer => Number(getComputedStyle(layer).opacity) === 1)))
       pass('Entering with reduced motion already enabled immediately shows the complete cover and readable narrative')
     } finally {
@@ -323,7 +323,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       trees: Number(getComputedStyle(element.querySelector('.learning-ink-trees')).opacity),
       treeAnimations: element.querySelector('.learning-ink-trees').getAnimations({ subtree: true }).length,
       treeOffset: ['top', 'left', 'width', 'height'].map(key => element.querySelector('.learning-ink-landscape').getBoundingClientRect()[key] - element.querySelector('.learning-ink-texture').getBoundingClientRect()[key]),
-      lines: [...element.querySelectorAll('.learning-ink-line')].map(line => Number(getComputedStyle(line).opacity)),
+      characters: [...element.querySelectorAll('.learning-ink-character')].map(character => Number(getComputedStyle(character).opacity)),
       top: element.getBoundingClientRect().top,
       y: scrollY,
     }))
@@ -339,11 +339,11 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-reveal')).getPropertyValue('--ink-frame')) === 0)
     assert.equal((await heroState()).inkAnimations, 0, 'The ink edge has no independent time-based animation')
     await page.evaluate(top => scrollTo({ top, behavior: 'instant' }), heroRange.start + heroRange.travel * 0.02)
-    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-line')).opacity) < 0.25)
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-character')).opacity) < 0.25)
     const sketch = await heroState()
     await page.mouse.move(900, 400)
     await page.mouse.wheel(0, Math.round(heroRange.travel * 0.3))
-    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-line')).opacity) > 0.99)
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-character')).opacity) > 0.99)
     const developing = await heroState()
     assert.ok(developing.y > sketch.y + heroRange.travel * 0.25)
     assertNormalHeroFlow(sketch, developing)
@@ -352,8 +352,8 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     assert.ok(Math.abs(developing.imageTop - sketch.imageTop) < 2, 'The reveal edge moves while the architectural image remains aligned with its outline')
     assertSharedTreeReveal(sketch)
     assertSharedTreeReveal(developing)
-    assert.ok(developing.lines[0] > developing.lines.at(-1) + 0.5, 'Earlier lines become readable before later lines')
-    assert.ok(developing.lines.every((opacity, index, lines) => index === 0 || opacity <= lines[index - 1]))
+    assert.ok(developing.characters[0] > developing.characters.at(-1) + 0.5, 'Earlier characters become readable before later characters')
+    assert.ok(developing.characters.every((opacity, index, characters) => index === 0 || opacity <= characters[index - 1]))
     const erosionBefore = await heroState()
     await page.waitForTimeout(350)
     const erosionAfter = await heroState()
@@ -374,7 +374,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     assert.equal(erosionReturned.maskPosition, erosionBefore.maskPosition, 'Returning to the same scroll position restores the exact erosion shape')
     assert.ok(Math.abs(erosionReturned.y - erosionBefore.y) < 1)
     await page.mouse.wheel(0, Math.ceil(heroRange.end - developing.y))
-    await page.waitForFunction(() => [...document.querySelectorAll('.learning-ink-line')].every(line => Number(getComputedStyle(line).opacity) > 0.99))
+    await page.waitForFunction(() => [...document.querySelectorAll('.learning-ink-character')].every(line => Number(getComputedStyle(line).opacity) > 0.99))
     const developed = await heroState()
     assertNormalHeroFlow(developing, developed)
     assert.notEqual(developed.transform, developing.transform)
@@ -382,12 +382,12 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     assertSharedTreeReveal(developed)
     assert.equal(developed.inkAnimations, 0, 'The completed scene has no looping erosion animation')
     await page.mouse.wheel(0, Math.round(heroRange.start + heroRange.travel * 0.06 - developed.y))
-    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-line')).opacity) < 0.4)
+    await page.waitForFunction(() => Number(getComputedStyle(document.querySelector('.learning-ink-character')).opacity) < 0.4)
     const reversed = await heroState()
     assertNormalHeroFlow(developed, reversed)
     assert.notEqual(reversed.transform, developed.transform)
     assertSharedTreeReveal(reversed)
-    assert.ok(reversed.lines.at(-1) < 0.25)
+    assert.ok(reversed.characters.at(-1) < 0.25)
     pass('Natural scrolling develops and reverses the tower, sun, and original trees through one mask; all artwork stays aligned and the erosion edge restores exactly when scrolling back')
 
     await jump(0)
@@ -513,8 +513,8 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     })))
     assert.ok(await page.locator('.learning-cover-trees, .learning-ink-trees').evaluateAll(layers => layers.length === 2 && layers.every(layer => Number(getComputedStyle(layer).opacity) === 1)))
     assertSharedTreeReveal(await heroState())
-    assert.ok(await page.locator('.learning-ink-line').evaluateAll(elements => elements.every(element => Number(getComputedStyle(element).opacity) === 1)))
-    assert.ok(await story.evaluate(element => Number(getComputedStyle(element.querySelector('.learning-hero-story-copy')).opacity) === 1))
+    assert.ok(await page.locator('.learning-ink-character').evaluateAll(elements => elements.every(element => Number(getComputedStyle(element).opacity) === 1)))
+    assert.equal(await page.locator('#learning-hero-story-title').getAttribute('aria-label'), await page.locator('#learning-hero-story-title').textContent(), 'The accessible heading contains the complete statement')
     assert.ok(await story.evaluate((element, height) => element.getBoundingClientRect().height <= height + 2, animatedHeroHeight))
     assert.ok(await story.evaluate(element => [element, ...element.children].every(child => !['sticky', 'fixed'].includes(getComputedStyle(child).position))))
     await page.getByRole('button', { name: '下一篇笔记' }).click()

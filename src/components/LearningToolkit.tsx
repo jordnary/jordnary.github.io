@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { LearningPixelFill } from './LearningPixelFill'
+import { LearningPixelArrow } from './LearningPixelArrow'
 import './LearningToolkit.css'
 
 const tools = [
@@ -105,8 +107,8 @@ export function LearningToolkit({ reducedMotion }: { reducedMotion: boolean }) {
       <header className="learning-toolkit-header">
         <h3>学习工具箱 <span lang="en">MY TOOLKIT</span></h3>
         <div className="learning-toolkit-controls">
-          <button type="button" onClick={() => move(-1)} aria-label="向左浏览工具" aria-disabled={moving} aria-controls="learning-toolkit-items"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10H4m5-5-5 5 5 5" /></svg></button>
-          <button type="button" onClick={() => move(1)} aria-label="向右浏览工具" aria-disabled={moving} aria-controls="learning-toolkit-items"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12m-5-5 5 5-5 5" /></svg></button>
+          <button className="learning-pixel-button" type="button" onClick={() => move(-1)} aria-label="向左浏览工具" aria-disabled={moving} aria-controls="learning-toolkit-items"><LearningPixelFill /><LearningPixelArrow direction="left" /></button>
+          <button className="learning-pixel-button" type="button" onClick={() => move(1)} aria-label="向右浏览工具" aria-disabled={moving} aria-controls="learning-toolkit-items"><LearningPixelFill /><LearningPixelArrow /></button>
         </div>
       </header>
       <div className="learning-toolkit-viewport">

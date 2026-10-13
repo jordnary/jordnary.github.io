@@ -28,8 +28,8 @@ export function LearningNotes() {
         <div className="notes-gallery-heading site-container">
           <div className="learning-section-index"><span>02</span> LEARNING NOTES <span>思考的切片</span></div>
           <div className="notes-heading-row">
-            <h2 id="notes-heading">把思考，<em>一页页展开。</em></h2>
-            <p>一些问题，一些尝试，还有尚未完成的答案。<br />{canScroll ? <><span className="notes-desktop-hint">向下滚动，向右探索</span><span className="notes-touch-hint">左右滑动，翻阅笔记</span></> : <span>{filteredNotes.length ? '点击封面，打开完整笔记' : '换个条件，继续探索'}</span>} <span aria-hidden="true">↗</span></p>
+            <h2 id="notes-heading"><span>从一个问题出发，</span><em>把探索写成自己的理解。</em></h2>
+            <p lang="en">I learn by asking questions, testing ideas, and putting what I discover into practice. These notes bring together the concepts, experiments, and small breakthroughs that shape the way I think and build.</p>
           </div>
           <div className="notes-toolbar">
             <div className="notes-filters" role="group" aria-label="筛选学习笔记">

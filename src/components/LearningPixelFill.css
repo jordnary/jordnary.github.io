@@ -1,0 +1,69 @@
+.learning-pixel-button {
+  --pixel-fill: var(--study-ink);
+  --pixel-foreground: var(--study-paper);
+  --pixel-active: 0;
+  position: relative;
+  isolation: isolate;
+  transition: color 180ms linear 120ms;
+}
+
+.learning-pixel-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  grid-template-columns: repeat(var(--pixel-columns), 1fr);
+  grid-template-rows: repeat(var(--pixel-rows), 1fr);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.learning-pixel-fill > i {
+  background: var(--pixel-fill);
+  opacity: var(--pixel-active);
+  transition: opacity 140ms steps(4, end) var(--pixel-delay);
+}
+
+.learning-pixel-arrow {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.05rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.learning-pixel-arrow > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+.learning-pixel-label-clip {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.learning-pixel-label { display: block; }
+
+.learning-pixel-button:focus-visible {
+  --pixel-active: 1;
+  color: var(--pixel-foreground);
+  outline: 2px solid var(--study-accent);
+  outline-offset: 4px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .learning-pixel-button:hover {
+    --pixel-active: 1;
+    color: var(--pixel-foreground);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-pixel-button, .learning-pixel-fill > i { transition: none; }
+}
