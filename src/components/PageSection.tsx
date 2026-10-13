@@ -27,8 +27,14 @@ export function PageSection({
     const timeoutId = window.setTimeout(() => {
       scrollToElementId(id, { behavior: 'auto' })
     }, 100)
+    const events = new AbortController()
+    const cancelRetry = () => window.clearTimeout(timeoutId)
+    for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown']) {
+      window.addEventListener(type, cancelRetry, { passive: true, signal: events.signal })
+    }
 
     return () => {
+      events.abort()
       window.clearTimeout(timeoutId)
     }
   }, [id])

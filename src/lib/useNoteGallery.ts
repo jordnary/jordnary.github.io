@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { notifyNavigationScroll } from './pageScrollSource'
 
 const pinnedQuery = '(min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)'
 
@@ -70,7 +71,9 @@ export function useNoteGallery(count: number) {
     const target = targetIndex / Math.max(1, count - 1) * distance
     const behavior = instant || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
     if (pinned) {
-      window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY - top + target, behavior })
+      const targetTop = section.getBoundingClientRect().top + window.scrollY - top + target
+      notifyNavigationScroll(behavior === 'smooth' && Math.abs(targetTop - window.scrollY) > 1)
+      window.scrollTo({ top: targetTop, behavior })
     } else {
       viewport.scrollTo({ left: target, behavior })
     }

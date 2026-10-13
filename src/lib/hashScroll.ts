@@ -1,3 +1,5 @@
+import { notifyNavigationScroll } from './pageScrollSource'
+
 export function getHashTargetId(hash = window.location.hash) {
   if (!hash || hash === '#') {
     return null
@@ -53,6 +55,8 @@ function scrollToElement(targetElement: HTMLElement, behavior: ScrollBehavior) {
     Number.parseFloat(window.getComputedStyle(targetElement).scrollMarginTop) || 0
   const targetTop = targetElement.getBoundingClientRect().top + window.scrollY - scrollMarginTop
 
+  const smooth = behavior === 'smooth' || (behavior === 'auto' && getComputedStyle(document.documentElement).scrollBehavior === 'smooth')
+  notifyNavigationScroll(smooth && Math.abs(targetTop - window.scrollY) > 1)
   window.scrollTo({
     behavior,
     top: Math.max(targetTop, 0),

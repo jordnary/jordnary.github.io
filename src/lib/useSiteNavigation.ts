@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
+import { notifyNavigationScroll } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, type SitePage } from './routes'
 
 type Position = { left: number; top: number }
@@ -84,7 +85,10 @@ export function useSiteNavigation(initialPage: SitePage) {
 
   useLayoutEffect(() => {
     if (navigation.focus) document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true })
+    let interacted = false
     const scroll = () => {
+      if (interacted) return
+      notifyNavigationScroll()
       if (navigation.position) window.scrollTo({ ...navigation.position, behavior: 'instant' })
       else if (!scrollToHashTarget({ behavior: navigation.behavior ?? 'instant' }) && navigation.focus) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
     }
@@ -92,7 +96,6 @@ export function useSiteNavigation(initialPage: SitePage) {
     const frame = window.requestAnimationFrame(scroll)
     // A lazy document can arrive after the initial layout. Restore only until
     // the visitor starts interacting, so loading never pulls them away.
-    let interacted = false
     const interact = () => { interacted = true }
     const ready = () => { if (!interacted) scroll() }
     window.addEventListener('project-document-ready', ready)

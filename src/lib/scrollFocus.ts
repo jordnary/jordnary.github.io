@@ -1,3 +1,5 @@
+import { notifyNavigationScroll } from './pageScrollSource'
+
 type ScrollFocusOptions = {
   /** Preferred viewport position; omitted for touch and keyboard activation. */
   viewportY?: number
@@ -20,6 +22,7 @@ export function scrollAndFocus(target: HTMLElement, { viewportY }: ScrollFocusOp
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
   const startY = window.scrollY
   const startTime = performance.now()
+  notifyNavigationScroll()
 
   const destination = () => {
     const rect = target.getBoundingClientRect()
