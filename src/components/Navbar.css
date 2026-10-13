@@ -118,7 +118,22 @@
   .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
 
   .nav-desktop-list { display: none; margin: 0; padding: 0; list-style: none; }
-  .nav-item-heading { position: relative; display: flex; align-items: center; }
+  .nav-item-heading {
+    --nav-item-color: var(--navigation-ink);
+    --nav-item-underline: 0;
+    --nav-item-duration: 0ms;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  /* Highlight the open menu, then a hovered heading, then the current page. */
+  .nav-item.is-expanded .nav-item-heading,
+  .nav-desktop-list:not(:has(.is-expanded)) .nav-item-heading:hover,
+  .nav-desktop-list:not(:has(.is-expanded, .nav-item-heading:hover)) .nav-item.is-active .nav-item-heading {
+    --nav-item-color: var(--navigation-accent);
+    --nav-item-underline: 1;
+    --nav-item-duration: 180ms;
+  }
   .nav-item-heading::after {
     position: absolute;
     right: 0.25rem;
@@ -127,26 +142,23 @@
     height: 2px;
     background: var(--navigation-accent);
     content: '';
-    transform: scaleX(0);
+    transform: scaleX(var(--nav-item-underline));
     transform-origin: left;
-    transition: transform 180ms ease;
+    transition: transform var(--nav-item-duration) ease;
   }
-  .nav-item:is(.is-active, .is-expanded) .nav-item-heading::after,
-  .nav-item-heading:hover::after { transform: scaleX(1); }
 
   .nav-link {
     display: inline-flex;
     align-items: center;
     min-height: 3rem;
     padding: 0.5rem 0.35rem;
-    color: var(--navigation-ink);
+    color: var(--nav-item-color);
     font-size: 1rem;
     font-weight: 550;
     letter-spacing: 0.015em;
     white-space: nowrap;
-    transition: color 160ms ease;
+    transition: color var(--nav-item-duration) ease;
   }
-  .nav-link:is(:hover, .is-active) { color: var(--navigation-accent); }
 
   .nav-link-label,
   .mobile-nav-link > span {
@@ -163,10 +175,10 @@
     min-height: 2.75rem;
     place-items: center;
     border-radius: 0.3rem;
-    color: var(--navigation-ink);
+    color: var(--nav-item-color);
     cursor: pointer;
+    transition: color var(--nav-item-duration) ease;
   }
-  .nav-dropdown-toggle:hover { color: var(--navigation-accent); }
   .nav-chevron,
   .nav-arrow { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
   .nav-chevron { transition: transform 180ms ease; }
