@@ -1066,8 +1066,12 @@
     font-size: clamp(2.15rem, 8.2vw, 3.5rem);
   }
   .portfolio-intro-lines {
-    inset: 0;
-    height: 100%;
+    /* Keep the curves proportional and inside the artwork row when stacked. */
+    grid-area: 2 / 1 / 3 / 2;
+    inset: 50% 0 auto;
+    height: auto;
+    aspect-ratio: 1160 / 480;
+    transform: translateY(-50%);
     opacity: 0.14;
   }
   .portfolio-intro-line-guide {
