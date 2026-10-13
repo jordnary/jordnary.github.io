@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { runNavbarScrollChecks } from './navbar-scroll.browser.mjs'
 import { runNavbarMotionChecks } from './navbar-motion.browser.mjs'
 import { runNavbarPanelChecks } from './navbar-panels.browser.mjs'
+import { runNavbarMobileChecks } from './navbar-mobile.browser.mjs'
 
 export async function runNavbarChecks(browser, baseURL, report = () => {}) {
   const checks = []
@@ -25,7 +26,7 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
   const closed = () => page.waitForFunction(() => !document.querySelector('.nav-mega-panel:not([hidden])'))
   const menuOpen = () => page.waitForFunction(() => {
     const dialog = document.querySelector('#mobile-navigation')
-    return dialog.open && getComputedStyle(dialog).opacity === '1' && dialog.getBoundingClientRect().top === 0
+    return dialog.open && getComputedStyle(dialog, '::before').opacity === '1' && dialog.getBoundingClientRect().top === 0
   })
   const menuClosed = () => page.waitForFunction(() => !document.querySelector('#mobile-navigation').open && document.body.style.overflow !== 'hidden')
   try {
@@ -200,16 +201,23 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
 
     for (const [width, height] of [[390, 844], [320, 568], [768, 1024], [844, 390]]) {
       await page.setViewportSize({ width, height })
+      await page.waitForFunction(() => document.querySelector('.nav-shell').getBoundingClientRect().top === 0)
+      const beforeOpen = await page.evaluate(() => {
+        const icon = document.querySelector('.nav-menu-button .menu-icon').getBoundingClientRect()
+        return { x: icon.x, y: icon.y, width: document.querySelector('.nav-shell').getBoundingClientRect().width }
+      })
       await page.locator('.nav-menu-button').click()
       await menuOpen()
       const geometry = await page.locator('#mobile-navigation').evaluate(el => {
         const rect = el.getBoundingClientRect()
-        const style = getComputedStyle(el)
-        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, overflow: el.scrollWidth > el.clientWidth, fontSize: parseFloat(getComputedStyle(el.querySelector('.mobile-nav-link')).fontSize), background: style.backgroundColor, modal: el.matches(':modal') }
+        const style = getComputedStyle(el, '::before')
+        const icon = el.querySelector('.menu-icon').getBoundingClientRect()
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, iconX: icon.x, iconY: icon.y, overflow: el.scrollWidth > el.clientWidth, fontSize: parseFloat(getComputedStyle(el.querySelector('.mobile-nav-link')).fontSize), background: style.backgroundColor, modal: el.matches(':modal') }
       })
       assert.equal(geometry.x, 0)
       assert.equal(geometry.y, 0)
-      assert.equal(geometry.width, width)
+      assert.equal(geometry.width, beforeOpen.width, 'The modal preserves the original page width and scrollbar space')
+      assert.ok(Math.abs(geometry.iconX - beforeOpen.x) < 1 && Math.abs(geometry.iconY - beforeOpen.y) < 1, 'The cross occupies the original hamburger position')
       assert.equal(geometry.height, height)
       assert.equal(geometry.overflow, false)
       assert.equal(geometry.modal, true, 'Mobile navigation opens as a modal')
@@ -233,6 +241,8 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
       assert.equal(await page.evaluate(() => scrollY), top)
       await page.keyboard.press('Escape')
       await menuClosed()
+      const afterClose = await page.locator('.nav-menu-button .menu-icon').boundingBox()
+      assert.ok(Math.abs(afterClose.x - beforeOpen.x) < 1 && Math.abs(afterClose.y - beforeOpen.y) < 1, 'Restoring page scrolling never shifts the hamburger')
       assert.equal(await page.locator('.nav-menu-button').evaluate(el => el === document.activeElement), true, 'Escape returns focus to the mobile toggle')
       pass(`Opaque fullscreen menu at ${width}x${height}: readable rows, contained focus, locked background, Escape restores focus`)
     }
@@ -240,7 +250,8 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.locator('.nav-menu-button').click()
     await menuOpen()
-    await page.locator('.mobile-nav-link[href="/learning/"]').click()
+    await page.locator('#mobile-nav-toggle-learning').click()
+    await page.locator('.mobile-nav-overview[href="/learning/"]').click()
     await page.waitForFunction(() => document.body.dataset.page === 'learning')
     await menuClosed()
     assert.equal(await page.locator('main').evaluate(el => el === document.activeElement), true)
@@ -271,6 +282,7 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await runNavbarScrollChecks(browser, baseURL, pass)
     await runNavbarMotionChecks(browser, baseURL, pass)
     await runNavbarPanelChecks(browser, baseURL, pass)
+    await runNavbarMobileChecks(browser, baseURL, pass)
   } finally {
     await context.close()
   }

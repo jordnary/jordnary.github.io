@@ -12,6 +12,8 @@ type NavbarProps = { activePage: SitePage; onSearchOpen: () => void }
 
 export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [mobilePage, setMobilePage] = useState<SitePage | null>(null)
+  const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(false)
   const [expandedPage, setExpandedPage] = useState<SitePage | null>(null)
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -19,6 +21,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const { isScrolled, isHidden } = useNavScrollVisibility(headerRef, Boolean(expandedPage || isOpen), activePage)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const mobilePanelRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -92,6 +95,17 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     }
   }, [isOpen])
 
+  useLayoutEffect(() => {
+    if (!isOpen || !mobilePage) return
+    if (mobileSubmenuOpen) {
+      const panel = mobilePanelRef.current
+      if (panel) panel.scrollTop = 0
+      panel?.querySelector<HTMLButtonElement>('.mobile-nav-back')?.focus({ preventScroll: true })
+    } else {
+      dialogRef.current?.querySelector<HTMLButtonElement>(`#mobile-nav-toggle-${mobilePage}`)?.focus({ preventScroll: true })
+    }
+  }, [isOpen, mobilePage, mobileSubmenuOpen])
+
   const cancelClose = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current)
     if (openTimer.current) clearTimeout(openTimer.current)
@@ -118,6 +132,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     window.requestAnimationFrame(() => headerRef.current?.querySelector<HTMLAnchorElement>(`#nav-panel-${page} a`)?.focus())
   }
   const themeToggleLabel = theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'
+  const mobileSection = mobilePage ? navigationSections[mobilePage] : undefined
   const brand = (
     <a className="nav-brand" href={getHomepagePortalHref()} onClick={closeMenu}>
       <span className="brand-mark">
@@ -241,10 +256,10 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
               aria-expanded={isOpen}
               aria-haspopup="dialog"
               aria-label="打开导航菜单"
-              className="icon-button nav-menu-button"
-              onClick={() => { setExpandedPage(null); setIsOpen(true) }}
+              className={`icon-button nav-menu-button ${isOpen ? 'is-open' : ''}`}
+              onClick={() => { setExpandedPage(null); setMobilePage(null); setMobileSubmenuOpen(false); setIsOpen(true) }}
               type="button"
-            ><span className="menu-icon" aria-hidden="true"><span className="menu-line menu-line-top" /><span className="menu-line menu-line-middle" /><span className="menu-line menu-line-bottom" /></span></button>
+            ><MenuIcon /></button>
           </div>
         </nav>
       </header>
@@ -253,10 +268,12 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
         className="mobile-nav-dialog"
         id="mobile-navigation"
         inert={!isOpen}
-        onClose={() => setIsOpen(false)}
+        onCancel={(event) => { event.preventDefault(); closeMenu() }}
+        onClose={(event) => { if (!event.currentTarget.open) setIsOpen(false) }}
         onKeyDown={(event) => {
           if (event.key === 'Tab') {
-            const controls = event.currentTarget.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')
+            const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')]
+              .filter((control) => !control.closest('[inert]') && control.getClientRects().length > 0)
             const first = controls[0]
             const last = controls[controls.length - 1]
             if (event.shiftKey && document.activeElement === first) {
@@ -278,20 +295,73 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
         <div className="mobile-nav-layout">
           <div className="mobile-nav-header">
             {brand}
-            <button aria-label="关闭导航菜单" className="mobile-nav-close" onClick={closeMenu} ref={closeButtonRef} type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19" /></svg></button>
+            <button aria-label="关闭导航菜单" className="mobile-nav-close" onClick={closeMenu} ref={closeButtonRef} type="button"><MenuIcon /></button>
           </div>
-          <nav aria-label="移动端主导航" className="mobile-nav-list">
-            {sitePages.map((page) => <a
-              aria-current={activePage === page ? 'page' : undefined}
-              className={`mobile-nav-link ${activePage === page ? 'is-active' : ''}`}
-              href={getRouteHref(page)}
-              key={page}
-              onClick={closeMenu}
-            ><span>{siteRoutes[page].label}</span><ChevronIcon /></a>)}
-          </nav>
-          <div className="mobile-nav-footer">
-            <button className="mobile-nav-search" onClick={openSearch} type="button"><SearchIcon /><span>搜索站内内容</span><ArrowIcon /></button>
-            <button aria-label={themeToggleLabel} aria-pressed={theme === 'dark'} className="mobile-nav-theme" onClick={toggleTheme} type="button"><ThemeIcon /><span>{theme === 'dark' ? '浅色模式' : '深色模式'}</span></button>
+          <div className="mobile-nav-body">
+            <div className="mobile-nav-primary" inert={mobileSubmenuOpen} aria-hidden={mobileSubmenuOpen}>
+              <nav aria-label="移动端主导航" className="mobile-nav-list">
+                {sitePages.map((page) => navigationSections[page] ? <button
+                  aria-current={activePage === page ? 'page' : undefined}
+                  aria-controls="mobile-navigation-panel"
+                  aria-expanded={mobileSubmenuOpen && mobilePage === page}
+                  className={`mobile-nav-link ${activePage === page ? 'is-active' : ''}`}
+                  id={`mobile-nav-toggle-${page}`}
+                  key={page}
+                  onClick={() => { setMobilePage(page); setMobileSubmenuOpen(true) }}
+                  type="button"
+                ><span>{siteRoutes[page].label}</span><ChevronIcon /></button> : <a
+                  aria-current={activePage === page ? 'page' : undefined}
+                  className={`mobile-nav-link ${activePage === page ? 'is-active' : ''}`}
+                  href={getRouteHref(page)}
+                  key={page}
+                  onClick={closeMenu}
+                ><span>{siteRoutes[page].label}</span><ChevronIcon /></a>)}
+              </nav>
+              <div className="mobile-nav-footer">
+                <button className="mobile-nav-search" onClick={openSearch} type="button"><SearchIcon /><span>搜索站内内容</span><ArrowIcon /></button>
+                <button aria-label={themeToggleLabel} aria-pressed={theme === 'dark'} className="mobile-nav-theme" onClick={toggleTheme} type="button"><ThemeIcon /><span>{theme === 'dark' ? '浅色模式' : '深色模式'}</span></button>
+              </div>
+            </div>
+            <nav
+              aria-label={mobilePage ? `${siteRoutes[mobilePage].label}导航` : '栏目导航'}
+              aria-hidden={!mobileSubmenuOpen}
+              className={`mobile-nav-panel ${mobileSubmenuOpen ? 'is-active' : ''}`}
+              id="mobile-navigation-panel"
+              inert={!mobileSubmenuOpen}
+              ref={mobilePanelRef}
+            >
+              {mobilePage && mobileSection && <>
+                <button className="mobile-nav-back" onClick={() => setMobileSubmenuOpen(false)} type="button"><ArrowIcon /><span>返回</span></button>
+                <div className="mobile-nav-section mobile-nav-intro">
+                  <span className="nav-eyebrow">{mobileSection.eyebrow}</span>
+                  <h2>{mobileSection.title}</h2>
+                  <p>{mobileSection.description}</p>
+                  <a className="mobile-nav-overview" href={getRouteHref(mobilePage)} onClick={closeMenu}>
+                    <span className="mobile-nav-bullet"><ArrowIcon /></span>
+                    <span>{mobilePage === 'projects' ? '探索全部项目' : mobilePage === 'learning' ? '浏览学习内容' : '更多关于我'}</span>
+                  </a>
+                </div>
+                {mobileSection.feature && <div className="mobile-nav-section">
+                  <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
+                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} sizes="(max-width: 1023px) 112px, 260px" /></span>
+                    <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
+                  </a>
+                </div>}
+                <div className="mobile-nav-section">
+                  <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
+                  <div className="mobile-nav-features">
+                    {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
+                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} sizes="(max-width: 1023px) 88px, 260px" /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+                      <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
+                    </a>)}
+                  </div>
+                </div>
+                <div className="mobile-nav-section mobile-nav-related">
+                  <h3>继续发现</h3>
+                  {mobileSection.related.map((link) => <a href={link.href} key={link.href} onClick={closeMenu}><span className="mobile-nav-bullet"><ArrowIcon /></span><span>{link.label}</span></a>)}
+                </div>
+              </>}
+            </nav>
           </div>
         </div>
       </dialog>, document.body)}
@@ -299,19 +369,23 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   )
 }
 
-function NavigationImage({ photo }: { photo: NavigationPhoto }) {
+function NavigationImage({ photo, sizes }: { photo: NavigationPhoto; sizes?: string }) {
   const image = navigationPhotos[photo]
   const base = `${import.meta.env.BASE_URL}images/navigation/${image.file}`
   return <img
     alt={image.alt}
     src={`${base}-640.webp`}
     srcSet={`${base}-640.webp 640w, ${base}-1920.webp 1920w`}
-    sizes={photo === 'landscape' ? '(min-width: 1200px) 320px, 28vw' : '(min-width: 1200px) 260px, 22vw'}
+    sizes={sizes ?? (photo === 'landscape' ? '(min-width: 1200px) 320px, 28vw' : '(min-width: 1200px) 260px, 22vw')}
     width={1920}
     height={1200}
     loading="lazy"
     decoding="async"
   />
+}
+
+function MenuIcon() {
+  return <span className="menu-icon" aria-hidden="true"><span className="menu-line menu-line-top" /><span className="menu-line menu-line-middle" /><span className="menu-line menu-line-bottom" /></span>
 }
 
 function ChevronIcon() {

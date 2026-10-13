@@ -151,12 +151,28 @@ export async function runNavbarMotionChecks(browser, baseURL, pass) {
     await page.waitForFunction(() => document.querySelector('.nav-shell').getBoundingClientRect().top === 0)
     const mobileFrames = await page.evaluate(async () => {
       const dialog = document.querySelector('#mobile-navigation')
+      const triggerIcon = document.querySelector('.nav-menu-button .menu-icon')
+      const modalIcon = dialog.querySelector('.menu-icon')
+      const initialIcon = triggerIcon.getBoundingClientRect()
       const frames = []
       const record = async phase => {
         const start = performance.now()
-        while (performance.now() - start < 340) {
+        while (performance.now() - start < 480) {
           await new Promise(resolve => requestAnimationFrame(resolve))
-          frames.push({ phase, opacity: Number(getComputedStyle(dialog).opacity), open: dialog.open, inert: dialog.inert, display: getComputedStyle(dialog).display })
+          const style = getComputedStyle(dialog)
+          const matrix = new DOMMatrixReadOnly(getComputedStyle(modalIcon.querySelector('.menu-line-top')).transform)
+          const icon = modalIcon.getBoundingClientRect()
+          const trigger = triggerIcon.getBoundingClientRect()
+          frames.push({
+            phase, opacity: Number(getComputedStyle(dialog, '::before').opacity),
+            open: dialog.open, inert: dialog.inert, display: style.display,
+            top: dialog.getBoundingClientRect().top,
+            headerOpacity: Number(style.opacity) * Number(getComputedStyle(dialog.querySelector('.mobile-nav-header')).opacity),
+            angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI,
+            middleOpacity: Number(getComputedStyle(modalIcon.querySelector('.menu-line-middle')).opacity),
+            aligned: Math.abs(icon.x - initialIcon.x) < 1 && Math.abs(icon.y - initialIcon.y) < 1
+              && Math.abs(trigger.x - initialIcon.x) < 1 && Math.abs(trigger.y - initialIcon.y) < 1,
+          })
         }
       }
       document.querySelector('.nav-menu-button').click()
@@ -167,15 +183,58 @@ export async function runNavbarMotionChecks(browser, baseURL, pass) {
     })
     for (const phase of ['opening', 'closing']) {
       assert.ok(mobileFrames.some(frame => frame.phase === phase && frame.opacity > 0.05 && frame.opacity < 0.95), `Mobile ${phase} uses a visible transition`)
+      const painted = mobileFrames.filter(frame => frame.phase === phase && frame.display !== 'none')
+      assert.ok(painted.filter(frame => frame.angle < -5 && frame.angle > -130).length >= 3, `${phase}: the hamburger rotates through intermediate angles`)
+      assert.ok(painted.some(frame => frame.middleOpacity > 0.05 && frame.middleOpacity < 0.95), `${phase}: the middle stroke fades smoothly`)
+      assert.ok(painted.every(frame => frame.top === 0 && frame.headerOpacity === 1 && frame.aligned), `${phase}: the solid header and icon stay in place`)
     }
+    const fullyOpen = mobileFrames.filter(frame => frame.phase === 'opening').at(-1)
+    assert.ok(Math.abs(fullyOpen.angle + 135) < 0.1)
+    assert.equal(fullyOpen.middleOpacity, 0)
     assert.ok(mobileFrames.filter(frame => frame.phase === 'closing' && !frame.open).every(frame => frame.inert))
     assert.equal(mobileFrames.at(-1).display, 'none')
     assert.notEqual(await page.evaluate(() => document.body.style.overflow), 'hidden')
-    pass('The mobile fullscreen surface and backdrop enter and exit smoothly, releasing focus and scroll on close')
+    pass('The mobile surface fades while the stationary hamburger rotates into a cross and back, releasing focus and scroll on close')
+
+    const interrupted = await page.evaluate(async () => {
+      const dialog = document.querySelector('#mobile-navigation')
+      const trigger = document.querySelector('.nav-menu-button')
+      const icon = dialog.querySelector('.menu-line-top')
+      const sample = () => {
+        const matrix = new DOMMatrixReadOnly(getComputedStyle(icon).transform)
+        return { time: performance.now(), angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI, open: dialog.open }
+      }
+      const frames = []
+      const record = async duration => {
+        const start = performance.now()
+        while (performance.now() - start < duration) {
+          await new Promise(resolve => requestAnimationFrame(resolve))
+          frames.push(sample())
+        }
+      }
+      trigger.click()
+      await record(120)
+      dialog.querySelector('.mobile-nav-close').click()
+      await record(50)
+      trigger.click()
+      await record(480)
+      return frames
+    })
+    assert.equal(interrupted.at(-1).open, true, 'Reopening survives any queued close event')
+    assert.ok(Math.abs(interrupted.at(-1).angle + 135) < 0.1)
+    for (let index = 1; index < interrupted.length; index++) {
+      const previous = interrupted[index - 1]
+      const current = interrupted[index]
+      if (current.time - previous.time < 40) assert.ok(Math.abs(current.angle - previous.angle) < 40, 'Interrupting the icon never jumps to an endpoint')
+    }
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('#mobile-navigation')).display === 'none')
+    pass('Rapid open, close and reopen reverses the icon continuously without losing the reopened menu')
 
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.locator('.nav-menu-button').click()
-    assert.equal(await page.locator('#mobile-navigation').evaluate(el => getComputedStyle(el).opacity), '1')
+    assert.equal(await page.locator('#mobile-navigation').evaluate(el => getComputedStyle(el, '::before').opacity), '1')
+    assert.equal(await page.locator('#mobile-navigation').evaluate(el => el.getAnimations({ subtree: true }).length), 0)
     await page.keyboard.press('Escape')
     await page.setViewportSize({ width: 1440, height: 844 })
     await page.locator('#nav-toggle-learning').click()
