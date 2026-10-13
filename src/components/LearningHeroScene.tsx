@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from 'react'
 import { motion, useScroll, useTransform, type MotionStyle, type MotionValue } from 'motion/react'
 import { LearningCoverOutline } from './LearningCoverOutline'
+import { LearningToolkit } from './LearningToolkit'
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 const imageRoot = `${import.meta.env.BASE_URL}images/learning/`
@@ -211,15 +212,25 @@ export function LearningHeroScene() {
         </figure>
 
         <div className="learning-hero-narrative" ref={narrativeRef}>
-          <p className="learning-kicker">在问题与答案之间</p>
-          <h2 id="learning-hero-story-title">
-            {['拆解问题，', '连接线索。', '在实践里，', '让理解成形。'].map((line, index) => (
-              <InkLine key={line} index={index} progress={textProgress} staticScene={staticScene}>{line}</InkLine>
-            ))}
-          </h2>
-          <motion.p className="learning-hero-story-copy" style={{ opacity: staticScene ? 1 : detailOpacity }}>计算机基础、机器学习、亲手做过的小实验。<br />让抽象的知识，一点点变得具体。</motion.p>
-          <a className="learning-story-link" href="#skills">循着兴趣，继续探索 <span aria-hidden="true">↗</span></a>
-          <div className="learning-hero-margin-note"><span>观察 / 连接 / 验证</span><p>每一次重新理解，<br />都值得留下一页笔记。</p></div>
+          <div className="learning-hero-editorial">
+            <p className="learning-kicker">在问题与答案之间 <span lang="en">A PRACTICE IN CURIOSITY</span></p>
+            <div className="learning-story-heading">
+              <h2 id="learning-hero-story-title">
+                {['拆解问题，', '连接线索，', '让理解成形。'].map((line, index) => (
+                  <InkLine key={line} index={index} progress={textProgress} staticScene={staticScene}>{line}</InkLine>
+                ))}
+              </h2>
+              <p className="learning-story-english" lang="en">Think deeply.<br />Build small.<br /><em>Keep connecting.</em></p>
+            </div>
+            <motion.p className="learning-hero-story-copy" style={{ opacity: staticScene ? 1 : detailOpacity }}>从计算机基础到机器学习，从纸上的推导到运行的代码。<br />把问题拆小，亲手实验，再把新的理解写进笔记。<br />知识就在这一来一回里，慢慢有了自己的结构。</motion.p>
+            <ol className="learning-story-process" aria-label="我的学习过程">
+              <li><span lang="en">01 / READ</span><p>从概念出发</p></li>
+              <li><span lang="en">02 / BUILD</span><p>用代码验证</p></li>
+              <li><span lang="en">03 / REFLECT</span><p>把经验留下</p></li>
+            </ol>
+            <a className="learning-story-link" href="#skills">循着兴趣，继续探索 <span aria-hidden="true">↗</span></a>
+          </div>
+          <LearningToolkit reducedMotion={staticScene} />
         </div>
       </section>
     </>

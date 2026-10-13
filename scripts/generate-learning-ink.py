@@ -1,7 +1,8 @@
 """Bake a seamless, evolving ink edge without runtime noise filters.
 
 Requires Pillow and NumPy. The narrow-band atlas contains 32 correlated
-phases followed by the first phase again. The page samples them by scroll
+phases in one horizontal row. There are no later frames below the active
+edge to leak through a composited clip. The page samples them by scroll
 position, so the edge stays still when scrolling stops.
 The full-size first frame is retained as the static fallback mask.
 """
@@ -16,7 +17,8 @@ from PIL import Image, ImageDraw
 WIDTH, HEIGHT = 1000, 1400
 BAND_TOP, BAND_HEIGHT = 1200, 150
 CENTER_Y = 1258
-FRAME_WIDTH, FRAME_HEIGHT, FRAME_COUNT = 768, 112, 32
+# Keep the complete horizontal strip within a 16384-pixel texture width.
+FRAME_WIDTH, FRAME_HEIGHT, FRAME_COUNT = 512, 112, 32
 
 
 def create_frames():
@@ -118,13 +120,13 @@ def main():
     fallback.paste(frames[0], (0, BAND_TOP))
     rgba_mask(fallback).save(output / 'hero-ink-edge.png', optimize=True)
 
-    atlas = Image.new('L', (FRAME_WIDTH, FRAME_HEIGHT * (FRAME_COUNT + 1)), 0)
-    for index, frame in enumerate([*frames, frames[0]]):
-        atlas.paste(frame.resize((FRAME_WIDTH, FRAME_HEIGHT), Image.Resampling.LANCZOS), (0, index * FRAME_HEIGHT))
+    atlas = Image.new('L', (FRAME_WIDTH * FRAME_COUNT, FRAME_HEIGHT), 0)
+    for index, frame in enumerate(frames):
+        atlas.paste(frame.resize((FRAME_WIDTH, FRAME_HEIGHT), Image.Resampling.LANCZOS), (index * FRAME_WIDTH, 0))
     rgba_mask(atlas).save(output / 'hero-ink-edge-atlas.png', optimize=True)
     if args.preview:
         save_preview(frames, args.preview)
-    print(f'Created ink masks: {FRAME_COUNT} erosion phases plus the repeated first phase')
+    print(f'Created ink masks: {FRAME_COUNT} erosion phases in one horizontal row')
 
 
 if __name__ == '__main__':

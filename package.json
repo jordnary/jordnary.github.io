@@ -14,6 +14,7 @@
     "test:homepage": "node tests/homepage-touch.browser.mjs",
     "test:projects": "node tests/projects.browser.mjs",
     "test:learning": "node tests/learning.browser.mjs",
+    "test:learning-toolkit": "node tests/learning-toolkit.browser.mjs",
     "test:learning-ink": "node tests/learning-ink.browser.mjs",
     "test:learning-geometry": "node tests/learning-geometry.browser.mjs",
     "test:learning-pointer": "node tests/learning-pointer.browser.mjs",

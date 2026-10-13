@@ -133,9 +133,9 @@
 .learning-cover-topics { display: flex; gap: 1.5rem; width: 100%; margin-top: 1.5rem; padding-top: 0.8rem; border-top: 1px solid var(--study-rule); font: 0.59rem/1.6 Consolas, 'Courier New', monospace; color: var(--study-muted); }
 .learning-cover-link:hover > span { transform: translate(3px, -3px); }
 .learning-hero-story { display: grid; grid-template-columns: 0.95fr 1.05fr; border-top: 1px solid var(--study-rule); }
-.learning-hero-scene { min-width: 0; margin: 0; border-right: 1px solid var(--study-rule); }
+.learning-hero-scene { display: flex; flex-direction: column; min-width: 0; margin: 0; border-right: 1px solid var(--study-rule); }
 .learning-hero-scene-meta { display: flex; justify-content: space-between; gap: 1rem; padding: 0.9rem 1.25rem; border-bottom: 1px dashed var(--study-rule); color: var(--study-muted); font: 0.54rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.05em; }
-.learning-ink-art { position: relative; width: 100%; max-width: 766.6667px; margin-inline: auto; aspect-ratio: 5 / 6; isolation: isolate; overflow: hidden; }
+.learning-ink-art { position: relative; flex-shrink: 0; width: 100%; max-width: 766.6667px; margin: auto; aspect-ratio: 5 / 6; isolation: isolate; overflow: hidden; }
 .learning-ink-guides, .learning-ink-outline, .learning-ink-texture { position: absolute; inset: 0; width: 100%; height: 100%; }
 .learning-ink-sun { position: absolute; top: 13.293%; left: 42.52%; width: 34.3%; aspect-ratio: 1; border-radius: 50%; background: #ef4e28; mix-blend-mode: multiply; }
 .learning-ink-signal { position: absolute; left: 8%; top: 14%; display: flex; align-items: center; gap: 0.6rem; color: var(--geometry-signal); font: 0.56rem/1.5 Consolas, monospace; letter-spacing: 0.06em; }
@@ -145,19 +145,18 @@
 .learning-ink-outline { filter: invert(1); }
 :root[data-theme="light"] .learning-ink-outline { filter: none; }
 .learning-ink-reveal { position: absolute; top: -20%; left: 0; width: 100%; height: 140%; mask: url('/images/learning/hero-ink-edge.png') 0 0 / 100% 100% no-repeat; will-change: transform; }
-/* The solid top covers earlier atlas frames and overlaps the current band.
-   Clip 2px inside its transparent tail (1350 / 1400 of the reveal height).
-   A separate mask intersection can leak adjacent rows at fractional pixels,
-   including along the composited layer's bottom edge. */
+/* All 32 frames sit in one horizontal row, so the area below the band is
+   intrinsically transparent, even on counter-transformed compositor layers.
+   The band spans 1200..1350 of 1400 units; the solid top overlaps its opaque
+   start. No hard clip or mask intersection is needed to hide other frames. */
 @property --ink-frame { syntax: '<integer>'; inherits: false; initial-value: 0; }
 @supports (mask-composite: add) {
   .learning-ink-reveal {
     mask-image: linear-gradient(#000, #000), url('/images/learning/hero-ink-edge-atlas.png');
-    mask-size: 100% 85.9%, 100% 353.571429%;
-    mask-position: 0 0, 0 calc(-33.8028169% + var(--ink-frame) * 4.225352113%);
+    mask-size: 100% 85.9%, 3200% 10.714285714%;
+    mask-position: 0 0, calc(var(--ink-frame) * 100% / 31) 96%;
     mask-repeat: no-repeat;
     mask-composite: add;
-    clip-path: inset(0 0 calc(3.571429% + 2px));
   }
 }
 .learning-ink-composition { position: absolute; top: 14.285714%; left: 0; width: 100%; height: 71.428571%; isolation: isolate; will-change: transform; }
@@ -173,17 +172,23 @@
 .learning-art-coordinate-top { left: 1.1rem; top: 3rem; }
 .learning-art-coordinate-bottom { right: 1.1rem; bottom: 3rem; }
 .learning-hero-art-caption { display: flex; justify-content: space-between; gap: 1rem; padding: 0.8rem 1.25rem; border-top: 1px dashed var(--study-rule); color: var(--study-muted); font: 0.56rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.04em; }
-.learning-hero-narrative { display: flex; flex-direction: column; align-items: flex-start; padding: clamp(2rem, 3.5vw, 4rem); }
-.learning-kicker { display: flex; align-items: center; gap: 0.65rem; color: var(--study-accent); font-size: 0.7rem; letter-spacing: 0.13em; }
+.learning-hero-narrative { display: flex; flex-direction: column; min-width: 0; }
+.learning-hero-editorial { width: 100%; padding: clamp(2rem, 3.5vw, 4rem); }
+.learning-kicker { display: flex; align-items: center; flex-wrap: wrap; gap: 0.65rem; color: var(--study-accent); font-size: 0.78rem; letter-spacing: 0.08em; }
 .learning-kicker::before { content: ''; width: 1.4rem; height: 1px; background: currentColor; }
-.learning-hero-narrative h2 { margin-top: clamp(1.5rem, 3vw, 3rem); color: var(--study-ink); font-family: inherit; font-size: clamp(2rem, 3.7vw, 4.5rem); font-weight: 750; line-height: 1.25; letter-spacing: -0.065em; }
+.learning-kicker > span { margin-left: auto; color: var(--study-muted); font: 0.65rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.04em; }
+.learning-story-heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1.25rem; margin-top: clamp(1.5rem, 2.8vw, 3rem); }
+.learning-hero-narrative h2 { margin: 0; color: var(--study-ink); font-family: inherit; font-size: clamp(2.25rem, 3.6vw, 5rem); font-weight: 750; line-height: 1.23; letter-spacing: -0.065em; }
+.learning-story-english { padding-bottom: 0.3rem; color: var(--study-muted); font: clamp(1rem, 1.35vw, 1.65rem)/1.55 Georgia, 'Times New Roman', serif; letter-spacing: -0.03em; }
+.learning-story-english em { color: var(--study-accent); }
 .learning-ink-line { display: block; }
-.learning-hero-story-copy { margin-top: 1.8rem; color: var(--study-muted); font-size: 0.8rem; line-height: 1.95; }
-.learning-story-link { display: inline-flex; align-items: center; gap: 1.5rem; margin-top: 1.8rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--study-rule); font-size: 0.75rem; }
+.learning-hero-story-copy { margin-top: clamp(1.5rem, 2.2vw, 2.5rem); color: var(--study-muted); font-size: clamp(0.9rem, 1.1vw, 1.15rem); line-height: 1.95; }
+.learning-story-process { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: clamp(1.5rem, 2.5vw, 2.75rem) 0 0; padding: 1.15rem 0 0; border-top: 1px solid var(--study-rule); list-style: none; }
+.learning-story-process li > span { color: var(--study-accent); font: 0.67rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.04em; }
+.learning-story-process p { margin-top: 0.55rem; color: var(--study-ink); font-size: clamp(0.8rem, 1vw, 1rem); }
+.learning-story-link { display: inline-flex; align-items: center; gap: 1.5rem; margin-top: 1.5rem; padding-bottom: 0.45rem; border-bottom: 1px solid var(--study-rule); font-size: 0.85rem; }
 .learning-story-link > span { color: var(--geometry-signal); transition: transform 200ms; }
 .learning-story-link:hover > span { transform: translate(2px, -2px); }
-.learning-hero-margin-note { display: flex; align-items: end; justify-content: space-between; gap: 1rem; width: 100%; margin-top: auto; padding-top: 3rem; color: var(--study-muted); font-size: 0.62rem; line-height: 1.9; }
-.learning-hero-margin-note > span { color: var(--study-accent); letter-spacing: 0.1em; }
 .learning-contents { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid var(--study-rule); }
 .learning-contents a { display: flex; align-items: center; gap: 1rem; padding: 1.05rem 1.5rem; font-size: 0.85rem; transition: background 200ms; }
 .learning-contents a + a { border-left: 1px solid var(--study-rule); }
@@ -404,9 +409,11 @@
 
 @media (max-width: 1000px) {
   .learning-cover-topics { gap: 1rem; }
-  .learning-hero-narrative { padding: 2rem 1.5rem; }
-  .learning-hero-narrative h2 { margin-top: 1.3rem; }
-  .learning-hero-margin-note { padding-top: 1.5rem; }
+  .learning-hero-editorial { padding: 2rem 1.5rem; }
+  .learning-kicker > span { display: none; }
+  .learning-story-heading { gap: 1rem; }
+  .learning-story-english { font-size: 1rem; }
+  .learning-hero-story-copy br { display: none; }
   .learning-studio .knowledge-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .learning-studio .knowledge-card:nth-child(3) { border-left: 0; }
   .learning-studio .knowledge-card:nth-child(n+3) { border-top: 1px solid var(--study-rule); }
@@ -443,9 +450,12 @@
   .learning-hero-scene { border-right: 0; }
   .learning-hero-scene-meta { padding-inline: 0.7rem; font-size: 0.46rem; }
   .learning-hero-art-caption { padding-inline: 0.7rem; font-size: 0.47rem; }
-  .learning-hero-narrative { padding: 2rem 0 2.2rem; border-top: 1px solid var(--study-rule); }
-  .learning-hero-narrative h2 { font-size: clamp(2rem, 8.5vw, 3.8rem); }
-  .learning-hero-story-copy { font-size: 0.76rem; }
+  .learning-hero-narrative { border-top: 1px solid var(--study-rule); }
+  .learning-hero-editorial { padding: 2rem 0 2rem; }
+  .learning-hero-narrative h2 { font-size: clamp(2.1rem, 8vw, 3.8rem); }
+  .learning-story-english { font-size: 1.05rem; }
+  .learning-hero-story-copy { font-size: 0.9rem; }
+  .learning-story-process { gap: 0.5rem; }
   .learning-contents a { padding: 0.9rem 0.45rem; gap: 0.45rem; font-size: 0.72rem; }
   .learning-contents a > span:first-child { font-size: 0.8rem; }
   .learning-studio .page-section { padding-block: 3rem; }
