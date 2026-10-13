@@ -43,6 +43,16 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     let releaseTrees
     try {
       const loadingPage = await loadingContext.newPage()
+      const assertDragBlocked = async phase => {
+        const box = await loadingPage.locator('.learning-cover-image').boundingBox()
+        await loadingPage.mouse.move(box.x + 240, box.y + 160)
+        assert.notEqual(await loadingPage.locator('.learning-cover-image').getAttribute('data-hint-visible'), 'true', `${phase} does not advertise unavailable dragging`)
+        await loadingPage.mouse.down()
+        await loadingPage.mouse.move(box.x + 440, box.y + 260)
+        assert.notEqual(await loadingPage.locator('.learning-cover-image').getAttribute('data-dragging'), 'true', `${phase} does not start dragging`)
+        assert.equal(await loadingPage.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'none', `${phase} shows no selection`)
+        await loadingPage.mouse.up()
+      }
       const photoGate = new Promise(resolve => { releasePhoto = resolve })
       const treeGate = new Promise(resolve => { releaseTrees = resolve })
       const photoRoute = '**/images/learning/hero-campus-sketch.webp'
@@ -65,6 +75,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       assert.equal(waiting.ready, 'false')
       assert.equal(waiting.animations, 0)
       assert.equal(waiting.photoLoaded, false)
+      await assertDragBlocked('Pending image loading')
       releasePhoto()
       await loadingPage.waitForFunction(() => document.querySelector('.learning-cover-photo-reveal img').naturalWidth > 0)
       assert.equal(await loadingPage.locator('.learning-cover-image').getAttribute('data-ready'), 'false', 'The cover still waits while its separate tree layer is loading')
@@ -79,6 +90,35 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       assert.ok(await loadingPage.locator('.learning-cover-image img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)))
       assert.ok(await loadingPage.locator('.learning-cover-photo-reveal').evaluate(element => element.getAnimations().some(animation => animation.animationName === 'learning-cover-reveal')))
       pass('The inline structural drawing waits for both architecture and tree images before animating and reloads correctly with caching enabled')
+      for (const [phase, time] of [['Structural drawing', 2500], ['Image reveal', 6120], ['Final guide appearance', 7200]]) {
+        await loadingPage.locator('.learning-cover-image').evaluate((element, time) => {
+          for (const animation of element.getAnimations({ subtree: true })) {
+            animation.pause()
+            animation.currentTime = time
+          }
+        }, time)
+        await assertDragBlocked(phase)
+      }
+      await loadingPage.mouse.down()
+      await loadingPage.locator('.learning-cover-image').evaluate(element => {
+        for (const animation of element.getAnimations({ subtree: true })) animation.finish()
+      })
+      const finishedCover = await loadingPage.locator('.learning-cover-image').boundingBox()
+      await loadingPage.mouse.move(finishedCover.x + 460, finishedCover.y + 280)
+      assert.equal(await loadingPage.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'none', 'A press during the animation cannot become a drag when the animation finishes')
+      await loadingPage.mouse.up()
+      await loadingPage.mouse.down()
+      await loadingPage.mouse.move(finishedCover.x + 500, finishedCover.y + 300)
+      assert.equal(await loadingPage.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'block', 'A fresh press after the entire opening sequence can draw a selection')
+      await loadingPage.mouse.up()
+      pass('Image loading and every opening phase block selections; dragging requires a fresh press after the full sequence finishes')
+
+      // A fresh visit checks that natural playback unlocks the first-hover hint.
+      await loadingPage.reload()
+      await loadingPage.waitForFunction(() => {
+        const element = document.querySelector('.learning-cover-image')
+        return element?.dataset.ready === 'true' && element.getAnimations().every(animation => animation.playState === 'finished')
+      })
       const hintCover = await loadingPage.locator('.learning-cover-image').boundingBox()
       await loadingPage.mouse.move(hintCover.x + 240, hintCover.y + 160)
       await loadingPage.waitForFunction(() => document.querySelector('.learning-cover-image').dataset.hintVisible === 'true')
@@ -112,6 +152,12 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       }), 'Reduced motion preserves the fixed architectural scale')
       assert.ok(await reducedPage.locator('.learning-ink-character').evaluateAll(lines => lines.every(line => Number(getComputedStyle(line).opacity) === 1)))
       assert.ok(await reducedPage.locator('.learning-cover-trees, .learning-ink-trees').evaluateAll(layers => layers.length === 2 && layers.every(layer => Number(getComputedStyle(layer).opacity) === 1)))
+      const reducedCover = await reducedPage.locator('.learning-cover-image').boundingBox()
+      await reducedPage.mouse.move(reducedCover.x + 240, reducedCover.y + 160)
+      await reducedPage.mouse.down()
+      await reducedPage.mouse.move(reducedCover.x + 440, reducedCover.y + 260)
+      assert.equal(await reducedPage.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'block', 'Reduced motion allows dragging immediately after images load')
+      await reducedPage.mouse.up()
       pass('Entering with reduced motion already enabled immediately shows the complete cover and readable narrative')
     } finally {
       await reducedContext.close()
@@ -194,6 +240,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       const middle = await sample(6120)
       const end = await sample(6480)
       const settled = await sample(8000)
+      for (const animation of animations) animation.finish()
       return { first, drawing, drawn, start, middle, end, settled, delay, duration, y: scrollY, sharedReveal: photo.contains(trees) && render.contains(trees), strokeCount: strokes.length }
     })
     assert.ok(entrance, 'The loaded cover has a staged drawing and center-out reveal animation')
@@ -250,6 +297,14 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     await page.mouse.move(coverBox.x + coverBox.width - 213, coverBox.y + coverBox.height - 147)
     await waitForGuides(['right', 'bottom'])
     assert.equal(await page.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'none', 'Measurement guides respond to hover without starting a selection')
+    const assertGradientDirection = async (start, target) => {
+      const background = await page.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).backgroundImage)
+      const angle = Number(background.match(/linear-gradient\(([-\d.]+)deg,/)?.[1]) * Math.PI / 180
+      const dx = target[0] - start[0]
+      const dy = target[1] - start[1]
+      const alignment = (Math.sin(angle) * dx - Math.cos(angle) * dy) / Math.hypot(dx, dy)
+      assert.ok(alignment > 0.999, 'The gradient grows darker toward the current drag endpoint at its actual angle')
+    }
     const assertDrag = async (start, end) => {
       await page.mouse.move(coverBox.x + start[0], coverBox.y + start[1])
       await page.mouse.down({ button: 'left' })
@@ -262,12 +317,20 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       assert.ok(Math.abs(selection.width - Math.abs(target[0] - start[0])) <= 2 && Math.abs(selection.height - Math.abs(target[1] - start[1])) <= 2, 'The selection size follows the actual drag distance')
       assert.ok(selection.x >= coverBox.x - 1 && selection.y >= coverBox.y - 1 && selection.x + selection.width <= coverBox.x + coverBox.width + 1 && selection.y + selection.height <= coverBox.y + coverBox.height + 1, 'Captured drags remain within the cover bounds')
       assert.ok(await page.locator('.learning-cover-reticle').evaluate(element => Number(getComputedStyle(element).opacity) > 0.99), 'The drag stays visible when pointer capture carries it outside the cover')
-      assert.ok(await page.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).backgroundImage.includes('gradient')), 'The selection uses a translucent gradient')
+      await assertGradientDirection(start, target)
       await page.mouse.up({ button: 'left' })
       assert.equal(await page.locator('.learning-cover-selection').evaluate(element => getComputedStyle(element).display), 'none', 'Releasing the button immediately hides the selection')
     }
     for (const target of [[550, 350], [180, 350], [550, 110], [180, 110]]) await assertDrag([350, 230], target)
     for (const target of [[-20, 180], [coverBox.width + 20, 180], [300, -20], [300, coverBox.height + 20]]) await assertDrag([350, 230], target)
+    await page.mouse.move(coverBox.x + 350, coverBox.y + 230)
+    await page.mouse.down()
+    for (const target of [[550, 250], [370, 350], [180, 350], [180, 110], [550, 110]]) {
+      await page.mouse.move(coverBox.x + target[0], coverBox.y + target[1], { steps: 4 })
+      await assertGradientDirection([350, 230], target)
+    }
+    await page.mouse.up()
+    pass('Selection shading follows shallow and steep drag angles, all four directions, and direction changes within the same drag')
     for (const [x, y] of [[2, 2], [coverBox.width - 2, 2], [2, coverBox.height - 2], [coverBox.width - 2, coverBox.height - 2]]) {
       await page.mouse.move(coverBox.x + x, coverBox.y + y)
       const coordinateBox = await page.locator('.learning-cover-reticle > span').boundingBox()

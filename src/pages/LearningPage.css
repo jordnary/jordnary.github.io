@@ -96,7 +96,7 @@
 .learning-cover-reticle::before, .learning-cover-reticle::after { content: ''; position: absolute; background: var(--study-muted); opacity: 0.2; }
 .learning-cover-reticle::before { left: var(--cursor-x); top: 0; bottom: 0; width: 1px; }
 .learning-cover-reticle::after { top: var(--cursor-y); left: 0; right: 0; height: 1px; }
-.learning-cover-selection { display: none; position: absolute; left: var(--selection-x); top: var(--selection-y); width: var(--selection-width); height: var(--selection-height); border: 1px solid var(--coordinate-signal); background: linear-gradient(135deg, transparent 8%, color-mix(in srgb, var(--coordinate-signal) 8%, transparent) 44%, color-mix(in srgb, var(--coordinate-signal) 40%, transparent)); }
+.learning-cover-selection { display: none; position: absolute; left: var(--selection-x); top: var(--selection-y); width: var(--selection-width); height: var(--selection-height); border: 1px solid var(--coordinate-signal); background: linear-gradient(var(--selection-angle, 135deg), transparent 8%, color-mix(in srgb, var(--coordinate-signal) 8%, transparent) 44%, color-mix(in srgb, var(--coordinate-signal) 40%, transparent)); }
 .learning-cover-image[data-dragging="true"] .learning-cover-selection { display: block; }
 .learning-cover-image { user-select: none; }
 .learning-cover-drag-hint { visibility: hidden; position: absolute; left: var(--hint-x); top: var(--hint-y); width: max-content; padding: 0.7rem 0.8rem; color: #f6f6f4; background: #252725; font: 600 0.7rem/1.5 Consolas, 'Courier New', monospace; white-space: nowrap; }
@@ -358,14 +358,15 @@
 .learning-loop-note a { display: inline-flex; align-items: center; gap: 0.8rem; margin-left: auto; color: var(--study-accent); }
 .learning-studio :is(button, a, select):focus-visible, .learning-note-reader :is(button, a, summary, pre):focus-visible { outline: 2px solid var(--study-accent); outline-offset: 4px; }
 
-.learning-note-reader { --note-reader-max-height: calc(100dvh - 3rem); --note-reader-font-scale: 1; width: min(780px, calc(100vw - 2rem)); max-height: var(--note-reader-max-height); padding: 0; margin: auto; overflow: hidden; border: 1px solid var(--study-rule); border-radius: 4px; background: var(--study-paper); box-shadow: 0 24px 100px rgb(0 0 0 / 0.35); opacity: 1; transform: scale(1); transform-origin: center; transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms ease; }
+/* Reveal the paper early so its expansion stays visible after the fade-in. */
+.learning-note-reader { --note-reader-max-height: calc(100dvh - 3rem); --note-reader-font-scale: 1; width: min(780px, calc(100vw - 2rem)); max-height: var(--note-reader-max-height); padding: 0; margin: auto; overflow: hidden; border: 1px solid var(--study-rule); border-radius: 4px; background: var(--study-paper); box-shadow: 0 24px 100px rgb(0 0 0 / 0.35); opacity: 1; transform: scale(1); transform-origin: center; transition: transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 180ms ease-out; }
 .note-reader-scroll { max-height: calc(var(--note-reader-max-height) - 2px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; scrollbar-gutter: auto; }
 .note-reader-scroll::-webkit-scrollbar { display: none; }
-.learning-note-reader::backdrop { background: rgb(3 12 20 / 0.78); backdrop-filter: blur(8px); opacity: 1; transition: opacity 260ms ease; }
+.learning-note-reader::backdrop { background: rgb(3 12 20 / 0.78); backdrop-filter: blur(8px); opacity: 1; transition: opacity 320ms ease; }
 .learning-note-reader[data-closing="true"] { opacity: 0; transform: scale(0.94); transition-duration: 220ms; transition-timing-function: ease-in; }
 .learning-note-reader[data-closing="true"]::backdrop { opacity: 0; transition-duration: 220ms; }
 @starting-style {
-  .learning-note-reader[open] { opacity: 0; transform: scale(0.94); }
+  .learning-note-reader[open] { opacity: 0; transform: scale(0.88); }
   .learning-note-reader[open]::backdrop { opacity: 0; }
 }
 .note-reader-paper { padding: 2rem clamp(1.25rem, 4vw, 3.25rem) 6rem; overflow-wrap: anywhere; font-size: calc(1rem * var(--note-reader-font-scale)); }

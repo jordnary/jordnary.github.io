@@ -84,6 +84,11 @@ function LearningCover({ staticScene }: { staticScene: boolean }) {
     setHintVisible(false)
   }
 
+  function canDrag(canvas: HTMLDivElement) {
+    // The frame animations finish with the last phase of the opening sequence.
+    return ready && canvas.getAnimations().every(animation => animation.playState === 'finished')
+  }
+
   function updatePointer(event: PointerEvent<HTMLDivElement>) {
     const canvas = event.currentTarget
     const bounds = canvas.getBoundingClientRect()
@@ -103,10 +108,13 @@ function LearningCover({ staticScene }: { staticScene: boolean }) {
     canvas.dataset.pointerLevel = y < canvasHeight / 2 ? 'top' : 'bottom'
     const start = dragStartRef.current
     if (start) {
+      const dx = x - start.x
+      const dy = y - start.y
       canvas.style.setProperty('--selection-x', `${Math.min(x, start.x)}px`)
       canvas.style.setProperty('--selection-y', `${Math.min(y, start.y)}px`)
-      canvas.style.setProperty('--selection-width', `${Math.abs(x - start.x)}px`)
-      canvas.style.setProperty('--selection-height', `${Math.abs(y - start.y)}px`)
+      canvas.style.setProperty('--selection-width', `${Math.abs(dx)}px`)
+      canvas.style.setProperty('--selection-height', `${Math.abs(dy)}px`)
+      canvas.style.setProperty('--selection-angle', `${Math.atan2(dy, dx) * 180 / Math.PI + 90}deg`)
     }
     return { x, y }
   }
@@ -123,13 +131,13 @@ function LearningCover({ staticScene }: { staticScene: boolean }) {
     <div className="learning-cover-image" data-ready={ready} data-static={staticScene} data-hint-visible={hintVisible} aria-hidden="true" onPointerMove={event => {
       if (event.pointerType === 'touch') return
       updatePointer(event)
-      if (!hintShownRef.current) {
+      if (!hintShownRef.current && canDrag(event.currentTarget)) {
         hintShownRef.current = true
         setHintVisible(true)
         hintTimerRef.current = setTimeout(() => setHintVisible(false), 3000)
       }
     }} onPointerDown={event => {
-      if (event.pointerType === 'touch' || event.button !== 0) return
+      if (event.pointerType === 'touch' || event.button !== 0 || !canDrag(event.currentTarget)) return
       event.preventDefault()
       hintShownRef.current = true
       hideHint()
