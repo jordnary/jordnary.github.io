@@ -1,13 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { learningNotes, noteDifficulties, noteProgresses, noteTopics, type LearningNote } from '../data/notes'
 import { learningPhotos, noteCovers } from '../data/note-covers'
 import { useNoteGallery } from '../lib/useNoteGallery'
 
-function readingMinutes(note: LearningNote) {
-  const text = [note.question, note.understanding, note.practice, ...note.keyPoints, note.example.code ?? '', note.example.explanation, ...note.pitfalls, note.review.question, note.review.answer].join('')
-  return Math.max(2, Math.ceil(text.length / 350))
-}
+const noteFontSizes = [90, 100, 110, 120, 130]
+const noteFontSizeKey = 'learning-note-font-size'
 
 export function LearningNotes() {
   const [topic, setTopic] = useState('全部主题')
@@ -59,7 +57,7 @@ export function LearningNotes() {
                       <p className="note-cover-label">{cover.label}</p>
                       <h3>{cover.title}</h3>
                       <p className="note-cover-summary">{note.summary}</p>
-                      <div className="note-cover-bottom"><span><i />{note.progress} · 约 {readingMinutes(note)} 分钟</span><span className="note-read-label">打开笔记 <span className="note-open-arrow" aria-hidden="true">↗</span></span></div>
+                      <div className="note-cover-bottom"><span><i />{note.progress}</span><span className="note-read-label">打开笔记 <span className="note-open-arrow" aria-hidden="true">↗</span></span></div>
                     </div>
                   </button>
                 </article>
@@ -88,6 +86,25 @@ function NoteFilter({ label, onChange, options, value }: { label: string; onChan
 
 function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const [isClosing, setIsClosing] = useState(false)
+  const [fontSize, setFontSize] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem(noteFontSizeKey))
+      return noteFontSizes.includes(saved) ? saved : 100
+    } catch {
+      return 100
+    }
+  })
+
+  const updateFontSize = (size: number) => {
+    setFontSize(size)
+    try {
+      localStorage.setItem(noteFontSizeKey, String(size))
+    } catch {
+      // Font controls remain available when browser storage is disabled.
+    }
+  }
+
   useEffect(() => {
     const dialog = dialogRef.current
     const previousOverflow = document.body.style.overflow
@@ -101,33 +118,54 @@ function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void
     }
   }, [])
 
+  useEffect(() => {
+    if (!isClosing) return
+    let active = true
+    const transitions = dialogRef.current?.getAnimations() ?? []
+    // Keep the dialog modal until its exit finishes, including reduced-motion exits.
+    void Promise.allSettled(transitions.map(transition => transition.finished)).then(() => {
+      if (active) onClose()
+    })
+    return () => { active = false }
+  }, [isClosing, onClose])
+
+  const requestClose = () => setIsClosing(true)
+
   return createPortal(
-    <dialog className="learning-note-reader" ref={dialogRef} aria-labelledby="note-reader-title" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose() }}>
-      <article className="note-reader-paper">
-        <header className="note-reader-masthead"><span>LEARNING JOURNAL / 学习手记</span><button type="button" aria-label="关闭笔记" onClick={onClose}>×</button></header>
-        <div className="note-reader-meta"><span>{note.topic}</span><span>{note.progress}</span><span>{note.difficulty}</span><span>约 {readingMinutes(note)} 分钟阅读</span></div>
-        <h2 id="note-reader-title">{note.title}</h2>
-        <p className="note-reader-summary">{note.summary}</p>
-        <div className="note-reader-sections">
-          <section><h3><span>01</span>从一个问题开始</h3><p>{note.question}</p></section>
-          <section><h3><span>02</span>理解与要点</h3><p>{note.understanding}</p><ul className="note-reader-points">{note.keyPoints.map(point => <li key={point}>{point}</li>)}</ul></section>
-          <section>
-            <h3><span>03</span>把理解放进实践</h3><p>{note.practice}</p>
-            <div className="note-reader-example">
-              <div className="note-example-heading"><h4>{note.example.title}</h4>{note.example.language && <span>{note.example.language}</span>}</div>
-              {note.example.code && <pre tabIndex={0} aria-label={`${note.example.language} 示例`}><code>{note.example.code}</code></pre>}
-              <p>{note.example.explanation}</p>
-            </div>
-          </section>
-          <section><h3><span>04</span>容易走偏的地方</h3><ul className="note-reader-pitfalls">{note.pitfalls.map(pitfall => <li key={pitfall}>{pitfall}</li>)}</ul></section>
-          <section>
-            <h3><span>05</span>合上笔记，试着回答</h3><p>{note.review.question}</p>
-            <details className="note-reader-review"><summary>想好之后，展开参考答案 <span aria-hidden="true">＋</span></summary><p>{note.review.answer}</p></details>
-          </section>
-          <section><h3><span>06</span>回到参考资料</h3><a href={note.reference.href} target="_blank" rel="noreferrer">{note.reference.label} <span aria-hidden="true">↗</span></a></section>
-        </div>
-        <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><span>KEEP LEARNING ↗</span></footer>
-      </article>
+    <dialog className="learning-note-reader" ref={dialogRef} aria-labelledby="note-reader-title" data-closing={isClosing} style={{ '--note-reader-font-scale': fontSize / 100 } as CSSProperties} onCancel={event => { event.preventDefault(); requestClose() }} onClick={event => { if (event.target === event.currentTarget) requestClose() }}>
+      <div className="note-reader-scroll">
+        <header className="note-reader-masthead"><span>LEARNING JOURNAL / 学习手记</span><button type="button" aria-label="关闭笔记" onClick={requestClose}><span aria-hidden="true">×</span></button></header>
+        <article className="note-reader-paper">
+          <div className="note-reader-meta"><span>{note.topic}</span><span>{note.progress}</span><span>{note.difficulty}</span></div>
+          <h2 id="note-reader-title">{note.title}</h2>
+          <p className="note-reader-summary">{note.summary}</p>
+          <div className="note-reader-sections">
+            <section><h3><span>01</span>从一个问题开始</h3><p>{note.question}</p></section>
+            <section><h3><span>02</span>理解与要点</h3><p>{note.understanding}</p><ul className="note-reader-points">{note.keyPoints.map(point => <li key={point}>{point}</li>)}</ul></section>
+            <section>
+              <h3><span>03</span>把理解放进实践</h3><p>{note.practice}</p>
+              <div className="note-reader-example">
+                <div className="note-example-heading"><h4>{note.example.title}</h4>{note.example.language && <span>{note.example.language}</span>}</div>
+                {note.example.code && <pre tabIndex={0} aria-label={`${note.example.language} 示例`}><code>{note.example.code}</code></pre>}
+                <p>{note.example.explanation}</p>
+              </div>
+            </section>
+            <section><h3><span>04</span>容易走偏的地方</h3><ul className="note-reader-pitfalls">{note.pitfalls.map(pitfall => <li key={pitfall}>{pitfall}</li>)}</ul></section>
+            <section>
+              <h3><span>05</span>合上笔记，试着回答</h3><p>{note.review.question}</p>
+              <details className="note-reader-review"><summary>想好之后，展开参考答案 <span aria-hidden="true">＋</span></summary><p>{note.review.answer}</p></details>
+            </section>
+            <section><h3><span>06</span>回到参考资料</h3><a href={note.reference.href} target="_blank" rel="noreferrer">{note.reference.label} <span aria-hidden="true">↗</span></a></section>
+          </div>
+          <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><span>KEEP LEARNING ↗</span></footer>
+        </article>
+      </div>
+      <div className="note-reader-font-controls" role="group" aria-label="调整笔记字号">
+        <span aria-hidden="true">字号</span>
+        <button type="button" aria-label="缩小字号" title="缩小字号" disabled={fontSize === noteFontSizes[0]} onClick={() => updateFontSize(fontSize - 10)}>A−</button>
+        <button className="note-reader-font-reset" type="button" aria-label={`当前字号 ${fontSize}%，恢复默认字号`} title="恢复默认字号" onClick={() => updateFontSize(100)}>{fontSize}%</button>
+        <button type="button" aria-label="放大字号" title="放大字号" disabled={fontSize === noteFontSizes[noteFontSizes.length - 1]} onClick={() => updateFontSize(fontSize + 10)}>A+</button>
+      </div>
     </dialog>, document.body,
   )
 }

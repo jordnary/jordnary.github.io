@@ -1,0 +1,29 @@
+.learning-notes-ticker { --notes-ticker-duration: 45s; container-type: inline-size; grid-column: 1 / -1; min-width: 0; overflow: hidden; border-top: 1px solid var(--study-rule); color: var(--study-muted); }
+.learning-notes-ticker-track { display: flex; width: max-content; animation: learning-notes-ticker-scroll var(--notes-ticker-duration) linear infinite; animation-play-state: paused; }
+.learning-notes-ticker-group { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-around; gap: clamp(1.5rem, 2vw, 2.5rem); min-width: 100cqw; margin: 0; padding: 0.7rem clamp(0.75rem, 1vw, 1.25rem); list-style: none; }
+.learning-notes-ticker-group li { display: flex; flex-shrink: 0; align-items: center; gap: 0.65rem; font-size: clamp(0.75rem, 0.85vw, 0.9375rem); line-height: 1; white-space: nowrap; }
+.learning-notes-ticker-group svg { flex-shrink: 0; width: 1.2rem; height: 1.2rem; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+.learning-notes-icon-frame { opacity: 0.55; }
+.learning-notes-ticker-title, .learning-notes-ticker-english { display: flex; align-items: center; height: 1.25rem; }
+.learning-notes-ticker-title { letter-spacing: 0.04em; }
+.learning-notes-ticker-english { font: 400 1.1em/1 Consolas, 'Courier New', monospace; }
+.learning-notes-ticker[data-running="true"] .learning-notes-ticker-track { animation-play-state: running; }
+.learning-notes-ticker:focus-within .learning-notes-ticker-track { animation-play-state: paused; }
+.learning-notes-ticker:focus-visible { outline: 2px solid var(--study-accent); outline-offset: -3px; }
+
+@keyframes learning-notes-ticker-scroll { to { transform: translateX(-50%); } }
+
+@media (hover: hover) and (pointer: fine) {
+  .learning-notes-ticker:hover .learning-notes-ticker-track { animation-play-state: paused; }
+}
+
+@media (max-width: 700px) {
+  .learning-notes-ticker-group { padding-block: 0.85rem; }
+  .learning-notes-ticker-group li { gap: 0.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .learning-notes-ticker-track { display: block; width: 100%; animation: none; }
+  .learning-notes-ticker-group { justify-content: flex-start; flex-wrap: wrap; gap: 0.75rem 1.75rem; }
+  .learning-notes-ticker-group[aria-hidden="true"] { display: none; }
+}

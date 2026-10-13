@@ -5,6 +5,7 @@ import { LearningToolkit } from './LearningToolkit'
 import { LearningPixelFill } from './LearningPixelFill'
 import { LearningPixelArrow } from './LearningPixelArrow'
 import { LearningPixelLabel } from './LearningPixelLabel'
+import { LearningNotesTicker } from './LearningNotesTicker'
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 const imageRoot = `${import.meta.env.BASE_URL}images/learning/`
@@ -192,12 +193,16 @@ export function LearningHeroScene() {
             <h1 lang="en"><span>Turn every spark of curiosity</span><span>into deeper understanding.</span></h1>
           </div>
           <div className="learning-cover-intro">
-            <div className="learning-intro-heading">
+            <div className="learning-cover-summary">
               <h2 className="learning-intro-index">学习手记</h2>
-              <a className="learning-cover-link" href="#notes">翻开学习笔记 <span aria-hidden="true">↗</span></a>
+              <p className="learning-cover-copy">拆解概念，串联线索。<br />从计算机基础到机器学习，在实践中理解。</p>
             </div>
-            <p className="learning-cover-copy">拆解概念，串联线索。<br />从计算机基础到机器学习，在实践中理解。</p>
-            <div className="learning-cover-topics"><span><b>01</b> 基础</span><span><b>02</b> 智能</span><span><b>03</b> 实践</span></div>
+            <a className="learning-cover-link learning-pixel-button" href="#notes">
+              <LearningPixelFill />
+              <LearningPixelLabel>翻开学习笔记</LearningPixelLabel>
+              <LearningPixelArrow />
+            </a>
+            <LearningNotesTicker />
           </div>
         </div>
 
