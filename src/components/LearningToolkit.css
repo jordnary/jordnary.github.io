@@ -1,7 +1,7 @@
 .learning-toolkit { container-type: inline-size; width: 100%; min-width: 0; margin-top: auto; border-top: 1px solid var(--study-rule); }
 .learning-toolkit-header { display: flex; align-items: center; justify-content: space-between; min-height: 3rem; border-bottom: 1px solid var(--study-rule); }
 .learning-toolkit-header h3 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem clamp(1.25rem, 2.2vw, 2.5rem); font-size: 0.85rem; font-weight: 500; }
-.learning-toolkit-header h3 > span { color: var(--study-muted); font: 0.66rem/1.5 Consolas, 'Courier New', monospace; letter-spacing: 0.06em; }
+.learning-toolkit-header h3 > span { color: inherit; font: inherit; }
 .learning-toolkit-controls { display: flex; flex-shrink: 0; align-self: stretch; }
 .learning-toolkit-controls button { --pixel-fill: #ff4e2a; --pixel-foreground: #fff; display: grid; place-items: center; width: 2.75rem; min-height: 2.75rem; padding: 0; border-left: 1px solid var(--study-rule); color: var(--study-muted); cursor: pointer; transition: color 120ms linear 80ms; }
 :root[data-theme="light"] .learning-toolkit-controls button { --pixel-fill: #ff3c00; }

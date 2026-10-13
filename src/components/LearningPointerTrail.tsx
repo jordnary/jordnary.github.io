@@ -4,7 +4,7 @@ import './LearningPointerTrail.css'
 type TrailPoint = { x: number; y: number; time: number; strength: number }
 
 const excludedSelector = [
-  '.learning-cover-image', '.nav-shell', '.navbar', '.footer-shell', 'nav',
+  '.learning-cover-image', '.nav-shell', '.navbar', '.footer-shell', 'nav:not(.learning-contents)',
   '.mobile-nav-panel', 'dialog', '[role="dialog"]', '[role="menu"]',
   '[role="tooltip"]', '[popover]', '.site-search-backdrop', '.image-gallery',
   '.yarl__portal', '.live2d-companion', '.live2d-tools', '.live2d-dialogue', '.toast',
@@ -38,20 +38,24 @@ export function LearningPointerTrail() {
     let width = 0
     let height = 0
 
-    const clear = () => {
+    const hide = () => {
       cancelAnimationFrame(frame)
       frame = 0
       previousTime = 0
       pointerDistance = 0
       speed = 0
       pressStarted = null
-      target = null
       head = null
       points = []
       if (canvas.dataset.active === 'true') {
         context.clearRect(0, 0, width, height)
         canvas.dataset.active = 'false'
       }
+    }
+
+    const clear = () => {
+      hide()
+      target = null
     }
 
     const resize = () => {
@@ -81,10 +85,13 @@ export function LearningPointerTrail() {
     const draw = (time: number) => {
       frame = 0
       const exclusions = visibleRects(excludedSelector)
-      if (!target || !head || !allowed(target.x, target.y, exclusions)) {
-        clear()
+      if (!target || !allowed(target.x, target.y, exclusions)) {
+        // Keep the viewport position so scrolling out of an excluded area can
+        // restore the marker without requiring another pointer event.
+        hide()
         return
       }
+      if (!head) head = { ...target }
 
       const delta = previousTime ? Math.max(1, time - previousTime) : 1000 / 60
       previousTime = time
@@ -191,8 +198,7 @@ export function LearningPointerTrail() {
 
     const updateTarget = (event: PointerEvent) => {
       const hit = event.target
-      if (event.pointerType !== 'mouse' || reducedMotion.matches || !finePointer.matches || document.hidden
-        || (hit instanceof Element && (!studio.contains(hit) || hit.closest(excludedSelector)))) {
+      if (event.pointerType !== 'mouse' || reducedMotion.matches || !finePointer.matches || document.hidden) {
         clear()
         return false
       }
@@ -205,7 +211,10 @@ export function LearningPointerTrail() {
       } else {
         target = { x: event.clientX, y: event.clientY }
       }
-      if (!head) head = { ...target }
+      if (hit instanceof Element && (!studio.contains(hit) || hit.closest(excludedSelector))) {
+        hide()
+        return false
+      }
       return true
     }
 
@@ -237,7 +246,8 @@ export function LearningPointerTrail() {
     document.addEventListener('pointercancel', clear)
     document.addEventListener('visibilitychange', clear)
     window.addEventListener('blur', clear)
-    window.addEventListener('scroll', clear, { capture: true, passive: true })
+    // Scroll and pointer input share one frame, including updated clipping masks.
+    window.addEventListener('scroll', recheck, { capture: true, passive: true })
     window.addEventListener('resize', resize)
     reducedMotion.addEventListener('change', clear)
     finePointer.addEventListener('change', clear)
@@ -252,7 +262,7 @@ export function LearningPointerTrail() {
       document.removeEventListener('pointercancel', clear)
       document.removeEventListener('visibilitychange', clear)
       window.removeEventListener('blur', clear)
-      window.removeEventListener('scroll', clear, true)
+      window.removeEventListener('scroll', recheck, true)
       window.removeEventListener('resize', resize)
       reducedMotion.removeEventListener('change', clear)
       finePointer.removeEventListener('change', clear)

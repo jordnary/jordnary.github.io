@@ -15,7 +15,7 @@ async function waitForPointerLayout(page) {
         cover.left, cover.top, cover.width, cover.height].join(',')
       stableFrames = current === previous ? stableFrames + 1 : 0
       previous = current
-      // A queued scroll event must clear old pixels before the next pointer input.
+      // Let queued scroll events refresh the clipping masks before pointer input.
       if (stableFrames >= 2) return
     }
     throw new Error('The Learning layout did not settle before pointer input')
@@ -256,10 +256,14 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     assert.equal(await trail.count(), 1)
     assert.equal(await trail.getAttribute('aria-hidden'), 'true')
     assert.equal(await trail.evaluate(canvas => getComputedStyle(canvas).pointerEvents), 'none')
-    for (const selector of ['.learning-hero-scene', '#skills .learning-panel-diagram', '#notes .notes-gallery-heading h2', '#timeline .learning-panel-diagram']) {
+    for (const selector of [
+      '.learning-hero-scene', '.learning-contents a[href="#skills"]',
+      '.learning-contents a[href="#notes"]', '.learning-contents a[href="#timeline"]',
+      '#skills .learning-panel-diagram', '#notes .notes-gallery-heading h2', '#timeline .learning-panel-diagram',
+    ]) {
       await activateTrail(page, selector)
     }
-    pass('A single noninteractive trail follows the pointer over the lower architectural scene and all three Learning content sections')
+    pass('A single noninteractive trail follows the pointer over the lower architectural scene, all three contents links, and the Learning content sections')
 
     await page.locator('.learning-cover-image').scrollIntoViewIfNeeded()
     await waitForPointerLayout(page)
@@ -300,7 +304,7 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     assert.ok(slow.tailMaxAlpha <= 8, 'Slow motion leaves an absent or nearly transparent trail after excluding the marker')
     assert.ok(fast.tailMaxAlpha > slow.tailMaxAlpha + 25, 'Fast motion produces a visibly darker trail than slow motion')
     assert.ok(fast.tailPixels > 20 && fast.tailAlpha > slow.tailAlpha + 500, 'Fast motion draws a measurable trail independently of the marker pixels')
-    assert.ok(fast.travelDistance > 400 && fast.inkSpan > 170, 'A fast sweep can extend beyond the old fixed trail limit')
+    assert.ok(fast.travelDistance > 400 && fast.inkSpan > 170, `A fast sweep can extend beyond the old fixed trail limit (observed ${fast.inkSpan} CSS pixels)`)
     assert.ok(fast.inkSpan <= fast.viewportWidth / 2 + 12, 'The trail stays within half of the viewport plus the marker and antialiasing')
     assert.ok(fast.strokeWidths.length > 3, 'The visible trail contains multiple canvas stroke segments')
     assert.ok(fast.strokeWidths[0] < fast.strokeWidths.at(-1) * 0.6 && fast.strokeWidths.at(-1) >= 1.2, 'The tail is physically thinner than the stroke nearest the marker')
@@ -330,7 +334,10 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
       await nextFrame()
       const reads = window.__learningPointerHitTests
       const draws = window.__learningPointerDraws
-      for (let event = 1; event <= 240; event++) move(x + event)
+      for (let event = 1; event <= 240; event++) {
+        move(x + event)
+        window.dispatchEvent(new Event('scroll'))
+      }
       const readsDuringBurst = window.__learningPointerHitTests - reads
       const drawsDuringBurst = window.__learningPointerDraws - draws
       await nextFrame()
@@ -350,7 +357,7 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     assert.equal(burst.drawsAfterBurst, 1, 'One frame renders the latest position from the complete input burst')
     assert.ok(Math.abs(burst.forwardLag) < 1 && Math.abs(burst.reverseLag) < 1, `Fast sweeps and reversals catch the latest pointer position in one frame (observed ${JSON.stringify(burst)})`)
     assert.equal(burst.idleDraws, 0, 'Rendering stops once the pointer settles and the trail has faded')
-    pass('High-frequency input is coalesced into one frame; fast reversals stay responsive and the settled marker requires no rendering loop')
+    pass('High-frequency pointer and scroll input share one frame; fast reversals stay responsive and the settled marker requires no rendering loop')
 
     for (const width of [480, 720]) {
       await page.setViewportSize({ width, height: 900 })
@@ -422,13 +429,61 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     await page.locator('.note-reader-paper').hover()
     await assertCleared(page, 'The note reader contents')
     await page.getByRole('button', { name: '关闭笔记' }).click()
+    await page.locator('dialog[open]').waitFor({ state: 'hidden' })
     pass('Search and note-reader dialogs clear the existing trail and keep their contents free of pointer effects')
 
     await activateTrail(page)
-    await page.mouse.down()
-    await page.evaluate(() => scrollBy({ top: 30, behavior: 'instant' }))
-    await assertCleared(page, 'Scrolling')
-    await page.mouse.up()
+    const scrolling = await page.evaluate(async () => {
+      const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve))
+      const canvas = document.querySelector('canvas.learning-pointer-trail')
+      const origin = { ...window.__learningPointerHead }
+      const move = x => document.dispatchEvent(new PointerEvent('pointermove', { pointerType: 'mouse', clientX: x, clientY: origin.y }))
+      const startY = scrollY
+      move(origin.x + 100)
+      await nextFrame()
+      const beforeScroll = { ...window.__learningPointerHead }
+      scrollBy({ top: 30, behavior: 'instant' })
+      await nextFrame()
+      await nextFrame()
+      const stationary = { active: canvas.dataset.active, head: { ...window.__learningPointerHead }, segments: window.__learningPointerStrokeWidths.length }
+      const moving = []
+      for (let frame = 0; frame < 8; frame++) {
+        move(origin.x + (frame % 2 ? 160 : 40))
+        scrollBy({ top: 4, behavior: 'instant' })
+        await nextFrame()
+        moving.push({ active: canvas.dataset.active, segments: window.__learningPointerStrokeWidths.length })
+      }
+      const stopped = await nextFrame()
+      while ((await nextFrame()) - stopped < 420) { /* Let the tail fade after scrolling stops. */ }
+      const settledDraws = window.__learningPointerDraws
+      for (let frame = 0; frame < 6; frame++) await nextFrame()
+      return { startY, endY: scrollY, beforeScroll, stationary, moving, idleDraws: window.__learningPointerDraws - settledDraws }
+    })
+    assert.ok(scrolling.endY > scrolling.startY, 'The regression check scrolls the actual document')
+    assert.equal(scrolling.stationary.active, 'true', 'Scrolling with a stationary pointer keeps the marker visible')
+    assert.deepEqual(scrolling.stationary.head, scrolling.beforeScroll, 'Scrolling keeps the marker at the same viewport coordinates')
+    assert.ok(scrolling.stationary.segments > 0, 'Scrolling preserves the existing fading trail')
+    assert.ok(scrolling.moving.every(sample => sample.active === 'true' && sample.segments > 0), 'Pointer movement continues drawing a tail throughout scrolling')
+    assert.equal(scrolling.idleDraws, 0, 'Scrolling adds no ongoing rendering once the trail settles')
+    pass('Actual scrolling retains the stationary marker and moving trail, then stops rendering when idle')
+
+    await page.locator('.learning-cover-image').scrollIntoViewIfNeeded()
+    await waitForPointerLayout(page)
+    const boundary = await page.evaluate(() => {
+      const cover = document.querySelector('.learning-cover-image').getBoundingClientRect()
+      return { x: cover.left + cover.width / 2, y: Math.max(cover.top + 30, document.querySelector('.nav-shell').getBoundingClientRect().bottom + 40), bottom: cover.bottom }
+    })
+    await page.mouse.move(boundary.x, boundary.y)
+    await assertCleared(page, 'A stationary pointer over the cover')
+    const coverScroll = await page.evaluate(() => scrollY)
+    await page.evaluate(amount => scrollBy({ top: amount, behavior: 'instant' }), boundary.bottom - boundary.y + 40)
+    await waitForPointerLayout(page)
+    assert.equal(await trail.getAttribute('data-active'), 'true', 'Scrolling the cover away restores the stationary pointer without a new mouse event')
+    await assertCoverMasked(page, 'The cover after scrolling beneath the stationary pointer')
+    await page.evaluate(top => scrollTo({ top, behavior: 'instant' }), coverScroll)
+    await assertCleared(page, 'Scrolling the cover back beneath the stationary pointer')
+    pass('Scrolling across the cover boundary updates masking and restores the stationary marker in allowed content')
+
     await activateTrail(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     await assertCleared(page, 'Resizing')
@@ -446,7 +501,7 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     await assertCleared(page, 'Reduced-motion pointer movement')
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await activateTrail(page)
-    pass('Scroll, resize, and blur clear stale pixels; reduced motion disables the effect and toggles back cleanly')
+    pass('Resize and blur clear stale pixels; reduced motion disables the effect and toggles back cleanly')
 
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => { document.documentElement.dataset.theme = value }, theme)

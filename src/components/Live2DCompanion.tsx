@@ -47,7 +47,7 @@ export function Live2DCompanion({ suspended, page, actions = noActions }: Compan
     () => window.matchMedia(compactQuery).matches,
     () => true,
   )
-  const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(desktopCollapseKey, false, 'sessionStorage'))
+  const [desktopCollapsed, setDesktopCollapsed] = useState(() => readPreference(desktopCollapseKey, true, 'sessionStorage'))
   const [mobileCollapsed, setMobileCollapsed] = useState(() => readPreference(mobileCollapseKey, true, 'sessionStorage'))
   const collapsed = compact ? mobileCollapsed : desktopCollapsed
   const [chatEnabled, setChatEnabled] = useState(() => readPreference(chatPreferenceKey, true))

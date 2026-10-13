@@ -78,6 +78,14 @@ try {
   check(!performance.getEntriesByType('resource').some((entry) => /\/src\/lib\/live2d|\/live2d\/vampire|cubism|pixi/.test(entry.name)), 'Mobile does not request the rendering runtime or model assets')
 
   compact.set(false)
+  await nextPaint()
+  check(!!document.querySelector('.live2d-launcher') && !document.querySelector('.live2d-stage'), 'Desktop also defaults to a collapsed launcher without mounting the model')
+  check(!performance.getEntriesByType('resource').some((entry) => /\/src\/lib\/live2d|\/live2d\/vampire|cubism|pixi/.test(entry.name)), 'Desktop does not request the rendering runtime or model assets until expanded')
+
+  root.unmount()
+  sessionStorage.setItem(sessionKeys[0], 'false')
+  root = createRoot(document.querySelector('#fixture')!)
+  render()
   await until(() => document.querySelector('.live2d-placeholder'))
   const loadingRect = document.querySelector('.live2d-placeholder')!.getBoundingClientRect()
   check(document.documentElement.clientWidth - loadingRect.right >= 23.5 && window.innerHeight - loadingRect.bottom >= 23.5, 'Loading status has comfortable right and bottom viewport margins')

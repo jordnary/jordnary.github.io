@@ -242,7 +242,7 @@
 .notes-filter > span { color: var(--study-muted); font-size: 0.67rem; }
 .notes-filter select { max-width: 10rem; padding: 0.4rem 0.3rem; border: 0; border-bottom: 1px solid var(--study-rule); border-radius: 0; background: transparent; color: var(--study-ink); font: inherit; font-size: 0.75rem; cursor: pointer; }
 .notes-filter option { background: var(--study-paper); color: var(--study-ink); }
-.notes-count { color: var(--study-muted); font: 0.7rem/1.5 monospace; white-space: nowrap; }
+.notes-count { color: var(--study-muted); font-size: 0.8125rem; font-weight: 500; line-height: 1.5; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .notes-viewport { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; scroll-padding-inline-start: var(--notes-gutter); }
 .notes-viewport::-webkit-scrollbar { display: none; }
 .notes-track { position: relative; display: flex; gap: 24px; width: max-content; padding: 0.4rem var(--notes-gutter) 0.6rem; }
@@ -493,7 +493,7 @@
   .notes-filter { gap: 0.2rem; }
   .notes-filter > span { display: none; }
   .notes-filter select { max-width: 7.5rem; font-size: 0.73rem; }
-  .notes-count { margin-left: auto; font-size: 0.65rem; }
+  .notes-count { margin-left: auto; font-size: 0.75rem; }
   .notes-track { gap: 16px; }
   .notes-viewport { scroll-snap-type: x mandatory; }
   .note-cover { height: 450px; padding: 1rem 1.2rem 1.2rem; }
