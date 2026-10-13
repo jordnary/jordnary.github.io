@@ -14,6 +14,15 @@ function App({ page: initialPage }: { page: SitePage }) {
   const { page, href } = useSiteNavigation(initialPage)
   const project = getProjectFromUrl(new URL(href))
   useEffect(() => {
+    const preventMiddleButtonAutoscroll = (event: MouseEvent) => {
+      if (event.button === 1) event.preventDefault()
+    }
+    // Autoscroll starts on mousedown; leave auxclick available for opening links.
+    window.addEventListener('mousedown', preventMiddleButtonAutoscroll, { capture: true, passive: false })
+    return () => window.removeEventListener('mousedown', preventMiddleButtonAutoscroll, true)
+  }, [])
+
+  useEffect(() => {
     const route = siteRoutes[page]
     const description = document.querySelector('meta[name="description"]')
 

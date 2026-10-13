@@ -218,29 +218,31 @@ export function LearningPointerTrail() {
       return true
     }
 
+    const updatePress = (buttons: number) => {
+      if (buttons === 0) pressStarted = null
+      else if (pressStarted === null) pressStarted = performance.now()
+    }
+
     const move = (event: PointerEvent) => {
-      if (updateTarget(event)) schedule()
+      if (!updateTarget(event)) return
+      // Chorded mouse buttons report intermediate presses/releases as pointermove.
+      updatePress(event.buttons)
+      schedule()
     }
 
     const recheck = () => {
       schedule()
     }
-    const pointerDown = (event: PointerEvent) => {
-      if (!updateTarget(event)) return
-      if (event.button !== 0) return
-      pressStarted = performance.now()
-      schedule()
-    }
     const pointerUp = (event: PointerEvent) => {
-      if (event.button !== 0 || pressStarted === null) return
-      pressStarted = null
+      if (event.pointerType !== 'mouse' || pressStarted === null) return
+      updatePress(event.buttons)
       schedule()
     }
     const mutationObserver = new MutationObserver(recheck)
     mutationObserver.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open', 'hidden', 'class'] })
     resize()
     document.addEventListener('pointermove', move, { passive: true })
-    document.addEventListener('pointerdown', pointerDown, { passive: true })
+    document.addEventListener('pointerdown', move, { capture: true, passive: true })
     window.addEventListener('pointerup', pointerUp, true)
     document.addEventListener('pointerleave', clear)
     document.addEventListener('pointercancel', clear)
@@ -256,7 +258,7 @@ export function LearningPointerTrail() {
       clear()
       mutationObserver.disconnect()
       document.removeEventListener('pointermove', move)
-      document.removeEventListener('pointerdown', pointerDown)
+      document.removeEventListener('pointerdown', move, true)
       window.removeEventListener('pointerup', pointerUp, true)
       document.removeEventListener('pointerleave', clear)
       document.removeEventListener('pointercancel', clear)

@@ -155,10 +155,10 @@ async function sampleTrailAtSpeed(page, pixelsPerMillisecond, options = {}) {
   }, { speed: pixelsPerMillisecond, ...options })
 }
 
-async function samplePressFeedback(page) {
+async function samplePressFeedback(page, button, buttons, chord = false) {
   await page.locator('#skills .learning-panel-diagram').first().scrollIntoViewIfNeeded()
   await waitForPointerLayout(page)
-  return page.evaluate(async () => {
+  return page.evaluate(async ({ button, buttons, chord }) => {
     const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve))
     const canvas = document.querySelector('canvas.learning-pointer-trail')
     const box = document.querySelector('#skills .learning-panel-diagram').getBoundingClientRect()
@@ -170,7 +170,7 @@ async function samplePressFeedback(page) {
     const regionHeight = Math.ceil(64 * scaleY)
     const regionLeft = Math.floor((x - 32) * scaleX)
     const regionTop = Math.floor((y - 32) * scaleY)
-    const dispatch = (type, buttons = 0) => document.dispatchEvent(new PointerEvent(type, { pointerType: 'mouse', clientX: x, clientY: y, button: 0, buttons, bubbles: true }))
+    const dispatch = (type, buttons = 0, changedButton = button) => document.dispatchEvent(new PointerEvent(type, { pointerType: 'mouse', clientX: x, clientY: y, button: changedButton, buttons, bubbles: true }))
     const sample = () => {
       const pixels = canvas.getContext('2d').getImageData(regionLeft, regionTop, regionWidth, regionHeight).data
       let left = regionWidth
@@ -197,17 +197,25 @@ async function samplePressFeedback(page) {
     await nextFrame()
     const idle = sample()
     const started = performance.now()
-    dispatch('pointerdown', 1)
+    dispatch('pointerdown', buttons)
     const growth = []
     while ((await nextFrame()) - started < 400) growth.push(sample())
     const held = sample()
     for (let frame = 0; frame < 6; frame++) await nextFrame()
     const stillHeld = sample()
-    dispatch('pointerup')
+    let partlyReleased
+    if (chord) {
+      dispatch('pointermove', buttons | 8, 3)
+      await nextFrame()
+      dispatch('pointermove', 8)
+      await nextFrame()
+      partlyReleased = sample()
+    }
+    dispatch('pointerup', 0, chord ? 3 : button)
     await nextFrame()
     const released = sample()
-    return { idle, growth, held, stillHeld, released }
-  })
+    return { idle, growth, held, stillHeld, partlyReleased, released }
+  }, { button, buttons, chord })
 }
 
 export async function runLearningPointerChecks(browser, baseURL, report = () => {}) {
@@ -369,13 +377,19 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
     await page.setViewportSize({ width: 1440, height: 900 })
     pass('Fast sweeps use the viewport-relative length limit and adapt after resizing')
 
-    const press = await samplePressFeedback(page)
-    assert.ok(press.idle.width >= 9 && press.idle.width <= 11 && press.idle.outerPixels === 0, `An idle pointer has only the square marker (observed ${JSON.stringify(press.idle)})`)
-    assert.ok(press.growth.some(sample => sample.width > press.idle.width + 2 && sample.width < press.held.width - 2), 'Pressing grows an outline through intermediate sizes')
-    assert.ok(press.held.width >= 19 && press.held.width <= 22 && press.held.height >= 19 && press.held.height <= 22 && press.held.outerPixels > 0, 'The held outline expands to about 20 CSS pixels around the ten-pixel square')
-    assert.deepEqual(press.stillHeld, press.held, 'The expanded outline stays visible and still while the button remains down')
-    assert.ok(press.released.width >= 9 && press.released.width <= 11 && press.released.outerPixels === 0, 'Releasing immediately removes the outline and retains the square')
-    pass('Left-button presses grow and hold an outline; releasing removes it while keeping the marker')
+    for (const [button, buttons, label] of [[0, 1, 'Left'], [1, 4, 'Middle'], [2, 2, 'Right'], [3, 8, 'Back'], [4, 16, 'Forward']]) {
+      const press = await samplePressFeedback(page, button, buttons)
+      assert.ok(press.idle.width >= 9 && press.idle.width <= 11 && press.idle.outerPixels === 0, `An idle pointer has only the square marker (observed ${JSON.stringify(press.idle)})`)
+      assert.ok(press.growth.some(sample => sample.width > press.idle.width + 2 && sample.width < press.held.width - 2), 'Pressing grows an outline through intermediate sizes')
+      assert.ok(press.held.width >= 19 && press.held.width <= 22 && press.held.height >= 19 && press.held.height <= 22 && press.held.outerPixels > 0, 'The held outline expands to about 20 CSS pixels around the ten-pixel square')
+      assert.deepEqual(press.stillHeld, press.held, 'The expanded outline stays visible and still while the button remains down')
+      assert.ok(press.released.width >= 9 && press.released.width <= 11 && press.released.outerPixels === 0, 'Releasing immediately removes the outline and retains the square')
+      pass(`${label}-button presses grow and hold an outline; releasing removes it while keeping the marker`)
+    }
+    const chord = await samplePressFeedback(page, 1, 4, true)
+    assert.deepEqual(chord.partlyReleased, chord.held, 'Releasing middle while a side button remains held preserves the outline')
+    assert.equal(chord.released.outerPixels, 0, 'Releasing the last side button clears the outline')
+    pass('Chorded buttons keep feedback until the final mouse button is released')
 
     await activateTrail(page)
     await page.waitForFunction(selector => {

@@ -19,6 +19,7 @@
     "test:learning-ink": "node tests/learning-ink.browser.mjs",
     "test:learning-geometry": "node tests/learning-geometry.browser.mjs",
     "test:learning-pointer": "node tests/learning-pointer.browser.mjs",
+    "test:site-mouse": "node tests/site-mouse.browser.mjs",
     "test:gallery": "node tests/image-gallery.browser.mjs",
     "test:project-details": "node tests/project-details.browser.mjs",
     "test:project-docs": "node --test tests/project-docs.test.mjs tests/routes.test.ts",
