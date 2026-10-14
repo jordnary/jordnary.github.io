@@ -1,5 +1,3 @@
-:root { --site-footer-bg: #4b6f8f; }
-
 .footer-shell {
   --footer-ink: #ffffff;
   --footer-muted: #edf3f8;
@@ -15,13 +13,27 @@
 }
 
 :root .footer-shell {
-  --footer-bg: var(--site-footer-bg);
+  --footer-bg: #4b6f8f;
 }
 
 .footer-surface {
   position: relative;
   display: flow-root;
   background: var(--footer-bg);
+}
+
+/* Mask the actual footer so content is visible immediately below the paper. */
+.footer-shell--paper-seam {
+  --paper-seam-height: clamp(1.75rem, 3vw, 3rem);
+  margin-top: calc(-1 * var(--paper-seam-height));
+  mask-image: var(--paper-seam-mask), linear-gradient(#000, #000);
+  mask-size: 100% var(--paper-seam-height), 100% calc(100% - var(--paper-seam-height) + 1px);
+  mask-position: top, bottom;
+  mask-repeat: no-repeat;
+}
+
+.footer-shell--paper-seam .footer-surface {
+  padding-top: var(--paper-seam-height);
 }
 
 /* The moving footer slot uncovers an actually stationary surface underneath. */
@@ -207,4 +219,8 @@
   .footer-surface { transform: none; }
   .footer-link,
   .footer-link-arrow { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .footer-shell--paper-seam { mask-image: none; }
 }

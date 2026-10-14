@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { SectionPaperSeam } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 import { getFooterOrbitPath, useFooterOrbit } from './useFooterOrbit'
 import { useFooterReveal } from './useFooterReveal'
 import { contactLinks } from '../data/contact'
 import { getRouteHref, type SitePage } from '../lib/routes'
+import { paperSeamMask } from '../lib/paper-tear'
 import './Footer.css'
 
 const footerPages: { page: SitePage; label: string }[] = [
@@ -59,13 +61,19 @@ const brandLetters = [...'JORDNARY'].map((letter, index) => ({
   x: 12 + index * 180,
 }))
 
-export function Footer() {
+export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
   const footerRef = useRef<HTMLElement>(null)
   useFooterReveal(footerRef)
   const currentYear = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date())
 
   return (
-    <footer ref={footerRef} className="footer-shell" id="site-footer" lang="en">
+    <footer
+      ref={footerRef}
+      className={`footer-shell${paperSeam ? ' footer-shell--paper-seam' : ''}`}
+      style={paperSeam ? { '--paper-seam-mask': paperSeamMask } as CSSProperties : undefined}
+      id="site-footer"
+      lang="en"
+    >
       <div className="footer-surface">
         <div className="footer-content">
           <FooterBrand />
@@ -100,6 +108,7 @@ export function Footer() {
           <p>Built with curiosity.</p>
         </div>
       </div>
+      {paperSeam && <SectionPaperSeam />}
     </footer>
   )
 }

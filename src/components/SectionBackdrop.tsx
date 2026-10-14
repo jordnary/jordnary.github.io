@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { paperTear, surfaceTear } from '../lib/paper-tear'
 import './SectionBackdrop.css'
 
 export type SectionTone = 'white' | 'paper' | 'sage' | 'sky' | 'lilac'
@@ -12,38 +13,12 @@ type SectionBackdropProps = {
   decoration?: SectionDecoration
 }
 
-// Several scales of irregularity keep the tear organic at both wide and narrow sizes.
-function tornContour(offset: number, seed: number) {
-  let state = seed
-  const random = () => {
-    state = (state * 1664525 + 1013904223) >>> 0
-    return state / 4294967296
-  }
-  const points: string[] = []
-  for (let x = 0; x < 1440; x += 1.5 + random() * 3.5) {
-    const y = offset + Math.sin(x / 73) * 4 + Math.sin(x / 21) * 2.6
-      + Math.sin(x / 7.3) * 1.1 + (random() - 0.5) * 2.6
-    points.push(`${x.toFixed(1)} ${y.toFixed(1)}`)
-  }
-  return `M${points.join('L')}L1440 ${offset}V64H0Z`
-}
-
-const paperTear = tornContour(15, 17)
-const surfaceTear = tornContour(37, 41)
-
 export function SectionPaperSeam({ className = '' }: { className?: string }) {
-  const maskId = useId()
   return (
     <svg className={`section-paper-seam ${className}`} viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <defs>
-        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="64">
-          <path d={paperTear} fill="white" />
-          <path d={surfaceTear} fill="black" />
-        </mask>
-      </defs>
-      <path className="section-paper-seam-surface" d={surfaceTear} />
+      {/* The footer mask supplies the upper edge; everything below this rim is transparent. */}
       <g className="section-paper-seam-shadow">
-        <path className="section-backdrop-paper-rim" d={paperTear} mask={`url(#${maskId})`} />
+        <path className="section-backdrop-paper-rim" d={`M0 0H1440V64H0Z ${surfaceTear}`} fillRule="evenodd" />
       </g>
     </svg>
   )

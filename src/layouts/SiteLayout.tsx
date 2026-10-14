@@ -28,7 +28,7 @@ export function SiteLayout({ children, page, isProjectDetail = false }: SiteLayo
 
         <main tabIndex={-1}>{children}</main>
 
-        {!isPortalMode && <Footer />}
+        {!isPortalMode && <Footer paperSeam={page === 'about'} />}
       </div>
       {!isPortalMode && <Live2DCompanion page={page} suspended={isSearchOpen} />}
       {!isPortalMode && <SiteSearch

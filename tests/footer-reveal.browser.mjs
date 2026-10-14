@@ -38,11 +38,45 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     await mkdir(process.env.FOOTER_SCREENSHOT_DIR, { recursive: true })
     await page.screenshot({ path: `${process.env.FOOTER_SCREENSHOT_DIR}/${name}.png` })
   }
+  const checkBelowPaper = async () => {
+    // Paint a probe on the real footer, where the former blue seam hid content.
+    const row = await page.evaluate(() => {
+      const seam = document.querySelector('.section-paper-seam').getBoundingClientRect()
+      const surface = document.querySelector('.footer-surface')
+      const y = Math.floor(seam.bottom - 3)
+      const probe = document.createElement('div')
+      probe.dataset.seamProbe = ''
+      Object.assign(probe.style, {
+        position: 'absolute', left: '0', right: '0', height: '3px',
+        top: `${y - surface.getBoundingClientRect().top}px`,
+        background: 'rgb(242, 0, 213)', zIndex: '1', pointerEvents: 'none',
+      })
+      surface.append(probe)
+      return y
+    })
+    try {
+      const strip = await page.screenshot({ clip: { x: 0, y: row, width: page.viewportSize().width, height: 2 } })
+      const pixels = await page.evaluate(async base64 => {
+        const image = new Image()
+        image.src = `data:image/png;base64,${base64}`
+        await image.decode()
+        const canvas = document.createElement('canvas')
+        canvas.width = image.width
+        canvas.height = image.height
+        const context = canvas.getContext('2d')
+        context.drawImage(image, 0, 0)
+        return [0.1, 0.3, 0.5, 0.7, 0.9].map(ratio => [...context.getImageData(Math.floor(image.width * ratio), 0, 1, 1).data])
+      }, strip.toString('base64'))
+      assert.ok(pixels.every(([r, g, b]) => r > 210 && g < 25 && b > 180), 'The actual footer remains visible directly below the paper, without an opaque blue band')
+    } finally {
+      await page.locator('[data-seam-probe]').evaluate(element => element.remove())
+    }
+  }
   try {
     await page.goto(new URL('about/', baseURL).href)
     await page.locator('.footer-shell[data-reveal]').waitFor({ state: 'attached' })
     await page.evaluate(() => document.fonts.ready)
-    for (const width of [1440, 390]) {
+    for (const width of [1920, 1440, 768, 390]) {
       await page.setViewportSize({ width, height: 960 })
       for (const theme of ['light', 'dark']) {
         await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
@@ -52,6 +86,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
           if (progress === 1) {
             await shot(`footer-reveal-${theme}-${width}`)
           }
+          if (progress === 0.7) await checkBelowPaper()
         }
         assert.ok(frames.every(frame => Math.abs(frame.bottom - frame.viewport) < 1), 'The footer remains anchored to the viewport during reveal and conceal')
         assert.ok(frames.every(frame => Math.abs(frame.mainBottom - frames[0].mainBottom) < 1), 'Reveal never changes document layout')
@@ -63,6 +98,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     }
     report('Desktop and mobile reveal reversibly from beneath the page in both themes without shifting layout')
     report('The footer stays at full brightness on entry, reversal and re-entry')
+    report('Content directly below the torn paper stays visible in both directions and themes across four screen widths')
 
     await page.setViewportSize({ width: 1440, height: 960 })
     await reveal(0.02)
@@ -115,6 +151,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).transform), 'none')
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).position), 'relative')
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element, '::after').content), 'none')
+    await checkBelowPaper()
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await page.setViewportSize({ width: 390, height: 300 })
     await page.waitForFunction(() => document.querySelector('.footer-shell').dataset.reveal === 'false')

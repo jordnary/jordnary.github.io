@@ -48,15 +48,14 @@
 
 .section-paper-seam {
   position: absolute;
-  inset: auto calc(50% - 50vw) -1px;
+  inset: 0 0 auto;
   display: block;
-  width: 100vw;
-  height: clamp(1.75rem, 3vw, 3rem);
+  width: 100%;
+  height: var(--paper-seam-height);
   pointer-events: none;
   user-select: none;
 }
 
-.section-paper-seam-surface { fill: var(--paper-seam-surface, var(--section-white)); }
 .section-paper-seam-shadow { filter: drop-shadow(0 3px 3px rgb(25 43 50 / 0.16)); }
 
 .section-margin {
