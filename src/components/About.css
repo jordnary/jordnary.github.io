@@ -44,6 +44,7 @@
   opacity: 0.1;
 }
 .journey-cover-summary {
+  --cover-edge-height: clamp(3rem, 4.5vw, 4.25rem);
   --cover-ink: #f8fcff;
   --cover-muted: #dce9f1;
   --cover-accent: #d0edf0;
@@ -60,7 +61,7 @@
   background: url('/images/about/crumpled-paper.webp') center / cover no-repeat;
   mask-image: linear-gradient(transparent, #000 1.25rem);
 }
-.journey-cover-summary .section-backdrop-edge { height: clamp(3rem, 4.5vw, 4.25rem); }
+.journey-cover-summary .section-backdrop-edge { height: var(--cover-edge-height); }
 .about-journey .section-backdrop-edge { overflow: hidden; }
 .journey-cover-summary .section-backdrop-edge > path:not(:last-child) { clip-path: inset(0 0 3px); }
 .journey-cover-summary .journey-prologue-glyph { opacity: 0.1; }
@@ -234,7 +235,7 @@
 }
 
 @media (max-width: 700px), (hover: none) and (pointer: coarse) {
-  .about-journey :not(.journey-atlas-motion), .about-journey *::before, .about-journey *::after { transition: none !important; animation: none !important; }
+  .about-journey :not(.journey-atlas-motion, .iceberg-motion), .about-journey *::before, .about-journey *::after { transition: none !important; animation: none !important; }
   .about-journey { --cover-top-space: 1rem; padding-bottom: 2.5rem; }
   .journey-cover { padding-block: 0; }
   .journey-intro { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 0 4.5rem; }

@@ -3,6 +3,7 @@ import { SectionBackdrop } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 import { AboutJourneyPath } from './AboutJourneyPath'
 import { AboutExplorationArt } from './AboutExplorationArt'
+import { AboutIceberg } from './AboutIceberg'
 import { AboutJourneyDecorations } from './AboutJourneyDecorations'
 import { aboutProfile } from '../data/profile'
 import { getRouteHref } from '../lib/routes'
@@ -65,6 +66,7 @@ export function About() {
 
         <div className="journey-cover-summary section-surface">
           <SectionBackdrop tone="sky" />
+          <AboutIceberg />
           <div className="journey-cover-notes">
             <div className="journey-prologue">
               <span className="journey-prologue-glyph" aria-hidden="true">序</span>

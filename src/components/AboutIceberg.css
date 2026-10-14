@@ -1,0 +1,49 @@
+/* Both photo layers share the existing paper boundary without sizing the cover. */
+.journey-cover-summary {
+  --iceberg-width: clamp(16.5rem, calc(44vw - 5rem), 32rem);
+  /* The summit lies right of the photo's center; align the peak with the open sky. */
+  --iceberg-center: 46%;
+}
+.journey-iceberg {
+  position: absolute;
+  z-index: 0;
+  top: calc(var(--cover-edge-height) * -0.421875);
+  left: var(--iceberg-center);
+  display: block;
+  width: var(--iceberg-width);
+  margin: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+  user-select: none;
+}
+
+.journey-iceberg-summit { width: calc(var(--iceberg-width) * 0.88); transform: translate(-50%, -100%); }
+.journey-iceberg-summit picture { display: block; }
+.journey-iceberg-depth {
+  opacity: 0.64;
+  mask-image: linear-gradient(#000 25%, rgb(0 0 0 / 0.85) 60%, rgb(0 0 0 / 0.6));
+}
+.journey-iceberg img, .journey-iceberg-water svg { display: block; width: 100%; height: auto; }
+.journey-iceberg-water svg { overflow: visible; }
+.journey-cover-notes, .journey-cover-colophon { position: relative; z-index: 2; }
+.journey-iceberg-rim { z-index: 1; left: calc(50% - 50vw); right: auto; width: 100vw; pointer-events: none; }
+.iceberg-water-ripples { stroke: #bbd4dd; stroke-width: 2; opacity: 0.6; }
+
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
+  .journey-iceberg, .journey-iceberg-rim { display: none; }
+}
+
+@media (forced-colors: active) {
+  .journey-iceberg, .journey-iceberg-rim { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .iceberg-water-ripples .iceberg-motion { animation: iceberg-water-ripple 4.8s ease-in-out infinite; animation-play-state: paused; }
+  .iceberg-water-ripples .iceberg-motion:nth-child(2) { animation-delay: -2.4s; }
+  .journey-iceberg[data-motion='running'] .iceberg-motion { animation-play-state: running; }
+}
+
+@keyframes iceberg-water-ripple {
+  0%, 100% { opacity: 0.3; transform: translateX(-3px); }
+  50% { opacity: 0.9; transform: translateX(3px); }
+}

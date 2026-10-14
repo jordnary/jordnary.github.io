@@ -4,6 +4,14 @@ import { pathToFileURL } from 'node:url'
 
 const motifSelector = '.journey-margin-motif'
 const screenshotDirectory = 'node_modules/.cache/about-decorations'
+const expectedMotifs = [
+  { kind: 'question', side: 'left', width: 132 },
+  { kind: 'connections', side: 'right', width: 152 },
+  { kind: 'notes', side: 'left', width: 152 },
+  { kind: 'rings', side: 'right', width: 112 },
+  { kind: 'growth', side: 'left', width: 152 },
+  { kind: 'next', side: 'right', width: 152 },
+]
 
 async function settleLayout(page) {
   await page.evaluate(async () => {
@@ -53,7 +61,8 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
   try {
     await page.goto(new URL('about/', baseURL).href)
     await page.locator(motifSelector).first().waitFor({ state: 'attached' })
-    assert.equal(await page.locator(motifSelector).count(), 4, 'The journey has four margin sketches')
+    assert.equal(await page.locator(motifSelector).count(), expectedMotifs.length, 'The journey has six distinct margin sketches')
+    assert.equal(await page.locator('.journey-margin-paper').count(), 2, 'The journey uses two local grid-paper patches')
     assert.equal(await page.locator('.journey-margin-art').getAttribute('aria-hidden'), 'true', 'Decorative drawings stay outside the accessibility tree')
     await mkdir(screenshotDirectory, { recursive: true })
 
@@ -77,8 +86,12 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
             drawing: rect(frame),
             width: Number.parseFloat(style.width),
             display: style.display,
-            side: element.classList.contains('journey-margin-motif--loop') ? 'left' : 'right',
-            visiblePaths: [...element.querySelectorAll('path')].filter(path => path.getBoundingClientRect().width > 0).length,
+            side: element.dataset.side,
+            kind: element.dataset.kind,
+            visibleShapes: [...element.querySelectorAll('path, circle, ellipse, rect, line, polygon, polyline')].filter(shape => {
+              const bounds = shape.getBoundingClientRect()
+              return bounds.width > 0 || bounds.height > 0
+            }).length,
             animations: element.getAnimations({ subtree: true }).length,
             opacity: [...element.querySelectorAll('.journey-pencil-frame')].map(frame => Number(getComputedStyle(frame).opacity)),
           }
@@ -87,6 +100,7 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
           overflow: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - document.documentElement.clientWidth,
           viewport: document.documentElement.clientWidth,
           scrollbar: Math.max(innerWidth - document.documentElement.clientWidth, innerWidth - document.body.clientWidth),
+          canvas: rect(document.querySelector('.journey-canvas')),
           paper,
           motifs,
           text: [...document.querySelectorAll('.journey-card h2, .journey-card-copy')].map(rect),
@@ -94,27 +108,40 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
       })
       assert.ok(layout.overflow <= 1, `${width}px layout has no horizontal page overflow`)
       assert.ok(layout.paper.every(paper => paper.grid.split(',').slice(-2).every(size => size.trim() === '20px 20px')), `${width}px paper preserves its 20px grid pitch`)
+      assert.ok(layout.paper.every(paper => paper.bounds.height < layout.canvas.height * 0.4), `${width}px grid-paper patches cover only a limited part of the journey`)
+      assert.ok(layout.paper.every(paper => paper.bounds.top >= layout.canvas.top + 24 && paper.bounds.bottom <= layout.canvas.bottom - 24), `${width}px paper leaves clear blank space above and below each patch`)
+      assert.ok(layout.paper[1].bounds.top - layout.paper[0].bounds.bottom >= 24, `${width}px paper patches leave a clear vertical gap between them`)
       const edgeTolerance = layout.scrollbar / 2 + 1
       assert.ok(Math.abs(layout.paper[0].bounds.left) <= edgeTolerance && Math.abs(layout.paper[1].bounds.right - layout.viewport) <= edgeTolerance, `${width}px paper remains anchored to the viewport edges`)
+      assert.deepEqual(layout.motifs.map(({ kind, side }) => ({ kind, side })), expectedMotifs.map(({ kind, side }) => ({ kind, side })), `${width}px keeps the six distinct sketches on their intended sides`)
       if (width > 700) {
         for (const [index, motif] of layout.motifs.entries()) {
-          const label = `${width}px motif ${index + 1}`
+          const label = `${width}px ${motif.kind} motif`
           assert.equal(motif.display, 'block', `${label} remains displayed`)
-          assert.equal(motif.width, motif.side === 'left' ? 132 : 112, `${label} keeps its original drawing width`)
-          const boundary = motif.side === 'left' ? layout.paper[0].bounds.right : layout.paper[1].bounds.left
-          assert.ok(motif.bounds.left < boundary && motif.bounds.right > boundary, `${label} crosses the inner paper edge`)
+          assert.equal(motif.width, expectedMotifs[index].width, `${label} keeps its original drawing width`)
+          const inwardExtent = motif.side === 'left' ? motif.drawing.right : layout.viewport - motif.drawing.left
+          assert.ok(inwardExtent < 220, `${label} stays close to its viewport edge`)
           assert.ok(Math.min(motif.drawing.right, layout.viewport) - Math.max(motif.drawing.left, 0) > 20, `${label} retains a visible drawing inside the viewport`)
           assert.ok(layout.text.every(text => motif.drawing.right <= text.left || motif.drawing.left >= text.right || motif.drawing.bottom <= text.top || motif.drawing.top >= text.bottom), `${label} does not overlap a card title or body`)
           assert.equal(motif.animations, 0, `${label} has no reduced-motion animations`)
           assert.deepEqual(motif.opacity, [1, 0, 0], `${label} keeps one complete static pencil pose`)
         }
       } else {
-        assert.ok(layout.motifs.every(motif => motif.display === 'none' && motif.bounds.width === 0 && motif.bounds.height === 0 && motif.visiblePaths === 0), `${width}px hides every sketch and all its SVG fragments`)
+        assert.ok(layout.motifs.every(motif => motif.display === 'none' && motif.bounds.width === 0 && motif.bounds.height === 0 && motif.visibleShapes === 0), `${width}px hides every sketch and all its SVG fragments`)
         assert.ok(layout.motifs.every(motif => motif.animations === 0), `${width}px retains no hidden pencil animation`)
       }
-      pass(`${width}px preserves the page bounds, paper grid, and ${width > 700 ? 'fixed-size margin drawings without covering card text' : 'complete removal of margin drawings'}`)
+      pass(`${width}px preserves the page bounds, local paper patches, and ${width > 700 ? 'six fixed-size margin drawings without covering card text' : 'complete removal of margin drawings'}`)
       if ([1440, 701, 700, 390].includes(width)) {
-        await page.locator('.journey-canvas').screenshot({ path: `${screenshotDirectory}/journey-${width}.png`, animations: 'disabled' })
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+        await settleLayout(page)
+        const canvasBounds = await page.locator('.journey-canvas').boundingBox()
+        const scrollOffset = await page.evaluate(() => scrollY)
+        await page.screenshot({
+          path: `${screenshotDirectory}/journey-${width}.png`,
+          animations: 'disabled',
+          fullPage: true,
+          clip: { x: 0, y: canvasBounds.y + scrollOffset, width, height: canvasBounds.height },
+        })
       }
     }
 
@@ -125,7 +152,7 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
     const motifs = page.locator(motifSelector)
     for (let index = 0; index < await motifs.count(); index++) {
       const motif = motifs.nth(index)
-      const label = `Animated motif ${index + 1}`
+      const label = `Animated ${await motif.getAttribute('data-kind')} motif`
       await motif.evaluate(element => {
         const bounds = element.getBoundingClientRect()
         window.scrollTo({ top: scrollY + bounds.top + bounds.height / 2 - innerHeight / 2, behavior: 'instant' })
@@ -136,7 +163,19 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
       assert.deepEqual([...new Set(samples.flatMap(sample => sample.visible))].sort(), [0, 1, 2], `${label} actually displays all three pencil poses over time`)
       assert.ok(samples.at(-1).times.every((time, frame) => time > samples[0].times[frame] + 900), `${label} advances its animation clock while visible`)
 
-      await motif.evaluate(element => window.scrollTo({ top: scrollY + element.getBoundingClientRect().bottom + 200, behavior: 'instant' }))
+      const canLeaveViewport = await motif.evaluate(element => {
+        const bounds = element.getBoundingClientRect()
+        const documentTop = scrollY + bounds.top
+        const documentBottom = scrollY + bounds.bottom
+        const maxScroll = document.documentElement.scrollHeight - innerHeight
+        const targetAfter = documentBottom + 200
+        const targetBefore = documentTop - innerHeight - 200
+        // Near the document end, scroll upward so the drawing exits below the viewport.
+        const target = documentBottom <= maxScroll ? Math.min(maxScroll, targetAfter) : Math.max(0, targetBefore)
+        window.scrollTo({ top: target, behavior: 'instant' })
+        return documentBottom <= maxScroll || documentTop >= innerHeight
+      })
+      assert.ok(canLeaveViewport, `${label} has enough document space to scroll completely out of view`)
       await page.waitForFunction(element => {
         const bounds = element.getBoundingClientRect()
         return (bounds.top >= innerHeight || bounds.bottom <= 0) && element.dataset.motion === 'paused'
@@ -148,7 +187,7 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
       assert.ok(paused.every(sample => sample.times.every((time, frame) => Math.abs(time - paused[0].times[frame]) < 0.01)), `${label} freezes its animation clock outside the viewport`)
       assert.ok(paused.every(sample => sample.visible[0] === paused[0].visible[0]), `${label} retains the same pose while paused`)
     }
-    pass('All four desktop sketches switch among three complete pencil poses and pause after leaving the viewport')
+    pass('All six desktop sketches switch among three complete pencil poses and pause after leaving the viewport')
 
     await page.emulateMedia({ reducedMotion: 'reduce' })
     for (let index = 0; index < await motifs.count(); index++) {

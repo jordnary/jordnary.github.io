@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { CodeGrowth, ExplorationPlane, KnowledgeConnections, ValidationNotes } from './AboutJourneySketches'
 import './AboutJourneyDecorations.css'
 
 // Three pencil poses keep the marks alive without moving their page anchors.
@@ -81,10 +82,12 @@ export function AboutJourneyDecorations() {
     <div className="journey-margin-art" ref={marginRef} aria-hidden="true">
       <div className="journey-margin-paper journey-margin-paper--left" />
       <div className="journey-margin-paper journey-margin-paper--right" />
-      <div className="journey-margin-motif journey-margin-motif--loop journey-margin-motif--first" data-motion="paused"><PencilLoop /></div>
-      <div className="journey-margin-motif journey-margin-motif--rings journey-margin-motif--second" data-motion="paused"><PencilRings /></div>
-      <div className="journey-margin-motif journey-margin-motif--loop journey-margin-motif--third" data-motion="paused"><PencilLoop /></div>
-      <div className="journey-margin-motif journey-margin-motif--rings journey-margin-motif--fourth" data-motion="paused"><PencilRings /></div>
+      <div className="journey-margin-motif journey-margin-motif--loop" data-side="left" data-kind="question" data-motion="paused"><PencilLoop /></div>
+      <div className="journey-margin-motif journey-margin-motif--connections" data-side="right" data-kind="connections" data-motion="paused"><KnowledgeConnections /></div>
+      <div className="journey-margin-motif journey-margin-motif--notes" data-side="left" data-kind="notes" data-motion="paused"><ValidationNotes /></div>
+      <div className="journey-margin-motif journey-margin-motif--rings" data-side="right" data-kind="rings" data-motion="paused"><PencilRings /></div>
+      <div className="journey-margin-motif journey-margin-motif--growth" data-side="left" data-kind="growth" data-motion="paused"><CodeGrowth /></div>
+      <div className="journey-margin-motif journey-margin-motif--next" data-side="right" data-kind="next" data-motion="paused"><ExplorationPlane /></div>
     </div>
   )
 }

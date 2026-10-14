@@ -1,11 +1,15 @@
 .journey-margin-art {
   --margin-paper-left: clamp(3rem, calc((100vw - var(--max-page-width)) / 2 - 2.5rem), 7.5rem);
   --margin-paper-right: clamp(2.5rem, calc((100vw - var(--max-page-width)) / 2 - 4.5rem), 3.5rem);
+  --margin-paper-left-height: clamp(38rem, 32%, 52rem);
+  --margin-paper-right-height: clamp(34rem, 29%, 48rem);
   --margin-grid: rgb(97 122 144 / 0.12);
   --margin-grid-major: rgb(97 122 144 / 0.17);
   --margin-blue: #a4cdd5;
   --margin-coral: #d58292;
   --margin-ink: #566c88;
+  --margin-sage: #8ca991;
+  --margin-paper-fill: #f2f4ed;
   position: absolute;
   z-index: -1;
   inset: 0 calc(50% - 50vw);
@@ -16,28 +20,41 @@
 
 .journey-margin-paper {
   position: absolute;
-  top: 1rem;
-  bottom: 6rem;
+  border-block: 1px solid var(--margin-grid-major);
   background-image:
     linear-gradient(to right, var(--margin-grid-major) 1px, transparent 1px),
     linear-gradient(to bottom, var(--margin-grid-major) 1px, transparent 1px),
     linear-gradient(to right, var(--margin-grid) 1px, transparent 1px),
     linear-gradient(to bottom, var(--margin-grid) 1px, transparent 1px);
   background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-  mask-image: linear-gradient(transparent, #000 3rem, #000 calc(100% - 5rem), transparent);
 }
-.journey-margin-paper--left { left: 0; width: var(--margin-paper-left); border-right: 1px solid var(--margin-grid-major); background-position: right top; }
-.journey-margin-paper--right { right: 0; width: var(--margin-paper-right); border-left: 1px solid var(--margin-grid-major); }
+.journey-margin-paper--left {
+  top: 5%;
+  left: 0;
+  width: var(--margin-paper-left);
+  height: var(--margin-paper-left-height);
+  border-right: 1px solid var(--margin-grid-major);
+  background-position: right top;
+}
+.journey-margin-paper--right {
+  top: 50%;
+  right: 0;
+  width: var(--margin-paper-right);
+  height: var(--margin-paper-right-height);
+  border-left: 1px solid var(--margin-grid-major);
+}
 
-/* The paper may narrow, but the sketches keep their size and cross its inner edge. */
-.journey-margin-motif { position: absolute; width: 8.25rem; }
+/* Keep each sketch's size while the viewport clips only its outer edge. */
+.journey-margin-motif { position: absolute; width: 9.5rem; }
 .journey-margin-motif svg { display: block; width: 100%; height: auto; overflow: visible; stroke-linecap: round; stroke-linejoin: round; }
-.journey-margin-motif--loop { left: calc(var(--margin-paper-left) - 4.75rem); }
-.journey-margin-motif--rings { right: calc(var(--margin-paper-right) - 3.5rem); width: 7rem; }
-.journey-margin-motif--first { top: 9%; }
-.journey-margin-motif--second { top: 31%; }
-.journey-margin-motif--third { top: 61%; transform: rotate(-12deg); }
-.journey-margin-motif--fourth { top: 84%; transform: rotate(14deg); }
+.journey-margin-motif[data-side="left"] { left: calc(var(--margin-paper-left) - 5.5rem); }
+.journey-margin-motif[data-side="right"] { right: calc(var(--margin-paper-right) - 5rem); }
+.journey-margin-motif.journey-margin-motif--loop { top: calc(5% + var(--margin-paper-left-height) / 2 - 3.875rem); left: calc(var(--margin-paper-left) - 4.75rem); width: 8.25rem; }
+.journey-margin-motif--connections { top: 8%; }
+.journey-margin-motif--notes { top: 42%; }
+.journey-margin-motif.journey-margin-motif--rings { top: calc(50% + var(--margin-paper-right-height) / 2 - 3.625rem); right: calc(var(--margin-paper-right) - 3.5rem); width: 7rem; }
+.journey-margin-motif--growth { top: 75%; }
+.journey-margin-motif--next { top: min(88%, calc(100% - 14.25rem)); }
 .journey-pencil-loop { stroke: var(--margin-blue); stroke-width: 5; opacity: 0.85; }
 .journey-pencil-scribble { stroke: var(--margin-coral); stroke-width: 1.65; }
 .journey-pencil-ring-blue { stroke: var(--margin-blue); stroke-width: 2.4; }
@@ -50,6 +67,8 @@
 @media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
   .journey-margin-motif { animation: journey-pencil-boil 900ms steps(1, end) infinite paused; }
   .journey-margin-motif--rings { animation-duration: 1200ms; }
+  .journey-margin-motif--connections, .journey-margin-motif--next { animation-duration: 1100ms; }
+  .journey-margin-motif--notes, .journey-margin-motif--growth { animation-duration: 1300ms; }
   .journey-margin-motif[data-motion="running"] { animation-play-state: running; }
 }
 

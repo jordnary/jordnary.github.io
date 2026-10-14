@@ -1,0 +1,38 @@
+.journey-iceberg .iceberg-flag {
+  position: absolute;
+  left: 32%;
+  top: 51%;
+  width: clamp(1.75rem, 2.6vw, 2.2rem);
+  height: auto;
+  transform: translate(-22.222%, -93.75%) rotate(-12deg);
+  transform-origin: 22.222% 93.75%;
+  overflow: visible;
+  pointer-events: none;
+  stroke: #b4677c;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iceberg-flag-cloth { fill: #f3f7ef; }
+.iceberg-flag-pencil { stroke-width: 1; opacity: 0.5; }
+.iceberg-flag-frame { opacity: 0; }
+.iceberg-flag-frame:first-child { opacity: 1; }
+.iceberg-flag-frame:nth-child(2) { --flag-frame-delay: -0.8s; }
+.iceberg-flag-frame:nth-child(3) { --flag-frame-delay: -0.4s; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .iceberg-flag .iceberg-flag-frame {
+    animation: iceberg-flag-flutter 1.2s step-end var(--flag-frame-delay, 0s) infinite;
+    animation-play-state: paused;
+  }
+
+  .journey-iceberg[data-motion='running'] .iceberg-flag-frame {
+    animation-play-state: running;
+  }
+}
+
+@keyframes iceberg-flag-flutter {
+  0%, 33.32% { opacity: 1; }
+  33.33%, 100% { opacity: 0; }
+}
