@@ -11,10 +11,10 @@
   stroke-linejoin: round;
 }
 
-.journey-next-ornament--ripples { top: -1.8rem; left: -0.9rem; width: 4.4rem; }
-.journey-next-ornament--scribble { right: 17%; bottom: -2rem; width: 5.4rem; }
-.journey-next-ornament--flowers { top: -1.8rem; right: 0.6rem; width: 5.2rem; }
-.journey-next-ornament--bolts { bottom: -2rem; left: 1.3rem; width: 5.8rem; }
+.journey-next-ornament--ripples { bottom: calc(100% + 1rem); left: 0.75rem; width: 4.4rem; }
+.journey-next-ornament--scribble { right: 17%; top: calc(100% + 0.75rem); width: 5.4rem; }
+.journey-next-ornament--flowers { bottom: calc(100% + 1rem); right: 0.6rem; width: 5.2rem; }
+.journey-next-ornament--bolts { top: calc(100% + 0.9rem); left: 1.3rem; width: 5.8rem; }
 
 .journey-next-ripple { stroke: var(--next-ornament-coral); stroke-width: 2.4; transform-origin: 40px 40px; }
 .journey-next-ripple--middle { opacity: 0.8; }
@@ -24,8 +24,10 @@
 .journey-next-scribble-dot { fill: var(--next-ornament-coral); }
 .journey-next-scribble-line { stroke: var(--next-ornament-coral); stroke-width: 1.8; }
 .journey-next-flower--large { fill: var(--next-ornament-coral); }
-.journey-next-flower--small, .journey-next-bolt--main { fill: var(--next-ornament-ink); }
-.journey-next-bolt--small, .journey-next-bolt--echo { fill: var(--next-ornament-coral); }
+.journey-next-flower--small { fill: var(--next-ornament-ink); }
+.journey-next-bolt { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.journey-next-bolt--main { stroke: var(--next-ornament-ink); }
+.journey-next-bolt--small, .journey-next-bolt--echo { stroke: var(--next-ornament-coral); stroke-width: 2; }
 .journey-next-scribble-line, .journey-next-flower, .journey-next-bolt { transform-box: fill-box; transform-origin: center; }
 
 @media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
@@ -64,16 +66,21 @@
   30%, 74% { transform: translate(-1px, 1px) rotate(3deg); }
 }
 
+@media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
+  .journey-next-ornament--ripples { top: 0.6rem; right: calc(100% + 1.1rem); bottom: auto; left: auto; }
+  .journey-next-ornament--flowers { top: -0.4rem; right: auto; bottom: auto; left: calc(100% + 1.1rem); }
+}
+
 @media (max-width: 900px) and (min-width: 701px) {
-  .journey-next-ornament--ripples { width: 3.7rem; left: -0.5rem; }
+  .journey-next-ornament--ripples { width: 3.7rem; }
   .journey-next-ornament--scribble { width: 4.5rem; right: 22%; }
   .journey-next-ornament--flowers { width: 4.5rem; }
   .journey-next-ornament--bolts { width: 4.8rem; }
 }
 
 @media (max-width: 700px), (hover: none) and (pointer: coarse) {
-  .journey-next-ornament--ripples { top: -1.3rem; left: -0.35rem; width: 3.2rem; }
-  .journey-next-ornament--scribble { right: 18%; bottom: -1.6rem; width: 4.2rem; }
-  .journey-next-ornament--flowers { top: -1.4rem; right: 0.65rem; width: 4rem; }
-  .journey-next-ornament--bolts { bottom: -1.7rem; left: 1rem; width: 4.5rem; }
+  .journey-next-ornament--ripples { bottom: calc(100% + 0.75rem); left: 0.6rem; width: 3.2rem; }
+  .journey-next-ornament--scribble { top: calc(100% + 0.5rem); right: auto; left: 12%; width: 4.2rem; }
+  .journey-next-ornament--flowers { bottom: calc(100% + 0.75rem); right: 0.65rem; width: 4rem; }
+  .journey-next-ornament--bolts { top: calc(100% + 0.6rem); left: 1rem; width: 4.5rem; }
 }

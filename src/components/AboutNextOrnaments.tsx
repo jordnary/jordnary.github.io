@@ -42,9 +42,9 @@ export function AboutNextOrnaments({ kind }: AboutNextOrnamentsProps) {
         </g>
       </svg>
       <svg className="journey-next-ornament journey-next-ornament--bolts" viewBox="0 0 110 72" fill="none" aria-hidden="true" focusable="false">
-        <path className="journey-next-bolt journey-next-bolt--main" d="M24 6 35 33 53 30 64 53 90 55 58 64 46 42 29 45 16 10Z" />
-        <path className="journey-next-bolt journey-next-bolt--small" d="M72 12 95 18 94 31 105 35 102 55 98 40 87 37 88 23 70 20Z" />
-        <path className="journey-next-bolt journey-next-bolt--echo" d="M9 43 23 54 21 63 34 69 15 68 16 57 5 48Z" />
+        <path className="journey-next-bolt journey-next-bolt--main" d="M20 8 32 39 50 36 61 58 87 56" />
+        <path className="journey-next-bolt journey-next-bolt--small" d="M72 16 91 21 91 34 101 38 103 53" />
+        <path className="journey-next-bolt journey-next-bolt--echo" d="M7 46 20 55 18 65 32 69" />
       </svg>
     </>
   )
