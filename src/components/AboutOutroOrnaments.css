@@ -10,7 +10,8 @@
 }
 
 .journey-outro-ornaments svg { position: absolute; display: block; height: auto; overflow: visible; opacity: 0.95; }
-.journey-outro-ornament--left { bottom: 12%; left: clamp(1.25rem, 5vw, 6rem); width: 4.625rem; }
+/* Keep the bottom anchor at every desktop width; scale into the space below the cards. */
+.journey-outro-ornament--left { bottom: 12%; left: clamp(1.25rem, 5vw, 6rem); width: clamp(2.75rem, calc(5vw + 0.125rem), 4.625rem); }
 .journey-outro-ornament--right { top: 2.5rem; right: clamp(1.25rem, 4.5vw, 5.5rem); width: 3.5rem; }
 
 @media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
@@ -43,7 +44,6 @@
 }
 
 @media (max-width: 1240px) {
-  .journey-outro-ornament--left { top: 1.5rem; bottom: auto; left: 1rem; width: 3.5rem; }
   .journey-outro-ornament--right { top: 3rem; right: 1rem; width: 2.8rem; }
 }
 
