@@ -1,0 +1,53 @@
+.journey-outro-ornaments {
+  --outro-dot-ink: #284a60;
+  --outro-dot-coral: #d58290;
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(50% - 50vw) calc(-1 * var(--journey-bottom-space));
+  overflow: clip;
+  pointer-events: none;
+  user-select: none;
+}
+
+.journey-outro-ornaments svg { position: absolute; display: block; height: auto; overflow: visible; opacity: 0.95; }
+.journey-outro-ornament--left { bottom: 12%; left: clamp(1.25rem, 5vw, 6rem); width: 4.625rem; }
+.journey-outro-ornament--right { top: 2.5rem; right: clamp(1.25rem, 4.5vw, 5.5rem); width: 3.5rem; }
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
+  .journey-outro-ornaments .journey-outro-ornament--left { opacity: 0; transition: opacity 650ms ease; }
+  .journey-outro-ornament--left[data-motion="running"] { opacity: 0.95; }
+  .journey-outro-ring-pulse { animation: journey-outro-ring-fade 4s linear infinite paused; }
+  .journey-outro-ring-aperture { animation: journey-outro-ring-aperture 4s linear infinite paused; }
+  .journey-outro-ornament--right[data-motion="running"] .journey-outro-ring-pulse,
+  .journey-outro-ornament--right[data-motion="running"] .journey-outro-ring-aperture { animation-play-state: running; }
+}
+
+/* Sampled at 30 fps: stationary particles, a fast radial wipe, and a softer fade. */
+@keyframes journey-outro-ring-fade {
+  0%, 33%, 100% { opacity: 1; }
+  36% { opacity: 0.94; }
+  38% { opacity: 0.8; }
+  40% { opacity: 0.55; }
+  42% { opacity: 0.3; }
+  44.25%, 83% { opacity: 0; }
+  86% { opacity: 0.12; }
+  88% { opacity: 0.3; }
+  90% { opacity: 0.55; }
+  93% { opacity: 0.83; }
+  97% { opacity: 0.98; }
+}
+
+@keyframes journey-outro-ring-aperture {
+  0%, 40%, 90%, 100% { r: 32px; }
+  44.25%, 83% { r: 0; }
+}
+
+@media (max-width: 1240px) {
+  .journey-outro-ornament--left { top: 1.5rem; bottom: auto; left: 1rem; width: 3.5rem; }
+  .journey-outro-ornament--right { top: 3rem; right: 1rem; width: 2.8rem; }
+}
+
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
+  .journey-outro-ornaments .journey-outro-ornament--left { display: none; }
+  .journey-outro-ornament--right { top: 1rem; right: 0.75rem; width: 2.3rem; }
+}

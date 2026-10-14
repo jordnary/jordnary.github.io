@@ -1,12 +1,12 @@
 import { useRef } from 'react'
 import { SectionBackdrop } from './SectionBackdrop'
-import { SmartLink } from './SmartLink'
+import { AboutNextLinks } from './AboutNextLinks'
+import { AboutOutroOrnaments } from './AboutOutroOrnaments'
 import { AboutJourneyPath } from './AboutJourneyPath'
 import { AboutExplorationArt } from './AboutExplorationArt'
 import { AboutIceberg } from './AboutIceberg'
 import { AboutJourneyDecorations } from './AboutJourneyDecorations'
 import { aboutProfile } from '../data/profile'
-import { getRouteHref } from '../lib/routes'
 import './About.css'
 
 const chapters = [
@@ -136,57 +136,13 @@ export function About() {
 
       <footer className="journey-outro section-surface">
         <SectionBackdrop tone="sage" />
+        <AboutOutroOrnaments />
         <p className="journey-outro-kicker"><span aria-hidden="true" /> TO BE CONTINUED</p>
         <h2>故事还在继续<span>，下一步见。</span></h2>
         <p className="journey-outro-copy">把沿途的思考写成笔记，把新的理解做成作品。</p>
-        <div className="journey-next-links">
-          <SmartLink className="journey-next-link" href={`${getRouteHref('learning')}#notes`}>
-            <span className="journey-next-copy"><small>KEEP LEARNING</small><span className="journey-next-title">阅读学习笔记</span></span>
-            <JourneyNextArt kind="notes" />
-            <span className="journey-next-note">沿着问题，留下一页思考。</span>
-            <span className="journey-next-arrow" aria-hidden="true">↗</span>
-          </SmartLink>
-          <SmartLink className="journey-next-link journey-next-link-building" href={getRouteHref('projects')}>
-            <span className="journey-next-copy"><small>KEEP BUILDING</small><span className="journey-next-title">看看项目实践</span></span>
-            <JourneyNextArt kind="projects" />
-            <span className="journey-next-note">把新的理解，做成小小作品。</span>
-            <span className="journey-next-arrow" aria-hidden="true">↗</span>
-          </SmartLink>
-        </div>
+        <AboutNextLinks />
       </footer>
     </section>
-  )
-}
-
-function JourneyNextArt({ kind }: { kind: 'notes' | 'projects' }) {
-  return (
-    <svg className="journey-next-art" viewBox="0 0 112 84" fill="none" aria-hidden="true" focusable="false">
-      <ellipse className="journey-next-art-orbit" cx="56" cy="44" rx="49" ry="29" transform="rotate(-18 56 44)" />
-      {kind === 'notes' ? (
-        <>
-          <path className="journey-next-art-wash" d="M22 23c12-3 24 0 34 7 10-7 22-10 34-7v37c-12-3-24 0-34 7-10-7-22-10-34-7Z" />
-          <g className="journey-next-art-lines">
-            <path d="M22 23c12-3 24 0 34 7 10-7 22-10 34-7v37c-12-3-24 0-34 7-10-7-22-10-34-7Z" />
-            <path d="M56 30v37M17 30v35c15-3 26 0 39 6 13-6 24-9 39-6V30" />
-            <path d="M30 34c6 0 11 2 17 5m-17 4c6 0 11 2 17 5m-17 4c4 0 8 1 11 3M65 39c5-3 10-5 17-5m-17 14c5-3 10-5 17-5" />
-          </g>
-          <path className="journey-next-art-detail" d="M73 24V13h9v9l-4-2-5 4Z" />
-        </>
-      ) : (
-        <>
-          <path className="journey-next-art-wash" d="m55 20 28 15v29L55 79 27 64V35Z" />
-          <g className="journey-next-art-lines">
-            <path d="m55 20 28 15-28 15-28-15 28-15Zm-28 15v29l28 15 28-15V35M55 50v29" />
-            <path d="m41 28 28 15v13M40 57l-5 3 5 3m29-6 5 3-5 3" />
-          </g>
-          <g className="journey-next-art-detail">
-            <path d="M15 43V18h20M78 72h19V47" strokeDasharray="2 4" />
-            <circle cx="15" cy="43" r="2" /><circle cx="97" cy="47" r="2" />
-          </g>
-        </>
-      )}
-      <path className="journey-next-art-detail" d="M94 7c0 6-2 8-8 8 6 0 8 2 8 8 0-6 2-8 8-8-6 0-8-2-8-8Z" />
-    </svg>
   )
 }
 
