@@ -282,7 +282,7 @@
 .notes-page-number { min-width: 4rem; font: italic 1.05rem Georgia, serif; color: var(--study-accent); }
 .notes-page-number > span { margin-left: 0.4rem; color: var(--study-muted); font-size: 0.8rem; }
 .notes-progress { position: relative; order: 2; flex: 1; height: 1px; background: var(--study-rule); }
-.notes-progress > span { position: absolute; width: 100%; height: 2px; top: -0.5px; background: var(--study-accent); transform: scaleX(var(--notes-progress, 0)); transform-origin: left; }
+.notes-progress > span { position: absolute; width: 100%; height: 2px; top: -0.5px; background: var(--study-accent); transform: scaleX(0); transform-origin: left; }
 .notes-arrows { display: flex; gap: 0.45rem; }
 .notes-arrows button { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid var(--study-rule); border-radius: 50%; color: var(--study-ink); cursor: pointer; transition: background 150ms; }
 .notes-arrows button:hover:not(:disabled) { background: var(--study-accent); color: var(--study-paper); }

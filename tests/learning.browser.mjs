@@ -30,6 +30,9 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
   const jump = async fraction => {
     const current = await position()
     await page.evaluate(top => scrollTo({ top, behavior: 'instant' }), current.start + current.travel * fraction)
+    await waitForTrack()
+  }
+  const waitForTrack = async () => {
     await page.waitForFunction(() => {
       const section = document.querySelector('#notes')
       const start = section.getBoundingClientRect().top + scrollY - 80
@@ -458,11 +461,13 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     await page.mouse.move(700, 400)
     await page.mouse.wheel(0, 400)
     await page.waitForFunction(y => scrollY > y + 350, before.y)
+    await waitForTrack()
     const after = await position()
     assert.ok(after.x < before.x - 350)
     assert.ok(Math.abs(after.top - before.top) < 2)
     await page.mouse.wheel(0, -220)
     await page.waitForFunction(y => scrollY < y - 180, after.y)
+    await waitForTrack()
     assert.ok((await position()).x > after.x + 180)
     pass('Native wheel scrolling moves cards horizontally in both directions while the heading stays pinned')
 

@@ -18,7 +18,7 @@ export function LearningNotes() {
     (progress === '全部进度' || note.progress === progress) &&
     (difficulty === '全部难度' || note.difficulty === difficulty),
   )
-  const { sectionRef, viewportRef, trackRef, activeIndex, canScroll, goTo, reset } = useNoteGallery(filteredNotes.length)
+  const { sectionRef, viewportRef, trackRef, progressRef, activeIndex, canScroll, goTo, reset } = useNoteGallery(filteredNotes.length)
   const updateFilter = (setter: (value: string) => void, value: string) => { reset(); setter(value) }
 
   return (
@@ -69,7 +69,7 @@ export function LearningNotes() {
         </div>
         <div className="notes-gallery-footer site-container">
           <span className="notes-page-number">{filteredNotes.length ? String(activeIndex + 1).padStart(2, '0') : '00'} <span>/ {String(filteredNotes.length).padStart(2, '0')}</span></span>
-          <div className="notes-progress" aria-hidden="true"><span /></div>
+          <div className="notes-progress" aria-hidden="true"><span ref={progressRef} /></div>
           <div className="notes-arrows" aria-label="翻阅笔记">
             <button aria-label="上一篇笔记" type="button" disabled={!canScroll || activeIndex === 0} onClick={() => goTo(activeIndex - 1)}>←</button>
             <button aria-label="下一篇笔记" type="button" disabled={!canScroll || activeIndex >= filteredNotes.length - 1} onClick={() => goTo(activeIndex + 1)}>→</button>
