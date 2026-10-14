@@ -64,8 +64,9 @@ export function useNoteGallery(count: number) {
       const nativeTarget = nativeScrollTarget.current
       const nativeNavigation = nativeTarget !== null
       if (nativeTarget !== null && Math.abs(window.scrollY - nativeTarget) < 1) nativeScrollTarget.current = null
-      // Snap outside the sticky range, and follow already-smooth navigation without a second easing.
-      if (instant || !pinned || targetOffset === 0 || targetOffset === distance || nativeNavigation || document.hidden) {
+      // Keep easing across sticky boundaries so the remaining horizontal travel never snaps.
+      // Already-smooth navigation and explicit positioning still update immediately.
+      if (instant || !pinned || nativeNavigation || document.hidden) {
         stop()
         renderedOffset = targetOffset
         paint(renderedOffset)
@@ -81,13 +82,17 @@ export function useNoteGallery(count: number) {
       setCanScroll(distance > 0)
       const top = Number.parseFloat(getComputedStyle(section).getPropertyValue('--notes-top')) || 80
       const start = section.getBoundingClientRect().top + window.scrollY - top
-      if (Math.abs(start - metrics.current.start) > 1 || distance !== metrics.current.distance) nativeScrollTarget.current = null
-      metrics.current = { pinned: media.matches && distance > 0, distance, top, start }
+      const pinned = media.matches && distance > 0
+      const layoutChanged = pinned !== metrics.current.pinned || distance !== metrics.current.distance
+        || top !== metrics.current.top || Math.abs(start - metrics.current.start) > 1
+      if (layoutChanged) nativeScrollTarget.current = null
+      metrics.current = { pinned, distance, top, start }
       section.dataset.pinned = String(metrics.current.pinned)
       section.style.setProperty('--notes-travel', `${metrics.current.pinned ? distance : 0}px`)
       if (metrics.current.pinned) viewport.scrollLeft = 0
       if (!metrics.current.pinned) nativeScrollTarget.current = null
-      sync(true)
+      // Unrelated page resizes must not interrupt an in-flight scroll animation.
+      sync(layoutChanged)
     }
     const schedule = () => sync()
     const scheduleMeasure = () => { cancelAnimationFrame(measureFrame); measureFrame = requestAnimationFrame(measure) }
