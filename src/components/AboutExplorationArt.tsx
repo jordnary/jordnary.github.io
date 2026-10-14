@@ -20,7 +20,7 @@ export function AboutExplorationArt() {
 
   return (
     <figure className="journey-atlas">
-      <div className="journey-atlas-label" aria-hidden="true">好奇心的轨迹</div>
+      <div className="journey-atlas-label">好奇心的轨迹</div>
       <div className="journey-atlas-map" aria-hidden="true">
         <svg className="journey-atlas-drawing" viewBox="0 0 540 440" fill="none" focusable="false">
           <defs>
