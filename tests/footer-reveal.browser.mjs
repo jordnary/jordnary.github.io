@@ -27,7 +27,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
         bottom: surface.getBoundingClientRect().bottom,
         viewport: innerHeight,
         mainBottom: document.querySelector('main').getBoundingClientRect().bottom + scrollY,
-        shade: Number(getComputedStyle(surface, '::after').opacity),
+        overlay: getComputedStyle(surface, '::after').content,
         opacity: getComputedStyle(surface).opacity,
         leaks: Boolean(document.elementFromPoint(20, Math.max(0, bounds.top - 2))?.closest('.footer-shell')),
       }
@@ -50,37 +50,19 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
         for (const progress of [0, 0.12, 0.35, 0.7, 1, 0.7, 0.35, 0.12, 0]) {
           frames.push(await reveal(progress))
           if (progress === 1) {
-            await page.waitForFunction(() => getComputedStyle(document.querySelector('.footer-surface'), '::after').opacity === '0')
             await shot(`footer-reveal-${theme}-${width}`)
           }
         }
         assert.ok(frames.every(frame => Math.abs(frame.bottom - frame.viewport) < 1), 'The footer remains anchored to the viewport during reveal and conceal')
         assert.ok(frames.every(frame => Math.abs(frame.mainBottom - frames[0].mainBottom) < 1), 'Reveal never changes document layout')
         assert.ok(frames.every(frame => !frame.leaks && frame.opacity === '1'), 'The clipped surface never covers the preceding content or fades away')
+        assert.ok(frames.every(frame => frame.overlay === 'none'), 'Entering and leaving the footer never adds a dark overlay')
         await reveal(-0.05)
-        const dark = await reveal(0.2)
-        assert.ok(dark.shade >= 0.4, 'The newly exposed footer and lettering start visibly dimmed')
-        await reveal(0.55)
-        const brightening = await page.evaluate(async () => {
-          const surface = document.querySelector('.footer-surface')
-          const samples = []
-          const start = performance.now()
-          while (performance.now() - start < 650) {
-            await new Promise(resolve => requestAnimationFrame(resolve))
-            samples.push({ shade: Number(getComputedStyle(surface, '::after').opacity), scroll: scrollY, bottom: surface.getBoundingClientRect().bottom })
-          }
-          return samples
-        })
-        assert.ok(brightening.filter(frame => frame.shade > 0.02 && frame.shade < 0.4).length >= 5, 'The dark veil passes through a visible gradual transition')
-        assert.ok(brightening.every(frame => frame.scroll === brightening[0].scroll && Math.abs(frame.bottom - 960) < 1), 'Brightening completes while the page and anchored footer stay still')
-        assert.equal(brightening.at(-1).shade, 0, 'The surface and text return to their full brightness')
-        assert.equal((await reveal(0.12)).shade, 0, 'A small upward reversal does not flash the footer dark again')
-        await reveal(-0.05)
-        assert.ok((await reveal(0.2)).shade >= 0.4, 'Leaving the viewport resets the next dark-to-light entrance')
+        assert.equal((await reveal(0.2)).overlay, 'none', 'Re-entering the viewport keeps the footer at full brightness')
       }
     }
     report('Desktop and mobile reveal reversibly from beneath the page in both themes without shifting layout')
-    report('The footer enters dimmed, brightens over half a second at rest, and replays only after leaving view')
+    report('The footer stays at full brightness on entry, reversal and re-entry')
 
     await page.setViewportSize({ width: 1440, height: 960 })
     await reveal(0.02)
@@ -102,7 +84,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     assert.ok(scrolling.every(frame => Math.abs(frame.drift) < 1), 'Every sampled scrolling frame stays pinned without jitter')
     report('Continuous smooth scrolling keeps the footer within one pixel of its anchored position')
 
-    const disableAnimations = await page.addStyleTag({ content: '.footer-surface, .footer-surface::after { animation: none !important; }' })
+    const disableAnimations = await page.addStyleTag({ content: '.footer-surface { animation: none !important; }' })
     for (const progress of [0.1, 0.5, 0.9, 0.5, 0.1]) {
       const frame = await reveal(progress)
       assert.ok(Math.abs(frame.bottom - frame.viewport) < 1 && !frame.leaks, 'Uncover remains stationary and clipped even when CSS animations are unavailable')
@@ -132,7 +114,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     await reveal(0.5)
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).transform), 'none')
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).position), 'relative')
-    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element, '::after').opacity), '0')
+    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element, '::after').content), 'none')
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await page.setViewportSize({ width: 390, height: 300 })
     await page.waitForFunction(() => document.querySelector('.footer-shell').dataset.reveal === 'false')

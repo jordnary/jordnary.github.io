@@ -63,7 +63,6 @@ export function useFooterOrbit(svgRef: RefObject<SVGSVGElement | null>, isInView
     const paint = () => {
       const path = getFooterOrbitPath(elapsed.current)
       if (path === previousPath) return
-      // The visible ring and the ink mask must use the same pose on every frame.
       for (const element of paths) element.setAttribute('d', path)
       previousPath = path
     }

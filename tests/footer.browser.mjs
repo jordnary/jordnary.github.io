@@ -38,118 +38,6 @@ export async function runFooterChecks(browser, baseURL, report = () => {}) {
     const orbitSelector = '.footer-wordmark > g .footer-orbit'
     await runFooterOrbitChecks(page, report)
 
-    const ink = footer.locator('.footer-ink-field')
-    const rasterInk = (options = {}) => ink.evaluate(async (field, options) => {
-      // Isolate the rendered pigment from letter clipping and the rotating O.
-      // Center each sample on the body so translation alone cannot pass.
-      const source = field.closest('svg')
-      const core = field.querySelector('.footer-ink-core')
-      if (options.gesture) {
-        const bounds = source.getBoundingClientRect()
-        const startX = Number(core.getAttribute('cx'))
-        const startY = Number(core.getAttribute('cy'))
-        const steps = options.gesture.steps
-        for (let step = 1; step <= steps; step++) {
-          // Keep a slow gesture slow on displays with a high refresh rate.
-          if (options.gesture.duration) await new Promise(resolve => setTimeout(resolve, options.gesture.duration / steps))
-          source.dispatchEvent(new PointerEvent('pointermove', {
-            bubbles: true,
-            clientX: bounds.x + (startX + options.gesture.distance * step / steps) / source.viewBox.baseVal.width * bounds.width,
-            clientY: bounds.y + startY / source.viewBox.baseVal.height * bounds.height,
-          }))
-          await new Promise(requestAnimationFrame)
-        }
-        // Sample the gesture's last frame before the pigment starts catching up.
-      }
-      const origin = options.origin || { x: Number(core.getAttribute('cx')), y: Number(core.getAttribute('cy')) }
-      const grayLead = Number(field.querySelector('.footer-ink-wash-far circle').getAttribute('cx')) - Number(core.getAttribute('cx'))
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-      svg.setAttribute('width', '420')
-      svg.setAttribute('height', '420')
-      svg.setAttribute('viewBox', `${origin.x - 210} ${origin.y - 210} 420 420`)
-      svg.append(source.querySelector('defs').cloneNode(true))
-      const clone = field.cloneNode(true)
-      const originals = [field, ...field.querySelectorAll('*')]
-      for (const [index, element] of [clone, ...clone.querySelectorAll('*')].entries()) {
-        const style = getComputedStyle(originals[index])
-        element.setAttribute('fill', style.fill)
-        element.setAttribute('opacity', style.opacity)
-      }
-      svg.append(clone)
-      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml' }))
-      try {
-        const image = new Image()
-        image.src = url
-        await image.decode()
-        const canvas = document.createElement('canvas')
-        canvas.width = canvas.height = 420
-        const context = canvas.getContext('2d')
-        context.drawImage(image, 0, 0)
-        const pixels = context.getImageData(0, 0, 420, 420).data
-        if (options.includeGray) return { pixels: Array.from({ length: 420 * 420 }, (_, index) => pixels[index * 4 + 3]), grayLead }
-        return Array.from({ length: 420 * 420 }, (_, index) => pixels[index * 4 + 3] > 192 ? 1 : 0)
-      } finally { URL.revokeObjectURL(url) }
-    }, options)
-    const wordmarkBox = await footer.locator('.footer-wordmark').boundingBox()
-    assert.equal(await ink.getAttribute('data-active'), 'false', 'Ink stays absent until the pointer enters')
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.28, wordmarkBox.y + wordmarkBox.height * 0.5)
-    await page.waitForFunction(() => Number(document.querySelector('.footer-ink-core').getAttribute('r')) > 100)
-    assert.equal(await ink.getAttribute('data-active'), 'true')
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.68, wordmarkBox.y + wordmarkBox.height * 0.5, { steps: 8 })
-    await page.waitForFunction(() => {
-      const coreX = Number(document.querySelector('.footer-ink-core').getAttribute('cx'))
-      return coreX > 800 && Number(document.querySelector('.footer-ink-wash-far circle').getAttribute('cx')) - coreX > 2
-    })
-    const geometry = await ink.evaluate(element => {
-      const core = element.querySelector('.footer-ink-core').getBBox()
-      const capHeight = element.closest('svg').querySelector('.footer-letter-shape').getBBox().height
-      return { diameter: core.width, height: core.height, footprint: element.getBBox().width, capHeight }
-    })
-    assert.ok(Math.abs(geometry.diameter - geometry.height) < 1, 'The ink body remains round')
-    assert.ok(geometry.diameter / geometry.capHeight > 1.2 && geometry.diameter / geometry.capHeight < 1.55, 'Ink size stays proportional to letter height')
-    assert.ok(geometry.footprint < geometry.capHeight * 1.9, 'A fast sweep does not leave a long tail')
-    await shot('footer-wordmark-ink')
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.28, wordmarkBox.y + wordmarkBox.height * 0.5, { steps: 8 })
-    await page.waitForFunction(() => Number(document.querySelector('.footer-ink-wash-far circle').getAttribute('cx')) - Number(document.querySelector('.footer-ink-core').getAttribute('cx')) < -2)
-    await page.waitForFunction(() => Math.abs(Number(document.querySelector('.footer-ink-wash-far circle').getAttribute('cx')) - Number(document.querySelector('.footer-ink-core').getAttribute('cx'))) < 0.02)
-    await page.waitForTimeout(200)
-    const beforeGesture = await rasterInk()
-    assert.ok(beforeGesture.reduce((sum, pixel) => sum + pixel, 0) > 40000, 'The visual sample contains a substantial ink body')
-    const roundBody = (pixels) => {
-      let centralHoles = 0
-      let distantInk = 0
-      for (let index = 0; index < pixels.length; index++) {
-        const distance = Math.hypot(index % 420 + 0.5 - 210, Math.floor(index / 420) + 0.5 - 210)
-        if (distance < 130 && !pixels[index]) centralHoles++
-        if (distance > 180 && pixels[index]) distantInk++
-      }
-      assert.ok(centralHoles < 20 && distantInk < 20, `The rendered body stays round and solid without deep cuts or large protrusions (${centralHoles} central holes, ${distantInk} distant pixels)`)
-    }
-    roundBody(beforeGesture)
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.34, wordmarkBox.y + wordmarkBox.height * 0.5, { steps: 8 })
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.28, wordmarkBox.y + wordmarkBox.height * 0.5, { steps: 8 })
-    await page.waitForTimeout(1000)
-    const afterGesture = await rasterInk()
-    roundBody(afterGesture)
-    const changedPixels = beforeGesture.filter((pixel, index) => pixel !== afterGesture[index]).length
-    assert.ok(changedPixels > 1000, 'A gesture reshapes the rendered ink even when the pointer returns to the same position')
-    await page.waitForTimeout(250)
-    assert.deepEqual(await rasterInk(), afterGesture, 'The rendered ink boundary stops evolving after motion settles')
-    report('Pixel comparisons confirm gesture-driven boundary changes and a stable shape at rest')
-    const slowSweep = await rasterInk({ gesture: { distance: 72, steps: 20, duration: 400 }, includeGray: true })
-    await page.waitForTimeout(600)
-    const origin = await ink.locator('.footer-ink-core').evaluate(core => ({ x: Number(core.getAttribute('cx')), y: Number(core.getAttribute('cy')) }))
-    const newlyWetted = await rasterInk({ gesture: { distance: 72, steps: 1 }, includeGray: true, origin })
-    assert.ok(newlyWetted.grayLead > slowSweep.grayLead * 1.7 && newlyWetted.grayLead > 35, 'Fast motion exposes a wider gray region before pigment develops')
-    await page.waitForTimeout(250)
-    const developed = await rasterInk({ includeGray: true, origin })
-    const darkened = newlyWetted.pixels.filter((alpha, index) => alpha > 30 && alpha < 160 && developed.pixels[index] > 230).length
-    assert.ok(darkened > 1000, 'The same newly covered pixels change from gray wash to dark ink after the pointer stops')
-    report('Slow and fast gestures confirm that gray coverage precedes dark pigment and widens with speed')
-    await page.mouse.move(0, 0)
-    await page.waitForFunction(() => document.querySelector('.footer-ink-field').dataset.active === 'false')
-    assert.equal(await ink.locator('circle').evaluateAll(circles => circles.every(circle => circle.getAttribute('r') === '0')), true, 'Ink dissipates after the pointer leaves')
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
     await page.waitForFunction(() => document.querySelector('.footer-brand').dataset.inView === 'false')
     const pausedOrbit = await footer.locator(orbitSelector).getAttribute('d')
@@ -163,10 +51,8 @@ export async function runFooterChecks(browser, baseURL, report = () => {}) {
     assert.equal(await footer.locator(orbitSelector).getAttribute('d'), reducedOrbit, 'Reduced motion freezes both rotation and morphing')
     assert.equal(await footer.locator('.footer-letter-shape').first().isVisible(), true)
     assert.equal(await footer.locator(orbitSelector).isVisible(), true)
-    await page.mouse.move(wordmarkBox.x + wordmarkBox.width * 0.5, wordmarkBox.y + wordmarkBox.height * 0.5)
-    assert.equal(await ink.getAttribute('data-active'), 'false', 'Reduced motion suppresses pointer ink')
     await page.mouse.move(0, 0)
-    report('Round ink follows the pointer without a long tail; gray diffusion leads in both directions and settles at rest; reduced motion and offscreen pause work')
+    report('The wordmark remains visible; reduced motion and offscreen pause work')
 
     for (const theme of ['light', 'dark']) {
       await page.evaluate(value => { document.documentElement.dataset.theme = value }, theme)
