@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getRouteHref } from '../lib/routes'
 import { Reveal } from './Reveal'
+import { HeroSamuraiArt } from './HeroSamuraiArt'
 import { SectionBackdrop } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 
@@ -114,6 +115,7 @@ export function Hero() {
   return (
     <section className="site-container page-gutter hero-section section-surface" id="home">
       <SectionBackdrop tone="sky" edge="none" />
+      <HeroSamuraiArt />
       <div className="hero-copy">
         <Reveal
           className="highlight-pill"

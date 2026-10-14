@@ -1,0 +1,107 @@
+.hero-section {
+  padding-bottom: clamp(6rem, 6vw, 7rem);
+}
+
+.hero-samurai-art {
+  position: absolute;
+  z-index: 0;
+  inset: 0 calc(50% - 50vw);
+  overflow: clip;
+  pointer-events: none;
+  user-select: none;
+  color: #678b99;
+}
+
+.hero-samurai-art svg {
+  position: absolute;
+  display: block;
+  overflow: visible;
+}
+
+.hero-kabuto {
+  bottom: 2.75rem;
+  left: max(0.75rem, calc(50% - 52rem));
+  width: clamp(7.5rem, calc((100vw - 72rem) / 2 + 1rem), 20rem);
+  opacity: 0.8;
+}
+
+.hero-katana {
+  right: max(1.5rem, calc(50% - 47.5rem));
+  bottom: 2.5rem;
+  height: clamp(27rem, 32vw, 38rem);
+  opacity: 0.78;
+}
+
+.samurai-ink {
+  stroke: currentColor;
+  stroke-width: 1.65;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.samurai-paper { fill: var(--section-sky); }
+.samurai-wash { fill: #dfebf0; }
+.samurai-shade { fill: #cbdde6; }
+.samurai-fine { stroke-width: 0.85; }
+.samurai-hairline { stroke-width: 0.45; }
+.samurai-muted { opacity: 0.55; }
+.samurai-accent { stroke: #aa8982; stroke-width: 1.1; }
+.samurai-rivets { fill: currentColor; stroke: none; }
+.samurai-handle-wrap { fill: #cddfe6; }
+
+/* On narrower screens, give the studies their own space below the content. */
+@media (max-width: 1279px) {
+  .hero-section { padding-bottom: 12rem; }
+  .hero-kabuto {
+    left: calc(50% - 10rem);
+    bottom: 2.5rem;
+    width: 7.5rem;
+  }
+  .hero-katana {
+    right: calc(50% - 7.5rem);
+    bottom: 1rem;
+    height: 12.5rem;
+    transform: rotate(30deg);
+    transform-origin: center;
+  }
+}
+
+/* Scale the complete desktop composition from one 1920px artboard. Zoom also
+   scales its layout height, so the next section follows without a spacer. */
+@supports (zoom: calc(100vw / 1920px)) {
+  @media (min-width: 1024px) {
+    .hero-section {
+      width: 72rem;
+      max-width: none;
+      padding-top: 5rem;
+      padding-bottom: 7rem;
+      zoom: calc(100vw / 1920px);
+    }
+
+    .hero-section > .section-backdrop,
+    .hero-samurai-art {
+      inset-inline: calc(50% - 60rem);
+    }
+
+    .hero-kabuto {
+      left: 11rem;
+      bottom: 2.75rem;
+      width: 15.75rem;
+    }
+
+    .hero-katana {
+      right: 8.5rem;
+      bottom: 0.75rem;
+      height: 43rem;
+      transform: none;
+    }
+
+    .home-journal > #explore > .section-backdrop > .section-backdrop-edge {
+      height: 3.125vw;
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .hero-samurai-art { display: none; }
+}
