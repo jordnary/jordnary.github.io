@@ -124,6 +124,16 @@
 .journey-chapter-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.8rem; padding: 1rem 0; border-top: 1px solid var(--journey-border); color: var(--journey-muted); font-size: 0.7rem; scroll-margin-top: 7rem; }
 .journey-chapter-heading > span { font-size: 0.58rem; letter-spacing: 0.14em; }
 .journey-canvas { position: relative; isolation: isolate; }
+:root:not([data-theme="light"]) .journey-canvas {
+  --journey-accent: #8ecbd6;
+  --journey-secondary: #b4add8;
+  --journey-paper: #151f30;
+  --journey-paper-alt: var(--journey-paper);
+  --journey-ink: #e3eaf4;
+  --journey-muted: #a6b4c8;
+  --journey-border: rgb(148 163 184 / 0.2);
+  --journey-card-shadow: 0 16px 36px -24px rgb(2 6 23 / 0.65), inset 0 1px 0 rgb(226 232 240 / 0.025);
+}
 .journey-chapters { position: relative; margin: 0; padding: 4.5rem 0 7rem; list-style: none; }
 .journey-path { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .journey-path path { stroke-linecap: round; }
@@ -134,7 +144,7 @@
 .journey-chapter:nth-of-type(3) { margin-top: 4.5rem; }
 .journey-chapter:nth-of-type(4) { margin-top: 3rem; }
 .journey-chapter:nth-of-type(5) { margin-top: 4rem; }
-.journey-card { --card-rotation: 1deg; position: relative; width: 100%; padding: 1.85rem 2rem 1.6rem; border: 1px solid var(--journey-border); border-radius: 0.8rem; background: var(--journey-paper); box-shadow: 0 14px 36px -28px rgb(12 42 39 / 0.28); transform: rotate(var(--card-rotation)); }
+.journey-card { --card-rotation: 1deg; position: relative; width: 100%; padding: 1.85rem 2rem 1.6rem; border: 1px solid var(--journey-border); border-radius: 0.8rem; background: var(--journey-paper); box-shadow: var(--journey-card-shadow, 0 14px 36px -28px rgb(12 42 39 / 0.28)); transform: rotate(var(--card-rotation)); }
 .journey-chapter:nth-of-type(even) .journey-card { --card-rotation: -1deg; background: var(--journey-paper-alt); }
 .journey-chapter:nth-of-type(3) .journey-card { --card-rotation: 0.7deg; }
 .journey-card::before { content: ''; position: absolute; inset: 0.6rem; border: 1px solid var(--journey-border); border-radius: 0.45rem; opacity: 0.3; pointer-events: none; }
