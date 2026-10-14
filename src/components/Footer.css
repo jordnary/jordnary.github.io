@@ -1,24 +1,64 @@
 .footer-shell {
-  --footer-ink: var(--color-text-soft);
-  --footer-muted: var(--color-text-muted);
-  --footer-rule: color-mix(in srgb, var(--color-primary-cyan) 18%, transparent);
-  --footer-accent: var(--color-primary-cyan);
-  --footer-draft: #a8c2d7;
-  --footer-ink-fill: #b8d2df;
-  --footer-ink-wash: #bbc5cd;
+  --footer-bg: #193443;
+  --footer-ink: #fff8f1;
+  --footer-muted: #c9dce0;
+  --footer-rule: rgb(255 248 241 / 0.24);
+  --footer-accent: #ffffff;
+  --footer-draft: #fff8f1;
+  --footer-ink-fill: #fff8f1;
+  --footer-ink-wash: #b6cdd1;
   --footer-gutter: clamp(1.25rem, 2.6vw, 4rem);
   position: relative;
+  overflow: clip;
+  isolation: isolate;
   color: var(--footer-ink);
-  background:
-    radial-gradient(ellipse at 6% 100%, color-mix(in srgb, var(--color-primary-cyan) 5%, transparent), transparent 65%),
-    linear-gradient(180deg, transparent, color-mix(in srgb, var(--color-bg) 72%, transparent));
+  background: var(--footer-bg);
 }
 
 :root[data-theme="light"] .footer-shell {
-  --footer-draft: #36556f;
-  --footer-ink-fill: #272b2e;
-  --footer-ink-wash: #62676a;
-  --footer-rule: rgb(51 83 112 / 0.16);
+  --footer-bg: #315a6b;
+}
+
+.footer-surface {
+  position: relative;
+  display: flow-root;
+  background: var(--footer-bg);
+}
+
+/* The moving footer slot uncovers an actually stationary surface underneath. */
+.footer-shell[data-reveal="true"] {
+  height: var(--footer-height);
+  clip-path: inset(0);
+}
+
+.footer-shell[data-reveal="true"] .footer-surface {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+}
+
+/* The search blur creates a fixed-position containing block of its own. */
+.app-shell.is-search-open .footer-shell .footer-surface {
+  position: relative;
+}
+
+.footer-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: #02090d;
+  opacity: 0;
+  transition: opacity 480ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.footer-shell[data-reveal="true"]:not([data-illuminated="true"]) .footer-surface::after {
+  opacity: 0.46;
+  transition: none;
+}
+
+.footer-shell[data-reveal]:focus-within .footer-surface::after {
+  opacity: 0;
 }
 
 .footer-content {
@@ -304,6 +344,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .footer-surface { transform: none; }
+  .footer-surface::after { opacity: 0; transition: none; }
+
   .footer-letter-trace,
   .footer-letter-echo,
   .footer-ink-layer {

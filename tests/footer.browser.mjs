@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
+import { runFooterRevealChecks } from './footer-reveal.browser.mjs'
 
 export async function runFooterChecks(browser, baseURL, report = () => {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, timezoneId: 'America/New_York' })
@@ -228,6 +229,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
   const browser = await chromium.launch({ channel: process.env.FOOTER_BROWSER_CHANNEL || 'msedge', headless: true })
   try {
+    await runFooterRevealChecks(browser, process.env.FOOTER_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
     await runFooterChecks(browser, process.env.FOOTER_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
   } catch (error) {
     console.error('Footer checks failed:', error.message)

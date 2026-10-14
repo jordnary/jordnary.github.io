@@ -1,0 +1,170 @@
+import assert from 'node:assert/strict'
+import { mkdir } from 'node:fs/promises'
+import { pathToFileURL } from 'node:url'
+
+export async function runFooterRevealChecks(browser, baseURL, report = () => {}) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 960 } })
+  await context.addInitScript(() => {
+    sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
+    sessionStorage.setItem('site-live2d-collapsed-mobile', 'true')
+  })
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  const reveal = async progress => {
+    await page.evaluate(progress => {
+      const bounds = document.querySelector('.footer-shell').getBoundingClientRect()
+      scrollTo({ top: scrollY + bounds.top - innerHeight + bounds.height * progress, behavior: 'instant' })
+    }, progress)
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+    return page.evaluate(() => {
+      const footer = document.querySelector('.footer-shell')
+      const surface = footer.querySelector('.footer-surface')
+      const bounds = footer.getBoundingClientRect()
+      return {
+        top: bounds.top,
+        height: bounds.height,
+        bottom: surface.getBoundingClientRect().bottom,
+        viewport: innerHeight,
+        mainBottom: document.querySelector('main').getBoundingClientRect().bottom + scrollY,
+        shade: Number(getComputedStyle(surface, '::after').opacity),
+        opacity: getComputedStyle(surface).opacity,
+        leaks: Boolean(document.elementFromPoint(20, Math.max(0, bounds.top - 2))?.closest('.footer-shell')),
+      }
+    })
+  }
+  const shot = async name => {
+    if (!process.env.FOOTER_SCREENSHOT_DIR) return
+    await mkdir(process.env.FOOTER_SCREENSHOT_DIR, { recursive: true })
+    await page.screenshot({ path: `${process.env.FOOTER_SCREENSHOT_DIR}/${name}.png` })
+  }
+  try {
+    await page.goto(new URL('about/', baseURL).href)
+    await page.locator('.footer-shell[data-reveal]').waitFor({ state: 'attached' })
+    await page.evaluate(() => document.fonts.ready)
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 960 })
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+        const frames = []
+        for (const progress of [0, 0.12, 0.35, 0.7, 1, 0.7, 0.35, 0.12, 0]) {
+          frames.push(await reveal(progress))
+          if (progress === 1) {
+            await page.waitForFunction(() => getComputedStyle(document.querySelector('.footer-surface'), '::after').opacity === '0')
+            await shot(`footer-reveal-${theme}-${width}`)
+          }
+        }
+        assert.ok(frames.every(frame => Math.abs(frame.bottom - frame.viewport) < 1), 'The footer remains anchored to the viewport during reveal and conceal')
+        assert.ok(frames.every(frame => Math.abs(frame.mainBottom - frames[0].mainBottom) < 1), 'Reveal never changes document layout')
+        assert.ok(frames.every(frame => !frame.leaks && frame.opacity === '1'), 'The clipped surface never covers the preceding content or fades away')
+        await reveal(-0.05)
+        const dark = await reveal(0.2)
+        assert.ok(dark.shade >= 0.4, 'The newly exposed footer and lettering start visibly dimmed')
+        await reveal(0.55)
+        const brightening = await page.evaluate(async () => {
+          const surface = document.querySelector('.footer-surface')
+          const samples = []
+          const start = performance.now()
+          while (performance.now() - start < 650) {
+            await new Promise(resolve => requestAnimationFrame(resolve))
+            samples.push({ shade: Number(getComputedStyle(surface, '::after').opacity), scroll: scrollY, bottom: surface.getBoundingClientRect().bottom })
+          }
+          return samples
+        })
+        assert.ok(brightening.filter(frame => frame.shade > 0.02 && frame.shade < 0.4).length >= 5, 'The dark veil passes through a visible gradual transition')
+        assert.ok(brightening.every(frame => frame.scroll === brightening[0].scroll && Math.abs(frame.bottom - 960) < 1), 'Brightening completes while the page and anchored footer stay still')
+        assert.equal(brightening.at(-1).shade, 0, 'The surface and text return to their full brightness')
+        assert.equal((await reveal(0.12)).shade, 0, 'A small upward reversal does not flash the footer dark again')
+        await reveal(-0.05)
+        assert.ok((await reveal(0.2)).shade >= 0.4, 'Leaving the viewport resets the next dark-to-light entrance')
+      }
+    }
+    report('Desktop and mobile reveal reversibly from beneath the page in both themes without shifting layout')
+    report('The footer enters dimmed, brightens over half a second at rest, and replays only after leaving view')
+
+    await page.setViewportSize({ width: 1440, height: 960 })
+    await reveal(0.02)
+    const scrolling = await page.evaluate(async () => {
+      const footer = document.querySelector('.footer-shell')
+      const surface = footer.querySelector('.footer-surface')
+      const bounds = footer.getBoundingClientRect()
+      const target = scrollY + bounds.bottom - innerHeight - 2
+      const frames = []
+      scrollTo({ top: target, behavior: 'smooth' })
+      const start = performance.now()
+      while (performance.now() - start < 900) {
+        await new Promise(resolve => requestAnimationFrame(resolve))
+        frames.push({ scroll: scrollY, drift: surface.getBoundingClientRect().bottom - innerHeight })
+      }
+      return frames
+    })
+    assert.ok(new Set(scrolling.map(frame => frame.scroll)).size > 8, 'The check samples a moving smooth scroll')
+    assert.ok(scrolling.every(frame => Math.abs(frame.drift) < 1), 'Every sampled scrolling frame stays pinned without jitter')
+    report('Continuous smooth scrolling keeps the footer within one pixel of its anchored position')
+
+    const disableAnimations = await page.addStyleTag({ content: '.footer-surface, .footer-surface::after { animation: none !important; }' })
+    for (const progress of [0.1, 0.5, 0.9, 0.5, 0.1]) {
+      const frame = await reveal(progress)
+      assert.ok(Math.abs(frame.bottom - frame.viewport) < 1 && !frame.leaks, 'Uncover remains stationary and clipped even when CSS animations are unavailable')
+    }
+    await disableAnimations.evaluate(element => element.remove())
+    report('The reveal works independently of CSS scroll-animation support')
+
+    await reveal(1)
+    await page.keyboard.press('Control+k')
+    await page.waitForFunction(() => document.querySelector('.app-shell').classList.contains('is-search-open'))
+    assert.ok(await page.locator('.footer-surface').evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      return bounds.bottom <= innerHeight + 1 && bounds.top >= 0
+    }), 'Opening search keeps the blurred footer in its visible slot')
+    await page.keyboard.press('Escape')
+    await page.waitForFunction(() => !document.querySelector('.app-shell').classList.contains('is-search-open'))
+    assert.ok(Math.abs((await reveal(0.5)).bottom - 960) < 1, 'Closing search restores the fixed reveal')
+
+    await reveal(0)
+    await page.locator('main a').last().focus()
+    await page.keyboard.press('Tab')
+    await page.waitForFunction(() => document.activeElement?.classList.contains('footer-brand-link'))
+    assert.ok(await page.locator('.footer-shell').evaluate(element => element.getBoundingClientRect().bottom <= innerHeight + 1), 'Tab navigation exposes links behind the clip')
+
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.waitForFunction(() => document.querySelector('.footer-shell').dataset.reveal === 'false')
+    await reveal(0.5)
+    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).transform), 'none')
+    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).position), 'relative')
+    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element, '::after').opacity), '0')
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.setViewportSize({ width: 390, height: 300 })
+    await page.waitForFunction(() => document.querySelector('.footer-shell').dataset.reveal === 'false')
+    assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).transform), 'none')
+    for (const label of ['Home', 'Contact', 'GitHub']) {
+      const link = page.locator('.footer-nav').getByRole('link', { name: label, exact: true })
+      await link.focus()
+      await page.waitForFunction(() => {
+        const bounds = document.activeElement.getBoundingClientRect()
+        return bounds.top >= 0 && bounds.bottom <= innerHeight
+      })
+      assert.ok(await link.evaluate(element => {
+        const bounds = element.getBoundingClientRect()
+        return bounds.top >= 0 && bounds.bottom <= innerHeight
+      }), 'Tall footer links remain reachable in a short viewport')
+    }
+    assert.deepEqual(errors, [])
+    report('Keyboard navigation, reduced motion and footers taller than the viewport remain accessible')
+  } finally {
+    await context.close()
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const browser = await chromium.launch({ channel: process.env.FOOTER_BROWSER_CHANNEL || 'msedge', headless: true })
+  try {
+    await runFooterRevealChecks(browser, process.env.FOOTER_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
+  } catch (error) {
+    console.error('Footer reveal checks failed:', error.message)
+    process.exitCode = 1
+  } finally {
+    await browser.close()
+  }
+}
