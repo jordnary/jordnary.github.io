@@ -255,7 +255,7 @@
 .notes-viewport::-webkit-scrollbar { display: none; }
 .notes-track { position: relative; display: flex; gap: 24px; width: max-content; padding: 0.4rem var(--notes-gutter) 0.6rem; }
 .note-exhibit { flex: 0 0 var(--note-width); width: var(--note-width); scroll-snap-align: start; }
-.note-cover { --note-ink: #f5f6ee; position: relative; display: flex; flex-direction: column; width: 100%; height: 490px; overflow: hidden; isolation: isolate; padding: 1.3rem 1.6rem 1.4rem; border: 1px solid rgb(204 225 217 / 0.24); border-radius: 9px; background: var(--note-paper); color: var(--note-ink); text-align: left; cursor: pointer; transition: filter 300ms, border-color 300ms; }
+.note-cover { --note-ink: #f5f6ee; position: relative; display: flex; flex-direction: column; width: 100%; height: 490px; overflow: hidden; isolation: isolate; padding: 1.3rem 1.6rem 1.4rem; border: 0; border-radius: 9px; background: var(--study-paper); color: var(--note-ink); text-align: left; cursor: pointer; transition: filter 300ms; }
 .note-cover-photo { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: learning-photo-drift 14s ease-in-out infinite alternate; animation-play-state: paused; }
 .note-cover-shade { position: absolute; z-index: -1; inset: 0; background: linear-gradient(180deg, rgb(3 9 16 / 0.65), rgb(3 9 16 / 0.08) 30%, rgb(3 9 16 / 0.5) 50%, rgb(3 9 16 / 0.94) 78%, #030910); }
 .note-exhibit[data-active="true"] .note-cover-photo, .note-cover:hover .note-cover-photo, .note-cover:focus-visible .note-cover-photo { animation-play-state: running; }
