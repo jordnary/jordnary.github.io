@@ -53,7 +53,6 @@ export function LearningNotes() {
                     if (event.currentTarget.matches(':focus-visible') && (bounds.left < 0 || bounds.right > window.innerWidth)) goTo(index, true)
                   }}>
                     <img className="note-cover-photo" src={`${import.meta.env.BASE_URL}images/learning/${photo.file}`} alt="" aria-hidden="true" width={960} height={1280} loading="lazy" decoding="async" style={{ objectPosition: cover.position ?? 'center' }} />
-                    <div className="note-cover-shade" aria-hidden="true" />
                     <div className="note-cover-top"><span className="note-cover-number">{String(coverIndex + 1).padStart(2, '0')}</span><span>{note.topic}</span><span>{note.difficulty}</span></div>
                     <div className="note-cover-copy">
                       <p className="note-cover-label">{cover.label}</p>
