@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { SmartLink } from './SmartLink'
+import { useFooterInk } from './useFooterInk'
 import { contactLinks } from '../data/contact'
 import { getRouteHref, type SitePage } from '../lib/routes'
 import './Footer.css'
@@ -121,8 +122,11 @@ export function Footer() {
 
 function FooterBrand() {
   const brandRef = useRef<HTMLAnchorElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const inkRef = useRef<SVGGElement>(null)
   const drawingId = useId()
   const [isInView, setIsInView] = useState(false)
+  useFooterInk(brandRef, svgRef, inkRef, isInView)
 
   useEffect(() => {
     const brand = brandRef.current
@@ -141,7 +145,7 @@ function FooterBrand() {
       ref={brandRef}
     >
       <span className="footer-brand-ruler" aria-hidden="true" />
-      <svg className="footer-wordmark" viewBox="0 0 1448 256" aria-hidden="true" fill="none">
+      <svg ref={svgRef} className="footer-wordmark" viewBox="0 0 1448 256" aria-hidden="true" fill="none">
         <defs>
           <mask id={`${drawingId}-letters`} maskUnits="userSpaceOnUse" x="0" y="0" width="1448" height="256">
             {brandLetters.map(({ x, d, letter }, index) => (
@@ -151,26 +155,28 @@ function FooterBrand() {
               </g>
             ))}
           </mask>
-          <radialGradient id={`${drawingId}-scan`}>
-            <stop offset="0" stopColor="currentColor" stopOpacity="0.04" />
-            <stop offset="0.82" stopColor="currentColor" stopOpacity="0.15" />
-            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
-          </radialGradient>
+          <filter id={`${drawingId}-ink`} filterUnits="userSpaceOnUse" x="-220" y="-220" width="1888" height="696" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.022 0.026" numOctaves="2" seed="9" result="grain" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.018 0.022" numOctaves="1" seed="23" result="current" />
+            <feOffset in="current" data-ink-flow="" result="moving-current" />
+            <feDisplacementMap in="grain" in2="moving-current" scale="40" xChannelSelector="R" yChannelSelector="G" result="flowing-grain" />
+            <feDisplacementMap in="SourceGraphic" in2="flowing-grain" scale="88" xChannelSelector="R" yChannelSelector="G" />
+            <feGaussianBlur stdDeviation="0.45" />
+          </filter>
         </defs>
+        <g className="footer-ink-layer" mask={`url(#${drawingId}-letters)`}>
+          <g ref={inkRef} className="footer-ink-field" data-active="false" filter={`url(#${drawingId}-ink)`}>
+            <g className="footer-ink-wash-far"><circle r="0" /></g>
+            <g className="footer-ink-wash-near"><circle r="0" /></g>
+            <circle className="footer-ink-core" r="0" />
+          </g>
+        </g>
         {brandLetters.map(({ x, letter, ...drawing }, index) => (
           <g key={index} transform={`translate(${x} 18)`} style={{ '--letter-index': index } as CSSProperties}>
             <LetterArtwork drawing={drawing} />
             {letter === 'O' && <FooterOrbit />}
           </g>
         ))}
-        <g className="footer-scan-layer" mask={`url(#${drawingId}-letters)`}>
-          <g className="footer-circle-scan">
-            <circle r="180" fill={`url(#${drawingId}-scan)`} />
-            <circle className="footer-scan-ring" r="156" />
-            <circle className="footer-scan-ring footer-scan-ring-inner" r="128" />
-            <path className="footer-scan-crosshair" d="M-12 0H12M0 -12V12" />
-          </g>
-        </g>
       </svg>
     </SmartLink>
   )
