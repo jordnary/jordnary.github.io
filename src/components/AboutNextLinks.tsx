@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { SmartLink } from './SmartLink'
 import { AboutNextSketch } from './AboutNextSketch'
-import { AboutNextOrnaments } from './AboutNextOrnaments'
 import { getRouteHref } from '../lib/routes'
 import './AboutNextLinks.css'
 
@@ -46,7 +45,6 @@ export function AboutNextLinks() {
             <path className="journey-next-border-echo" d="M22 6C86 3 131 7 165 6M375 23C378 69 373 93 376 120M357 206C295 210 260 204 229 207M6 184C2 157 6 135 4 116" />
             <path className="journey-next-border-mark" d="M25 13c15-2 30-1 45-2m-40 5 32-2" />
           </svg>
-          <AboutNextOrnaments kind={kind} />
           <span className="journey-next-copy">
             <small>{caption}</small>
             <span className="journey-next-title">{title}</span>

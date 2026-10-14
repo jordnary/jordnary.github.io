@@ -53,10 +53,10 @@ export function AboutExplorationArt() {
   }, [])
 
   return (
-    <figure className="journey-atlas" ref={atlasRef} data-motion="paused">
-      <div className="journey-atlas-label">好奇心的轨迹</div>
+    <figure className="journey-atlas" ref={atlasRef} data-motion="paused" data-cover-reveal>
+      <div className="journey-atlas-label journey-cover-reveal">好奇心的轨迹</div>
       <div className="journey-atlas-map" aria-hidden="true">
-        <svg className="journey-atlas-drawing" viewBox="0 0 540 440" fill="none" focusable="false">
+        <svg className="journey-atlas-drawing journey-cover-reveal" viewBox="0 0 540 440" fill="none" focusable="false">
           <defs>
             <linearGradient id={gradientId} x1="80" y1="330" x2="460" y2="100" gradientUnits="userSpaceOnUse">
               <stop className="journey-atlas-color-start" />
@@ -72,7 +72,7 @@ export function AboutExplorationArt() {
             {ribbons.map((path, index) => <path key={index} d={path} opacity={index % 4 === 0 ? 0.6 : 0.26} />)}
           </g>
           <ellipse className="journey-atlas-orbit" cx="270" cy="226" rx="218" ry="102" transform="rotate(27 270 226)" />
-          <path className="journey-atlas-trail" d={explorationTrail} pathLength="1" />
+          <path className="journey-atlas-trail journey-cover-draw" d={explorationTrail} pathLength="1" />
           <path className="journey-atlas-traveler journey-atlas-motion" d={explorationTrail} pathLength="1" />
           <path className="journey-atlas-trail-end" d="m344 78-7 7 10 4" />
           <g className="journey-atlas-annotations">
@@ -125,12 +125,12 @@ export function AboutExplorationArt() {
             </g>
           </g>
         </svg>
-        <div className="journey-atlas-topic journey-atlas-topic-cs"><strong>CS</strong><span>理解世界</span></div>
-        <div className="journey-atlas-topic journey-atlas-topic-ai"><strong>AI</strong><span>探索可能</span></div>
-        <div className="journey-atlas-topic journey-atlas-topic-web"><strong>Web</strong><span>动手创造</span></div>
-        <span className="journey-atlas-origin">从一个问题出发</span>
+        <div className="journey-atlas-topic journey-atlas-topic-cs journey-cover-reveal"><strong>CS</strong><span>理解世界</span></div>
+        <div className="journey-atlas-topic journey-atlas-topic-ai journey-cover-reveal"><strong>AI</strong><span>探索可能</span></div>
+        <div className="journey-atlas-topic journey-atlas-topic-web journey-cover-reveal"><strong>Web</strong><span>动手创造</span></div>
+        <span className="journey-atlas-origin journey-cover-reveal">从一个问题出发</span>
       </div>
-      <figcaption>不急着抵达，先保持好奇。<span aria-hidden="true">↗</span></figcaption>
+      <figcaption className="journey-cover-reveal">不急着抵达，先保持好奇。<span aria-hidden="true">↗</span></figcaption>
     </figure>
   )
 }

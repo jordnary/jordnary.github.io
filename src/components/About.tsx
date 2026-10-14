@@ -1,11 +1,13 @@
 import { useRef } from 'react'
 import { SectionBackdrop } from './SectionBackdrop'
 import { AboutNextLinks } from './AboutNextLinks'
+import { AboutClosingNote } from './AboutClosingNote'
 import { AboutOutroOrnaments } from './AboutOutroOrnaments'
 import { AboutJourneyPath } from './AboutJourneyPath'
 import { AboutExplorationArt } from './AboutExplorationArt'
 import { AboutIceberg } from './AboutIceberg'
 import { AboutJourneyDecorations } from './AboutJourneyDecorations'
+import { useAboutCoverReveal } from './useAboutCoverReveal'
 import { aboutProfile } from '../data/profile'
 import './About.css'
 
@@ -46,20 +48,21 @@ const chapters = [
 
 export function About() {
   const journeyRef = useRef<HTMLOListElement>(null)
+  const coverRef = useAboutCoverReveal()
 
   return (
     <section className="about-journey site-container section-surface" id="about" aria-labelledby="about-title">
       <SectionBackdrop edge="none" />
-      <header className="journey-cover section-surface">
+      <header className="journey-cover section-surface" ref={coverRef}>
         <SectionBackdrop tone="sky" edge="none" />
         <div className="journey-intro">
-          <div className="journey-intro-heading">
-            <p className="journey-eyebrow"><span aria-hidden="true" /> 每一步，都算数。</p>
+          <div className="journey-intro-heading" data-cover-reveal>
+            <p className="journey-eyebrow journey-cover-reveal"><span aria-hidden="true" /> 每一步，都算数。</p>
             <h1 id="about-title">
-              <span>关于我，</span>
-              <span>和一路的<em>探索<svg viewBox="0 0 240 22" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false"><path d="M4 15Q106 0 235 9M147 19l74-5" /></svg></em><span className="journey-title-period">。</span></span>
+              <span className="journey-cover-reveal">关于我，</span>
+              <span className="journey-cover-reveal">和一路的<em>探索<svg viewBox="0 0 240 22" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false"><path className="journey-cover-draw" pathLength="1" d="M4 15Q106 0 235 9M147 19l74-5" /></svg></em><span className="journey-title-period">。</span></span>
             </h1>
-            <p className="journey-handwritten" aria-hidden="true">Always becoming<span>↗</span></p>
+            <p className="journey-handwritten journey-cover-reveal" aria-hidden="true">Always becoming<span>↗</span></p>
           </div>
           <AboutExplorationArt />
         </div>
@@ -68,30 +71,30 @@ export function About() {
           <SectionBackdrop tone="sky" />
           <AboutIceberg />
           <div className="journey-cover-notes">
-            <div className="journey-prologue">
-              <span className="journey-prologue-glyph" aria-hidden="true">序</span>
-              <p className="journey-prologue-label">THE JOURNEY BEGINS</p>
-              <a className="journey-scroll-link" href="#journey-start">
+            <div className="journey-prologue" data-cover-reveal>
+              <span className="journey-prologue-glyph journey-cover-reveal" aria-hidden="true">序</span>
+              <p className="journey-prologue-label journey-cover-reveal">THE JOURNEY BEGINS</p>
+              <a className="journey-scroll-link journey-cover-reveal" href="#journey-start">
                 <span className="journey-scroll-title">沿着<em>好奇心</em>，<br />往下走<span className="journey-scroll-icon" aria-hidden="true">↘</span></span>
               </a>
-              <svg className="journey-prologue-trail" viewBox="0 0 320 62" fill="none" aria-hidden="true" focusable="false">
+              <svg className="journey-prologue-trail journey-cover-reveal" viewBox="0 0 320 62" fill="none" aria-hidden="true" focusable="false">
                 <path d="M2 47C54 47 70 12 126 21S202 65 258 29S302 10 317 14" />
                 <path d="M2 55C60 55 79 25 127 31S208 70 269 37" />
                 <circle cx="126" cy="21" r="3.5" />
                 <path d="M282 5c0 9-3 12-12 12 9 0 12 3 12 12 0-9 3-12 12-12-9 0-12-3-12-12Z" />
               </svg>
             </div>
-            <div className="journey-intro-aside">
-              <p className="journey-note-index"><span aria-hidden="true">✳</span> 写在旅程开始前</p>
-              <p className="journey-intro-copy">{aboutProfile.intro}</p>
+            <div className="journey-intro-aside" data-cover-reveal>
+              <p className="journey-note-index journey-cover-reveal"><span aria-hidden="true">✳</span> 写在旅程开始前</p>
+              <p className="journey-intro-copy journey-cover-reveal">{aboutProfile.intro}</p>
               <ul className="journey-keywords" aria-label="个人叙事关键词">
                 {aboutProfile.keywords.map((keyword, index) => (
-                  <li key={keyword}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{keyword}</li>
+                  <li className="journey-cover-reveal" key={keyword}><span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{keyword}</li>
                 ))}
               </ul>
             </div>
           </div>
-          <div className="journey-cover-colophon" aria-hidden="true"><span>保持好奇 · 持续生长</span><span>A WORK IN PROGRESS</span></div>
+          <div className="journey-cover-colophon journey-cover-reveal" data-cover-reveal aria-hidden="true"><span>保持好奇 · 持续生长</span><span>A WORK IN PROGRESS</span></div>
         </div>
       </header>
 
@@ -141,6 +144,7 @@ export function About() {
         <h2>故事还在继续<span>，下一步见。</span></h2>
         <p className="journey-outro-copy">把沿途的思考写成笔记，把新的理解做成作品。</p>
         <AboutNextLinks />
+        <AboutClosingNote />
       </footer>
     </section>
   )

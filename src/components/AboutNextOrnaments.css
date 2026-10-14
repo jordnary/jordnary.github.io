@@ -1,3 +1,22 @@
+.journey-next-scene {
+  --next-scene-top: clamp(5rem, calc(4rem + 2.3vw), 6rem);
+  --next-scene-card-height: clamp(11.75rem, calc(10.75rem + 3vw), 13.25rem);
+  --next-scene-lower-band: calc(var(--next-scene-top) + var(--next-scene-card-height) + 3rem);
+  position: relative;
+  isolation: isolate;
+  min-height: calc(var(--next-scene-top) + var(--next-scene-card-height) + 11rem);
+  margin-top: 1.5rem;
+  padding-block: var(--next-scene-top) 1.5rem;
+}
+
+.journey-next-ornaments {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
 .journey-next-ornament {
   --next-ornament-ink: #284a60;
   --next-ornament-coral: #d58290;
@@ -11,10 +30,11 @@
   stroke-linejoin: round;
 }
 
-.journey-next-ornament--ripples { bottom: calc(100% + 1rem); left: 0.75rem; width: 4.4rem; }
-.journey-next-ornament--scribble { right: 17%; top: calc(100% + 0.75rem); width: 5.4rem; }
-.journey-next-ornament--flowers { bottom: calc(100% + 1rem); right: 0.6rem; width: 5.2rem; }
-.journey-next-ornament--bolts { top: calc(100% + 0.9rem); left: 1.3rem; width: 5.8rem; }
+/* Fixed scene anchors and fluid sizes keep the background continuous as cards reflow. */
+.journey-next-ornament--ripples { top: 0; left: 6%; width: clamp(3.2rem, calc(2.7rem + 1.9vw), 4.4rem); }
+.journey-next-ornament--flowers { top: 0.75rem; right: 6%; width: clamp(4rem, calc(3.5rem + 1.9vw), 5.2rem); }
+.journey-next-ornament--scribble { top: var(--next-scene-lower-band); left: 22%; width: clamp(4.2rem, calc(3.8rem + 1.8vw), 5.4rem); }
+.journey-next-ornament--bolts { top: calc(var(--next-scene-lower-band) + 0.75rem); right: 16%; width: clamp(4.5rem, calc(4rem + 2vw), 5.8rem); }
 
 .journey-next-ripple { stroke: var(--next-ornament-coral); stroke-width: 2.4; transform-origin: 40px 40px; }
 .journey-next-ripple--middle { opacity: 0.8; }
@@ -25,9 +45,8 @@
 .journey-next-scribble-line { stroke: var(--next-ornament-coral); stroke-width: 1.8; }
 .journey-next-flower--large { fill: var(--next-ornament-coral); }
 .journey-next-flower--small { fill: var(--next-ornament-ink); }
-.journey-next-bolt { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.journey-next-bolt--main { stroke: var(--next-ornament-ink); }
-.journey-next-bolt--small, .journey-next-bolt--echo { stroke: var(--next-ornament-coral); stroke-width: 2; }
+.journey-next-bolt--main { fill: var(--next-ornament-ink); }
+.journey-next-bolt--small, .journey-next-bolt--echo { fill: var(--next-ornament-coral); }
 .journey-next-scribble-line, .journey-next-flower, .journey-next-bolt { transform-box: fill-box; transform-origin: center; }
 
 @media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
@@ -41,7 +60,7 @@
   .journey-next-bolt--small { animation-delay: -0.35s; }
   .journey-next-bolt--echo { animation-delay: -0.7s; }
 
-  .journey-next-link[data-motion="running"] .journey-next-ornament :is(.journey-next-ripple, .journey-next-scribble-line, .journey-next-flower, .journey-next-bolt) { animation-play-state: running; }
+  .journey-next-ornament[data-motion="running"] :is(.journey-next-ripple, .journey-next-scribble-line, .journey-next-flower, .journey-next-bolt) { animation-play-state: running; }
 }
 
 @keyframes journey-next-ripple {
@@ -64,23 +83,4 @@
   0%, 48%, 100% { transform: translate(0, 0) rotate(0deg); }
   18%, 62% { transform: translate(1px, -2px) rotate(-4deg); }
   30%, 74% { transform: translate(-1px, 1px) rotate(3deg); }
-}
-
-@media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
-  .journey-next-ornament--ripples { top: 0.6rem; right: calc(100% + 1.1rem); bottom: auto; left: auto; }
-  .journey-next-ornament--flowers { top: -0.4rem; right: auto; bottom: auto; left: calc(100% + 1.1rem); }
-}
-
-@media (max-width: 900px) and (min-width: 701px) {
-  .journey-next-ornament--ripples { width: 3.7rem; }
-  .journey-next-ornament--scribble { width: 4.5rem; right: 22%; }
-  .journey-next-ornament--flowers { width: 4.5rem; }
-  .journey-next-ornament--bolts { width: 4.8rem; }
-}
-
-@media (max-width: 700px), (hover: none) and (pointer: coarse) {
-  .journey-next-ornament--ripples { bottom: calc(100% + 0.75rem); left: 0.6rem; width: 3.2rem; }
-  .journey-next-ornament--scribble { top: calc(100% + 0.5rem); right: auto; left: 12%; width: 4.2rem; }
-  .journey-next-ornament--flowers { bottom: calc(100% + 0.75rem); right: 0.65rem; width: 4rem; }
-  .journey-next-ornament--bolts { top: calc(100% + 0.6rem); left: 1rem; width: 4.5rem; }
 }

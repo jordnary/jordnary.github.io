@@ -36,18 +36,18 @@ export function AboutIceberg() {
 
   return (
     <>
-      <div className="journey-iceberg journey-iceberg-summit" ref={summitRef} data-motion="paused" aria-hidden="true">
+      <div className="journey-iceberg journey-iceberg-summit journey-cover-reveal" ref={summitRef} data-motion="paused" data-cover-reveal aria-hidden="true">
         <picture>
           <source media="(max-width: 700px), (hover: none) and (pointer: coarse)" srcSet="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
           <img src="/images/about/iceberg-summit.webp" width="650" height="320" alt="" decoding="async" />
         </picture>
         <AboutIcebergFlag />
       </div>
-      <picture className="journey-iceberg journey-iceberg-depth" aria-hidden="true">
+      <picture className="journey-iceberg journey-iceberg-depth journey-cover-reveal" data-cover-reveal aria-hidden="true">
         <source media="(max-width: 700px), (hover: none) and (pointer: coarse)" srcSet="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
         <img src="/images/about/iceberg-depth.webp" width="880" height="365" alt="" decoding="async" />
       </picture>
-      <div className="journey-iceberg journey-iceberg-water" ref={icebergRef} data-motion="paused" aria-hidden="true">
+      <div className="journey-iceberg journey-iceberg-water journey-cover-reveal" ref={icebergRef} data-motion="paused" data-cover-reveal aria-hidden="true">
         <svg viewBox="0 0 600 40" fill="none" focusable="false">
           <g className="iceberg-water-ripples" strokeLinecap="round">
             <path className="iceberg-motion" d="M-16 13q24-4 51-1m530 0q24-3 51 1" />

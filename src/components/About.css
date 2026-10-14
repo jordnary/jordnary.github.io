@@ -176,7 +176,7 @@
 .journey-node { position: absolute; z-index: 1; top: calc(100% + 14px - 0.625rem); left: calc(var(--node-offset) - 0.625rem); display: grid; place-items: center; width: 1.25rem; height: 1.25rem; border: 1px solid var(--journey-accent); border-radius: 50%; background: var(--journey-paper); }
 .journey-node > span { width: 0.35rem; height: 0.35rem; border-radius: 50%; background: var(--journey-accent); }
 .journey-rail { position: absolute; bottom: -14px; left: calc(var(--node-offset) - 1px); width: 2px; height: calc(100% + 14px - 1.25rem); border-radius: 2px; background: linear-gradient(to bottom, var(--journey-accent), color-mix(in srgb, var(--journey-accent) 55%, transparent) 52%, transparent); opacity: 0.65; }
-.journey-outro { padding: 0 0 1rem; text-align: center; }
+.journey-outro { padding: 0 clamp(0rem, calc(1.5rem - 2vw), 0.5rem) 1rem; text-align: center; }
 .about-journey .journey-outro { padding-top: 0.5rem; }
 .about-journey .journey-outro > .section-backdrop { bottom: calc(-1 * var(--journey-bottom-space)); }
 .journey-outro > .section-backdrop::before {
@@ -256,7 +256,7 @@
   .journey-chapter .journey-node { left: 0.15rem; right: auto; top: 2.75rem; bottom: auto; }
   .journey-rail { display: none; }
   .journey-path-progress { stroke-opacity: 0.45; }
-  .journey-outro { padding-inline: 0.5rem; text-align: left; }
+  .journey-outro { text-align: left; }
   .about-journey .journey-outro { padding-top: 1.5rem; }
   .journey-outro-kicker { justify-content: flex-start; }
   .journey-outro h2 > span { display: block; margin-top: 0.35rem; }
@@ -274,17 +274,36 @@
 }
 
 @media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
-  .journey-intro-heading { animation: journey-cover-arrive 850ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-  .journey-atlas { animation: journey-cover-arrive 1000ms cubic-bezier(0.2, 0.7, 0.2, 1) 120ms both; }
-  .journey-atlas-trail { stroke-dasharray: 1; animation: journey-trail-draw 1800ms ease 350ms both; }
-}
-
-@keyframes journey-cover-arrive {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes journey-trail-draw {
-  from { stroke-dashoffset: 1; }
-  to { stroke-dashoffset: 0; }
+  /* Each visible group starts its own sequence; ambient pencil loops stay independent. */
+  .journey-cover-draw { stroke-dasharray: 1; }
+  .journey-eyebrow { --cover-reveal-distance: 8px; }
+  .journey-intro h1 > span:first-child { --cover-reveal-delay: 90ms; --cover-reveal-duration: 850ms; }
+  .journey-intro h1 > span:nth-child(2) { --cover-reveal-delay: 200ms; --cover-reveal-duration: 850ms; }
+  .journey-intro h1 .journey-cover-draw { --cover-reveal-delay: 520ms; --cover-reveal-duration: 900ms; }
+  .journey-handwritten { --cover-reveal-delay: 380ms; --cover-reveal-distance: 10px; }
+  .journey-atlas-label { --cover-reveal-delay: 140ms; }
+  .journey-atlas-drawing { --cover-reveal-delay: 240ms; --cover-reveal-duration: 1000ms; }
+  .journey-atlas-trail { --cover-reveal-delay: 420ms; --cover-reveal-duration: 1600ms; }
+  .journey-atlas-topic { --cover-reveal-distance: 10px; }
+  .journey-atlas-topic-cs { --cover-reveal-delay: 380ms; }
+  .journey-atlas-topic-ai { --cover-reveal-delay: 480ms; }
+  .journey-atlas-topic-web { --cover-reveal-delay: 580ms; }
+  .journey-atlas-origin { --cover-reveal-delay: 640ms; }
+  .journey-atlas figcaption { --cover-reveal-delay: 720ms; }
+  /* Fade the aligned photo layers without moving their shared waterline. */
+  .journey-iceberg { --cover-reveal-distance: 0px; --cover-reveal-duration: 1100ms; }
+  .journey-iceberg-summit { --cover-reveal-delay: 260ms; }
+  .journey-iceberg-depth { --cover-reveal-delay: 360ms; }
+  .journey-iceberg-water { --cover-reveal-delay: 500ms; }
+  .journey-prologue-glyph { --cover-reveal-distance: 0px; --cover-reveal-duration: 1000ms; }
+  .journey-prologue-label { --cover-reveal-delay: 160ms; }
+  .journey-scroll-link { --cover-reveal-delay: 260ms; }
+  .journey-prologue-trail { --cover-reveal-delay: 420ms; --cover-reveal-distance: 8px; }
+  .journey-note-index { --cover-reveal-delay: 260ms; }
+  .journey-intro-copy { --cover-reveal-delay: 360ms; }
+  .journey-keywords li { --cover-reveal-delay: 480ms; --cover-reveal-distance: 8px; }
+  .journey-keywords li:nth-child(2) { --cover-reveal-delay: 560ms; }
+  .journey-keywords li:nth-child(3) { --cover-reveal-delay: 640ms; }
+  .journey-keywords li:nth-child(4) { --cover-reveal-delay: 720ms; }
+  .journey-cover-colophon { --cover-reveal-delay: 800ms; --cover-reveal-distance: 6px; }
 }
