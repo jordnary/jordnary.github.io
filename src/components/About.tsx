@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { SectionBackdrop } from './SectionBackdrop'
+import { SectionBackdrop, SectionPaperSeam } from './SectionBackdrop'
 import { AboutNextLinks } from './AboutNextLinks'
 import { AboutClosingNote } from './AboutClosingNote'
 import { AboutOutroOrnaments } from './AboutOutroOrnaments'
@@ -146,6 +146,7 @@ export function About() {
         <AboutNextLinks />
         <AboutClosingNote />
       </footer>
+      <SectionPaperSeam className="journey-footer-seam" />
     </section>
   )
 }

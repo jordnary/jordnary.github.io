@@ -46,6 +46,19 @@
 .section-backdrop-paper-rim { fill: var(--section-white); }
 .section-backdrop-fiber { fill: color-mix(in srgb, var(--section-fill) 50%, var(--section-white)); }
 
+.section-paper-seam {
+  position: absolute;
+  inset: auto calc(50% - 50vw) -1px;
+  display: block;
+  width: 100vw;
+  height: clamp(1.75rem, 3vw, 3rem);
+  pointer-events: none;
+  user-select: none;
+}
+
+.section-paper-seam-surface { fill: var(--paper-seam-surface, var(--section-white)); }
+.section-paper-seam-shadow { filter: drop-shadow(0 3px 3px rgb(25 43 50 / 0.16)); }
+
 .section-margin {
   position: absolute;
   inset-block: 3rem 1.5rem;
@@ -131,5 +144,5 @@
 }
 
 @media (forced-colors: active) {
-  .section-backdrop { display: none; }
+  .section-backdrop, .section-paper-seam { display: none; }
 }

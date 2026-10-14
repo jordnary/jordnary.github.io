@@ -31,6 +31,24 @@ function tornContour(offset: number, seed: number) {
 const paperTear = tornContour(15, 17)
 const surfaceTear = tornContour(37, 41)
 
+export function SectionPaperSeam({ className = '' }: { className?: string }) {
+  const maskId = useId()
+  return (
+    <svg className={`section-paper-seam ${className}`} viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs>
+        <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="64">
+          <path d={paperTear} fill="white" />
+          <path d={surfaceTear} fill="black" />
+        </mask>
+      </defs>
+      <path className="section-paper-seam-surface" d={surfaceTear} />
+      <g className="section-paper-seam-shadow">
+        <path className="section-backdrop-paper-rim" d={paperTear} mask={`url(#${maskId})`} />
+      </g>
+    </svg>
+  )
+}
+
 // A transparent rim lets an illustration sit behind the same tear as the backdrop.
 export function SectionPaperRim({ className = '' }: { className?: string }) {
   const maskId = useId()

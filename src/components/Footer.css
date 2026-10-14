@@ -1,3 +1,5 @@
+:root { --site-footer-bg: #4b6f8f; }
+
 .footer-shell {
   --footer-ink: #ffffff;
   --footer-muted: #edf3f8;
@@ -13,7 +15,7 @@
 }
 
 :root .footer-shell {
-  --footer-bg: #4b6f8f;
+  --footer-bg: var(--site-footer-bg);
 }
 
 .footer-surface {

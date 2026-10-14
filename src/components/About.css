@@ -193,6 +193,7 @@
 .journey-outro h2 { margin: 1.2rem 0 0.8rem; color: var(--journey-ink); font-family: var(--journey-serif); font-size: clamp(1.5rem, 2.5vw, 2.1rem); font-weight: 500; }
 .journey-outro h2 > span { color: var(--journey-accent); }
 .journey-outro-copy { color: var(--journey-muted); font-size: 0.8rem; line-height: 1.8; }
+.journey-footer-seam { --paper-seam-surface: var(--site-footer-bg); z-index: 1; }
 .about-journey a:focus-visible { outline: 2px solid var(--journey-accent); outline-offset: 6px; border-radius: 3px; }
 
 /* Motion is controlled by interruptible Web Animations, including restored scroll positions. */
