@@ -23,7 +23,7 @@ export function LearningNotes() {
 
   return (
     <section className="notes-gallery section-surface" id="notes" aria-labelledby="notes-heading" ref={sectionRef}>
-      <SectionBackdrop />
+      <SectionBackdrop edge="none" />
       <div className="notes-sticky">
         <div className="notes-gallery-heading site-container">
           <div className="learning-section-index"><span>02</span> LEARNING NOTES <span>思考的切片</span></div>

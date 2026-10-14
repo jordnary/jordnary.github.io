@@ -103,12 +103,12 @@
 .learning-studio .page-section.section-surface { padding-block: 4.5rem; }
 .learning-studio .notes-gallery.section-surface { padding-top: 1.5rem; padding-bottom: 3rem; }
 .learning-studio .notes-gallery[data-pinned="true"].section-surface { padding-block: 0; }
-.learning-studio .notes-sticky { background: var(--section-white); }
-.learning-studio .learning-hero-story { background: var(--section-white); }
-.learning-studio .learning-contents { background: var(--section-white); }
+.learning-studio .notes-sticky { background: var(--study-paper); }
+.learning-studio .learning-hero-story { background: var(--section-paper); }
+.learning-studio .learning-contents { background: var(--section-paper); }
 .learning-studio .knowledge-card.learning-blueprint-panel,
-.learning-studio .timeline-row.learning-blueprint-panel { background: color-mix(in srgb, var(--section-white) 45%, transparent); }
-.learning-studio .learning-blueprint-panel:hover { background: color-mix(in srgb, var(--section-white) 65%, transparent); }
+.learning-studio .timeline-row.learning-blueprint-panel { background: var(--section-paper); }
+.learning-studio .learning-blueprint-panel:hover { background: color-mix(in srgb, var(--study-ink) 4%, var(--section-paper)); }
 .learning-studio .section-backdrop { --section-margin-width: max(0.75rem, calc(var(--page-gutter) - 0.65rem)); }
 .learning-studio .section-margin { opacity: 0.65; }
 

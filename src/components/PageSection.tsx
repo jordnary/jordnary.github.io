@@ -10,6 +10,7 @@ type PageSectionProps = {
   id: string
   title: ReactNode
   tone?: SectionTone
+  edge?: 'paper' | 'arc' | 'none'
   decoration?: SectionDecoration
 }
 
@@ -20,6 +21,7 @@ export function PageSection({
   id,
   title,
   tone,
+  edge,
   decoration,
 }: PageSectionProps) {
   useEffect(() => {
@@ -46,7 +48,7 @@ export function PageSection({
 
   return (
     <section className="page-section section-surface" id={id}>
-      <SectionBackdrop tone={tone} decoration={decoration} />
+      <SectionBackdrop tone={tone} edge={edge} decoration={decoration} />
       <div className="site-container">
         <Reveal className="section-heading">
           <p className="section-eyebrow">{eyebrow}</p>

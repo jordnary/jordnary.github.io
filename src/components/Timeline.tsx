@@ -12,7 +12,8 @@ export function Timeline() {
   return (
     <PageSection
       id="timeline"
-      tone="sage"
+      tone="paper"
+      edge="none"
       decoration="botanical-right"
       eyebrow="Stage Plan"
       title={<>学到这里，<em>然后呢？</em></>}

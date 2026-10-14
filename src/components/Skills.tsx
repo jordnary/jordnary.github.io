@@ -13,7 +13,8 @@ export function Skills() {
   return (
     <PageSection
       id="skills"
-      tone="white"
+      tone="paper"
+      edge="none"
       eyebrow="Knowledge Map"
       title={<>循着兴趣，<em>画一张地图。</em></>}
       description="四条仍在延伸的学习路径。把零散的概念连起来，也为下一个问题留出位置。"
