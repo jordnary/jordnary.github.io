@@ -124,7 +124,7 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     await reveal(0)
     await page.locator('main a').last().focus()
     await page.keyboard.press('Tab')
-    await page.waitForFunction(() => document.activeElement?.classList.contains('footer-brand-link'))
+    await page.waitForFunction(() => document.activeElement === document.querySelector('.footer-nav .footer-link'))
     assert.ok(await page.locator('.footer-shell').evaluate(element => element.getBoundingClientRect().bottom <= innerHeight + 1), 'Tab navigation exposes links behind the clip')
 
     await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -139,6 +139,8 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     assert.equal(await page.locator('.footer-surface').evaluate(element => getComputedStyle(element).transform), 'none')
     for (const label of ['Home', 'Contact', 'GitHub']) {
       const link = page.locator('.footer-nav').getByRole('link', { name: label, exact: true })
+      // Home may still hold focus from the Tab check before the viewport resize.
+      await page.locator('main').focus()
       await link.focus()
       await page.waitForFunction(() => {
         const bounds = document.activeElement.getBoundingClientRect()

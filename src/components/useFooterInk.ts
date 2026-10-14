@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from 'react'
 
 // Pointer travel stirs the noise field as pigment moves through it.
 export function useFooterInk(
-  surfaceRef: RefObject<HTMLAnchorElement | null>,
+  surfaceRef: RefObject<HTMLElement | null>,
   svgRef: RefObject<SVGSVGElement | null>,
   inkRef: RefObject<SVGGElement | null>,
   isInView: boolean,
@@ -18,7 +18,7 @@ export function useFooterInk(
     const farWash = ink.querySelector<SVGCircleElement>('.footer-ink-wash-far circle')
     const flow = svg.querySelector<SVGFEOffsetElement>('[data-ink-flow]')
     if (!core || !nearWash || !farWash || !flow) return
-    const capHeight = svg.querySelector<SVGPathElement>('.footer-letter-outline')?.getBBox().height || 220
+    const capHeight = svg.querySelector<SVGPathElement>('.footer-letter-shape')?.getBBox().height || 220
     const radius = capHeight * 0.7
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     let frame = 0
