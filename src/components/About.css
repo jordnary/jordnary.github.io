@@ -134,38 +134,12 @@
 .journey-atlas-topic-cs { left: 14.4%; top: 15%; }
 .journey-atlas-topic-ai { right: 1%; top: 36.5%; }
 .journey-atlas-topic-web { left: 64.3%; top: 83%; }
-.journey-atlas-spark { stroke: var(--cover-accent); stroke-width: 1.25; stroke-linecap: round; }
 .journey-atlas-origin { position: absolute; left: 0; top: 81%; color: var(--cover-muted); font-size: 0.875rem; line-height: 1.5; }
 .journey-atlas figcaption { display: flex; justify-content: flex-end; align-items: center; gap: 0.8rem; margin-top: 0.85rem; padding-right: 1rem; color: var(--cover-ink); font-family: var(--journey-serif); font-size: 1rem; line-height: 1.7; letter-spacing: 0.04em; }
 .journey-atlas figcaption > span { color: var(--cover-secondary); font-size: 1.4rem; }
 .journey-chapter-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.8rem; padding: 1rem 0; border-top: 1px solid var(--journey-border); color: var(--journey-muted); font-size: 0.7rem; scroll-margin-top: 7rem; }
 .journey-chapter-heading > span { font-size: 0.58rem; letter-spacing: 0.14em; }
 .journey-canvas { position: relative; isolation: isolate; }
-.journey-margin-art { position: absolute; z-index: -1; inset: 0 calc(50% - 50vw); overflow: clip; pointer-events: none; user-select: none; }
-.journey-margin-piece { position: absolute; width: clamp(0.75rem, calc((100vw - 70rem) / 2), 11.25rem); height: 31.25rem; overflow: clip; }
-.journey-margin-piece--left { left: 0; }
-.journey-margin-piece--right { right: 0; }
-.journey-margin-piece svg { position: absolute; width: 11.25rem; height: auto; }
-.journey-margin-piece--left svg { right: 0; }
-.journey-margin-piece--right svg { left: 0; }
-.journey-margin-piece--one { top: 3%; height: 19rem; }
-.journey-margin-piece--two { top: 11%; }
-.journey-margin-piece--three { top: 37%; height: 22rem; }
-.journey-margin-piece--four { top: 52%; height: 21rem; }
-.journey-margin-piece--five { top: 75%; height: 19rem; }
-.journey-margin-piece--six { top: 84%; height: 17.5rem; }
-@media (prefers-reduced-motion: no-preference) and (min-width: 1001px) and (hover: hover) and (pointer: fine) {
-  .journey-art-orbit { animation: journey-margin-orbit 22s linear infinite paused; }
-  .journey-art-spark { transform-origin: 66px 95px; animation: journey-margin-spark 4.2s ease-in-out infinite alternate paused; }
-  .journey-art-mobile { --journey-sway-angle: 2.25deg; transform-origin: 86px 52px; animation: journey-margin-sway 6s ease-in-out infinite alternate paused; }
-  .journey-art-mobile-tier { --journey-sway-angle: 2.5deg; transform-origin: 122px 142px; animation: journey-margin-sway 4.6s ease-in-out -1.8s infinite alternate-reverse paused; }
-  .journey-art-tide { animation: journey-margin-tide 7.5s ease-in-out infinite paused; }
-  .journey-margin-piece[data-visible="true"] :is(.journey-art-orbit, .journey-art-spark, .journey-art-mobile, .journey-art-mobile-tier, .journey-art-tide) { animation-play-state: running; }
-}
-@keyframes journey-margin-orbit { to { transform: rotate(360deg); } }
-@keyframes journey-margin-spark { from { opacity: 0.55; transform: scale(0.9) rotate(-7deg); } to { opacity: 1; transform: scale(1.12) rotate(7deg); } }
-@keyframes journey-margin-sway { from { transform: rotate(calc(-1 * var(--journey-sway-angle))); } to { transform: rotate(var(--journey-sway-angle)); } }
-@keyframes journey-margin-tide { 0%, 100% { transform: translate(-3px, 2px); } 50% { transform: translate(3px, -2px); } }
 .journey-chapters { position: relative; margin: 0; padding: 4.5rem 0 7rem; list-style: none; }
 .journey-path { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .journey-path path { stroke-linecap: round; }
@@ -260,7 +234,7 @@
 }
 
 @media (max-width: 700px), (hover: none) and (pointer: coarse) {
-  .about-journey *, .about-journey *::before, .about-journey *::after { transition: none !important; animation: none !important; }
+  .about-journey :not(.journey-atlas-motion), .about-journey *::before, .about-journey *::after { transition: none !important; animation: none !important; }
   .about-journey { --cover-top-space: 1rem; padding-bottom: 2.5rem; }
   .journey-cover { padding-block: 0; }
   .journey-intro { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 0 4.5rem; }
@@ -279,7 +253,6 @@
   .journey-cover-summary { padding-block: 1rem 4rem; }
   .journey-cover-summary .journey-cover-colophon { margin-top: 0.5rem; }
   .about-journey .journey-story { padding-top: 1.25rem; }
-  .journey-margin-piece { width: 0.75rem; opacity: 0.45; }
   .journey-prologue { width: min(100%, 23rem); padding-left: 1rem; }
   .journey-prologue-glyph { top: 0; right: 0.5rem; font-size: 6.5rem; }
   .journey-scroll-title { font-size: 1.75rem; }

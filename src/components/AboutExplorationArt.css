@@ -1,0 +1,107 @@
+.journey-atlas {
+  --atlas-pencil: #b4677c;
+  --atlas-paper: #f3f7ef;
+}
+
+/* Paper captions stay still; only the drawings cycle through pencil frames. */
+.journey-atlas-topic > span {
+  align-self: flex-start;
+  margin-left: -0.35rem;
+  padding: 0.16rem 0.35rem;
+  background: color-mix(in srgb, var(--atlas-paper) 78%, transparent);
+  box-shadow: 0 2px 3px rgb(39 60 83 / 0.04);
+  transform: rotate(-3deg);
+}
+
+.journey-atlas-topic-ai > span { transform: rotate(2deg); }
+.journey-atlas-topic-web > span { transform: rotate(-2deg); }
+
+.journey-atlas-doodle {
+  stroke: var(--atlas-pencil);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.journey-atlas-doodle-paper { fill: var(--atlas-paper); stroke: none; }
+.journey-atlas-connections { fill: var(--atlas-paper); stroke: var(--cover-accent); stroke-width: 1.7; }
+.journey-atlas-thought { --atlas-sketch-offset: -0.17s; stroke-width: 1.5; opacity: 0.85; }
+.journey-atlas-code { --atlas-sketch-offset: -0.49s; }
+.journey-atlas-sketch-frame { opacity: 0; }
+.journey-atlas-sketch-frame:first-child { opacity: 1; }
+.journey-atlas-sketch-frame:nth-child(2) { --atlas-frame-offset: -0.64s; }
+.journey-atlas-sketch-frame:nth-child(3) { --atlas-frame-offset: -0.32s; }
+
+.journey-atlas-question text {
+  fill: var(--cover-accent);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 35px;
+  font-style: italic;
+}
+
+.journey-atlas-question-ring {
+  stroke: var(--atlas-pencil);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  opacity: 0.75;
+}
+
+.journey-atlas-question-ring:nth-child(2) { --atlas-ring-delay: -2.16s; }
+.journey-atlas-question-ring:nth-child(3) { --atlas-ring-delay: -1.92s; }
+
+.journey-atlas-signal {
+  stroke: var(--cover-accent);
+  stroke-width: 2;
+  stroke-dasharray: 0.16 0.84;
+}
+
+.journey-atlas-traveler {
+  stroke: var(--atlas-pencil);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 0.001 0.999;
+  opacity: 0;
+}
+
+/* Ambient motion also runs in narrow previews and on touch screens. */
+@media (prefers-reduced-motion: no-preference) {
+  .journey-atlas-traveler { animation: atlas-follow-question 5.4s linear infinite; }
+  .journey-atlas-question-ring { animation: atlas-question-ripple 2.4s ease-in-out var(--atlas-ring-delay, 0s) infinite; }
+  .journey-atlas-sketch-frame {
+    animation: atlas-pencil-frame 0.96s step-end infinite;
+    animation-delay: calc(var(--atlas-frame-offset, 0s) + var(--atlas-sketch-offset, 0s));
+  }
+  .journey-atlas-signal { animation: atlas-connect 2.4s linear infinite; }
+  .journey-atlas-code { animation: atlas-code-jot 1.92s steps(1, end) infinite; }
+  .journey-atlas .journey-atlas-motion { animation-play-state: paused; }
+  .journey-atlas[data-motion='running'] .journey-atlas-motion { animation-play-state: running; }
+}
+
+@keyframes atlas-follow-question {
+  0% { stroke-dashoffset: 0; opacity: 0; }
+  8%, 88% { opacity: 0.9; }
+  100% { stroke-dashoffset: -1; opacity: 0; }
+}
+
+@keyframes atlas-question-ripple {
+  0% { stroke-dashoffset: 1; opacity: 0; transform: scale(0.8); }
+  18% { opacity: 0.9; }
+  32%, 48% { stroke-dashoffset: 0; opacity: 0.9; transform: scale(1); }
+  78%, 100% { stroke-dashoffset: -1; opacity: 0; transform: scale(1.08); }
+}
+
+/* Three distinct outlines create hand-drawn movement without moving the labels. */
+@keyframes atlas-pencil-frame {
+  0%, 33.32% { opacity: 1; }
+  33.33%, 100% { opacity: 0; }
+}
+
+@keyframes atlas-connect { to { stroke-dashoffset: -1; } }
+
+@keyframes atlas-code-jot {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-1px, -2px) rotate(-5deg); }
+  50% { transform: translate(1px, 1px) rotate(3deg); }
+  75% { transform: translate(0, -1px) rotate(-2deg); }
+}

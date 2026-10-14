@@ -1,137 +1,90 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import './AboutJourneyDecorations.css'
 
-function GridPaper() {
-  const gridId = useId()
-  return (
-    <svg viewBox="0 0 180 500" fill="none" focusable="false">
-      <defs>
-        <pattern id={gridId} width="24" height="24" patternUnits="userSpaceOnUse">
-          <path d="M24 0H0V24" stroke="#9bafbc" strokeWidth="0.7" opacity="0.6" />
-        </pattern>
-      </defs>
-      <g>
-        <path d="M103 101h83v370l-13-4-10 8-11-5-13 8-10-5-12 7-14-6Z" fill="#f9fbfc" />
-        <path d="M103 101h83v370l-13-4-10 8-11-5-13 8-10-5-12 7-14-6Z" fill={`url(#${gridId})`} stroke="#a9bac5" strokeWidth="0.8" />
-        <path d="m114 84 38-12 13 38-38 12Z" fill="#d88794" opacity="0.7" />
-        <path d="m152 72 13 38-10-5Z" fill="#b45e70" opacity="0.6" />
-        <path d="m122 97 25-8" stroke="#fff" strokeWidth="1" opacity="0.65" />
-        <path d="m129 268 16-24 11 8 22-42M124 381h31m-31 8h19" stroke="#64878f" strokeWidth="1.1" />
-        <path d="m140 304 6 15 15-4-13 11 8 13-15-6-9 13 1-17-15-3 16-7Z" stroke="#cf7685" strokeWidth="1.3" />
-      </g>
-    </svg>
-  )
-}
+// Three pencil poses keep the marks alive without moving their page anchors.
+const scribbles = [
+  'M28 77C8 62 78 49 71 65S12 96 24 77 86 76 66 91 16 54 37 59 67 113 48 107 25 63 54 66 82 86 53 91 8 83 28 69 71 64 62 80 27 108 29 86 49 50 58 72 54 107 41 91 13 77 39 76 82 58 67 75 30 98 23 84',
+  'M26 75C12 56 78 56 70 68S14 99 25 79 83 72 68 88 13 60 35 57 70 109 49 108 21 65 52 64 82 91 54 89 10 88 26 72 74 60 64 79 25 106 27 87 52 52 60 73 51 110 39 94 16 73 41 74 79 62 69 77 34 102 25 84',
+  'M29 79C7 64 74 50 73 64S17 94 23 76 83 79 64 94 19 54 39 61 64 111 46 105 26 60 55 67 79 85 52 94 8 81 30 67 68 67 60 83 30 110 31 87 46 49 55 70 57 104 43 90 11 81 37 78 84 56 65 73 28 96 22 86',
+]
 
-// Short, alternating facets suggest curled paper instead of continuous ribbons.
-function Streamers() {
+const loops = [
+  'M79 84C56 87 38 69 40 47S58 13 79 16 116 35 112 58 98 82 79 84Z',
+  'M79 85C55 85 39 70 41 48S57 14 80 17 115 34 111 57 99 83 79 85Z',
+  'M80 84C57 88 37 68 40 46S60 14 81 16 113 37 112 59 97 81 80 84Z',
+]
+
+function PencilLoop() {
   return (
-    <svg viewBox="0 0 180 280" fill="none" focusable="false">
-      {[0, 1, 2].map(ribbon => (
-        <g key={ribbon} fill={ribbon === 1 ? '#315371' : '#dc8593'}>
-          {Array.from({ length: 12 }, (_, i) => {
-            const phase = i * 0.77 + ribbon * 1.5
-            const x = 44 + ribbon * 36 + Math.sin(phase) * 19
-            const y = 18 + ribbon * 48 + i * 11
-            return <path key={i} opacity={0.85 - i * 0.045} transform={`translate(${x} ${y}) rotate(${Math.cos(phase) * 42 - 15})`} d={i % 2 ? 'm0 0 8 2-2 5-5-1Z' : 'm0 0 7-2 1 6-6 1Z'} />
-          })}
+    <svg viewBox="0 0 132 124" fill="none" focusable="false">
+      {loops.map((loop, index) => (
+        <g className="journey-pencil-frame" key={loop}>
+          <path className="journey-pencil-loop" d={loop} />
+          <path className="journey-pencil-scribble" d={scribbles[index]} />
         </g>
       ))}
     </svg>
   )
 }
 
-function Constellation() {
+function PencilRings() {
   return (
-    <svg viewBox="0 0 180 300" fill="none" focusable="false">
-      <path d="m24 171 42-76 49 31 29-77M66 95l-7 124 56-93 25 88M24 171l116 43" stroke="#96b9c1" strokeWidth="1.1" />
-      <path d="m24 171 35 48 81-5 4-165" stroke="#b7cbd1" strokeDasharray="2 6" />
-      <g fill="#6f979e">
-        <circle cx="24" cy="171" r="3" /><circle cx="115" cy="126" r="4" /><circle cx="59" cy="219" r="2.5" /><circle cx="144" cy="49" r="3" />
+    <svg viewBox="0 0 112 116" fill="none" focusable="false">
+      <g className="journey-pencil-frame">
+        <path className="journey-pencil-ring-blue" d="M79 82C63 98 33 87 27 66S32 29 51 24 92 34 94 55M36 22C59 6 90 22 99 43" />
+        <path className="journey-pencil-ring-coral" d="M78 69C66 87 39 79 36 61S47 31 62 34 85 51 78 69Z" />
+        <path className="journey-pencil-ring-ink" d="M73 61C70 76 48 76 44 60S55 39 64 43 75 53 73 61ZM19 58C17 84 38 98 60 98M23 88c8 9 18 14 31 15" />
       </g>
-      <g className="journey-art-orbit" style={{ transformOrigin: '66px 95px' }}>
-        <circle cx="66" cy="95" r="20" stroke="#c6b786" strokeDasharray="44 18 10 54" />
-        <circle cx="66" cy="75" r="3" fill="#c6b786" />
+      <g className="journey-pencil-frame">
+        <path className="journey-pencil-ring-blue" d="M80 81C61 98 32 88 26 65S34 28 52 25 92 35 93 55M37 21C60 8 89 21 99 44" />
+        <path className="journey-pencil-ring-coral" d="M79 68C65 87 38 78 37 60S46 32 63 35 84 52 79 68Z" />
+        <path className="journey-pencil-ring-ink" d="M73 60C69 76 48 74 45 61S53 39 65 44 74 54 73 60ZM18 59C19 84 37 99 61 97M23 87c8 10 18 16 32 16" />
       </g>
-      <path className="journey-art-spark" d="m66 84 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#ce8291" />
-      <path d="m140 204 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#ce8291" opacity="0.7" />
-      <path d="M25 257h40m-40 6h24" stroke="#b7cbd1" />
-    </svg>
-  )
-}
-
-function BotanicalStudy() {
-  return (
-    <svg viewBox="0 0 180 350" fill="none" focusable="false">
-      <path d="M13 82h107v203H13Z" fill="#eff3eb" transform="rotate(-8 65 180)" />
-      <g stroke="#7d9a87" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M46 300c49-67 22-150 77-248" />
-        <path d="M75 235c-39-5-52-30-47-50 34 0 48 21 47 50Zm4-48c35-3 55-26 52-45-31 3-48 20-52 45Zm12-52c-32-8-44-32-32-49 24 7 36 22 32 49Zm15-39c30-1 45-20 39-41-25 5-37 19-39 41Z" />
-        <path d="m28 185 47 50m4-48 52-45M59 86l32 49m15-39 39-41" opacity="0.5" />
+      <g className="journey-pencil-frame">
+        <path className="journey-pencil-ring-blue" d="M78 83C64 97 34 86 28 67S31 30 50 23 93 33 95 54M35 23C58 7 91 23 98 42" />
+        <path className="journey-pencil-ring-coral" d="M77 70C67 86 40 80 35 62S48 30 61 33 86 50 77 70Z" />
+        <path className="journey-pencil-ring-ink" d="M74 62C71 75 47 77 43 59S56 40 63 42 76 52 74 62ZM20 57C16 83 39 97 59 99M24 89c7 8 17 13 30 14" />
       </g>
-      <path d="m94 249 41-13m-5 4 5-4-6-1M24 310h42m-42 6h29" stroke="#acb7aa" />
-      <circle cx="136" cy="234" r="3" fill="#d3938b" />
-      <g fill="#c5b78f"><circle cx="27" cy="53" r="2" /><circle cx="38" cy="45" r="1.5" /><circle cx="42" cy="58" r="2.5" /></g>
-    </svg>
-  )
-}
-
-function HangingShapes() {
-  return (
-    <svg viewBox="0 0 180 300" fill="none" focusable="false">
-      <circle cx="86" cy="20" r="3" stroke="#9eb3bb" />
-      <path d="M86 23v29" stroke="#9eb3bb" />
-      <g className="journey-art-mobile">
-        <path d="M30 81C47 64 66 52 86 52c15 0 27 6 36 16" stroke="#829ba4" strokeWidth="1.4" strokeLinecap="round" />
-        <path d="M30 81v44m92-57v74" stroke="#9eb3bb" strokeWidth="1" />
-        <circle cx="86" cy="52" r="2.5" fill="#fff" stroke="#829ba4" />
-        <circle cx="30" cy="140" r="15" fill="#dce9eb" stroke="#91afb8" />
-        <path d="M20 139a10 10 0 0 0 11 11" stroke="#b6cdd1" strokeLinecap="round" />
-        <g className="journey-art-mobile-tier">
-          <path d="M72 165c14-16 32-23 50-23 6 0 12 3 16 8" stroke="#829ba4" strokeWidth="1.3" strokeLinecap="round" />
-          <path d="M72 165v44m66-59v73" stroke="#9eb3bb" />
-          <circle cx="122" cy="142" r="2.5" fill="#fff" stroke="#829ba4" />
-          <path d="M72 209c12 10 15 23 0 36-15-13-12-26 0-36Z" fill="#cf8f9b" />
-          <path d="M72 214v24" stroke="#e8bbc3" strokeWidth="0.8" />
-          <circle cx="138" cy="232" r="9" stroke="#bfa878" strokeWidth="2" />
-        </g>
-      </g>
-    </svg>
-  )
-}
-
-function WaveStudy() {
-  return (
-    <svg viewBox="0 0 180 300" fill="none" focusable="false">
-      <circle cx="80" cy="112" r="36" fill="#f1e8d6" />
-      <path d="M80 58V45m-39 29-9-10m86 7 9-10" stroke="#bea77e" />
-      <g className="journey-art-tide" stroke="#88aeb8" strokeWidth="1.2">
-        {[0, 1, 2, 3, 4].map(i => <path key={i} transform={`translate(0 ${i * 13})`} d="M8 153c25-35 41 30 70-4s43-20 64 1 30 7 40-5" />)}
-      </g>
-      <path d="m36 230 32 18 38-11-32-16Z" fill="#edf2f4" stroke="#a4bac4" />
-      <path d="m68 248 6-27 11 22" stroke="#a4bac4" />
-      <circle cx="142" cy="94" r="3" fill="#ce8291" />
     </svg>
   )
 }
 
 export function AboutJourneyDecorations() {
   const marginRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
+    const margin = marginRef.current
+    if (!margin) return
+
+    const visible = new Set<HTMLElement>()
+    const pieces = Array.from(margin.querySelectorAll<HTMLElement>('.journey-margin-motif'))
+    const syncMotion = () => {
+      pieces.forEach(piece => { piece.dataset.motion = visible.has(piece) && !document.hidden ? 'running' : 'paused' })
+    }
     const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => { (entry.target as HTMLElement).dataset.visible = String(entry.isIntersecting) })
+      entries.forEach(entry => {
+        const piece = entry.target as HTMLElement
+        if (entry.isIntersecting) visible.add(piece)
+        else visible.delete(piece)
+      })
+      syncMotion()
     })
-    marginRef.current?.querySelectorAll('[data-animated]').forEach(piece => observer.observe(piece))
-    return () => observer.disconnect()
+    pieces.forEach(piece => observer.observe(piece))
+    document.addEventListener('visibilitychange', syncMotion)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', syncMotion)
+    }
   }, [])
 
   return (
     <div className="journey-margin-art" ref={marginRef} aria-hidden="true">
-      <div className="journey-margin-piece journey-margin-piece--left journey-margin-piece--one" data-animated><Constellation /></div>
-      <div className="journey-margin-piece journey-margin-piece--right journey-margin-piece--two"><GridPaper /></div>
-      <div className="journey-margin-piece journey-margin-piece--left journey-margin-piece--three"><BotanicalStudy /></div>
-      <div className="journey-margin-piece journey-margin-piece--right journey-margin-piece--four" data-animated><HangingShapes /></div>
-      <div className="journey-margin-piece journey-margin-piece--left journey-margin-piece--five" data-animated><WaveStudy /></div>
-      <div className="journey-margin-piece journey-margin-piece--right journey-margin-piece--six"><Streamers /></div>
+      <div className="journey-margin-paper journey-margin-paper--left" />
+      <div className="journey-margin-paper journey-margin-paper--right" />
+      <div className="journey-margin-motif journey-margin-motif--loop journey-margin-motif--first" data-motion="paused"><PencilLoop /></div>
+      <div className="journey-margin-motif journey-margin-motif--rings journey-margin-motif--second" data-motion="paused"><PencilRings /></div>
+      <div className="journey-margin-motif journey-margin-motif--loop journey-margin-motif--third" data-motion="paused"><PencilLoop /></div>
+      <div className="journey-margin-motif journey-margin-motif--rings journey-margin-motif--fourth" data-motion="paused"><PencilRings /></div>
     </div>
   )
 }

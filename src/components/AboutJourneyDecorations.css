@@ -1,0 +1,67 @@
+.journey-margin-art {
+  --margin-paper-left: clamp(3rem, calc((100vw - var(--max-page-width)) / 2 - 2.5rem), 7.5rem);
+  --margin-paper-right: clamp(2.5rem, calc((100vw - var(--max-page-width)) / 2 - 4.5rem), 3.5rem);
+  --margin-grid: rgb(97 122 144 / 0.12);
+  --margin-grid-major: rgb(97 122 144 / 0.17);
+  --margin-blue: #a4cdd5;
+  --margin-coral: #d58292;
+  --margin-ink: #566c88;
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(50% - 50vw);
+  overflow: clip;
+  pointer-events: none;
+  user-select: none;
+}
+
+.journey-margin-paper {
+  position: absolute;
+  top: 1rem;
+  bottom: 6rem;
+  background-image:
+    linear-gradient(to right, var(--margin-grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--margin-grid-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--margin-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--margin-grid) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  mask-image: linear-gradient(transparent, #000 3rem, #000 calc(100% - 5rem), transparent);
+}
+.journey-margin-paper--left { left: 0; width: var(--margin-paper-left); border-right: 1px solid var(--margin-grid-major); background-position: right top; }
+.journey-margin-paper--right { right: 0; width: var(--margin-paper-right); border-left: 1px solid var(--margin-grid-major); }
+
+/* The paper may narrow, but the sketches keep their size and cross its inner edge. */
+.journey-margin-motif { position: absolute; width: 8.25rem; }
+.journey-margin-motif svg { display: block; width: 100%; height: auto; overflow: visible; stroke-linecap: round; stroke-linejoin: round; }
+.journey-margin-motif--loop { left: calc(var(--margin-paper-left) - 4.75rem); }
+.journey-margin-motif--rings { right: calc(var(--margin-paper-right) - 3.5rem); width: 7rem; }
+.journey-margin-motif--first { top: 9%; }
+.journey-margin-motif--second { top: 31%; }
+.journey-margin-motif--third { top: 61%; transform: rotate(-12deg); }
+.journey-margin-motif--fourth { top: 84%; transform: rotate(14deg); }
+.journey-pencil-loop { stroke: var(--margin-blue); stroke-width: 5; opacity: 0.85; }
+.journey-pencil-scribble { stroke: var(--margin-coral); stroke-width: 1.65; }
+.journey-pencil-ring-blue { stroke: var(--margin-blue); stroke-width: 2.4; }
+.journey-pencil-ring-coral { stroke: var(--margin-coral); stroke-width: 2.6; }
+.journey-pencil-ring-ink { stroke: var(--margin-ink); stroke-width: 1.15; }
+.journey-pencil-frame:nth-child(1) { opacity: var(--pencil-first, 1); }
+.journey-pencil-frame:nth-child(2) { opacity: var(--pencil-second, 0); }
+.journey-pencil-frame:nth-child(3) { opacity: var(--pencil-third, 0); }
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine) {
+  .journey-margin-motif { animation: journey-pencil-boil 900ms steps(1, end) infinite paused; }
+  .journey-margin-motif--rings { animation-duration: 1200ms; }
+  .journey-margin-motif[data-motion="running"] { animation-play-state: running; }
+}
+
+/* One clock switches all three poses together, including at loop boundaries. */
+@keyframes journey-pencil-boil {
+  0%, 100% { --pencil-first: 1; --pencil-second: 0; --pencil-third: 0; }
+  33.333333% { --pencil-first: 0; --pencil-second: 1; --pencil-third: 0; }
+  66.666667% { --pencil-first: 0; --pencil-second: 0; --pencil-third: 1; }
+}
+
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
+  .journey-margin-art { --margin-paper-left: 0.5rem; --margin-paper-right: 0.5rem; }
+  .journey-margin-motif { display: none; }
+  .journey-margin-paper { opacity: 0.6; }
+}
