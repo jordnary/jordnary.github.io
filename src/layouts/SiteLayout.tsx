@@ -22,8 +22,6 @@ export function SiteLayout({ children, page, isProjectDetail = false }: SiteLayo
   return (
     <div className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${isSearchOpen ? ' is-search-open' : ''}`}>
       <div className="app-shell-content">
-        {!isPortalMode && <div className="ambient-bg" />}
-        {!isPortalMode && <div className="grid-bg" />}
         {!isPortalMode && <ScrollProgress />}
 
         {!isPortalMode && <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />}

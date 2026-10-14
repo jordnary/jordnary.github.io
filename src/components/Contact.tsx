@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Toast } from './Toast'
+import { SectionBackdrop } from './SectionBackdrop'
 import { ContactAirmail } from './ContactAirmail'
 import { CopyIcon } from './icons'
 import { ArtisticLabel } from './ArtisticLabel'
@@ -24,13 +25,14 @@ export function Contact() {
   }
 
   return (
-    <section className="correspondence site-container" id="contact" aria-labelledby="contact-title">
+    <section className="correspondence site-container section-surface" id="contact" aria-labelledby="contact-title">
+      <SectionBackdrop tone="lilac" edge="none" />
       <div className="correspondence-masthead">
         <p><span aria-hidden="true" /> CONTACT / KEEP IN TOUCH</p>
         <span className="correspondence-edition" aria-hidden="true">A SPACE FOR CONNECTION</span>
       </div>
 
-      <div className="correspondence-hero">
+      <div className="correspondence-hero section-surface">
         <header className="correspondence-intro">
           <p className="correspondence-preface">
             <span>好的交流，往往始于一句你好。</span>
@@ -72,66 +74,69 @@ export function Contact() {
         </div>
       </div>
 
-      <div className="correspondence-connect">
-        <div className="correspondence-connect-heading">
-          <span>CORRESPONDENCE / 联系</span><span aria-hidden="true">A PLACE FOR YOUR IDEAS</span>
-        </div>
-        <div className="correspondence-email">
-          <div className="correspondence-email-top">
-            <div className="correspondence-email-heading">
-              <span className="correspondence-to" aria-hidden="true">To.</span>
-              <div><span>收件地址 / EMAIL</span><p>把你的想法，寄到这里。</p></div>
-            </div>
-            <div className="correspondence-mail-postage" aria-hidden="true">
-              <svg className="correspondence-mail-postmark" viewBox="0 0 136 70" fill="none" focusable="false">
-                <circle cx="35" cy="35" r="29" /><circle cx="35" cy="35" r="23" />
-                <path d="M55 22q12-6 24 0t24 0 24 0M55 35q12-6 24 0t24 0 24 0M55 48q12-6 24 0t24 0 24 0" />
-              </svg>
-              <img className="correspondence-mail-mark" src={airmailStamp} alt="" width="240" height="204" decoding="async" />
-            </div>
+      <div className="correspondence-bottom section-surface">
+        <SectionBackdrop decoration="halftone-right" />
+        <div className="correspondence-connect">
+          <div className="correspondence-connect-heading">
+            <span>CORRESPONDENCE / 联系</span><span aria-hidden="true">A PLACE FOR YOUR IDEAS</span>
           </div>
-          <a className="correspondence-address" href={`mailto:${contactProfile.email}`} aria-label={`发送邮件至 ${contactProfile.email}`}>
-            {contactProfile.email}
-          </a>
-          <div className="correspondence-email-actions">
-            <a className="correspondence-send-button" href={`mailto:${contactProfile.email}`}>
-              <span>写封邮件</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m4 11 16-7-7 16-2-7-7-2Zm7 2 9-9" /></svg>
+          <div className="correspondence-email">
+            <div className="correspondence-email-top">
+              <div className="correspondence-email-heading">
+                <span className="correspondence-to" aria-hidden="true">To.</span>
+                <div><span>收件地址 / EMAIL</span><p>把你的想法，寄到这里。</p></div>
+              </div>
+              <div className="correspondence-mail-postage" aria-hidden="true">
+                <svg className="correspondence-mail-postmark" viewBox="0 0 136 70" fill="none" focusable="false">
+                  <circle cx="35" cy="35" r="29" /><circle cx="35" cy="35" r="23" />
+                  <path d="M55 22q12-6 24 0t24 0 24 0M55 35q12-6 24 0t24 0 24 0M55 48q12-6 24 0t24 0 24 0" />
+                </svg>
+                <img className="correspondence-mail-mark" src={airmailStamp} alt="" width="240" height="204" decoding="async" />
+              </div>
+            </div>
+            <a className="correspondence-address" href={`mailto:${contactProfile.email}`} aria-label={`发送邮件至 ${contactProfile.email}`}>
+              {contactProfile.email}
             </a>
-            <button
-              aria-label={`复制邮箱 ${contactProfile.email}`}
-              className="contact-copy-button"
-              data-copied={copyToastId > 0 && copySucceeded}
-              onClick={handleCopyEmail}
-              type="button"
-            >
-              {copyToastId > 0 && copySucceeded ? <span className="correspondence-copy-check" aria-hidden="true">✓</span> : <CopyIcon />}
-              <span>{copyToastId > 0 && copySucceeded ? '已复制' : '复制邮箱'}</span>
-            </button>
-            <span className="correspondence-email-signoff" aria-hidden="true">a little hello, a new beginning.</span>
+            <div className="correspondence-email-actions">
+              <a className="correspondence-send-button" href={`mailto:${contactProfile.email}`}>
+                <span>写封邮件</span><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m4 11 16-7-7 16-2-7-7-2Zm7 2 9-9" /></svg>
+              </a>
+              <button
+                aria-label={`复制邮箱 ${contactProfile.email}`}
+                className="contact-copy-button"
+                data-copied={copyToastId > 0 && copySucceeded}
+                onClick={handleCopyEmail}
+                type="button"
+              >
+                {copyToastId > 0 && copySucceeded ? <span className="correspondence-copy-check" aria-hidden="true">✓</span> : <CopyIcon />}
+                <span>{copyToastId > 0 && copySucceeded ? '已复制' : '复制邮箱'}</span>
+              </button>
+              <span className="correspondence-email-signoff" aria-hidden="true">a little hello, a new beginning.</span>
+            </div>
+          </div>
+
+          <div className="correspondence-elsewhere">
+            <nav className="correspondence-links" aria-label="更多联系入口">
+              {otherContactLinks.map((link, index) => (
+                <SmartLink
+                  className="correspondence-link"
+                  href={link.href}
+                  key={link.title}
+                  data-external={link.href.startsWith('http')}
+                  aria-label={`${link.title}：${link.label}${link.href.startsWith('http') ? '（新窗口打开）' : ''}`}
+                >
+                  <span className="correspondence-link-kicker"><span>{String(index + 1).padStart(2, '0')}</span> / {link.href.startsWith('http') ? 'OPEN SOURCE' : 'BACK TO THE START'}</span>
+                  <span className="correspondence-link-body">
+                    <span className="correspondence-link-content"><span className="correspondence-link-title"><ArtisticLabel>{link.title}</ArtisticLabel></span><span className="correspondence-link-description">{link.description}</span></span>
+                    <span className="correspondence-link-arrow" aria-hidden="true">{link.href.startsWith('http') ? '↗' : '→'}</span>
+                  </span>
+                </SmartLink>
+              ))}
+            </nav>
           </div>
         </div>
-
-        <div className="correspondence-elsewhere">
-          <nav className="correspondence-links" aria-label="更多联系入口">
-            {otherContactLinks.map((link, index) => (
-              <SmartLink
-                className="correspondence-link"
-                href={link.href}
-                key={link.title}
-                data-external={link.href.startsWith('http')}
-                aria-label={`${link.title}：${link.label}${link.href.startsWith('http') ? '（新窗口打开）' : ''}`}
-              >
-                <span className="correspondence-link-kicker"><span>{String(index + 1).padStart(2, '0')}</span> / {link.href.startsWith('http') ? 'OPEN SOURCE' : 'BACK TO THE START'}</span>
-                <span className="correspondence-link-body">
-                  <span className="correspondence-link-content"><span className="correspondence-link-title"><ArtisticLabel>{link.title}</ArtisticLabel></span><span className="correspondence-link-description">{link.description}</span></span>
-                  <span className="correspondence-link-arrow" aria-hidden="true">{link.href.startsWith('http') ? '↗' : '→'}</span>
-                </span>
-              </SmartLink>
-            ))}
-          </nav>
-        </div>
+        <div className="correspondence-colophon"><span>学习 · 创作 · 交换灵感</span><span>Looking forward to our next conversation.</span></div>
       </div>
-      <div className="correspondence-colophon"><span>学习 · 创作 · 交换灵感</span><span>Looking forward to our next conversation.</span></div>
       <Toast
         message={copySucceeded ? '已复制邮箱' : '复制失败，请手动选择邮箱复制'}
         onClose={handleToastClose}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getRouteHref } from '../lib/routes'
 import { Reveal } from './Reveal'
+import { SectionBackdrop } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 
 const consoleMetrics = [
@@ -111,7 +112,8 @@ export function Hero() {
   )
 
   return (
-    <section className="site-container page-gutter hero-section" id="home">
+    <section className="site-container page-gutter hero-section section-surface" id="home">
+      <SectionBackdrop tone="sky" edge="none" />
       <div className="hero-copy">
         <Reveal
           className="highlight-pill"

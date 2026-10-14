@@ -1,9 +1,8 @@
 .footer-shell {
-  --footer-bg: #111e2c;
-  --footer-ink: #f3f7fc;
-  --footer-muted: #b5c5d5;
-  --footer-rule: rgb(243 247 252 / 0.18);
-  --footer-accent: #ffffff;
+  --footer-ink: #ffffff;
+  --footer-muted: #edf3f8;
+  --footer-rule: rgb(255 255 255 / 0.2);
+  --footer-accent: #eff6ff;
   --footer-gutter: clamp(1.25rem, 3.4vw, 4rem);
   --footer-column-gutter: clamp(1rem, 1.5vw, 2.5rem);
   position: relative;
@@ -13,11 +12,8 @@
   background: var(--footer-bg);
 }
 
-:root[data-theme="light"] .footer-shell {
-  --footer-bg: #586e80;
-  --footer-ink: #f8fbff;
-  --footer-muted: #e8eff6;
-  --footer-rule: rgb(248 251 255 / 0.22);
+:root .footer-shell {
+  --footer-bg: #4b6f8f;
 }
 
 .footer-surface {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion, type MotionProps } from 'motion/react'
 import { ProjectCard } from './ProjectCard'
+import { SectionBackdrop } from './SectionBackdrop'
 import { FilterBar } from './FilterBar'
 import { SmartLink } from './SmartLink'
 import { ContactIcon } from './icons'
@@ -88,8 +89,9 @@ export function Projects() {
   }, [])
 
   return (
-    <div className="portfolio-page site-container" id="projects">
-      <header className="portfolio-intro">
+    <div className="portfolio-page site-container section-surface" id="projects">
+      <SectionBackdrop tone="sage" edge="none" />
+      <header className="portfolio-intro section-surface">
         <svg className="portfolio-intro-lines" viewBox="0 0 1160 480" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <motion.g
             initial={reducedMotion ? false : { opacity: 0 }}
@@ -182,8 +184,9 @@ export function Projects() {
 
       <section
         aria-labelledby="portfolio-collection-title"
-        className="portfolio-collection"
+        className="portfolio-collection section-surface"
       >
+        <SectionBackdrop decoration="fold-left" />
         <div className="portfolio-collection-heading">
           <h2 id="portfolio-collection-title">
             项目一览<span> / COLLECTION</span>
@@ -221,7 +224,8 @@ export function Projects() {
         </div>
       </section>
 
-      <aside className="portfolio-colophon">
+      <aside className="portfolio-colophon section-surface">
+        <SectionBackdrop tone="sky" />
         <span aria-hidden="true">↳</span>
         <div>
           <h2>探索还在继续。</h2>

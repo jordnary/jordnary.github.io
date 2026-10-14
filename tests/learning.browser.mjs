@@ -358,12 +358,12 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       overflow: document.documentElement.scrollWidth > innerWidth,
     }))
     assert.ok(widths.cover >= widths.viewport - 2)
-    assert.ok(widths.skills > widths.footer + 150)
-    assert.ok(widths.nav < widths.viewport - 150 && widths.footer < widths.viewport - 150)
-    assert.ok(Math.abs(widths.nav - widths.footer) < 2, 'Global navigation and footer keep the shared site width')
+    assert.ok(widths.skills > widths.nav + 150)
+    assert.ok(widths.nav < widths.viewport - 150)
+    assert.ok(Math.abs(widths.footer - widths.viewport) < 2, 'The footer keeps its full-width layout')
     assert.equal(widths.overflow, false)
     assert.equal(await page.locator('.learning-art-credit, .note-reader-end a').count(), 0)
-    pass('Learning uses the wide canvas without changing the global navigation or footer width or showing image source credits')
+    pass('Learning uses the wide canvas with contained navigation and the full-width footer')
     await page.setViewportSize({ width: 1440, height: 900 })
 
     const heroRange = await story.evaluate(element => {
@@ -506,7 +506,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       await page.getByRole('dialog').locator('summary').click()
       assert.ok((await page.getByRole('dialog').innerText()).includes(note.review.answer))
       await page.keyboard.press('Shift+Tab')
-      assert.equal(await page.evaluate(() => document.querySelector('dialog').contains(document.activeElement)), true)
+      assert.equal(await page.getByRole('dialog').evaluate(element => element.contains(document.activeElement)), true)
       const readingY = await page.evaluate(() => scrollY)
       await page.mouse.wheel(0, 150)
       await page.keyboard.press('Escape')
@@ -547,12 +547,10 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
         return copy.top >= bounds.top && copy.bottom <= bounds.bottom
       }), 'The complete cover text fits within short cards')
     }
-    for (const theme of ['dark', 'light']) {
-      await page.evaluate(value => { document.documentElement.dataset.theme = value }, theme)
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
-      assert.ok(await cards.first().isVisible())
-    }
-    pass('Gallery art and controls fit short and tall screens in both themes without horizontal page overflow')
+    assert.equal(await page.locator('html').evaluate(element => getComputedStyle(element).colorScheme), 'light')
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
+    assert.ok(await cards.first().isVisible())
+    pass('Gallery art and controls fit short and tall screens in the light appearance without horizontal page overflow')
 
     const animatedHeroHeight = await story.evaluate(element => element.getBoundingClientRect().height)
     await page.emulateMedia({ reducedMotion: 'reduce' })

@@ -4,8 +4,8 @@
   "description": "Jordnary 的个人主页，展示前端项目、技能栈、成长时间线和联系方式。",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "/favicon.svg",

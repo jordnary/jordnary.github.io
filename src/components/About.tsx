@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import { SectionBackdrop } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 import { AboutJourneyPath } from './AboutJourneyPath'
 import { AboutExplorationArt } from './AboutExplorationArt'
@@ -45,8 +46,9 @@ export function About() {
   const journeyRef = useRef<HTMLOListElement>(null)
 
   return (
-    <section className="about-journey site-container" id="about" aria-labelledby="about-title">
-      <header className="journey-cover">
+    <section className="about-journey site-container section-surface" id="about" aria-labelledby="about-title">
+      <SectionBackdrop tone="sky" edge="none" />
+      <header className="journey-cover section-surface">
         <div className="journey-masthead">
           <p><span aria-hidden="true">✳</span> ABOUT ME / MY JOURNEY</p>
           <span>保持好奇，让探索发生</span>
@@ -91,42 +93,46 @@ export function About() {
         <div className="journey-cover-colophon" aria-hidden="true"><span>保持好奇 · 持续生长</span><span>A WORK IN PROGRESS</span></div>
       </header>
 
-      <div className="journey-chapter-heading" id="journey-start">
-        <p>一点背景，一些想法，一段仍在继续的旅程。</p>
-        <span aria-hidden="true">SCROLL TO EXPLORE ↘</span>
-      </div>
+      <div className="journey-story section-surface">
+        <SectionBackdrop decoration="rings-right" />
+        <div className="journey-chapter-heading" id="journey-start">
+          <p>一点背景，一些想法，一段仍在继续的旅程。</p>
+          <span aria-hidden="true">SCROLL TO EXPLORE ↘</span>
+        </div>
 
-      <div className="journey-canvas">
-        <ol className="journey-chapters" ref={journeyRef} aria-label="我的探索旅程">
-          {chapters.map((chapter, index) => (
-            <li className="journey-chapter" key={chapter.caption}>
-              <span className="journey-node" aria-hidden="true"><span /></span>
-              <span className="journey-rail" aria-hidden="true" />
-              <article className="journey-card" aria-labelledby={`journey-title-${index}`}>
-                <div className="journey-card-heading">
-                  <JourneyNumber value={chapter.symbol} />
-                  <div>
-                    <p className="journey-card-caption">{chapter.caption}</p>
-                    <p className="journey-card-label">{chapter.label}</p>
+        <div className="journey-canvas">
+          <ol className="journey-chapters" ref={journeyRef} aria-label="我的探索旅程">
+            {chapters.map((chapter, index) => (
+              <li className="journey-chapter" key={chapter.caption}>
+                <span className="journey-node" aria-hidden="true"><span /></span>
+                <span className="journey-rail" aria-hidden="true" />
+                <article className="journey-card" aria-labelledby={`journey-title-${index}`}>
+                  <div className="journey-card-heading">
+                    <JourneyNumber value={chapter.symbol} />
+                    <div>
+                      <p className="journey-card-caption">{chapter.caption}</p>
+                      <p className="journey-card-label">{chapter.label}</p>
+                    </div>
+                    <JourneySymbol index={index} />
                   </div>
-                  <JourneySymbol index={index} />
-                </div>
-                <h2 id={`journey-title-${index}`}>{chapter.title}</h2>
-                <div className="journey-card-copy">
-                  {chapter.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-                </div>
-                <ul className="journey-card-tags" aria-label={`${chapter.label}关键词`}>
-                  {chapter.tags.map(tag => <li key={tag}>{tag}</li>)}
-                </ul>
-              </article>
-            </li>
-          ))}
-        </ol>
-        {/* The list ref must be attached before the controller's layout effect. */}
-        <AboutJourneyPath containerRef={journeyRef} />
+                  <h2 id={`journey-title-${index}`}>{chapter.title}</h2>
+                  <div className="journey-card-copy">
+                    {chapter.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+                  </div>
+                  <ul className="journey-card-tags" aria-label={`${chapter.label}关键词`}>
+                    {chapter.tags.map(tag => <li key={tag}>{tag}</li>)}
+                  </ul>
+                </article>
+              </li>
+            ))}
+          </ol>
+          {/* The list ref must be attached before the controller's layout effect. */}
+          <AboutJourneyPath containerRef={journeyRef} />
+        </div>
       </div>
 
-      <footer className="journey-outro">
+      <footer className="journey-outro section-surface">
+        <SectionBackdrop tone="sage" />
         <p className="journey-outro-kicker"><span aria-hidden="true" /> TO BE CONTINUED</p>
         <h2>故事还在继续<span>，下一步见。</span></h2>
         <p className="journey-outro-copy">把沿途的思考写成笔记，把新的理解做成作品。</p>

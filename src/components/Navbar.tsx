@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { applyTheme, getInitialTheme, storeTheme, type Theme } from '../lib/theme'
 import { getGitHubSnapshot } from '../lib/github'
 import { useNavScrollVisibility } from '../lib/useNavScrollVisibility'
 import { getHomepagePortalHref, getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
@@ -15,7 +14,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [mobilePage, setMobilePage] = useState<SitePage | null>(null)
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(false)
   const [expandedPage, setExpandedPage] = useState<SitePage | null>(null)
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isScrolled, isHidden } = useNavScrollVisibility(headerRef, Boolean(expandedPage || isOpen), activePage)
@@ -24,8 +22,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const mobilePanelRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => { applyTheme(theme) }, [theme])
 
   useLayoutEffect(() => {
     const header = headerRef.current
@@ -119,11 +115,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     setIsOpen(false)
   }
   const openSearch = () => { closeMenu(); onSearchOpen() }
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark'
-    storeTheme(nextTheme)
-    setTheme(nextTheme)
-  }
   const openWithKeyboard = (event: KeyboardEvent, page: SitePage) => {
     if (event.key !== 'ArrowDown') return
     event.preventDefault()
@@ -131,7 +122,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     setExpandedPage(page)
     window.requestAnimationFrame(() => headerRef.current?.querySelector<HTMLAnchorElement>(`#nav-panel-${page} a`)?.focus())
   }
-  const themeToggleLabel = theme === 'dark' ? '切换到浅色主题' : '切换到深色主题'
   const mobileSection = mobilePage ? navigationSections[mobilePage] : undefined
   const brand = (
     <a className="nav-brand" href={getHomepagePortalHref()} onClick={closeMenu}>
@@ -250,7 +240,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
             <button aria-haspopup="dialog" aria-label="搜索站内内容" className="nav-search-button" onClick={openSearch} type="button">
               <SearchIcon /><span className="nav-search-label">搜索</span><kbd className="nav-search-shortcut">Ctrl K</kbd>
             </button>
-            <button aria-label={themeToggleLabel} aria-pressed={theme === 'dark'} className="icon-button theme-toggle-button" onClick={toggleTheme} title={themeToggleLabel} type="button"><ThemeIcon /></button>
             <button
               aria-controls="mobile-navigation"
               aria-expanded={isOpen}
@@ -319,7 +308,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
               </nav>
               <div className="mobile-nav-footer">
                 <button className="mobile-nav-search" onClick={openSearch} type="button"><SearchIcon /><span>搜索站内内容</span><ArrowIcon /></button>
-                <button aria-label={themeToggleLabel} aria-pressed={theme === 'dark'} className="mobile-nav-theme" onClick={toggleTheme} type="button"><ThemeIcon /><span>{theme === 'dark' ? '浅色模式' : '深色模式'}</span></button>
               </div>
             </div>
             <nav
@@ -396,12 +384,6 @@ function ArrowIcon() {
 }
 function SearchIcon() {
   return <svg aria-hidden="true" fill="none" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3" /><path d="m16 16 4.2 4.2" /></svg>
-}
-function ThemeIcon() {
-  return <span aria-hidden="true" className="theme-toggle-icon">
-    <svg className="theme-icon theme-icon-sun" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2" /><path d="M12 2.8v2.4M12 18.8v2.4m-8.6-17 1.7 1.7m12.2 12.2 1.7 1.7M2.8 12h2.4M18.8 12h2.4M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7" /></svg>
-    <svg className="theme-icon theme-icon-moon" fill="none" viewBox="0 0 24 24"><path d="M20.2 14.2A7.7 7.7 0 0 1 9.8 3.8a8.5 8.5 0 1 0 10.4 10.4Z" /></svg>
-  </span>
 }
 function NavigationGlyph({ icon }: { icon: NavigationIcon }) {
   const paths: Record<NavigationIcon, string> = {

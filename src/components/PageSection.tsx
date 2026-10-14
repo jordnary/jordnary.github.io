@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react'
 import { Reveal } from './Reveal'
+import { SectionBackdrop, type SectionTone, type SectionDecoration } from './SectionBackdrop'
 import { getHashTargetId, scrollToElementId } from '../lib/hashScroll'
 
 type PageSectionProps = {
@@ -8,6 +9,8 @@ type PageSectionProps = {
   eyebrow: string
   id: string
   title: ReactNode
+  tone?: SectionTone
+  decoration?: SectionDecoration
 }
 
 export function PageSection({
@@ -16,6 +19,8 @@ export function PageSection({
   eyebrow,
   id,
   title,
+  tone,
+  decoration,
 }: PageSectionProps) {
   useEffect(() => {
     if (getHashTargetId() !== id) {
@@ -40,7 +45,8 @@ export function PageSection({
   }, [id])
 
   return (
-    <section className="page-section" id={id}>
+    <section className="page-section section-surface" id={id}>
+      <SectionBackdrop tone={tone} decoration={decoration} />
       <div className="site-container">
         <Reveal className="section-heading">
           <p className="section-eyebrow">{eyebrow}</p>

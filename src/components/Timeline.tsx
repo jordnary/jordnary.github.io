@@ -12,6 +12,8 @@ export function Timeline() {
   return (
     <PageSection
       id="timeline"
+      tone="sage"
+      decoration="botanical-right"
       eyebrow="Stage Plan"
       title={<>学到这里，<em>然后呢？</em></>}
       description="把理解带进实践，再带着新的问题回来。下一页，从这些小计划开始。"

@@ -29,6 +29,8 @@ export function HomePage() {
           description="这是我的个人主页：介绍当下的自己，沉淀学习与思考，记录正在打磨的项目，也留一个方便交流的入口。"
           eyebrow="Personal Space"
           id="explore"
+          tone="white"
+          decoration="collage-left"
           title={<>欢迎来到我的<br /><em>数字空间</em><span className="home-title-star" aria-hidden="true">✳</span></>}
         >
           <div className="home-atlas">

@@ -1,16 +1,9 @@
 .home-journal {
-  --journal-ink: #e3eeef;
-  --journal-muted: #a0b4bf;
-  --journal-accent: #8ed8d0;
-  --journal-secondary: #bab4e5;
-  --journal-rule: rgb(159 194 204 / 0.23);
-  --journal-paper: #112331;
-  --journal-paper-alt: #1a2338;
   --journal-serif: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
   color: var(--journal-ink);
 }
 
-:root[data-theme="light"] .home-journal {
+:root .home-journal {
   --journal-ink: #283f4b;
   --journal-muted: #576e7b;
   --journal-accent: #34796f;
@@ -125,12 +118,9 @@
 }
 
 .home-entry:nth-child(even) { margin-top: 2rem; }
-.home-entry--learning { --entry-accent: #bcb0e2; --entry-paper: #20253a; }
-.home-entry--projects { --entry-accent: #91bedb; --entry-paper: #14293b; }
-.home-entry--contact { --entry-accent: #d6bb92; --entry-paper: #2b2b30; }
-:root[data-theme="light"] .home-entry--learning { --entry-accent: #80639d; --entry-paper: #f2eef7; }
-:root[data-theme="light"] .home-entry--projects { --entry-accent: #376f94; --entry-paper: #edf4f9; }
-:root[data-theme="light"] .home-entry--contact { --entry-accent: #8a6b3c; --entry-paper: #f7f3e9; }
+:root .home-entry--learning { --entry-accent: #80639d; --entry-paper: #f2eef7; }
+:root .home-entry--projects { --entry-accent: #376f94; --entry-paper: #edf4f9; }
+:root .home-entry--contact { --entry-accent: #8a6b3c; --entry-paper: #f7f3e9; }
 
 .home-entry:hover,
 .home-entry:focus-within {

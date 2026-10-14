@@ -184,30 +184,22 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
 
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 })
-      for (const theme of ['dark', 'light']) {
-        const current = await page.locator('html').getAttribute('data-theme')
-        if (current !== theme)
-          await page
-            .getByRole('button', {
-              name: theme === 'dark' ? '切换到深色主题' : '切换到浅色主题',
-            })
-            .click()
+      assert.equal(await page.locator('html').evaluate(el => getComputedStyle(el).colorScheme), 'light')
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1,
+        ),
+        `${width}px overflow`,
+      )
+      for (const card of await cards.all()) {
+        const bounds = await card.boundingBox()
         assert.ok(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth + 1,
-          ),
-          `${width}px ${theme} overflow`,
+          bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1,
         )
-        for (const card of await cards.all()) {
-          const bounds = await card.boundingBox()
-          assert.ok(
-            bounds && bounds.x >= 0 && bounds.x + bounds.width <= width + 1,
-          )
-        }
       }
     }
     pass(
-      '320, 390, 768 and 1440px layouts fit in both themes with reduced motion',
+      '320, 390, 768 and 1440px layouts fit the light appearance with reduced motion',
     )
 
     await page.setViewportSize({ width: 390, height: 844 })

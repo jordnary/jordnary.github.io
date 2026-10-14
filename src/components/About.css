@@ -1,18 +1,11 @@
 .about-journey {
-  --journey-accent: #8be5dd;
-  --journey-secondary: #bfb1ef;
-  --journey-paper: #14252e;
-  --journey-paper-alt: #202537;
-  --journey-ink: #e6efee;
-  --journey-muted: #a6b8bc;
-  --journey-border: rgb(139 229 221 / 0.2);
   --journey-serif: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
   max-width: calc(var(--max-page-width) + var(--page-gutter) * 2);
   padding: 2.75rem var(--page-gutter) 4rem;
   scroll-margin-top: 6rem;
 }
 
-:root[data-theme="light"] .about-journey {
+:root .about-journey {
   --journey-accent: #246b64;
   --journey-secondary: #7b659c;
   --journey-paper: #f4f6f0;
@@ -23,19 +16,13 @@
 }
 
 .journey-cover {
-  --cover-point-fill: #132438;
-  --cover-ink: #e8f0fc;
-  --cover-accent: #8bd5e9;
-  --cover-muted: #a8b8cf;
-  --cover-rule: rgb(149 185 218 / 0.22);
-  --cover-secondary: #b7b3e8;
   position: relative;
   isolation: isolate;
   padding-block: 0.4rem 0;
   color: var(--cover-ink);
 }
 
-:root[data-theme="light"] .journey-cover {
+:root .journey-cover {
   --cover-point-fill: #eaf5fc;
   --cover-ink: #273c53;
   --cover-accent: #276c8b;
@@ -124,16 +111,6 @@
 .journey-chapter-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.8rem; padding: 1rem 0; border-top: 1px solid var(--journey-border); color: var(--journey-muted); font-size: 0.7rem; scroll-margin-top: 7rem; }
 .journey-chapter-heading > span { font-size: 0.58rem; letter-spacing: 0.14em; }
 .journey-canvas { position: relative; isolation: isolate; }
-:root:not([data-theme="light"]) .journey-canvas {
-  --journey-accent: #8ecbd6;
-  --journey-secondary: #b4add8;
-  --journey-paper: #151f30;
-  --journey-paper-alt: var(--journey-paper);
-  --journey-ink: #e3eaf4;
-  --journey-muted: #a6b4c8;
-  --journey-border: rgb(148 163 184 / 0.2);
-  --journey-card-shadow: 0 16px 36px -24px rgb(2 6 23 / 0.65), inset 0 1px 0 rgb(226 232 240 / 0.025);
-}
 .journey-chapters { position: relative; margin: 0; padding: 4.5rem 0 7rem; list-style: none; }
 .journey-path { position: absolute; z-index: -1; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .journey-path path { stroke-linecap: round; }

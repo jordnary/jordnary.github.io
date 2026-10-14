@@ -1,0 +1,135 @@
+:root {
+  --section-white: #ffffff;
+  --section-paper: #f6f3eb;
+  --section-sage: #e9f0e8;
+  --section-sky: #e9f1f6;
+  --section-lilac: #efedf5;
+  --section-decoration: #6b8d91;
+}
+
+.section-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.section-backdrop {
+  --section-fill: var(--section-white);
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(50% - 50vw);
+  pointer-events: none;
+  user-select: none;
+  background: var(--section-fill);
+  color: var(--section-decoration);
+}
+
+.section-backdrop--paper { --section-fill: var(--section-paper); }
+.section-backdrop--sage { --section-fill: var(--section-sage); }
+.section-backdrop--sky { --section-fill: var(--section-sky); }
+.section-backdrop--lilac { --section-fill: var(--section-lilac); }
+
+.section-backdrop-edge {
+  position: absolute;
+  inset: auto 0 calc(100% - 1px);
+  display: block;
+  width: 100%;
+  height: clamp(2rem, 4.5vw, 3.75rem);
+  fill: var(--section-fill);
+  overflow: visible;
+}
+
+.section-backdrop-paper-shadow {
+  fill: color-mix(in srgb, var(--section-decoration) 9%, var(--section-white));
+  filter: blur(0.7px);
+}
+
+.section-backdrop-paper-rim { fill: var(--section-white); }
+.section-backdrop-fiber { fill: color-mix(in srgb, var(--section-fill) 50%, var(--section-white)); }
+
+.section-margin {
+  position: absolute;
+  inset-block: 3rem 1.5rem;
+  width: var(--section-margin-width, clamp(1.5rem, calc((100vw - 74rem) / 2 - 1rem), 10rem));
+  overflow: clip;
+}
+
+.section-margin--left { left: 0; }
+.section-margin--right { right: 0; }
+.section-margin svg {
+  position: absolute;
+  top: 1rem;
+  width: 11.25rem;
+  height: 37.5rem;
+  overflow: visible;
+}
+
+.section-margin--left svg { right: 0; }
+.section-margin--right svg { left: 0; top: clamp(5rem, 18%, 24rem); }
+.section-margin--compact { height: 23rem; bottom: auto; }
+.section-margin--compact svg { top: 0; height: 22.5rem; }
+.section-margin--rings-right { top: min(35%, 32rem); }
+.section-margin--contour-left { top: min(25%, 26rem); }
+.section-margin--fold-left { top: min(22%, 26rem); }
+.section-margin--botanical-right { top: min(25%, 14rem); }
+.section-margin-sheet { fill: color-mix(in srgb, var(--section-sky) 70%, var(--section-white)); }
+.section-margin--right .section-margin-sheet { fill: color-mix(in srgb, var(--section-sage) 70%, var(--section-white)); }
+.section-margin-sheet-shadow { fill: color-mix(in srgb, var(--section-decoration) 11%, var(--section-white)); }
+.section-margin-grid-paper { fill: var(--section-white); stroke: color-mix(in srgb, var(--section-decoration) 20%, transparent); stroke-width: 0.6; }
+.section-margin-grid-line { stroke: var(--section-decoration); stroke-width: 0.45; opacity: 0.4; }
+.section-margin-fibers { stroke: var(--section-decoration); stroke-width: 0.5; opacity: 0.22; }
+.section-margin-fold { fill: var(--section-sky); }
+.section-margin-tape { fill: #d9cbb0; opacity: 0.4; }
+.section-margin-ink { stroke: #79a5ae; stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+.section-margin-coral { stroke: #c88388; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: 0.75; }
+.section-margin-trail { stroke: #7b95a0; stroke-width: 0.8; stroke-dasharray: 2 5; opacity: 0.55; }
+.section-margin-star { fill: #c88388; opacity: 0.4; }
+.section-margin-botanical { stroke: #759187; stroke-width: 1; fill: none; opacity: 0.65; stroke-linecap: round; stroke-linejoin: round; }
+
+.journey-story { margin-top: 3rem; padding-top: 1rem; }
+.journey-story .journey-chapter-heading { margin-top: 0; }
+.journey-outro.section-surface { padding-block: 3.5rem 1rem; }
+.journey-outro > .section-backdrop { bottom: -4rem; }
+
+.portfolio-collection.section-surface { padding-block: 2.5rem 3.5rem; }
+.portfolio-collection.section-surface .portfolio-collection-heading { border-top: 0; }
+.portfolio-colophon.section-surface { margin-top: 0; padding-block: 3rem 1rem; border-top: 0; }
+.portfolio-colophon > .section-backdrop { bottom: -2rem; }
+
+.correspondence-bottom { margin-top: 2.25rem; padding-top: 2.5rem; }
+.correspondence-bottom > .section-backdrop { bottom: -1.75rem; }
+.correspondence-bottom .correspondence-connect { padding-top: 0; }
+
+.learning-cover.section-surface { padding-bottom: 2.75rem; }
+.learning-studio .page-section.section-surface { padding-block: 4.5rem; }
+.learning-studio .notes-gallery.section-surface { padding-top: 1.5rem; padding-bottom: 3rem; }
+.learning-studio .notes-gallery[data-pinned="true"].section-surface { padding-block: 0; }
+.learning-studio .notes-sticky { background: var(--section-white); }
+.learning-studio .learning-hero-story { background: var(--section-white); }
+.learning-studio .learning-contents { background: var(--section-white); }
+.learning-studio .knowledge-card.learning-blueprint-panel,
+.learning-studio .timeline-row.learning-blueprint-panel { background: color-mix(in srgb, var(--section-white) 45%, transparent); }
+.learning-studio .learning-blueprint-panel:hover { background: color-mix(in srgb, var(--section-white) 65%, transparent); }
+.learning-studio .section-backdrop { --section-margin-width: max(0.75rem, calc(var(--page-gutter) - 0.65rem)); }
+.learning-studio .section-margin { opacity: 0.65; }
+
+.home-journal .page-section.section-surface { padding-block: clamp(3.5rem, 6vw, 5.5rem); }
+.home-journal .section-surface .section-eyebrow { border-top: 0; padding-top: 0; }
+
+.project-reader-layout.section-surface { padding-top: 3rem; border-top: 0; }
+.project-reader-layout > .section-backdrop { bottom: -4rem; }
+
+@media (max-width: 760px) {
+  .section-margin { width: 0.65rem; opacity: 0.45; }
+  .journey-story { margin-top: 2rem; }
+  .journey-outro.section-surface { padding-top: 2.5rem; }
+  .portfolio-collection.section-surface { padding-block: 2rem 2.5rem; }
+  .portfolio-colophon.section-surface { padding-top: 2rem; }
+  .correspondence-bottom { margin-top: 1.75rem; padding-top: 2rem; }
+  .learning-studio .page-section.section-surface { padding-block: 3rem; }
+  .learning-studio .notes-gallery.section-surface { padding-top: 0.75rem; }
+  .project-reader-layout.section-surface { padding-top: 2rem; }
+}
+
+@media (forced-colors: active) {
+  .section-backdrop { display: none; }
+}

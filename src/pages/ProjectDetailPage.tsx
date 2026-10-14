@@ -4,6 +4,7 @@ import { projectIntroductions } from '../data/project-introductions'
 import { ImageGallery, GalleryTrigger, type GalleryImage } from '../components/image-gallery'
 import { SmartLink } from '../components/SmartLink'
 import { ArtisticLabel } from '../components/ArtisticLabel'
+import { SectionBackdrop } from '../components/SectionBackdrop'
 import { getRouteHref } from '../lib/routes'
 import './ProjectDetailPage.css'
 
@@ -75,7 +76,8 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   }, [activeHeading, tocOpen])
 
   return (
-    <div className="project-reader site-container">
+    <div className="project-reader site-container section-surface">
+      <SectionBackdrop tone="sky" edge="none" />
       <nav className="project-reader-breadcrumb" aria-label="面包屑">
         <a className="project-reader-button project-reader-button--back" href={getRouteHref('projects')} data-project-return>
           <span className="project-reader-button-icon"><ReaderArrow direction="left" /></span>
@@ -105,7 +107,8 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
         </figure>}
       </header>
 
-      <div className="project-reader-layout">
+      <div className="project-reader-layout section-surface">
+        <SectionBackdrop decoration="contour-left" />
         <aside className={`project-reader-toc${tocOpen ? ' is-open' : ''}`} aria-label="本页目录">
           <div className="project-reader-toc-heading">
             <svg className="project-reader-toc-orbit" viewBox="0 0 120 120" fill="none" aria-hidden="true">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { SectionBackdrop } from './SectionBackdrop'
 import { learningNotes, noteDifficulties, noteProgresses, noteTopics, type LearningNote } from '../data/notes'
 import { learningPhotos, noteCovers } from '../data/note-covers'
 import { useNoteGallery } from '../lib/useNoteGallery'
@@ -21,7 +22,8 @@ export function LearningNotes() {
   const updateFilter = (setter: (value: string) => void, value: string) => { reset(); setter(value) }
 
   return (
-    <section className="notes-gallery" id="notes" aria-labelledby="notes-heading" ref={sectionRef}>
+    <section className="notes-gallery section-surface" id="notes" aria-labelledby="notes-heading" ref={sectionRef}>
+      <SectionBackdrop />
       <div className="notes-sticky">
         <div className="notes-gallery-heading site-container">
           <div className="learning-section-index"><span>02</span> LEARNING NOTES <span>思考的切片</span></div>

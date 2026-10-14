@@ -111,6 +111,7 @@ export function LiveUpdates() {
       description="这里汇集我公开的代码动态与最近在读的内容，记录持续学习、动手实践和整理思考的日常足迹。"
       eyebrow="Now & Notes"
       id="live"
+      tone="white"
       title={<>最近在<span className="live-title-accent">做什么
         <svg viewBox="0 0 160 12" fill="none" aria-hidden="true">
           <path d="M3 8C41 2 105 2 157 6M88 10c23-3 43-3 62-2" />

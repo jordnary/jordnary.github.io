@@ -123,14 +123,14 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     pass('Featured projects open their real detail routes')
 
     await page.goto(new URL('about/', baseURL).href)
-    await page.locator('.theme-toggle-button').click()
+    assert.equal(await page.locator('.theme-toggle-button, .mobile-nav-theme').count(), 0)
     await page.locator('.nav-link[href="/learning/"]').hover()
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
-    await shot('desktop-dark')
-    assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark')
+    await shot('desktop-light')
+    assert.equal(await page.locator('html').evaluate(el => getComputedStyle(el).colorScheme), 'light')
     await page.mouse.click(20, 700)
     await closed()
-    pass('Dark theme carries into panels; clicking outside dismisses them')
+    pass('Navigation stays light without theme controls; clicking outside dismisses panels')
 
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 844 })
@@ -225,12 +225,10 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
       assert.ok(!geometry.background.includes(' / ') && geometry.background !== 'rgba(0, 0, 0, 0)')
       assert.equal(await page.locator('.mobile-nav-link').count(), 5)
       if (width === 390) {
-        await shot('mobile-dark')
-        await page.locator('.mobile-nav-theme').click()
         await shot('mobile-light')
-        assert.equal(await page.locator('html').getAttribute('data-theme'), 'light')
+        assert.equal(await page.locator('html').evaluate(el => getComputedStyle(el).colorScheme), 'light')
       }
-      await page.locator('.mobile-nav-theme').focus()
+      await page.locator('.mobile-nav-search').focus()
       for (let index = 0; index < 12; index++) {
         await page.keyboard.press('Tab')
         assert.equal(await page.locator('#mobile-navigation').evaluate(el => el.contains(document.activeElement)), true, `Tab ${index} stays inside mobile navigation`)

@@ -21,6 +21,7 @@
     "test:learning-pointer": "node tests/learning-pointer.browser.mjs",
     "test:site-mouse": "node tests/site-mouse.browser.mjs",
     "test:navbar": "node --test tests/nav-scroll-visibility.test.ts && node tests/navbar.browser.mjs",
+    "test:appearance": "node tests/appearance.browser.mjs",
     "test:footer": "node tests/footer.browser.mjs",
     "test:gallery": "node tests/image-gallery.browser.mjs",
     "test:project-details": "node tests/project-details.browser.mjs",
