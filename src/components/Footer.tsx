@@ -1,64 +1,236 @@
+import { useEffect, useId, useRef, useState, type CSSProperties } from 'react'
 import { SmartLink } from './SmartLink'
-import { getRouteHref, sitePages, siteRoutes } from '../lib/routes'
+import { contactLinks } from '../data/contact'
+import { getRouteHref, type SitePage } from '../lib/routes'
+import './Footer.css'
+
+const footerPages: { page: SitePage; label: string }[] = [
+  { page: 'home', label: 'Home' },
+  { page: 'about', label: 'About' },
+  { page: 'learning', label: 'Learning' },
+  { page: 'projects', label: 'Projects' },
+  { page: 'contact', label: 'Contact' },
+]
+
+const shanghaiClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Shanghai',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+})
+
+type LetterDrawing = {
+  d: string
+  guides: string
+  anchors: [number, number][]
+}
+
+// Broad geometric capitals, with narrow cuts and a faceted O counter.
+// Construction marks follow each letter rather than crossing the entire word.
+const letterDrawings: Record<string, LetterDrawing> = {
+  J: {
+    d: 'M0 0H164V148C164 197 136 220 82 220C28 220 0 195 0 146H42C42 172 53 182 82 182C108 182 122 172 122 148V38H0Z',
+    guides: 'M-7 0H171M-7 38H130M-7 146H49M82 174V228M115 148H171',
+    anchors: [[0, 0], [164, 0], [0, 38], [122, 38], [0, 146], [42, 146], [164, 148], [82, 182], [82, 220]],
+  },
+  O: {
+    d: 'M0 0H164V36H0Z',
+    guides: 'M-7 0H171M-7 36H171',
+    anchors: [[0, 0], [164, 0], [0, 36], [164, 36]],
+  },
+  R: {
+    d: 'M0 0H84C135 0 164 23 164 69C164 101 149 122 123 132L164 220H116L79 140H42V220H0Z M42 38V102H80C108 102 121 93 121 70C121 47 108 38 80 38Z',
+    guides: 'M-7 0H92M35 38H91M35 102H91M-7 140H86M114 132H133M-7 220H49M108 220H171M121 62H171',
+    anchors: [[0, 0], [84, 0], [42, 38], [42, 102], [121, 70], [164, 69], [123, 132], [79, 140], [42, 140], [0, 220], [42, 220], [116, 220], [164, 220]],
+  },
+  D: {
+    d: 'M0 0H71C132 0 164 37 164 110S132 220 71 220H0Z M42 38V182H70L105 165L122 131V89L105 55L70 38Z',
+    guides: 'M-7 0H79M-7 220H79M35 38H78M35 182H78M122 110H171M42 102V118',
+    anchors: [[0, 0], [71, 0], [164, 110], [71, 220], [0, 220], [42, 38], [42, 182], [105, 55], [122, 89], [122, 131], [105, 165]],
+  },
+  N: {
+    d: 'M0 0H78L124 210H129V0H164V220H86L40 10H35V220H0Z',
+    guides: 'M-7 0H85M122 0H171M-7 220H42M79 220H171M35 102V118M129 102V118M28 10H47M117 210H136',
+    anchors: [[0, 0], [78, 0], [129, 0], [164, 0], [0, 220], [35, 220], [86, 220], [164, 220], [40, 10], [124, 210]],
+  },
+  A: {
+    d: 'M0 220L55 0H109L164 220H121L110 175H54L43 220Z M63 137H101L82 44Z',
+    guides: 'M48 0H116M-7 220H50M114 220H171M47 175H117M56 137H108M75 44H89M82 0V16',
+    anchors: [[55, 0], [109, 0], [0, 220], [43, 220], [121, 220], [164, 220], [54, 175], [110, 175], [63, 137], [101, 137], [82, 44]],
+  },
+  Y: {
+    d: 'M0 0H47L82 87L117 0H164L103 132V220H61V132Z',
+    guides: 'M-7 0H54M110 0H171M54 220H110M54 132H110M75 87H89M82 145V165',
+    anchors: [[0, 0], [47, 0], [117, 0], [164, 0], [82, 87], [61, 132], [103, 132], [61, 220], [103, 220]],
+  },
+}
+
+const orbitDrawing: LetterDrawing = {
+  d: 'M0 -78C45 -82 79 -49 78 0C82 48 46 79 0 78C-48 82 -80 48 -78 0C-82 -46 -44 -80 0 -78Z M-26 -54L36 -47L57 14L11 59L-46 37L-57 -15Z',
+  guides: 'M-8 0H8M0 -8V8M-25 -78H25M-25 78H25M-78 -20V20M78 -20V20',
+  anchors: [[0, -78], [78, 0], [0, 78], [-78, 0], [-26, -54], [36, -47], [57, 14], [11, 59], [-46, 37], [-57, -15]],
+}
+
+const brandLetters = [...'JORDNARY'].map((letter, index) => ({
+  ...letterDrawings[letter],
+  letter,
+  x: 12 + index * 180,
+}))
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date())
 
   return (
-    <footer className="footer-shell">
-      <div className="site-container footer-content">
-        <div className="footer-brand">
-          <SmartLink className="footer-brand-link" href={getRouteHref('home')}>
-            Jordnary
-          </SmartLink>
-          <p className="footer-description">
-            记录个人叙事、知识沉淀与项目复盘。
-          </p>
-        </div>
-
+    <footer className="footer-shell" id="site-footer" lang="en">
+      <div className="footer-content">
+        <FooterBrand />
+        <ShanghaiTime />
         <nav aria-label="Footer navigation" className="footer-nav">
-          {sitePages.map((page) => (
-            <SmartLink
-              className="footer-link"
-              href={getRouteHref(page)}
-              key={page}
-            >
-              {siteRoutes[page].label}
-            </SmartLink>
-          ))}
+          <div className="footer-nav-column">
+            <h2 className="footer-heading">Explore</h2>
+            <ul>
+              {footerPages.map(({ page, label }) => (
+                <li key={page}>
+                  <SmartLink className="footer-link" href={getRouteHref(page)}>{label}</SmartLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="footer-nav-column">
+            <h2 className="footer-heading">Connect</h2>
+            <ul>
+              {contactLinks.filter(({ title }) => title === 'GitHub' || title === 'Email').map(({ title, href }) => (
+                <li key={title}>
+                  <SmartLink className="footer-link" href={href}>
+                    {title}<span className="footer-link-arrow" aria-hidden="true">↗</span>
+                  </SmartLink>
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
-
-        <div className="footer-meta">
-          <SmartLink
-            aria-label="Visit Jordnary on GitHub"
-            className="footer-github-link"
-            href="https://github.com/jordnary"
-          >
-            <GitHubIcon />
-            <span>GitHub</span>
-          </SmartLink>
-          <p className="footer-copyright">
-            © {currentYear} Jordnary. All rights reserved.
-          </p>
-        </div>
+      </div>
+      <div className="footer-meta">
+        <p>© {currentYear} Jordnary</p>
+        <p>Built with curiosity.</p>
       </div>
     </footer>
   )
 }
 
-function GitHubIcon() {
+function FooterBrand() {
+  const brandRef = useRef<HTMLAnchorElement>(null)
+  const drawingId = useId()
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const brand = brandRef.current
+    if (!brand) return
+    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting))
+    observer.observe(brand)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.8"
-      viewBox="0 0 24 24"
+    <SmartLink
+      aria-label="JORDNARY — Home"
+      className="footer-brand-link"
+      data-in-view={isInView}
+      href={getRouteHref('home')}
+      ref={brandRef}
     >
-      <path d="M8.8 19.5c-3.2 1-3.2-1.6-4.5-2" />
-      <path d="M15.2 22v-3.1a2.7 2.7 0 0 0-.8-2.1c2.7-.3 5.6-1.3 5.6-6a4.7 4.7 0 0 0-1.3-3.3 4.4 4.4 0 0 0-.1-3.3s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 3.9 5.6 4.2 5.6 4.2a4.4 4.4 0 0 0-.1 3.3A4.7 4.7 0 0 0 4.2 11c0 4.6 2.9 5.7 5.6 6a2.7 2.7 0 0 0-.8 2.1V22" />
-    </svg>
+      <span className="footer-brand-ruler" aria-hidden="true" />
+      <svg className="footer-wordmark" viewBox="0 0 1448 256" aria-hidden="true" fill="none">
+        <defs>
+          <mask id={`${drawingId}-letters`} maskUnits="userSpaceOnUse" x="0" y="0" width="1448" height="256">
+            {brandLetters.map(({ x, d, letter }, index) => (
+              <g key={index} transform={`translate(${x} 18)`}>
+                <path d={d} fill="white" fillRule="evenodd" />
+                {letter === 'O' && <FooterOrbit silhouette />}
+              </g>
+            ))}
+          </mask>
+          <radialGradient id={`${drawingId}-scan`}>
+            <stop offset="0" stopColor="currentColor" stopOpacity="0.04" />
+            <stop offset="0.82" stopColor="currentColor" stopOpacity="0.15" />
+            <stop offset="1" stopColor="currentColor" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+        {brandLetters.map(({ x, letter, ...drawing }, index) => (
+          <g key={index} transform={`translate(${x} 18)`} style={{ '--letter-index': index } as CSSProperties}>
+            <LetterArtwork drawing={drawing} />
+            {letter === 'O' && <FooterOrbit />}
+          </g>
+        ))}
+        <g className="footer-scan-layer" mask={`url(#${drawingId}-letters)`}>
+          <g className="footer-circle-scan">
+            <circle r="180" fill={`url(#${drawingId}-scan)`} />
+            <circle className="footer-scan-ring" r="156" />
+            <circle className="footer-scan-ring footer-scan-ring-inner" r="128" />
+            <path className="footer-scan-crosshair" d="M-12 0H12M0 -12V12" />
+          </g>
+        </g>
+      </svg>
+    </SmartLink>
+  )
+}
+
+function LetterArtwork({ drawing: { d, guides, anchors } }: { drawing: LetterDrawing }) {
+  return (
+    <>
+      <path className="footer-letter-outline" d={d} fillRule="evenodd" />
+      <path className="footer-letter-trace" d={d} pathLength="1" />
+      <path className="footer-letter-echo" d={d} pathLength="1" />
+      <path className="footer-drawing-guides" d={guides} />
+      <g className="footer-drawing-anchors">
+        {anchors.map(([x, y]) => <path key={`${x}-${y}`} d={`M${x - 3} ${y}h6M${x} ${y - 3}v6`} />)}
+      </g>
+    </>
+  )
+}
+
+function FooterOrbit({ silhouette = false }: { silhouette?: boolean }) {
+  return (
+    <g transform="translate(82 142)">
+      <g className="footer-orbit">
+        {silhouette ? <path d={orbitDrawing.d} fill="white" fillRule="evenodd" /> : <LetterArtwork drawing={orbitDrawing} />}
+      </g>
+    </g>
+  )
+}
+
+function ShanghaiTime() {
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | undefined
+    const update = () => setNow(new Date())
+    const sync = () => {
+      clearInterval(timer)
+      if (!document.hidden) {
+        update()
+        timer = setInterval(update, 1000)
+      }
+    }
+    sync()
+    document.addEventListener('visibilitychange', sync)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', sync)
+    }
+  }, [])
+
+  return (
+    <div className="footer-clock">
+      <div className="footer-clock-display">
+        <h2 className="footer-heading">Local time</h2>
+        <p className="footer-clock-reading">
+          <time dateTime={now.toISOString()}>{shanghaiClock.format(now)}</time>
+          {' '}<span>(GMT+8)</span>
+        </p>
+      </div>
+      <p className="footer-clock-location"><span aria-hidden="true" />Shanghai, China</p>
+    </div>
   )
 }
