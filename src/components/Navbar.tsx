@@ -65,7 +65,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
         setExpandedPage(null)
       }
     }
-    const desktop = window.matchMedia('(min-width: 1024px)')
+    const desktop = window.matchMedia('(min-width: 720px)')
     desktop.addEventListener('change', dismiss)
     window.addEventListener('popstate', dismiss)
     document.addEventListener('pointerdown', outside)
@@ -331,7 +331,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                 </div>
                 {mobileSection.feature && <div className="mobile-nav-section">
                   <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
-                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} sizes="(max-width: 1023px) 112px, 260px" /></span>
+                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} sizes="112px" /></span>
                     <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
                   </a>
                 </div>}
@@ -339,7 +339,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                   <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
                   <div className="mobile-nav-features">
                     {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
-                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} sizes="(max-width: 1023px) 88px, 260px" /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} sizes="88px" /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
                       <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
                     </a>)}
                   </div>

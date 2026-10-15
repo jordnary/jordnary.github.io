@@ -41,6 +41,38 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await shot('desktop-closed')
     pass('Five primary text links remain, without a separate contact button')
 
+    for (const width of [720, 721, 768, 844, 1023, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 })
+      assert.equal(await page.locator('.nav-menu-button').isVisible(), false)
+      assert.equal(await page.locator('.nav-search-shortcut').isVisible(), true)
+      const layout = await page.locator('.nav-content').evaluate(nav => {
+        const bounds = nav.getBoundingClientRect()
+        const parts = [...nav.children].map(child => child.getBoundingClientRect())
+        const headings = [...nav.querySelectorAll('.nav-item-heading')].map(child => child.getBoundingClientRect())
+        return {
+          contained: parts.every(part => part.left >= bounds.left && part.right <= bounds.right + 1),
+          separated: parts.slice(1).every((part, index) => part.left - parts[index].right >= 16),
+          singleRow: headings.every(heading => Math.abs(heading.top - headings[0].top) < 1),
+          visibleLinks: nav.querySelectorAll('.nav-link').length === headings.filter(heading => heading.width > 0).length,
+        }
+      })
+      assert.deepEqual(layout, { contained: true, separated: true, singleRow: true, visibleLinks: true }, `Full navigation fits without overlap at ${width}px`)
+    }
+    await page.setViewportSize({ width: 719, height: 900 })
+    assert.equal(await page.locator('.nav-desktop-list').isVisible(), false)
+    await page.locator('.nav-menu-button').click()
+    await menuOpen()
+    await page.setViewportSize({ width: 720, height: 900 })
+    await menuClosed()
+    await page.locator('#nav-toggle-learning').click()
+    await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
+    await page.setViewportSize({ width: 719, height: 900 })
+    await closed()
+    assert.equal(await page.locator('#nav-toggle-learning').getAttribute('aria-expanded'), 'false')
+    await page.setViewportSize({ width: 1440, height: 960 })
+    await page.mouse.move(20, 700)
+    pass('Full navigation fits down to 720px; crossing the mobile boundary dismisses menus and releases scroll locking')
+
     await page.locator('#nav-toggle-learning').click()
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
     await page.keyboard.press('Escape')
@@ -199,7 +231,7 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await page.waitForFunction(() => !document.querySelector('.nav-shell').classList.contains('is-hidden'))
     pass('Open dropdowns and keyboard focus keep the header available during scroll')
 
-    for (const [width, height] of [[390, 844], [320, 568], [768, 1024], [844, 390]]) {
+    for (const [width, height] of [[390, 844], [320, 568], [700, 1024], [719, 390]]) {
       await page.setViewportSize({ width, height })
       await page.waitForFunction(() => document.querySelector('.nav-shell').getBoundingClientRect().top === 0)
       const beforeOpen = await page.evaluate(() => {

@@ -71,7 +71,7 @@ export async function runNavbarPanelChecks(browser, baseURL, pass) {
     assert.equal(await page.locator('#nav-toggle-projects').getAttribute('aria-expanded'), 'true')
     pass('Hover takes over from keyboard focus; rapid photo/text switching keeps one set of links, a continuous background and stable page layout')
 
-    await page.setViewportSize({ width: 1024, height: 320 })
+    await page.setViewportSize({ width: 720, height: 320 })
     await open('projects')
     await page.locator('#nav-panel-projects a').last().focus()
     const geometry = await page.locator('#nav-panel-projects').evaluate(panel => {

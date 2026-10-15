@@ -464,11 +464,29 @@
   .mobile-nav-search svg { width: 1.1rem; height: 1.1rem; }
   .mobile-nav-search > .nav-arrow { margin-left: auto; }
 
-  @media (min-width: 1024px) {
+  /* Keep the desktop breakpoint in sync with Navbar.tsx. */
+  @media (min-width: 720px) {
     .nav-desktop-list { display: flex; align-items: center; gap: clamp(1.3rem, 2.5vw, 2.5rem); }
     .nav-shell .nav-menu-button { display: none; }
   }
-  @media (max-width: 1023px) {
+  @media (720px <= width < 1024px) {
+    .nav-content { gap: 1rem; }
+    .nav-desktop-list { gap: clamp(0.75rem, 2vw, 1.3rem); }
+    .nav-mega-content,
+    .nav-mega-panel--about .nav-mega-content,
+    .nav-mega-panel--projects .nav-mega-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nav-mega-intro,
+    .nav-mega-panel--projects .nav-mega-intro { grid-column: 1 / -1; grid-row: auto; padding: 0; }
+    .nav-mega-intro h2,
+    .nav-mega-intro p { max-width: none; }
+    .nav-overview-link { margin-top: 0.75rem; }
+    .nav-mega-links,
+    .nav-mega-panel--projects .nav-mega-links { padding-left: 0; border-left: 0; }
+    .nav-mega-panel--projects .nav-mega-links,
+    .nav-mega-panel--projects .nav-related-links { grid-column: 1 / -1; }
+    .nav-mega-panel--projects .nav-related-links { padding-left: 0; }
+  }
+  @media (width < 720px) {
     /* Keep the scrollbar lane when the modal locks background scrolling. */
     :root:has(.nav-shell) { scrollbar-gutter: stable; }
     .nav-shell {

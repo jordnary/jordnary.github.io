@@ -75,7 +75,7 @@ export async function runNavbarMobileChecks(browser, baseURL, pass) {
     }
     pass('All three mobile sections expose their real overview, feature and related links, with keyboard focus contained in the active level')
 
-    for (const [width, height] of [[320, 568], [768, 1024], [844, 390]]) {
+    for (const [width, height] of [[320, 568], [700, 1024], [719, 390]]) {
       await page.setViewportSize({ width, height })
       await page.locator('#mobile-nav-toggle-projects').tap()
       await opened()
@@ -113,7 +113,7 @@ export async function runNavbarMobileChecks(browser, baseURL, pass) {
       await page.locator('.mobile-nav-back').tap()
       await returned()
     }
-    pass('Phone, tablet and landscape layouts scroll only the submenu, keep the header visible and reset the submenu scroll on re-entry')
+    pass('Narrow and wide mobile layouts scroll only the submenu, keep the header visible and reset the submenu scroll on re-entry')
 
     await page.setViewportSize({ width: 390, height: 844 })
     await page.locator('#mobile-nav-toggle-learning').tap()
