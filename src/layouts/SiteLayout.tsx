@@ -18,20 +18,22 @@ export function SiteLayout({ children, page, isProjectDetail = false }: SiteLayo
   // state can leave the fixed homepage portal mode active for one render after
   // in-place navigation to a static page, hiding its shared chrome.
   const isPortalMode = page === 'home' && isPortalPath()
+  const isProjectsArchive = page === 'projects' && !isProjectDetail
+  const hasSharedChrome = !isPortalMode && !isProjectsArchive
 
   return (
     <div className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${isSearchOpen ? ' is-search-open' : ''}`}>
       <div className="app-shell-content">
-        {!isPortalMode && <ScrollProgress />}
+        {hasSharedChrome && <ScrollProgress />}
 
-        {!isPortalMode && <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />}
+        {hasSharedChrome && <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />}
 
         <main tabIndex={-1}>{children}</main>
 
-        {!isPortalMode && <Footer paperSeam={page === 'about'} />}
+        {hasSharedChrome && <Footer paperSeam={page === 'about'} />}
       </div>
-      {!isPortalMode && <Live2DCompanion page={page} suspended={isSearchOpen} />}
-      {!isPortalMode && <SiteSearch
+      {hasSharedChrome && <Live2DCompanion page={page} suspended={isSearchOpen} />}
+      {hasSharedChrome && <SiteSearch
           isOpen={isSearchOpen}
           onClose={() => setIsSearchOpen(false)}
           onOpen={() => setIsSearchOpen(true)}

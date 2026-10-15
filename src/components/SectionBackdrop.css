@@ -102,11 +102,6 @@
 .journey-outro.section-surface { padding-block: 3.5rem 1rem; }
 .journey-outro > .section-backdrop { bottom: -4rem; }
 
-.portfolio-collection.section-surface { padding-block: 2.5rem 3.5rem; }
-.portfolio-collection.section-surface .portfolio-collection-heading { border-top: 0; }
-.portfolio-colophon.section-surface { margin-top: 0; padding-block: 3rem 1rem; border-top: 0; }
-.portfolio-colophon > .section-backdrop { bottom: -2rem; }
-
 .correspondence-bottom { margin-top: 2.25rem; padding-top: 2.5rem; }
 .correspondence-bottom > .section-backdrop { bottom: -1.75rem; }
 .correspondence-bottom .correspondence-connect { padding-top: 0; }
@@ -134,8 +129,6 @@
   .section-margin { width: 0.65rem; opacity: 0.45; }
   .journey-story { margin-top: 2rem; }
   .journey-outro.section-surface { padding-top: 2.5rem; }
-  .portfolio-collection.section-surface { padding-block: 2rem 2.5rem; }
-  .portfolio-colophon.section-surface { padding-top: 2rem; }
   .correspondence-bottom { margin-top: 1.75rem; padding-top: 2rem; }
   .learning-studio .page-section.section-surface { padding-block: 3rem; }
   .learning-studio .notes-gallery.section-surface { padding-top: 0.75rem; }

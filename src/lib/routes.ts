@@ -28,8 +28,8 @@ export const siteRoutes: Record<SitePage, SiteRoute> = {
   },
   projects: {
     label: '项目',
-    title: '项目案例 | Jordnary',
-    description: '探索 Web 应用、机器学习与视觉实验：浏览项目实景、实验图、实现过程和公开代码。',
+    title: 'Projects | Portfolio',
+    description: 'Selected projects in web development, machine learning and visual experiments.',
   },
   contact: {
     label: '联系',

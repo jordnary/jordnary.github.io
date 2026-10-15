@@ -1,4 +1,4 @@
-# Rounded font subsets
+# Local fonts
 
 `learning-rounded-medium.woff2` is a renamed subset of
 [Resource Han Rounded CN v1.910](https://github.com/CyanoHao/Resource-Han-Rounded/releases/tag/v1.910),
@@ -28,3 +28,10 @@ To regenerate, install `fonttools` and `brotli`, then run:
 ```sh
 python scripts/subset-navigation-font.py "ChillRoundF v3.0.ttf"
 ```
+
+## Projects archive
+
+`projects-instrument-serif.ttf` is the regular weight of Instrument Serif,
+distributed by Google Fonts under the SIL Open Font License 1.1. The original
+copyright and license are included in `LICENSE.projects-instrument-serif.txt`.
+It is served locally and used only by the Projects archive.
