@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll } from './pageScrollSource'
-import { getPageFromUrl, getProjectFromUrl, type SitePage } from './routes'
+import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
 
 type Position = { left: number; top: number }
 type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior }
@@ -55,8 +55,9 @@ export function useSiteNavigation(initialPage: SitePage) {
       persistPosition()
       if (url.href !== window.location.href) {
         const currentUrl = new URL(window.location.href)
-        const fromList = getPageFromUrl(currentUrl) === 'projects' && !getProjectFromUrl(currentUrl)
-        const returnDepth = getProjectFromUrl(url)
+        const fromList = getPageFromUrl(currentUrl) === 'projects'
+          && !getProjectFromUrl(currentUrl) && !isProjectStudioUrl(currentUrl)
+        const returnDepth = getProjectFromUrl(url) || isProjectStudioUrl(url)
           ? (fromList ? 1 : window.history.state?.projectReturnDepth ? window.history.state.projectReturnDepth + 1 : undefined)
           : undefined
         currentKey = crypto.randomUUID()

@@ -14,8 +14,20 @@ function projectPages(): Plugin {
       server.middlewares.use((request, _response, next) => {
         const url = new URL(request.url || '/', 'https://example.com')
         const root = base.replace(/\/$/, '')
-        if (projects.some(project => [`${root}/projects/${project.id}`, `${root}/projects/${project.id}/`, `${root}/projects/${project.id}/index.html`].includes(url.pathname))) {
+        if ([`${root}/projects/studio`, `${root}/projects/studio/`, `${root}/projects/studio/index.html`].includes(url.pathname)) {
+          request.url = `${root}/projects/studio/index.html${url.search}`
+        } else if (projects.some(project => [`${root}/projects/${project.id}`, `${root}/projects/${project.id}/`, `${root}/projects/${project.id}/index.html`].includes(url.pathname))) {
           request.url = `${root}/projects/index.html${url.search}`
+        }
+        next()
+      })
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        const url = new URL(request.url || '/', 'https://example.com')
+        const root = base.replace(/\/$/, '')
+        if ([`${root}/projects/studio`, `${root}/projects/studio/`].includes(url.pathname)) {
+          request.url = `${root}/projects/studio/index.html${url.search}`
         }
         next()
       })
@@ -47,6 +59,7 @@ export default defineConfig({
         about: fileURLToPath(new URL('./about/index.html', import.meta.url)),
         learning: fileURLToPath(new URL('./learning/index.html', import.meta.url)),
         projects: fileURLToPath(new URL('./projects/index.html', import.meta.url)),
+        projectStudio: fileURLToPath(new URL('./projects/studio/index.html', import.meta.url)),
         contact: fileURLToPath(new URL('./contact/index.html', import.meta.url)),
       },
     },

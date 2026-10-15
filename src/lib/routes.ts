@@ -38,6 +38,12 @@ export const siteRoutes: Record<SitePage, SiteRoute> = {
   },
 }
 
+export const projectStudioRoute: SiteRoute = {
+  label: 'Studio',
+  title: 'Creative Development | Portfolio',
+  description: 'A creative development practice exploring computer science, artificial intelligence and the web.',
+}
+
 export function getRouteHref(page: SitePage) {
   const base = import.meta.env.BASE_URL
 
@@ -61,7 +67,7 @@ export function getPageFromDocument() {
 
 /** Match only the static pages this app can render, including their HTML URLs. */
 export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SitePage | null {
-  if (getProjectFromUrl(url, base)) return 'projects'
+  if (isProjectStudioUrl(url, base) || getProjectFromUrl(url, base)) return 'projects'
   const root = base.replace(/\/$/, '')
   for (const page of sitePages) {
     const path = page === 'home' ? `${root}/home` : `${root}/${page}`
@@ -73,6 +79,15 @@ export function getPageFromUrl(url: URL, base = import.meta.env.BASE_URL): SiteP
 
 export function getProjectHref(id: string, base = import.meta.env.BASE_URL) {
   return `${base.replace(/\/$/, '')}/projects/${id}/`
+}
+
+export function getProjectStudioHref(base = import.meta.env.BASE_URL) {
+  return `${base.replace(/\/$/, '')}/projects/studio/`
+}
+
+export function isProjectStudioUrl(url: URL, base = import.meta.env.BASE_URL) {
+  const path = getProjectStudioHref(base)
+  return [path, path.slice(0, -1), `${path}index.html`].includes(url.pathname)
 }
 
 export function getProjectFromUrl(url: URL, base = import.meta.env.BASE_URL) {

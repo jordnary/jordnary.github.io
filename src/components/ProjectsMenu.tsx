@@ -4,9 +4,9 @@ import { getHomepagePortalHref, getRouteHref } from '../lib/routes'
 const menuPages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 type MenuController = { open: () => void; close: () => void; reset: () => void }
 
-export function ProjectsWordmark() {
+export function ProjectsWordmark({ href = getHomepagePortalHref(), label = 'Portfolio home' }: { href?: string; label?: string }) {
   return (
-    <a className="archive-wordmark" href={getHomepagePortalHref()} aria-label="Portfolio home">
+    <a className="archive-wordmark" href={href} aria-label={label}>
       <span>CREATIVE</span><span>DEVELOPMENT</span><span>PORTFOLIO</span>
     </a>
   )

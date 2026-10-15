@@ -10,7 +10,7 @@ export function ProjectsCursor() {
 
   useEffect(() => {
     const cursor = cursorRef.current
-    const archive = cursor?.closest<HTMLElement>('.projects-archive')
+    const archive = cursor?.closest<HTMLElement>('.projects-archive, .project-studio')
     if (!cursor || !archive || typeof cursor.showPopover !== 'function') return
 
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)')

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getPageFromUrl, getProjectFromUrl, getProjectHref, sitePages } from '../src/lib/routes.ts'
+import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl, sitePages } from '../src/lib/routes.ts'
 import { projects } from '../src/data/projects.ts'
 
 test('client navigation recognizes every static page and its HTML alias at root and under a deployment base', () => {
@@ -32,4 +32,25 @@ test('project detail URLs recognize only known projects at root and under a depl
     assert.equal(getProjectFromUrl(new URL(`${base}projects/missing/`, 'https://example.com'), base), undefined)
     assert.equal(getPageFromUrl(new URL(`${base}projects/missing/`, 'https://example.com'), base), null)
   }
+})
+
+test('the standalone studio recognizes static aliases without becoming a project detail', () => {
+  for (const base of ['/', '/portfolio/']) {
+    const path = getProjectStudioHref(base)
+    assert.equal(path, `${base}projects/studio/`)
+    assert.equal(getProjectStudioHref(base.replace(/\/$/, '')), path)
+    for (const alias of [path, path.slice(0, -1), `${path}index.html`, `${path}?source=archive#intro`]) {
+      const url = new URL(alias, 'https://example.com')
+      assert.equal(isProjectStudioUrl(url, base), true)
+      assert.equal(getPageFromUrl(url, base), 'projects')
+      assert.equal(getProjectFromUrl(url, base), undefined)
+    }
+    for (const invalid of [`${path}extra/`, `${path}index.htm`, `${base}projects/`, `${base}projects/studio-not-found/`]) {
+      const url = new URL(invalid, 'https://example.com')
+      assert.equal(isProjectStudioUrl(url, base), false)
+      if (invalid !== `${base}projects/`) assert.equal(getPageFromUrl(url, base), null)
+    }
+  }
+  assert.equal(isProjectStudioUrl(new URL('https://example.com/projects/studio/'), '/portfolio/'), false)
+  assert.equal(getPageFromUrl(new URL('https://example.com/projects/studio/'), '/portfolio/'), null)
 })

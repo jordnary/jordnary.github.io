@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { projects, projectFilters, type ProjectCase, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
-import { getPageFromUrl, getProjectHref } from '../lib/routes'
+import { getPageFromUrl, getProjectHref, getProjectStudioHref } from '../lib/routes'
 import { ProjectsCursor } from './ProjectsCursor'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
@@ -111,7 +111,7 @@ export function Projects() {
     <div className="projects-archive" id="projects" lang="en">
       <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" />
       <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" />
-      <ProjectsWordmark />
+      <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />
       <header className="archive-header">
         <div className="archive-title"><h1>PROJECTS</h1></div>
         <div className="archive-filters" role="group" aria-label="Filter projects">
