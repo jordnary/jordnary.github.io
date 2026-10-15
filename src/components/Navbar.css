@@ -18,7 +18,6 @@
     --mobile-nav-spacing: clamp(1.5rem, 4vw, 2.5rem);
     --mobile-nav-gutter: max(var(--mobile-nav-spacing), env(safe-area-inset-left));
     --mobile-nav-gutter-end: max(var(--mobile-nav-spacing), env(safe-area-inset-right));
-    --navigation-surface: var(--mobile-nav-bg);
     --navigation-ink: var(--color-text);
     --navigation-muted: var(--color-text-muted);
     --navigation-line: var(--color-border);
@@ -36,18 +35,16 @@
     border-bottom: 1px solid var(--nav-border);
     background: var(--nav-bg);
     box-shadow: var(--nav-shadow);
-    -webkit-backdrop-filter: blur(24px);
-    backdrop-filter: blur(24px);
     color: var(--navigation-ink);
     transform: translate3d(0, 0, 0);
     will-change: transform;
     transition: transform 250ms cubic-bezier(0.42, 0, 0.58, 1),
       --nav-panel-height var(--nav-panel-duration) var(--nav-panel-ease),
-      box-shadow 200ms ease, background 200ms ease;
+      box-shadow 200ms ease;
     isolation: isolate;
   }
 
-  .nav-shell.is-scrolled { border-color: var(--nav-scrolled-border); background: var(--nav-scrolled-bg); box-shadow: var(--nav-scrolled-shadow); }
+  .nav-shell.is-scrolled { box-shadow: var(--nav-scrolled-shadow); }
 
   .nav-shell:has(.nav-mega-panel:not([hidden])) {
     --nav-panel-duration: 300ms;
@@ -62,8 +59,8 @@
     z-index: -1;
     height: calc(100% + var(--nav-panel-height) - 1px);
     border-bottom: 1px solid var(--navigation-line);
-    background: var(--navigation-surface), var(--color-bg);
-    box-shadow: 0 24px 30px -26px rgb(0 0 0 / 0.2);
+    background: var(--nav-bg);
+    box-shadow: var(--nav-scrolled-shadow);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -316,7 +313,7 @@
   .nav-photo-category { display: block; margin-bottom: 0.35rem; color: var(--navigation-accent); font-size: 0.65rem; font-weight: 550; letter-spacing: 0.05em; }
   .nav-feature-link--photo strong { padding-right: 1.1rem; font-size: 0.9rem; overflow-wrap: anywhere; }
   .nav-feature-link--photo small { margin-top: 0.25rem; line-height: 1.75; }
-  .nav-feature-link--photo > .nav-arrow { position: absolute; top: 0.6rem; right: 0.6rem; width: 1.65rem; height: 1.65rem; padding: 0.25rem; border-radius: 50%; background: var(--navigation-surface), var(--color-bg); }
+  .nav-feature-link--photo > .nav-arrow { position: absolute; top: 0.6rem; right: 0.6rem; width: 1.65rem; height: 1.65rem; padding: 0.25rem; border-radius: 50%; background: var(--nav-bg); }
   .nav-feature-link--photo:is(:hover, :focus-visible) strong { color: var(--navigation-accent); }
   .nav-mega-panel--projects .nav-related-links { display: flex; gap: 1.5rem; align-items: center; padding: 0.9rem 0 0 2rem; border: 0; border-top: 1px solid var(--navigation-line); }
   .nav-mega-panel--projects .nav-related-links .nav-column-label { margin: 0; }
@@ -353,7 +350,7 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: var(--navigation-surface), var(--color-bg);
+    background: var(--nav-bg);
     opacity: 0;
     transition: opacity var(--mobile-nav-duration) ease;
   }
@@ -401,7 +398,7 @@
   .mobile-nav-panel {
     z-index: 1;
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
-    background: var(--navigation-surface), var(--color-bg);
+    background: var(--nav-bg);
     transform: translate3d(100%, 0, 0);
     visibility: hidden;
     transition: transform 340ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0ms linear 340ms;

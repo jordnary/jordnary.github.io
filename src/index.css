@@ -53,36 +53,10 @@
   --color-control-border: rgb(15 23 42 / 0.13);
   --color-control-bg: rgb(255 255 255 / 0.64);
   --color-control-hover-bg: rgb(8 145 178 / 0.1);
-  --nav-border: rgb(15 23 42 / 0.08);
-  --nav-bg:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.9),
-      rgb(248 250 252 / 0.74)
-    );
-  --nav-shadow:
-    0 1px 0 rgb(255 255 255 / 0.82),
-    0 14px 36px -34px rgb(15 23 42 / 0.38);
-  --nav-scrolled-border: rgb(8 145 178 / 0.18);
-  --nav-scrolled-bg:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.94),
-      rgb(240 249 255 / 0.82)
-    );
-  --nav-scrolled-shadow:
-    0 18px 48px -34px rgb(15 23 42 / 0.32),
-    0 10px 30px -28px rgb(8 145 178 / 0.36);
-  --mobile-nav-border: rgb(15 23 42 / 0.09);
-  --mobile-nav-bg:
-    linear-gradient(
-      180deg,
-      #ffffff,
-      #f0f9ff
-    );
-  --mobile-nav-shadow:
-    0 18px 42px -32px rgb(15 23 42 / 0.22),
-    inset 0 1px 0 rgb(255 255 255 / 0.82);
+  --nav-border: rgb(0 0 0 / 0.08);
+  --nav-bg: #ffffff;
+  --nav-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+  --nav-scrolled-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
 
   color-scheme: light;
 }
