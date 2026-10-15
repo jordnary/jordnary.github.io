@@ -1,6 +1,6 @@
 .journey-closing-note {
   max-width: 38rem;
-  margin: clamp(2rem, 2.5vw, 2.5rem) auto 0;
+  margin: var(--journey-closing-space) auto 0;
   padding-inline: 0.5rem;
   color: var(--journey-ink);
   font-family: var(--journey-serif);

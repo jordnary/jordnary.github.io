@@ -1,6 +1,8 @@
 .about-journey {
   --cover-top-space: 1.15rem;
-  --journey-bottom-space: 3rem;
+  --journey-closing-space: clamp(1.75rem, 2vw, 2.25rem);
+  /* Account for the footer's overlapping tear and the outro's own padding. */
+  --journey-bottom-space: calc(var(--journey-closing-space) + var(--paper-seam-height) * 0.75 - 0.75rem);
   --journey-serif: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
   max-width: calc(var(--max-page-width) + var(--page-gutter) * 2);
   padding: var(--cover-top-space) var(--page-gutter) var(--journey-bottom-space);
@@ -214,7 +216,7 @@
 
 @media (max-width: 700px), (hover: none) and (pointer: coarse) {
   .about-journey :not(.journey-atlas-motion, .iceberg-motion), .about-journey *::before, .about-journey *::after { transition: none !important; animation: none !important; }
-  .about-journey { --cover-top-space: 1rem; --journey-bottom-space: 2rem; }
+  .about-journey { --cover-top-space: 1rem; }
   .journey-cover { padding-block: 0; }
   .journey-intro { grid-template-columns: 1fr; gap: 2rem; padding: 1rem 0 4.5rem; }
   .journey-intro-heading { padding: 0; }
