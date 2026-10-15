@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
-import { getHomepagePortalHref, getRouteHref } from '../lib/routes'
+import { getRouteHref } from '../lib/routes'
 
 const menuPages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 type MenuController = { open: () => void; close: () => void; reset: () => void }
 
-export function ProjectsWordmark({ href = getHomepagePortalHref(), label = 'Portfolio home' }: { href?: string; label?: string }) {
+export function ProjectsWordmark({ href, label }: { href?: string; label?: string }) {
+  const Tag = href ? 'a' : 'div'
   return (
-    <a className="archive-wordmark" href={href} aria-label={label}>
+    <Tag className="archive-wordmark" href={href} aria-label={label}>
       <span>CREATIVE</span><span>DEVELOPMENT</span><span>PORTFOLIO</span>
-    </a>
+    </Tag>
   )
 }
 
@@ -122,7 +123,7 @@ export function ProjectsMenu({ onOpen }: { onOpen: () => void }) {
           <ProjectsWordmark />
           <nav aria-label="Main navigation">
             {menuPages.map((page, index) => (
-              <a key={page} href={page === 'home' ? getHomepagePortalHref() : getRouteHref(page)} aria-current={page === 'projects' ? 'page' : undefined}>
+              <a key={page} href={getRouteHref(page)} aria-current={page === 'projects' ? 'page' : undefined}>
                 <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>{page.charAt(0).toUpperCase() + page.slice(1)}
               </a>
             ))}
