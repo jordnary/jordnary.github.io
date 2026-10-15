@@ -11,6 +11,41 @@ async function waitForStudio(page) {
   await page.evaluate(() => document.fonts.ready)
 }
 
+function themeButton(page, theme) {
+  return page.getByRole('group', { name: 'Color theme', exact: true })
+    .getByRole('button', { name: theme === 'light' ? 'Light' : 'Dark', exact: true })
+}
+
+async function assertTheme(page, theme) {
+  await page.waitForFunction(expected => {
+    const root = document.querySelector('.project-studio')
+    if (!root) return false
+    const style = getComputedStyle(root)
+    return root.dataset.theme === expected && style.colorScheme === expected
+      && style.backgroundColor === (expected === 'light' ? 'rgb(242, 242, 242)' : 'rgb(0, 0, 0)')
+      && style.color === (expected === 'light' ? 'rgb(23, 23, 23)' : 'rgb(242, 242, 242)')
+  }, theme)
+  for (const choice of ['light', 'dark']) {
+    assert.equal(await themeButton(page, choice).getAttribute('aria-pressed'), String(choice === theme))
+  }
+}
+
+async function readThemeIsolation(page) {
+  return page.evaluate(() => ({
+    document: [document.documentElement, document.body].map(element => ({
+      theme: element.getAttribute('data-theme'),
+      className: element.className,
+      inlineStyle: element.getAttribute('style'),
+      scheme: getComputedStyle(element).colorScheme,
+      background: getComputedStyle(element).backgroundColor,
+      siteBackground: getComputedStyle(element).getPropertyValue('--color-bg').trim(),
+    })),
+    meta: document.querySelector('meta[name="color-scheme"]')?.content,
+    local: Object.entries(localStorage).sort(),
+    session: Object.entries(sessionStorage).sort(),
+  }))
+}
+
 async function waitForArchive(page, expected = projects) {
   await page.waitForFunction(ids => {
     const rows = [...document.querySelectorAll('.archive-project')]
@@ -97,7 +132,11 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
   }
 
   try {
-    const page = await createPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
+    const page = await createPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference', colorScheme: 'dark' })
+    await page.addInitScript(() => {
+      localStorage.setItem('jordnary-theme', 'dark')
+      sessionStorage.setItem('jordnary-theme', 'dark')
+    })
     const imageRequests = []
     page.on('request', request => {
       if (request.resourceType() === 'image') imageRequests.push(new URL(request.url()).pathname)
@@ -112,7 +151,16 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     assert.deepEqual((await heading.innerText()).split(/\r?\n/).map(line => line.trim()).filter(Boolean),
       ['CREATIVE', 'DEVELOPMENT', 'PORTFOLIO'])
     assert.equal(await page.locator('.nav-shell, #site-footer, .live2d-companion, .archive-menu, .archive-menu-toggle').count(), 0)
-    assert.equal(await page.getByRole('button', { name: /menu|light|dark|theme/i }).count(), 0)
+    assert.equal(await page.getByRole('button', { name: /menu/i }).count(), 0)
+    const themeGroup = page.getByRole('group', { name: 'Color theme', exact: true })
+    assert.equal(await themeGroup.getByRole('button').count(), 2)
+    const lightButton = themeButton(page, 'light')
+    const darkButton = themeButton(page, 'dark')
+    assert.equal((await lightButton.innerText()).trim(), 'LIGHT')
+    assert.equal((await darkButton.innerText()).trim(), 'DARK')
+    assert.ok(await themeGroup.getByRole('button').evaluateAll(buttons => buttons.every(button =>
+      button instanceof HTMLButtonElement && button.type === 'button' && button.tabIndex === 0)))
+    await assertTheme(page, 'light')
     assert.ok(!/[\u3400-\u9fff]/u.test(await root.innerText()), 'Visible studio content is English')
     assert.equal(await page.locator('html').getAttribute('lang'), 'en')
     const back = page.getByRole('link', { name: 'Back to projects', exact: true })
@@ -141,6 +189,75 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     assert.ok(studioArtworks.every(artwork => requestedFiles.has(artwork.file.split('/').at(-1))),
       'Every configured artwork is requested from local image assets')
     pass(`The independent English studio loads all ${studioArtworks.length} accessible artworks at their native proportions without shared controls or an entrance animation`)
+
+    const isolatedAppearance = await readThemeIsolation(page)
+    assert.equal(isolatedAppearance.document[0].scheme, 'light')
+    assert.equal(isolatedAppearance.meta, 'light')
+    await darkButton.click()
+    const themeTransition = await root.evaluate(element => {
+      const style = getComputedStyle(element)
+      return { properties: style.transitionProperty.split(',').map(value => value.trim()),
+        durations: style.transitionDuration.split(',').map(value => value.trim()),
+        easing: style.transitionTimingFunction.split(',').map(value => value.trim()) }
+    })
+    for (const property of ['background-color', 'color']) {
+      const index = themeTransition.properties.indexOf(property)
+      assert.ok(index >= 0, `${property} participates in the theme fade`)
+      assert.equal(themeTransition.durations[index % themeTransition.durations.length], '0.6s')
+      assert.equal(themeTransition.easing[index % themeTransition.easing.length], 'ease-out')
+    }
+    const fadeSamples = await root.evaluate(async element => {
+      const samples = []
+      const start = performance.now()
+      do {
+        samples.push(getComputedStyle(element).backgroundColor)
+        await new Promise(requestAnimationFrame)
+      } while (performance.now() - start < 650)
+      return samples
+    })
+    assert.ok(fadeSamples.some(color => !['rgb(242, 242, 242)', 'rgb(0, 0, 0)'].includes(color)),
+      'The theme passes through intermediate colors instead of changing abruptly')
+    await assertTheme(page, 'dark')
+    await page.mouse.move(1, 1)
+    await page.waitForFunction(() => {
+      const cursor = document.querySelector('.project-studio .projects-cursor')
+      return cursor?.dataset.active === 'true' && cursor.dataset.mode === 'default'
+        && getComputedStyle(cursor).backgroundColor === 'rgb(242, 242, 242)'
+        && getComputedStyle(cursor).borderTopColor === 'rgb(242, 242, 242)'
+    })
+    await darkButton.hover()
+    await page.waitForFunction(() => {
+      const cursor = document.querySelector('.project-studio .projects-cursor')
+      return cursor?.dataset.mode === 'interactive'
+        && getComputedStyle(cursor).backgroundColor === 'rgba(0, 0, 0, 0)'
+        && getComputedStyle(cursor).borderTopColor === 'rgb(242, 242, 242)'
+    })
+    await waitForArtworkFilter(page)
+    assert.equal(await gallery.evaluate(element => getComputedStyle(element).filter), 'none',
+      'Theme switching does not invert the gallery')
+    assert.deepEqual(await readThemeIsolation(page), isolatedAppearance,
+      'Dark mode leaves document styles, metadata and both storage areas unchanged')
+    await lightButton.click()
+    await assertTheme(page, 'light')
+    await darkButton.focus()
+    await page.keyboard.press('Enter')
+    await assertTheme(page, 'dark')
+    assert.ok(await darkButton.evaluate(button => button.matches(':focus-visible')
+      && getComputedStyle(button).outlineStyle !== 'none' && parseFloat(getComputedStyle(button).outlineWidth) > 0),
+    'Keyboard theme activation has a visible focus indicator')
+    await lightButton.focus()
+    await page.keyboard.press('Space')
+    await assertTheme(page, 'light')
+    await darkButton.click()
+    await lightButton.click()
+    await darkButton.click()
+    await assertTheme(page, 'dark')
+    await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })))
+    await assertTheme(page, 'light')
+    assert.deepEqual(await readThemeIsolation(page), isolatedAppearance)
+    await darkButton.evaluate(button => button.blur())
+    await page.mouse.move(1, 1)
+    pass('The studio starts light despite dark system and saved preferences; mouse, keyboard and rapid changes fade locally, the cursor stays visible, and a simulated cache restore resets light')
 
     const firstGalleryBox = await gallery.boundingBox()
     await page.mouse.move(firstGalleryBox.x + 8, firstGalleryBox.y + firstGalleryBox.height / 2)
@@ -180,11 +297,15 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
       const directResponse = await page.goto(url(path))
       assert.equal(directResponse.status(), 200)
       await waitForStudio(page)
+      await assertTheme(page, 'light')
+      await themeButton(page, 'dark').click()
+      await assertTheme(page, 'dark')
       await page.reload()
       await waitForStudio(page)
+      await assertTheme(page, 'light')
       assert.equal(await heading.count(), 1)
     }
-    pass('The studio URL and index.html alias both support direct visits and refreshes')
+    pass('The studio URL and index.html alias open in light mode and reset to light after refreshing a dark page')
 
     for (const [width, height] of [[320, 568], [390, 844], [768, 900], [1440, 900],
       [768, 600], [1440, 600], [667, 375], [390, 320]]) {
@@ -194,7 +315,7 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
       assert.ok(await gallery.evaluate(element => element.scrollWidth > element.clientWidth
         && ['auto', 'scroll'].includes(getComputedStyle(element).overflowX)),
       `${width}px: the gallery retains native horizontal scrolling`)
-      for (const element of [heading, gallery, back, page.locator('.studio-introduction')]) {
+      for (const element of [heading, gallery, back, page.locator('.studio-introduction'), themeGroup, lightButton, darkButton]) {
         const box = await element.boundingBox()
         assert.ok(box && box.x >= -1 && box.x + box.width <= width + 1
           && box.y >= -1 && box.y + box.height <= height + 1,
@@ -202,8 +323,14 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
       }
       const titleBox = await heading.boundingBox()
       const stripBox = await gallery.boundingBox()
+      const themeBox = await themeGroup.boundingBox()
       assert.ok(titleBox.y + titleBox.height < stripBox.y,
         `${width}x${height}: the title stays above the gallery`)
+      assert.ok(themeBox.y + themeBox.height <= stripBox.y + 1,
+        `${width}x${height}: theme controls stay above the gallery`)
+      assert.ok(themeBox.x >= titleBox.x + titleBox.width || themeBox.y >= titleBox.y + titleBox.height
+        || themeBox.x + themeBox.width <= titleBox.x || themeBox.y + themeBox.height <= titleBox.y,
+      `${width}x${height}: theme controls do not overlap the title`)
       await assertArtworkLayout(page)
     }
     pass('Narrow, desktop and short landscape layouts fit without title overlap and keep overflow inside the gallery')
@@ -245,13 +372,20 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     const navigationPage = await createPage({ viewport: { width: 1440, height: 720 }, reducedMotion: 'reduce' })
     await navigationPage.goto(url('projects/'))
     await waitForArchive(navigationPage)
+    const archiveAppearance = await readThemeIsolation(navigationPage)
     const entry = navigationPage.locator('.projects-archive > .archive-wordmark')
     assert.equal(await entry.getAttribute('href'), new URL(url(studioPath)).pathname)
     await entry.click()
     await navigationPage.waitForURL(url(studioPath))
     await waitForStudio(navigationPage)
+    await assertTheme(navigationPage, 'light')
+    await themeButton(navigationPage, 'dark').click()
+    await assertTheme(navigationPage, 'dark')
     await navigationPage.getByRole('link', { name: 'Back to projects', exact: true }).click()
     await waitForArchive(navigationPage)
+    assert.equal(await navigationPage.getByRole('group', { name: 'Color theme' }).count(), 0)
+    assert.deepEqual(await readThemeIsolation(navigationPage), archiveAppearance,
+      'Leaving a dark studio restores the archive without changing global appearance or storage')
     const filter = navigationPage.getByRole('group', { name: 'Filter projects' })
       .getByRole('button', { name: /^AI & ML(?:\s|$)/ })
     await filter.click()
@@ -262,14 +396,21 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     // Keep the archive position intact when activating its fixed navigation link.
     await entry.evaluate(element => element.click())
     await waitForStudio(navigationPage)
+    await assertTheme(navigationPage, 'light')
+    await themeButton(navigationPage, 'dark').click()
+    await assertTheme(navigationPage, 'dark')
     await navigationPage.goBack()
     await waitForArchive(navigationPage, filteredProjects)
     await navigationPage.waitForFunction(y => Math.abs(scrollY - y) < 8, position)
     assert.equal(await filter.getAttribute('aria-pressed'), 'true')
     await navigationPage.goForward()
     await waitForStudio(navigationPage)
+    await assertTheme(navigationPage, 'light')
+    await themeButton(navigationPage, 'dark').click()
+    await assertTheme(navigationPage, 'dark')
     await navigationPage.reload()
     await waitForStudio(navigationPage)
+    await assertTheme(navigationPage, 'light')
     const keyboardBack = navigationPage.getByRole('link', { name: 'Back to projects', exact: true })
     await keyboardBack.focus()
     await navigationPage.keyboard.press('Enter')
@@ -277,7 +418,7 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     await waitForArchive(navigationPage, filteredProjects)
     await navigationPage.waitForFunction(y => Math.abs(scrollY - y) < 8, position)
     assert.equal(await filter.getAttribute('aria-pressed'), 'true')
-    pass('The archive wordmark opens the studio; browser history and keyboard Back restore its filter and scroll even after refresh')
+    pass('Studio re-entry, browser history and refresh reset the theme while Back restores the archive filter, scroll and unchanged global appearance')
 
     for (const mode of ['reduced motion', 'touch']) {
       const manualPage = await createPage(mode === 'touch'
@@ -285,6 +426,19 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
         : { viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })
       await manualPage.goto(url(studioPath))
       await waitForStudio(manualPage)
+      await assertTheme(manualPage, 'light')
+      if (mode === 'touch') await themeButton(manualPage, 'dark').tap()
+      else await themeButton(manualPage, 'dark').click()
+      await assertTheme(manualPage, 'dark')
+      if (mode === 'reduced motion') {
+        assert.ok(await manualPage.locator('.project-studio, .project-studio [role="group"] button')
+          .evaluateAll(elements => elements.every(element => getComputedStyle(element).transitionDuration
+            .split(',').every(duration => parseFloat(duration) === 0))),
+        'Reduced motion disables theme transitions')
+      }
+      if (mode === 'touch') await themeButton(manualPage, 'light').tap()
+      else await themeButton(manualPage, 'light').click()
+      await assertTheme(manualPage, 'light')
       const manualGallery = manualPage.locator('.studio-gallery')
       if (mode === 'touch') {
         assert.ok(await manualPage.locator('.studio-gallery-frame img').evaluateAll(artwork => artwork.every(image =>

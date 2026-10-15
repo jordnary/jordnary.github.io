@@ -1,13 +1,31 @@
-import { useEffect, useRef, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ProjectsCursor } from '../components/ProjectsCursor'
 import { studioArtworks } from '../data/project-studio'
 import { getRouteHref } from '../lib/routes'
 import './ProjectStudioPage.css'
 
 export function ProjectStudioPage() {
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [animateTheme, setAnimateTheme] = useState(false)
   const pageRef = useRef<HTMLDivElement>(null)
   const galleryRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+
+  const selectTheme = (nextTheme: 'light' | 'dark') => {
+    setAnimateTheme(true)
+    setTheme(nextTheme)
+  }
+
+  useEffect(() => {
+    // A restored browser page keeps React state; every new visit starts light.
+    const restore = (event: PageTransitionEvent) => {
+      if (!event.persisted) return
+      setAnimateTheme(false)
+      setTheme('light')
+    }
+    window.addEventListener('pageshow', restore)
+    return () => window.removeEventListener('pageshow', restore)
+  }, [])
 
   useEffect(() => {
     const page = pageRef.current
@@ -93,10 +111,15 @@ export function ProjectStudioPage() {
   }, [])
 
   return (
-    <div className="project-studio" ref={pageRef} lang="en">
+    <div className="project-studio" ref={pageRef} lang="en" data-theme={theme} data-theme-animated={animateTheme}>
       <h1 className="studio-title">
         <span>CREATIVE</span><span>DEVELOPMENT</span><span>PORTFOLIO</span>
       </h1>
+      <div className="studio-theme" role="group" aria-label="Color theme">
+        <button type="button" aria-label="Light" aria-pressed={theme === 'light'} onClick={() => selectTheme('light')}>LIGHT</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" aria-label="Dark" aria-pressed={theme === 'dark'} onClick={() => selectTheme('dark')}>DARK</button>
+      </div>
       <div className="studio-gallery" ref={galleryRef} tabIndex={0} role="region" aria-label="Project image gallery">
         <div className="studio-gallery-track" ref={trackRef}>
           {studioArtworks.map((artwork, index) => (
