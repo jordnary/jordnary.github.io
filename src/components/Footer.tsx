@@ -63,7 +63,7 @@ const brandLetters = [...'JORDNARY'].map((letter, index) => ({
 
 export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
   const footerRef = useRef<HTMLElement>(null)
-  useFooterReveal(footerRef)
+  useFooterReveal(footerRef, paperSeam)
   const currentYear = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date())
 
   return (

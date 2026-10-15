@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 export async function runFooterRevealChecks(browser, baseURL, report = () => {}) {
+  await runFooterTopNavigationChecks(browser, baseURL, report)
   const context = await browser.newContext({ viewport: { width: 1440, height: 960 } })
   await context.addInitScript(() => {
     sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
@@ -24,6 +25,8 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
       return {
         top: bounds.top,
         height: bounds.height,
+        surfaceHeight: surface.getBoundingClientRect().height,
+        surfaceTop: surface.getBoundingClientRect().top,
         bottom: surface.getBoundingClientRect().bottom,
         viewport: innerHeight,
         mainBottom: document.querySelector('main').getBoundingClientRect().bottom + scrollY,
@@ -73,9 +76,35 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     }
   }
   try {
-    await page.goto(new URL('about/', baseURL).href)
+    await page.goto(new URL('contact/', baseURL).href)
     await page.locator('.footer-shell[data-reveal]').waitFor({ state: 'attached' })
     await page.evaluate(() => document.fonts.ready)
+    const sharedFooter = await page.locator('.footer-shell').elementHandle()
+    const checkPageEnd = async () => {
+      // Let route styles, ResizeObserver and the scheduled measurement settle.
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+      const frame = await reveal(1)
+      assert.ok(await sharedFooter.evaluate(element => element.isConnected), 'Client navigation preserves the shared footer')
+      assert.ok(Math.abs(frame.height - frame.surfaceHeight) < 1, 'The footer reserves its full height, including route-specific paper padding')
+      assert.ok(Math.abs(frame.top - frame.surfaceTop) < 1, 'Scrolling to the page end fully reveals the footer without a refresh')
+    }
+    for (const width of [1920, 390]) {
+      await page.setViewportSize({ width, height: 960 })
+      for (const [label, route] of [['Contact', 'contact/'], ['About', 'about/']]) {
+        await reveal(1)
+        await page.locator('.footer-nav').getByRole('link', { name: label, exact: true }).click()
+        await page.waitForURL(new URL(route, baseURL).href)
+        await checkPageEnd()
+      }
+      await page.goBack()
+      await page.waitForURL(new URL('contact/', baseURL).href)
+      await checkPageEnd()
+      await page.goForward()
+      await page.waitForURL(new URL('about/', baseURL).href)
+      await checkPageEnd()
+    }
+    report('Client navigation and history traversal preserve the full footer scroll range on desktop and mobile')
+
     for (const width of [1920, 1440, 768, 390]) {
       await page.setViewportSize({ width, height: 960 })
       for (const theme of ['light', 'dark']) {
@@ -172,6 +201,58 @@ export async function runFooterRevealChecks(browser, baseURL, report = () => {})
     }
     assert.deepEqual(errors, [])
     report('Keyboard navigation, reduced motion and footers taller than the viewport remain accessible')
+  } finally {
+    await context.close()
+  }
+}
+
+async function runFooterTopNavigationChecks(browser, baseURL, report) {
+  const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } })
+  await context.addInitScript(() => {
+    sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
+    sessionStorage.setItem('site-live2d-collapsed-mobile', 'true')
+    // Route layout must be correct even if an offscreen resize notification is not delivered.
+    const NativeResizeObserver = window.ResizeObserver
+    window.ResizeObserver = class extends NativeResizeObserver {
+      observe(target, options) {
+        if (!target.matches('.footer-surface')) super.observe(target, options)
+      }
+    }
+  })
+  const page = await context.newPage()
+  try {
+    for (const width of [1920, 390]) {
+      await page.setViewportSize({ width, height: 1080 })
+      const routes = width === 1920 ? ['home/', 'learning/', 'projects/', 'contact/'] : ['contact/']
+      for (const route of routes) {
+        await page.goto(new URL(route, baseURL).href)
+        await page.locator('.footer-shell[data-reveal]').waitFor({ state: 'attached' })
+        await page.evaluate(() => document.fonts.ready)
+        const footer = await page.locator('.footer-shell').elementHandle()
+        if (width === 1920) {
+          await page.locator('.nav-desktop-list').getByRole('link', { name: '关于', exact: true }).click()
+        } else {
+          await page.getByRole('button', { name: '打开导航菜单', exact: true }).click()
+          await page.getByRole('button', { name: '关于', exact: true }).click()
+          await page.getByRole('link', { name: '更多关于我', exact: true }).click()
+        }
+        await page.waitForURL(new URL('about/', baseURL).href)
+        await page.locator('.journey-closing-note').waitFor({ state: 'attached' })
+        const atTop = await footer.evaluate(element => {
+          const slot = element.getBoundingClientRect()
+          const surface = element.querySelector('.footer-surface').getBoundingClientRect()
+          return { connected: element.isConnected, scroll: scrollY, offscreen: slot.top > innerHeight, reserved: slot.height, actual: surface.height }
+        })
+        assert.ok(atTop.connected && atTop.offscreen && atTop.scroll < 1, 'Top navigation changes pages while the shared footer remains offscreen')
+        assert.ok(Math.abs(atTop.reserved - atTop.actual) < 1, `Top navigation from ${route} reserves the entire About footer before scrolling`)
+        await page.mouse.move(width / 2, 400)
+        await page.mouse.wheel(0, 30000)
+        await page.waitForFunction(() => Math.abs(scrollY - (document.documentElement.scrollHeight - innerHeight)) < 1)
+        const clippedTop = await footer.evaluate(element => element.getBoundingClientRect().top - element.querySelector('.footer-surface').getBoundingClientRect().top)
+        assert.ok(Math.abs(clippedTop) < 1, 'A wheel scroll reaches the full footer without refreshing or focusing a footer link')
+      }
+    }
+    report('Desktop and mobile top navigation reserve the full footer even without resize notifications')
   } finally {
     await context.close()
   }

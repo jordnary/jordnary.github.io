@@ -1,6 +1,7 @@
 import { useLayoutEffect, type RefObject } from 'react'
 
-export function useFooterReveal(footerRef: RefObject<HTMLElement | null>) {
+export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperSeam: boolean) {
+  // Navigation must reserve the new padding before paint, even while the footer is offscreen.
   useLayoutEffect(() => {
     const footer = footerRef.current
     const surface = footer?.querySelector<HTMLElement>('.footer-surface')
@@ -30,7 +31,8 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>) {
       }
     }
     const resize = new ResizeObserver(schedule)
-    resize.observe(surface)
+    // Route changes can change only the paper padding, leaving the content box unchanged.
+    resize.observe(surface, { box: 'border-box' })
     window.addEventListener('resize', schedule)
     reducedMotion.addEventListener('change', update)
     footer.addEventListener('focusin', revealFocus)
@@ -45,5 +47,5 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>) {
       delete footer.dataset.reveal
       footer.style.removeProperty('--footer-height')
     }
-  }, [footerRef])
+  }, [footerRef, paperSeam])
 }
