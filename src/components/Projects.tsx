@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { projects, projectFilters, type ProjectCase, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
-import { getPageFromUrl, getProjectHref, getProjectStudioHref } from '../lib/routes'
+import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
 import { ProjectsCursor } from './ProjectsCursor'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
@@ -64,6 +64,9 @@ export function Projects() {
 
   useEffect(() => {
     const restore = () => {
+      const url = new URL(window.location.href)
+      // Back/Forward updates the address before the paper covers this outgoing list.
+      if (getPageFromUrl(url) !== 'projects' || getProjectFromUrl(url) || isProjectStudioUrl(url)) return
       window.clearTimeout(filterTimer.current)
       const value = window.location.hash ? '全部项目' : savedFilter()
       setActiveProject(null)

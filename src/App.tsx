@@ -8,11 +8,14 @@ import { LearningPage } from './pages/LearningPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { ProjectStudioPage } from './pages/ProjectStudioPage'
 import { useSiteNavigation } from './lib/useSiteNavigation'
+import { ProjectPageTransition } from './components/ProjectPageTransition'
 
-const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage'))
+const loadProjectDetail = () => import('./pages/ProjectDetailPage')
+const ProjectDetailPage = lazy(loadProjectDetail)
+const prepareNavigation = (url: URL) => getProjectFromUrl(url) ? loadProjectDetail() : undefined
 
 function App({ page: initialPage }: { page: SitePage }) {
-  const { page, href } = useSiteNavigation(initialPage)
+  const { page, href, transition } = useSiteNavigation(initialPage, prepareNavigation)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
   useEffect(() => {
@@ -36,11 +39,14 @@ function App({ page: initialPage }: { page: SitePage }) {
   }, [page, project, href, isStudio])
 
   return (
-    <SiteLayout page={page} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} /></Suspense> : getPageContent(page)}</SiteLayout>
+    <>
+      <SiteLayout page={page} href={href} transitioning={Boolean(transition)} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} /></Suspense> : getPageContent(page, href)}</SiteLayout>
+      {transition && <ProjectPageTransition key={transition.id} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
+    </>
   )
 }
 
-function getPageContent(page: SitePage) {
+function getPageContent(page: SitePage, href: string) {
   switch (page) {
     case 'about':
       return <AboutPage />
@@ -51,7 +57,7 @@ function getPageContent(page: SitePage) {
     case 'contact':
       return <ContactPage />
     case 'home':
-      return <HomePage />
+      return <HomePage href={href} />
   }
 }
 

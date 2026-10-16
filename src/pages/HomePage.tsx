@@ -3,7 +3,7 @@ import { LiveUpdates } from '../components/LiveUpdates'
 import { PageSection } from '../components/PageSection'
 import { Reveal } from '../components/Reveal'
 import { SmartLink } from '../components/SmartLink'
-import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
+import { getRouteHref, isHomepagePortalUrl, siteRoutes, type SitePage } from '../lib/routes'
 import { HomepagePortal } from '../components/HomepagePortal'
 import './HomePage.css'
 
@@ -16,8 +16,8 @@ const explorePages: Array<{ page: ExplorePage; caption: string }> = [
   { page: 'contact', caption: 'Start a conversation' },
 ]
 
-export function HomePage() {
-  if (isPortalPath()) {
+export function HomePage({ href = window.location.href }: { href?: string }) {
+  if (isHomepagePortalUrl(new URL(href))) {
     return <HomepagePortal />
   }
 
@@ -120,10 +120,3 @@ function ExploreIllustration({ page }: { page: ExplorePage }) {
     </svg>
   )
 }
-
-function isPortalPath() {
-  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
-  const currentPath = window.location.pathname.replace(/\/$/, '')
-  return currentPath === basePath
-}
-

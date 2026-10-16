@@ -59,6 +59,11 @@ export function getHomepagePortalHref() {
   return import.meta.env.BASE_URL
 }
 
+export function isHomepagePortalUrl(url: URL, base = import.meta.env.BASE_URL) {
+  const root = base.replace(/\/$/, '')
+  return [root || '/', `${root}/`, `${root}/index.html`].includes(url.pathname)
+}
+
 export function getPageFromDocument() {
   const page = document.body.dataset.page
 

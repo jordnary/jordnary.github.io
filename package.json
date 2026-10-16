@@ -15,6 +15,7 @@
     "test:homepage-performance": "node tests/homepage-performance.browser.mjs",
     "test:about": "node --test tests/about-journey-motion.test.ts && node tests/about-decorations.browser.mjs",
     "test:projects": "node tests/projects.browser.mjs",
+    "test:project-transition": "node --test tests/project-page-transition.test.ts && node tests/project-page-transition.browser.mjs",
     "test:project-studio": "node tests/project-studio.browser.mjs",
     "test:learning": "node tests/learning.browser.mjs",
     "test:learning-scroll": "node tests/learning-scroll.browser.mjs",

@@ -2,9 +2,12 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
+import { shouldTransitionProjects } from './project-page-transition'
 
 type Position = { left: number; top: number }
 type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior }
+type PageTransition = { id: number; onCovered: () => Promise<void>; onComplete: () => void }
+type PrepareNavigation = (url: URL) => Promise<unknown> | undefined
 const historyKey = 'siteNavigationKey'
 const positionKey = 'siteNavigationPosition'
 
@@ -13,9 +16,23 @@ function savedPosition(): Position | undefined {
   return value && Number.isFinite(value.left) && Number.isFinite(value.top) ? value : undefined
 }
 
+async function prepareWithinBudget(promise: Promise<unknown> | undefined) {
+  if (!promise) return
+  let timeout = 0
+  try {
+    await Promise.race([
+      promise.catch(() => undefined),
+      new Promise<void>(resolve => { timeout = window.setTimeout(resolve, 2500) }),
+    ])
+  } finally {
+    window.clearTimeout(timeout)
+  }
+}
+
 /** Keep the shared layout alive while retaining independently addressable HTML pages. */
-export function useSiteNavigation(initialPage: SitePage) {
+export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNavigation) {
   const [navigation, setNavigation] = useState<Navigation>({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false })
+  const [transition, setTransition] = useState<PageTransition | null>(null)
 
   useEffect(() => {
     const previousRestoration = window.history.scrollRestoration
@@ -27,12 +44,56 @@ export function useSiteNavigation(initialPage: SitePage) {
       return key as string
     }
     let currentKey = ensureKey()
-    const savePosition = () => positions.set(currentKey, { left: window.scrollX, top: window.scrollY })
+    let renderedHref = window.location.href
+    let active: { id: number; committed: boolean } | null = null
+    let revision = 0
+    const savePosition = () => {
+      if (!active || active.committed) positions.set(currentKey, { left: window.scrollX, top: window.scrollY })
+    }
     const persistPosition = () => {
       savePosition()
-      window.history.replaceState({ ...window.history.state, [positionKey]: positions.get(currentKey) }, '')
+      if (window.history.state?.[historyKey] === currentKey) {
+        window.history.replaceState({ ...window.history.state, [positionKey]: positions.get(currentKey) }, '')
+      }
     }
     savePosition()
+
+    const navigate = (next: Navigation, commitHistory: () => void) => {
+      const id = ++revision
+      const commit = () => {
+        commitHistory()
+        renderedHref = next.href
+        setNavigation(next)
+      }
+      const animate = shouldTransitionProjects(new URL(renderedHref), new URL(next.href))
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        && document.visibilityState !== 'hidden'
+      if (!animate) {
+        active = null
+        setTransition(null)
+        commit()
+        return
+      }
+      active = { id, committed: false }
+      // Start fetching while the old page is still visible; reveal only after the route can render.
+      // A stalled chunk may use the page's existing loading state, never a locked overlay.
+      const ready = prepareWithinBudget(prepare?.(new URL(next.href)))
+      const onCovered = async () => {
+        await ready
+        if (active?.id !== id || active.committed) return
+        active.committed = true
+        commit()
+      }
+      setTransition({
+        id,
+        onCovered,
+        onComplete: () => {
+          if (active?.id !== id) return
+          active = null
+          setTransition(null)
+        },
+      })
+    }
 
     const click = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
@@ -43,6 +104,8 @@ export function useSiteNavigation(initialPage: SitePage) {
       if (url.origin !== window.location.origin) return
       const page = getPageFromUrl(url)
       if (!page) return
+      // The overlay captures physical input; ignore synthetic repeat clicks as well.
+      if (active) { event.preventDefault(); return }
       if (anchor.hasAttribute('data-project-return') && Number.isInteger(window.history.state?.projectReturnDepth) && window.history.state.projectReturnDepth > 0) {
         event.preventDefault()
         persistPosition()
@@ -53,39 +116,66 @@ export function useSiteNavigation(initialPage: SitePage) {
         ? 'smooth' : 'instant'
       event.preventDefault()
       persistPosition()
-      if (url.href !== window.location.href) {
-        const currentUrl = new URL(window.location.href)
-        const fromList = getPageFromUrl(currentUrl) === 'projects'
-          && !getProjectFromUrl(currentUrl) && !isProjectStudioUrl(currentUrl)
-        const returnDepth = getProjectFromUrl(url) || isProjectStudioUrl(url)
-          ? (fromList ? 1 : window.history.state?.projectReturnDepth ? window.history.state.projectReturnDepth + 1 : undefined)
-          : undefined
-        currentKey = crypto.randomUUID()
-        window.history.pushState({ [historyKey]: currentKey, projectReturnDepth: returnDepth }, '', url)
-      }
-      setNavigation({ page, href: url.href, focus: true, behavior })
+      navigate({ page, href: url.href, focus: true, behavior }, () => {
+        if (url.href !== window.location.href) {
+          const currentUrl = new URL(window.location.href)
+          const fromList = getPageFromUrl(currentUrl) === 'projects'
+            && !getProjectFromUrl(currentUrl) && !isProjectStudioUrl(currentUrl)
+          const returnDepth = getProjectFromUrl(url) || isProjectStudioUrl(url)
+            ? (fromList ? 1 : window.history.state?.projectReturnDepth ? window.history.state.projectReturnDepth + 1 : undefined)
+            : undefined
+          currentKey = crypto.randomUUID()
+          window.history.pushState({ [historyKey]: currentKey, projectReturnDepth: returnDepth }, '', url)
+        }
+      })
     }
     const pop = () => {
       const page = getPageFromUrl(new URL(window.location.href))
       if (!page) return
-      currentKey = ensureKey()
-      setNavigation({ page, href: window.location.href, position: positions.get(currentKey) ?? savedPosition(), focus: true })
+      const targetKey = ensureKey()
+      navigate({ page, href: window.location.href, position: positions.get(targetKey) ?? savedPosition(), focus: true }, () => {
+        currentKey = targetKey
+      })
     }
     document.addEventListener('click', click)
     window.addEventListener('popstate', pop)
     window.addEventListener('scroll', savePosition, { passive: true })
     window.addEventListener('pagehide', persistPosition)
     return () => {
+      active = null
       window.history.scrollRestoration = previousRestoration
       document.removeEventListener('click', click)
       window.removeEventListener('popstate', pop)
       window.removeEventListener('scroll', savePosition)
       window.removeEventListener('pagehide', persistPosition)
     }
-  }, [])
+  }, [prepare])
 
   useLayoutEffect(() => {
-    if (navigation.focus) document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true })
+    if (!transition) {
+      if (navigation.focus) document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true })
+      return
+    }
+    // Block visitor scrolling without competing with dialogs that own body overflow.
+    const prevent = (event: Event) => event.preventDefault()
+    const preventKey = (event: KeyboardEvent) => {
+      if (['Tab', 'Enter', ' ', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', 'Escape'].includes(event.key)
+        && !event.altKey && !event.ctrlKey && !event.metaKey) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+      }
+    }
+    window.addEventListener('wheel', prevent, { passive: false, capture: true })
+    window.addEventListener('touchmove', prevent, { passive: false, capture: true })
+    window.addEventListener('keydown', preventKey, true)
+    return () => {
+      window.removeEventListener('wheel', prevent, true)
+      window.removeEventListener('touchmove', prevent, true)
+      window.removeEventListener('keydown', preventKey, true)
+    }
+  }, [transition, navigation])
+
+  useLayoutEffect(() => {
     let interacted = false
     const scroll = () => {
       if (interacted) return
@@ -114,5 +204,5 @@ export function useSiteNavigation(initialPage: SitePage) {
     }
   }, [navigation])
 
-  return navigation
+  return { ...navigation, transition }
 }
