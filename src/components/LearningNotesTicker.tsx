@@ -52,7 +52,7 @@ export function LearningNotesTicker() {
   }, [])
 
   return (
-    <div className="learning-notes-ticker" ref={tickerRef} role="group" aria-label="学习理念，悬停或聚焦可暂停滚动" tabIndex={0}>
+    <div className="learning-notes-ticker" ref={tickerRef} role="group" aria-label="学习理念" tabIndex={0}>
       <div className="learning-notes-ticker-track">
         {[0, 1].map(copy => (
           <ul className="learning-notes-ticker-group" key={copy} aria-hidden={copy === 1 ? true : undefined}>

@@ -8,14 +8,9 @@
 .learning-notes-ticker-title { letter-spacing: 0.04em; }
 .learning-notes-ticker-english { font: 400 1.1em/1 Consolas, 'Courier New', monospace; }
 .learning-notes-ticker[data-running="true"] .learning-notes-ticker-track { animation-play-state: running; }
-.learning-notes-ticker:focus-within .learning-notes-ticker-track { animation-play-state: paused; }
 .learning-notes-ticker:focus-visible { outline: 2px solid var(--study-accent); outline-offset: -3px; }
 
 @keyframes learning-notes-ticker-scroll { to { transform: translateX(-50%); } }
-
-@media (hover: hover) and (pointer: fine) {
-  .learning-notes-ticker:hover .learning-notes-ticker-track { animation-play-state: paused; }
-}
 
 @media (max-width: 700px) {
   .learning-notes-ticker-group { padding-block: 0.85rem; }
