@@ -104,12 +104,15 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await page.keyboard.press('Enter')
     await page.waitForURL(url(`projects/${projects[0].id}/`))
     await page.locator('.project-introduction').waitFor()
-    assert.equal(await page.locator('.nav-shell').count(), 1)
-    assert.equal(await page.locator('#site-footer').count(), 1)
-    assert.equal(await page.locator('.projects-cursor').count(), 0)
-    await page.getByRole('link', { name: '返回项目', exact: true }).click()
+    assert.equal(await page.locator('.nav-shell, #site-footer, .live2d-companion').count(), 0)
+    assert.equal(await page.locator('.project-reader .projects-cursor').count(), 1)
+    assert.ok(await page.locator('.project-reader .projects-cursor').evaluate(element => {
+      const style = getComputedStyle(element)
+      return style.display === 'none' || Number(style.opacity) === 0
+    }), 'The standalone reader preserves the system pointer with reduced motion')
+    await page.locator('[data-project-return]').first().click()
     await waitForProjects(page)
-    pass('Keyboard focus reveals previews, blur hides them, and Enter opens detail pages with their existing chrome')
+    pass('Keyboard focus reveals previews, blur hides them, and Enter opens the standalone reader without shared page chrome')
 
     for (const value of projectFilters) {
       const expected = projects.filter(project => value === '全部项目' || project.category === value)
@@ -211,6 +214,25 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       })
       assert.notEqual(await link.evaluate(element => getComputedStyle(element).cursor), 'none')
       pass('The desktop cursor replaces the pointer without intercepting clicks and yields to keyboard navigation')
+
+      await filterButton(motionPage, '全部项目').hover()
+      await motionPage.waitForFunction(() => {
+        const cursor = document.querySelector('.projects-cursor')
+        return cursor?.dataset.mode === 'interactive' && parseFloat(getComputedStyle(cursor).width) === 18
+      })
+      await motionPage.mouse.down()
+      await motionPage.waitForFunction(() => {
+        const cursor = document.querySelector('.projects-cursor')
+        const width = cursor && parseFloat(getComputedStyle(cursor).width)
+        return width > 0 && width < 17.5
+      })
+      await motionPage.mouse.up()
+      await motionPage.waitForFunction(() => {
+        const cursor = document.querySelector('.projects-cursor')
+        return cursor && parseFloat(getComputedStyle(cursor).width) === 18
+      })
+      assert.equal(await filterButton(motionPage, '全部项目').getAttribute('aria-pressed'), 'true')
+      pass('Primary clicks briefly compress the shared cursor and keep the underlying control usable')
 
       const samplesPromise = motionPage.evaluate(async () => {
         const samples = []

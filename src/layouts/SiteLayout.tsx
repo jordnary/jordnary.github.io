@@ -20,11 +20,11 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
   // state can leave the fixed homepage portal mode active for one render after
   // in-place navigation to a static page, hiding its shared chrome.
   const isPortalMode = page === 'home' && isHomepagePortalUrl(new URL(href))
-  const isProjectsArchive = page === 'projects' && !isProjectDetail
-  const hasSharedChrome = !isPortalMode && !isProjectsArchive
+  const isProjectsExperience = page === 'projects'
+  const hasSharedChrome = !isPortalMode && !isProjectsExperience
 
   return (
-    <div inert={transitioning} className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${isSearchOpen ? ' is-search-open' : ''}`}>
+    <div inert={transitioning} className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${hasSharedChrome && isSearchOpen ? ' is-search-open' : ''}`}>
       <div className="app-shell-content">
         {hasSharedChrome && <ScrollProgress />}
 

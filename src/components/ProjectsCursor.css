@@ -10,9 +10,9 @@
   width: 10px;
   height: 10px;
   overflow: visible;
-  border: 1px solid #171717;
+  border: 1px solid var(--projects-cursor-ink, #171717);
   border-radius: 50%;
-  background: #171717;
+  background: var(--projects-cursor-ink, #171717);
   opacity: 0;
   pointer-events: none;
   transition: width 150ms ease, height 150ms ease, background-color 150ms ease;
@@ -30,7 +30,7 @@
   left: 50%;
   width: 12px;
   height: 1px;
-  background: #fff;
+  background: var(--projects-cursor-paper, #fff);
   content: '';
   opacity: 0;
   transform: translate(-50%, -50%);
@@ -57,12 +57,17 @@
   background: transparent;
 }
 
+.project-reader .projects-cursor {
+  --projects-cursor-ink: var(--reader-ink);
+  --projects-cursor-paper: var(--reader-paper);
+}
+
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .projects-cursor:popover-open { display: block; }
   .projects-cursor[data-active='true'] { opacity: 1; }
 
-  :is(.projects-archive, .project-studio)[data-projects-cursor='active'],
-  :is(.projects-archive, .project-studio)[data-projects-cursor='active'] * {
+  :is(.projects-archive, .project-studio, .project-reader)[data-projects-cursor='active'],
+  :is(.projects-archive, .project-studio, .project-reader)[data-projects-cursor='active'] * {
     cursor: none !important;
   }
 }

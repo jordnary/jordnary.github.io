@@ -1,20 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ProjectCase } from '../data/projects'
+import { projects, type ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
-import { ImageGallery, GalleryTrigger, type GalleryImage } from '../components/image-gallery'
+import { ImageGallery, type GalleryImage } from '../components/image-gallery'
+import { ProjectsCursor } from '../components/ProjectsCursor'
 import { SmartLink } from '../components/SmartLink'
-import { ArtisticLabel } from '../components/ArtisticLabel'
-import { SectionBackdrop } from '../components/SectionBackdrop'
 import { getRouteHref } from '../lib/routes'
 import './ProjectDetailPage.css'
 
-function ReaderArrow({ direction }: { direction: 'left' | 'up' | 'down' }) {
-  const paths = {
-    left: 'M19 12H5m6-6-6 6 6 6',
-    up: 'M12 19V5m-6 6 6-6 6 6',
-    down: 'M12 5v14m-6-6 6 6 6-6',
-  }
-  return <svg className={`project-reader-arrow project-reader-arrow--${direction}`} viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={paths[direction]} /></svg>
+const categoryLabels = {
+  'Web 应用': 'Web development',
+  '机器学习': 'Machine learning',
+  '视觉实验': 'Visual experiment',
+}
+
+function ReaderSymbol({ direction }: { direction: 'external' | 'up' }) {
+  return <svg className="project-reader-symbol" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d={direction === 'external' ? 'M4 12 12 4M5 4h7v7' : 'M8 13V3M3 8l5-5 5 5'} />
+  </svg>
+}
+
+function ReaderImageButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return <button className="project-reader-image-trigger" type="button" data-project-preview
+    aria-label={label} aria-haspopup="dialog" onClick={onClick}>
+    <span className="project-reader-image-plus" aria-hidden="true" />
+  </button>
 }
 
 export default function ProjectDetailPage({ project }: { project: ProjectCase }) {
@@ -23,7 +32,10 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   const [activeHeading, setActiveHeading] = useState(sections[0].id)
   const [tocOpen, setTocOpen] = useState(false)
   const tocRef = useRef<HTMLElement>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  const restoreOverflow = useRef<(() => void) | null>(null)
   const activeChapter = Math.max(0, sections.findIndex(section => section.id === activeHeading))
+  const projectNumber = String(projects.findIndex(item => item.id === project.id) + 1).padStart(2, '0')
   const base = import.meta.env.BASE_URL
   const images = useMemo<GalleryImage[]>(() => {
     const items = [project.image?.cover, project.image, ...sections.flatMap(section => section.figures ?? [])]
@@ -36,6 +48,32 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
     }))
   }, [base, project, sections])
 
+  const resetContents = () => {
+    if (dialogRef.current?.open) return
+    restoreOverflow.current?.()
+    restoreOverflow.current = null
+    setTocOpen(false)
+  }
+  const closeContents = () => {
+    dialogRef.current?.close()
+    // Release the scroll lock before the shared navigation handles a chapter link.
+    resetContents()
+  }
+  const openContents = () => {
+    const dialog = dialogRef.current
+    if (!dialog || dialog.open) return
+    const previousOverflow = document.body.style.overflow
+    restoreOverflow.current = () => { document.body.style.overflow = previousOverflow }
+    document.body.style.overflow = 'hidden'
+    dialog.showModal()
+    setTocOpen(true)
+  }
+
+  useEffect(() => () => {
+    restoreOverflow.current?.()
+    restoreOverflow.current = null
+  }, [])
+
   useEffect(() => {
     const frame = requestAnimationFrame(() => window.dispatchEvent(new Event('project-document-ready')))
     let scrollFrame = 0
@@ -44,7 +82,7 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
       let current = sections[0].id
       for (const section of sections) {
         const element = document.getElementById(`project-${section.id}`)
-        if (element && element.getBoundingClientRect().top <= 160) current = section.id
+        if (element && element.getBoundingClientRect().top <= 98) current = section.id
       }
       // A short final chapter may never reach the heading threshold.
       if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
@@ -76,82 +114,74 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   }, [activeHeading, tocOpen])
 
   return (
-    <div className="project-reader site-container section-surface">
-      <SectionBackdrop tone="sky" edge="none" />
-      <nav className="project-reader-breadcrumb" aria-label="面包屑">
-        <a className="project-reader-button project-reader-button--back" href={getRouteHref('projects')} data-project-return>
-          <span className="project-reader-button-icon"><ReaderArrow direction="left" /></span>
-          <span>返回项目</span>
+    <div className="project-reader">
+      <nav className="project-reader-topbar" aria-label="面包屑">
+        <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回项目">
+          <span className="project-reader-dash" aria-hidden="true" /><span>Back To Index</span>
         </a>
-        <span aria-hidden="true">/</span><ArtisticLabel className="project-reader-category">{project.category}</ArtisticLabel>
+        <span className="project-reader-edition">Selected works / {projectNumber}</span>
       </nav>
-      <header id="project-overview" className={`project-reader-header${project.image ? ' has-cover' : ''}`}>
-        <div>
-          <p className="project-reader-eyebrow">PROJECT / 项目介绍 <span> / {project.status}</span></p>
+
+      <header id="project-cover" className={`project-reader-header${project.image ? ' has-cover' : ''}`}>
+        <div className="project-reader-heading">
+          <p className="project-reader-eyebrow"><span>Selected project</span><span>{projectNumber} / {categoryLabels[project.category]}</span></p>
           <h1>{project.title}</h1>
           <p className="project-reader-subtitle">{project.subtitle}</p>
-          <p className="project-reader-description">{project.description}</p>
+          <p className="project-reader-status">{project.status}</p>
           <ul className="project-reader-stack" aria-label="技术与方法">{project.stack.map(item => <li key={item}>{item}</li>)}</ul>
           <div className="project-reader-actions">
-            <a href="#project-document" className="btn-primary project-reader-read"><span>阅读介绍</span><ReaderArrow direction="down" /></a>
-            <SmartLink href={project.repository}>查看仓库 ↗</SmartLink>
-            {project.demo && <SmartLink href={project.demo}>访问网站 ↗</SmartLink>}
+            <SmartLink href={project.repository} aria-label="查看仓库"><span>Repository</span><ReaderSymbol direction="external" /></SmartLink>
+            <SmartLink href={project.source.href} aria-label={project.source.label}><span>Full report</span><ReaderSymbol direction="external" /></SmartLink>
+            {project.demo && <SmartLink href={project.demo} aria-label="访问网站"><span>Visit website</span><ReaderSymbol direction="external" /></SmartLink>}
           </div>
         </div>
         {project.image && <figure className="project-reader-cover">
           <div className="project-reader-cover-image">
-            <img src={images[0].src} alt={images[0].alt} width="1600" height="1000" />
-            <GalleryTrigger onClick={() => setPreviewIndex(0)} label={`放大查看 ${project.title} 项目图片`} />
+            <img src={images[0].src} alt={images[0].alt} width={images[0].width} height={images[0].height} fetchPriority="high" />
+            <ReaderImageButton onClick={() => setPreviewIndex(0)} label={`放大查看 ${project.title} 项目图片`} />
           </div>
-          <figcaption>{images[0].caption}<span>{images.length} 张图片</span></figcaption>
+          <figcaption><span>{images[0].caption}</span><span>{String(images.length).padStart(2, '0')} images</span></figcaption>
         </figure>}
       </header>
 
-      <div className="project-reader-layout section-surface">
-        <SectionBackdrop decoration="contour-left" />
-        <aside className={`project-reader-toc${tocOpen ? ' is-open' : ''}`} aria-label="本页目录">
-          <div className="project-reader-toc-heading">
-            <svg className="project-reader-toc-orbit" viewBox="0 0 120 120" fill="none" aria-hidden="true">
-              <circle cx="60" cy="60" r="43" />
-              <circle cx="60" cy="60" r="28" strokeDasharray="2 6" />
-              <ellipse cx="60" cy="60" rx="55" ry="18" transform="rotate(-38 60 60)" />
-              <path d="M60 8v14m0 76v14M8 60h14m76 0h14" />
-              <circle className="project-reader-toc-orbit-node" cx="94" cy="34" r="3" />
-              <path className="project-reader-toc-orbit-core" d="m60 52 8 8-8 8-8-8Z" />
-            </svg>
-            <p className="project-reader-toc-kicker"><span aria-hidden="true" /> CHAPTER INDEX</p>
-            <h2 className="project-reader-toc-title">本页目录</h2>
-            <button className="project-reader-toc-toggle" type="button" onClick={() => setTocOpen(!tocOpen)} aria-expanded={tocOpen} aria-controls="project-toc-links">
-              <span>本页目录</span><span className="project-reader-toc-toggle-icon" aria-hidden="true">{tocOpen ? '−' : '+'}</span>
-            </button>
-            <p className="project-reader-toc-description">{sections.length} 个章节</p>
-          </div>
-          <div className="project-reader-toc-position">
-            <div className="project-reader-toc-position-label"><span>阅读位置</span><span><strong>{String(activeChapter + 1).padStart(2, '0')}</strong> / {String(sections.length).padStart(2, '0')}</span></div>
-            <div className="project-reader-toc-segments" aria-hidden="true">
-              {sections.map((section, index) => <span key={section.id} className={index <= activeChapter ? 'is-reached' : undefined} />)}
-            </div>
-          </div>
-          <nav id="project-toc-links" ref={tocRef} aria-label="介绍目录">
-            <ol>
-              {sections.map((section, index) => <li key={section.id}>
-                <a href={`#project-${section.id}`} aria-current={activeHeading === section.id ? 'location' : undefined} onClick={() => setTocOpen(false)}>
-                  <span className="project-reader-toc-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="project-reader-toc-link-title">{section.title}</span>
-                  <svg className="project-reader-toc-arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h9M8 4l4 4-4 4" /></svg>
-                </a>
-              </li>)}
-            </ol>
-          </nav>
-          <div className="project-reader-toc-footer"><SmartLink className="project-reader-original" href={project.source.href}>{project.source.label}<span aria-hidden="true">↗</span></SmartLink></div>
-        </aside>
+      <button className="project-reader-toc-toggle" type="button" aria-label="本页目录" aria-haspopup="dialog"
+        aria-expanded={tocOpen} aria-controls="project-contents" onClick={openContents}>
+        <span className="project-reader-menu-symbol" aria-hidden="true" /><span>Contents</span>
+      </button>
+      <dialog className="project-reader-toc" id="project-contents" ref={dialogRef} aria-labelledby="project-contents-title"
+        onCancel={event => { event.preventDefault(); closeContents() }} onClose={resetContents}
+        onClick={event => {
+          if (event.target !== event.currentTarget) return
+          const bounds = event.currentTarget.getBoundingClientRect()
+          if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeContents()
+        }}>
+        <div className="project-reader-toc-heading">
+          <h2 id="project-contents-title">Contents</h2>
+          <button type="button" className="project-reader-toc-close" aria-label="关闭目录" onClick={closeContents} autoFocus>
+            <span>Close</span><span className="project-reader-close-symbol" aria-hidden="true" />
+          </button>
+        </div>
+        <p className="project-reader-toc-position"><span>本页目录</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></p>
+        <nav id="project-toc-links" ref={tocRef} aria-label="介绍目录">
+          <ol>{sections.map((section, index) => <li key={section.id}>
+            <a href={`#project-${section.id}`} aria-current={activeHeading === section.id ? 'location' : undefined} onClick={closeContents}>
+              <span className="project-reader-toc-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              <span>{section.title}</span>
+            </a>
+          </li>)}</ol>
+        </nav>
+        <div className="project-reader-toc-footer"><SmartLink href={project.source.href}><span>{project.source.label}</span><ReaderSymbol direction="external" /></SmartLink></div>
+      </dialog>
 
+      <div className="project-reader-layout">
+        <div className="project-reader-document-meta"><span>The project / 项目介绍</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></div>
         <div className="project-reader-main">
           <article className="project-reader-document" id="project-document" aria-label={`${project.title} 项目介绍`}>
-            <div className="project-reader-document-meta"><span>项目介绍</span></div>
+            <p className="project-reader-description">{project.description}</p>
             <div className="project-introduction">
-              {sections.map(section => (
+              {sections.map((section, index) => (
                 <section key={section.id} id={`project-${section.id}`} aria-labelledby={`project-${section.id}-title`}>
+                  <span className="project-reader-section-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                   <h2 id={`project-${section.id}-title`}>{section.title}</h2>
                   {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
                   {section.figures?.map(figure => {
@@ -159,7 +189,7 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
                     return <figure className="project-introduction-figure" key={figure.file}>
                       <div className="project-introduction-image">
                         <img src={images[resultIndex].src} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
-                        <GalleryTrigger onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
+                        <ReaderImageButton onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
                       </div>
                       <figcaption>{figure.caption}</figcaption>
                     </figure>
@@ -169,39 +199,15 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
             </div>
           </article>
           <footer className="project-reader-end">
-            <div className="project-reader-end-art" aria-hidden="true">
-              <svg className="project-reader-end-flow" viewBox="0 0 800 100" preserveAspectRatio="none" fill="none">
-                <g className="project-reader-end-streams">
-                  {[
-                    'M-40 72C130 78 180 8 350 26S610 98 840 30',
-                    'M-40 86C140 92 210 16 365 36S640 110 840 44',
-                    'M-40 52C140 98 280 0 470 22S650 80 840 64',
-                  ].map(path => <g key={path}>
-                    <path className="project-reader-end-stream" d={path} />
-                    <path className="project-reader-end-current" d={path} pathLength="1000" />
-                  </g>)}
-                </g>
-              </svg>
-              <svg className="project-reader-end-ripples" viewBox="0 0 180 64" fill="none">
-                <g><circle cx="90" cy="32" r="13" /><circle cx="90" cy="32" r="6" /></g>
-                <g><circle cx="45" cy="22" r="5" /><circle cx="133" cy="43" r="7" /></g>
-                <g><circle cx="20" cy="39" r="2" /><circle cx="157" cy="20" r="2.5" /><path d="m114 13 3 3-3 3-3-3Z" /></g>
-              </svg>
-            </div>
-            <div className="project-reader-end-actions">
-              <a className="project-reader-button project-reader-button--primary" href={getRouteHref('projects')} data-project-return>
-                <span className="project-reader-button-icon"><ReaderArrow direction="left" /></span>
-                <span>返回全部项目</span>
-              </a>
-              <a className="project-reader-button project-reader-button--overview" href="#project-overview">
-                <span>回到项目概览</span>
-                <span className="project-reader-button-icon"><ReaderArrow direction="up" /></span>
-              </a>
-            </div>
+            <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回全部项目">
+              <span className="project-reader-dash" aria-hidden="true" /><span>Back To Index</span>
+            </a>
+            <a className="project-reader-top" href="#project-cover" aria-label="回到项目概览"><span>Back To Top</span><ReaderSymbol direction="up" /></a>
           </footer>
         </div>
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
+      <ProjectsCursor />
     </div>
   )
 }

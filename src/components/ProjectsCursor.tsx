@@ -10,8 +10,8 @@ export function ProjectsCursor() {
 
   useEffect(() => {
     const cursor = cursorRef.current
-    const archive = cursor?.closest<HTMLElement>('.projects-archive, .project-studio')
-    if (!cursor || !archive || typeof cursor.showPopover !== 'function') return
+    const surface = cursor?.closest<HTMLElement>('.projects-archive, .project-studio, .project-reader')
+    if (!cursor || !surface || typeof cursor.showPopover !== 'function') return
 
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)')
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -19,6 +19,7 @@ export function ProjectsCursor() {
     let position: CursorPoint | null = null
     let frame = 0
     let previousTime = 0
+    let pressAnimation: Animation | null = null
 
     const enabled = () => finePointer.matches && !reducedMotion.matches && !document.hidden
 
@@ -28,9 +29,11 @@ export function ProjectsCursor() {
       previousTime = 0
       target = null
       position = null
+      pressAnimation?.cancel()
+      pressAnimation = null
       cursor.dataset.active = 'false'
       cursor.dataset.mode = 'default'
-      delete archive.dataset.projectsCursor
+      delete surface.dataset.projectsCursor
       if (cursor.matches(':popover-open')) cursor.hidePopover()
     }
 
@@ -42,14 +45,16 @@ export function ProjectsCursor() {
       }
 
       const hit = document.elementFromPoint(target.x, target.y)
-      if (!hit || !archive.contains(hit)) {
+      if (!hit || !surface.contains(hit)) {
         clear()
         return
       }
 
-      cursor.dataset.mode = hit.closest('[data-project-preview]')
+      const mode = hit.closest('[data-project-preview]')
         ? 'preview'
         : hit.closest(interactiveSelector) ? 'interactive' : 'default'
+      if (cursor.dataset.mode !== mode) pressAnimation?.cancel()
+      cursor.dataset.mode = mode
 
       if (!position) position = { ...target }
       const delta = previousTime ? Math.min(time - previousTime, 64) : 1000 / 60
@@ -72,7 +77,7 @@ export function ProjectsCursor() {
       }
       cursor.dataset.active = 'true'
       // Hide the native cursor only after a replacement has a valid position.
-      archive.dataset.projectsCursor = 'active'
+      surface.dataset.projectsCursor = 'active'
 
       if (settling) frame = requestAnimationFrame(draw)
       else previousTime = 0
@@ -84,12 +89,24 @@ export function ProjectsCursor() {
 
     const move = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse' || !enabled()
-        || !(event.target instanceof Node) || !archive.contains(event.target)) {
+        || !(event.target instanceof Node) || !surface.contains(event.target)) {
         clear()
         return
       }
       target = { x: event.clientX, y: event.clientY }
       schedule()
+    }
+
+    const press = (event: PointerEvent) => {
+      move(event)
+      if (!target || event.button !== 0) return
+      pressAnimation?.cancel()
+      const size = cursor.dataset.mode === 'preview' ? 24 : cursor.dataset.mode === 'interactive' ? 18 : 10
+      pressAnimation = cursor.animate([
+        { width: `${size}px`, height: `${size}px` },
+        { width: `${size * .72}px`, height: `${size * .72}px`, offset: .38 },
+        { width: `${size}px`, height: `${size}px` },
+      ], { duration: 220, easing: 'cubic-bezier(.2, .65, .3, 1)' })
     }
 
     const leave = (event: PointerEvent) => {
@@ -106,15 +123,15 @@ export function ProjectsCursor() {
       if (cursor.matches(':popover-open')) {
         cursor.hidePopover()
         cursor.dataset.active = 'false'
-        delete archive.dataset.projectsCursor
+        delete surface.dataset.projectsCursor
       }
       schedule()
     })
-    dialogs.observe(archive, { subtree: true, attributes: true, attributeFilter: ['open'] })
+    dialogs.observe(surface, { subtree: true, attributes: true, attributeFilter: ['open'] })
 
     document.addEventListener('pointermove', move, { passive: true })
     document.addEventListener('pointerover', move, { passive: true })
-    document.addEventListener('pointerdown', move, { passive: true })
+    document.addEventListener('pointerdown', press, { passive: true })
     document.addEventListener('pointerout', leave, { passive: true })
     document.addEventListener('pointercancel', clear)
     document.addEventListener('keydown', keyDown, true)
@@ -130,7 +147,7 @@ export function ProjectsCursor() {
       clear()
       document.removeEventListener('pointermove', move)
       document.removeEventListener('pointerover', move)
-      document.removeEventListener('pointerdown', move)
+      document.removeEventListener('pointerdown', press)
       document.removeEventListener('pointerout', leave)
       document.removeEventListener('pointercancel', clear)
       document.removeEventListener('keydown', keyDown, true)

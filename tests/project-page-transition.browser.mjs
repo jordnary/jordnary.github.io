@@ -349,6 +349,8 @@ export async function runProjectPageTransitionChecks(browser, baseURL, report = 
     pass('Archive, detail and detail-to-detail navigation supports Back/Forward; rapid Back cancels stale commits and restores filter and scroll')
 
     await transition(page, () => projectLink.click(), detail(first))
+    await noTransition(page, () => page.getByRole('button', { name: '本页目录', exact: true }).click(),
+      () => page.locator('dialog.project-reader-toc').waitFor({ state: 'visible' }))
     const chapter = page.locator('#project-toc-links a').nth(1)
     const chapterHash = await chapter.getAttribute('href')
     await noTransition(page, () => chapter.click(), () => page.waitForFunction(hash => location.hash === hash, chapterHash))
