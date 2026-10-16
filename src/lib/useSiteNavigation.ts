@@ -112,11 +112,16 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
         window.history.go(-window.history.state.projectReturnDepth)
         return
       }
-      const behavior = url.pathname === window.location.pathname && url.search === window.location.search && url.hash.length > 1
+      const sameDocument = url.pathname === window.location.pathname && url.search === window.location.search
+      const behavior = sameDocument && url.hash.length > 1
         ? 'smooth' : 'instant'
+      // Chapter controls update the address and history without aligning the page
+      // to their hash target. Direct URLs and ordinary contents links still do.
+      const position = sameDocument && anchor.hasAttribute('data-preserve-scroll')
+        ? { left: window.scrollX, top: window.scrollY } : undefined
       event.preventDefault()
       persistPosition()
-      navigate({ page, href: url.href, focus: true, behavior }, () => {
+      navigate({ page, href: url.href, focus: true, behavior, position }, () => {
         if (url.href !== window.location.href) {
           const currentUrl = new URL(window.location.href)
           const fromList = getPageFromUrl(currentUrl) === 'projects'

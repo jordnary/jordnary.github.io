@@ -1,0 +1,29 @@
+.project-chapter-number {
+  display: inline-flex;
+  flex: none;
+  font: inherit;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.project-chapter-digit {
+  position: relative;
+  display: block;
+  width: .55em;
+  height: 1.1em;
+  overflow: hidden;
+}
+
+.project-chapter-digit-face {
+  position: absolute;
+  inset: 0;
+  display: block;
+  text-align: center;
+  line-height: 1.1;
+  transform: translateY(0);
+}
+
+.project-chapter-digit-face + .project-chapter-digit-face {
+  transform: translateY(100%);
+}

@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
 import { projects, type ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
 import { ImageGallery, type GalleryImage } from '../components/image-gallery'
 import { ProjectsCursor } from '../components/ProjectsCursor'
 import { SmartLink } from '../components/SmartLink'
+import { ProjectChapterNumber } from '../components/ProjectChapterNumber'
 import { getRouteHref } from '../lib/routes'
+import { getHashTargetId } from '../lib/hashScroll'
 import './ProjectDetailPage.css'
 
 const categoryLabels = {
@@ -13,9 +15,50 @@ const categoryLabels = {
   '视觉实验': 'Visual experiment',
 }
 
-function ReaderSymbol({ direction }: { direction: 'external' | 'up' }) {
+const chapterLabels: Record<string, [string, string]> = {
+  overview: ['Introduction', '项目介绍'],
+  methods: ['Methods', '优化方法'],
+  sampling: ['Sampling', '采样实验'],
+  sparsity: ['Sparsity', '稀疏对照'],
+  'long-sequence': ['Long sequences', '长序列实验'],
+  scope: ['Perspective', '总结与讨论'],
+  reading: ['Reading', '阅读体验'],
+  implementation: ['Implementation', '实现方法'],
+  'feature-augmentation': ['Augmentation', '特征增强'],
+  'clip-results': ['CLIP results', '特征对照'],
+  experiments: ['Experiments', '实验讨论'],
+  results: ['Results', '实验结果'],
+  reconstruction: ['Reconstruction', '重建对照'],
+  ablation: ['Ablation', '消融实验'],
+  'latent-space': ['Latent space', '潜在空间'],
+  initialization: ['Initialization', '初始化对照'],
+  optimizers: ['Optimizers', '优化器对照'],
+  outputs: ['Outputs', '生成结果'],
+  validation: ['Validation', '模型验证'],
+  transfer: ['Transfer', '迁移实验'],
+  design: ['Study design', '实验设计'],
+  'response-time': ['Response time', '反应时间'],
+  limitations: ['Limitations', '局限与讨论'],
+  'latent-distribution': ['Distribution', '潜在分布'],
+  experience: ['Experience', '交互体验'],
+}
+
+const motionQuery = '(prefers-reduced-motion: reduce)'
+const readMotionPreference = () => window.matchMedia(motionQuery).matches
+const subscribeMotionPreference = (notify: () => void) => {
+  const query = window.matchMedia(motionQuery)
+  query.addEventListener('change', notify)
+  return () => query.removeEventListener('change', notify)
+}
+type ChapterState = { target: number; displayed: number; direction: 1 | -1; phase: 'idle' | 'leaving' | 'entering' }
+
+function ReaderSymbol({ direction }: { direction: 'external' | 'up' | 'previous' | 'next' | 'plus' }) {
+  const paths = {
+    external: 'M4 12 12 4M5 4h7v7', up: 'M8 13V3M3 8l5-5 5 5',
+    previous: 'M13 8H3M8 3 3 8l5 5', next: 'M3 8h10M8 3l5 5-5 5', plus: 'M3 8h10M8 3v10',
+  }
   return <svg className="project-reader-symbol" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path d={direction === 'external' ? 'M4 12 12 4M5 4h7v7' : 'M8 13V3M3 8l5-5 5 5'} />
+    <path d={paths[direction]} />
   </svg>
 }
 
@@ -26,15 +69,38 @@ function ReaderImageButton({ label, onClick }: { label: string; onClick: () => v
   </button>
 }
 
-export default function ProjectDetailPage({ project }: { project: ProjectCase }) {
+export default function ProjectDetailPage({ project, href }: { project: ProjectCase; href: string }) {
   const { sections } = projectIntroductions[project.id]
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
-  const [activeHeading, setActiveHeading] = useState(sections[0].id)
+  const hash = new URL(href).hash
+  const hashTarget = getHashTargetId(hash)
+  const hashChapter = sections.findIndex(section => hashTarget === `project-${section.id}`)
+  const reducedMotion = useSyncExternalStore(subscribeMotionPreference, readMotionPreference)
+  const [chapter, setChapter] = useState<ChapterState>(() => ({
+    target: Math.max(0, hashChapter), displayed: Math.max(0, hashChapter), direction: 1, phase: 'idle',
+  }))
+  const requestedChapter = hash === '#project-cover' ? chapter.target : Math.max(0, hashChapter)
+  // Keep the latest requested destination separate from the outgoing article.
+  // Rapid clicks and browser history can retarget a transition before it finishes.
+  if (requestedChapter !== chapter.target || (reducedMotion && chapter.phase !== 'idle')) {
+    setChapter({
+      target: requestedChapter,
+      displayed: reducedMotion ? requestedChapter : chapter.displayed,
+      direction: requestedChapter === chapter.target ? chapter.direction : requestedChapter > chapter.target ? 1 : -1,
+      phase: reducedMotion ? 'idle' : 'leaving',
+    })
+  }
   const [tocOpen, setTocOpen] = useState(false)
   const tocRef = useRef<HTMLElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const focusFrame = useRef(0)
+  const previousChapter = useRef(chapter.displayed)
   const restoreOverflow = useRef<(() => void) | null>(null)
-  const activeChapter = Math.max(0, sections.findIndex(section => section.id === activeHeading))
+  const activeChapter = chapter.target
+  const activeHeading = sections[activeChapter].id
+  const section = sections[chapter.displayed]
+  const [chapterEnglish, chapterChinese] = chapterLabels[activeHeading] ?? ['Chapter', '项目章节']
   const projectNumber = String(projects.findIndex(item => item.id === project.id) + 1).padStart(2, '0')
   const base = import.meta.env.BASE_URL
   const images = useMemo<GalleryImage[]>(() => {
@@ -70,37 +136,53 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
   }
 
   useEffect(() => () => {
+    cancelAnimationFrame(focusFrame.current)
     restoreOverflow.current?.()
     restoreOverflow.current = null
   }, [])
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => window.dispatchEvent(new Event('project-document-ready')))
-    let scrollFrame = 0
-    const update = () => {
-      scrollFrame = 0
-      let current = sections[0].id
-      for (const section of sections) {
-        const element = document.getElementById(`project-${section.id}`)
-        if (element && element.getBoundingClientRect().top <= 98) current = section.id
-      }
-      // A short final chapter may never reach the heading threshold.
-      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
-        current = sections[sections.length - 1].id
-      }
-      setActiveHeading(current)
-    }
-    const scroll = () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(update) }
-    update()
-    window.addEventListener('scroll', scroll, { passive: true })
-    window.addEventListener('resize', scroll)
-    return () => {
-      cancelAnimationFrame(frame)
-      cancelAnimationFrame(scrollFrame)
-      window.removeEventListener('scroll', scroll)
-      window.removeEventListener('resize', scroll)
-    }
+    return () => cancelAnimationFrame(frame)
   }, [sections])
+
+  useLayoutEffect(() => {
+    const viewport = scrollRef.current
+    const article = viewport?.firstElementChild
+    if (!viewport || !article) return
+    const updateOverflow = () => {
+      viewport.dataset.scrollable = String(viewport.scrollHeight > viewport.clientHeight + 1)
+    }
+    updateOverflow()
+    // Recheck both the frame and the content as chapters, images and fonts resize.
+    const observer = new ResizeObserver(updateOverflow)
+    observer.observe(viewport)
+    observer.observe(article)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (chapter.phase === 'idle') return
+    const timer = window.setTimeout(() => {
+      setChapter(current => current.phase === 'leaving'
+        ? { ...current, displayed: current.target, phase: 'entering' }
+        : { ...current, phase: 'idle' })
+    }, chapter.phase === 'leaving' ? 160 : 440)
+    return () => window.clearTimeout(timer)
+  }, [chapter.phase, chapter.target])
+
+  useLayoutEffect(() => {
+    if (previousChapter.current === chapter.displayed) return
+    previousChapter.current = chapter.displayed
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+    // Run after shared route focus, including immediate reduced-motion changes.
+    cancelAnimationFrame(focusFrame.current)
+    focusFrame.current = requestAnimationFrame(() => {
+      if (document.activeElement?.closest('main') && !dialogRef.current?.open) {
+        scrollRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
+      }
+    })
+  }, [chapter.displayed])
 
   useEffect(() => {
     const nav = tocRef.current
@@ -144,10 +226,6 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
         </figure>}
       </header>
 
-      <button className="project-reader-toc-toggle" type="button" aria-label="本页目录" aria-haspopup="dialog"
-        aria-expanded={tocOpen} aria-controls="project-contents" onClick={openContents}>
-        <span className="project-reader-menu-symbol" aria-hidden="true" /><span>Contents</span>
-      </button>
       <dialog className="project-reader-toc" id="project-contents" ref={dialogRef} aria-labelledby="project-contents-title"
         onCancel={event => { event.preventDefault(); closeContents() }} onClose={resetContents}
         onClick={event => {
@@ -164,25 +242,36 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
         <p className="project-reader-toc-position"><span>本页目录</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></p>
         <nav id="project-toc-links" ref={tocRef} aria-label="介绍目录">
           <ol>{sections.map((section, index) => <li key={section.id}>
-            <a href={`#project-${section.id}`} aria-current={activeHeading === section.id ? 'location' : undefined} onClick={closeContents}>
+            <a href={`#project-${section.id}`} aria-current={activeHeading === section.id ? 'location' : undefined} onClick={() => {
+              closeContents()
+              if (index !== chapter.displayed) return
+              scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
+              cancelAnimationFrame(focusFrame.current)
+              focusFrame.current = requestAnimationFrame(() => scrollRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true }))
+            }}>
               <span className="project-reader-toc-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <span>{section.title}</span>
             </a>
           </li>)}</ol>
         </nav>
-        <div className="project-reader-toc-footer"><SmartLink href={project.source.href}><span>{project.source.label}</span><ReaderSymbol direction="external" /></SmartLink></div>
+        <div className="project-reader-toc-footer"><SmartLink href={project.source.href}><span>Full report</span><ReaderSymbol direction="external" /></SmartLink></div>
       </dialog>
 
-      <div className="project-reader-layout">
+      <div className="project-reader-layout" id="project-document" data-chapter={section.id} data-phase={chapter.phase}
+        data-direction={chapter.direction === 1 ? 'next' : 'previous'} style={{ '--chapter-direction': chapter.direction } as CSSProperties}>
+        {sections.map(item => <span className="project-reader-anchor" id={`project-${item.id}`} key={item.id} aria-hidden="true" />)}
         <div className="project-reader-document-meta"><span>The project / 项目介绍</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></div>
         <div className="project-reader-main">
-          <article className="project-reader-document" id="project-document" aria-label={`${project.title} 项目介绍`}>
-            <p className="project-reader-description">{project.description}</p>
-            <div className="project-introduction">
-              {sections.map((section, index) => (
-                <section key={section.id} id={`project-${section.id}`} aria-labelledby={`project-${section.id}-title`}>
-                  <span className="project-reader-section-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-                  <h2 id={`project-${section.id}-title`}>{section.title}</h2>
+          <aside className="project-reader-chapter-label" aria-label={`第 ${activeChapter + 1} 章：${chapterEnglish} / ${chapterChinese}`}>
+            <ProjectChapterNumber value={activeChapter + 1} direction={chapter.direction} reducedMotion={reducedMotion} />
+            <p className="project-reader-chapter-english" lang="en">{chapterEnglish}</p>
+            <p className="project-reader-chapter-chinese">{chapterChinese}</p>
+          </aside>
+          <div className="project-reader-scroll" ref={scrollRef} tabIndex={0} role="region" aria-label="章节正文">
+            <article className="project-reader-document" aria-label={`${project.title} 项目介绍`}>
+              <div className="project-introduction" data-phase={chapter.phase} key={section.id}>
+                <section id={`project-${section.id}-content`} aria-labelledby={`project-${section.id}-title`}>
+                  <h2 id={`project-${section.id}-title`} tabIndex={-1}>{section.title}</h2>
                   {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
                   {section.figures?.map(figure => {
                     const resultIndex = images.findIndex(image => image.src === `${base}images/projects/${figure.file}`)
@@ -195,16 +284,26 @@ export default function ProjectDetailPage({ project }: { project: ProjectCase })
                     </figure>
                   })}
                 </section>
-              ))}
-            </div>
-          </article>
-          <footer className="project-reader-end">
-            <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回全部项目">
-              <span className="project-reader-dash" aria-hidden="true" /><span>Back To Index</span>
-            </a>
-            <a className="project-reader-top" href="#project-cover" aria-label="回到项目概览"><span>Back To Top</span><ReaderSymbol direction="up" /></a>
-          </footer>
+              </div>
+              <nav className="project-reader-chapter-navigation" aria-label="Chapter navigation">
+                {activeChapter > 0 && <a className="project-reader-previous" href={`#project-${sections[activeChapter - 1].id}`} data-preserve-scroll>
+                  <ReaderSymbol direction="previous" /><span>Previous chapter</span>
+                </a>}
+                {activeChapter < sections.length - 1 && <a className="project-reader-next" href={`#project-${sections[activeChapter + 1].id}`} data-preserve-scroll>
+                  <span>Next chapter</span><ReaderSymbol direction="next" />
+                </a>}
+              </nav>
+            </article>
+          </div>
         </div>
+        <footer className="project-reader-end">
+          <button className="project-reader-index" type="button" aria-label="本页目录" aria-haspopup="dialog"
+            aria-expanded={tocOpen} aria-controls="project-contents" onClick={openContents}>
+            <span>Index</span><ReaderSymbol direction="plus" />
+          </button>
+          <a className="project-reader-collection" href={getRouteHref('projects')} data-project-return aria-label="返回全部项目">Projects / Selected works</a>
+          <a className="project-reader-top" href="#project-cover" aria-label="回到项目概览"><ReaderSymbol direction="up" /><span>Top</span></a>
+        </footer>
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
       <ProjectsCursor />
