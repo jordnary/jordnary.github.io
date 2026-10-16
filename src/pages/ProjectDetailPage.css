@@ -54,9 +54,11 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 .project-reader-image-plus::after { transform: rotate(90deg); }
 .project-reader-cover-image:has(:focus-visible) img { filter: grayscale(0); }
 .project-reader .project-reader-image-trigger:focus-visible { outline-offset: -4px; outline: 2px solid var(--reader-ink); }
-.project-reader-toc { position: fixed; inset: max(32px, 7vh) var(--reader-edge) auto auto; width: min(520px, calc(100% - 40px)); max-width: none; max-height: calc(100dvh - 64px); margin: 0; padding: 32px 36px; overflow: hidden; border: 1px solid var(--reader-rule); color: var(--reader-ink); background: var(--reader-paper); }
-.project-reader-toc[open] { display: flex; flex-direction: column; animation: reader-contents-enter 180ms ease-out; }
-.project-reader-toc::backdrop { background: rgb(23 23 23 / 12%); }
+.project-reader-toc { position: fixed; inset: auto; box-sizing: border-box; width: min(520px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); margin: 0; padding: 32px 36px; overflow: hidden; overscroll-behavior: contain; border: 1px solid var(--reader-rule); color: var(--reader-ink); background: var(--reader-paper); }
+.project-reader-toc[open] { display: flex; flex-direction: column; }
+.project-reader-toc:is([data-state='opening'], [data-state='closing']) { will-change: clip-path; }
+.project-reader-toc[data-state='closing'] > * { pointer-events: none; }
+.project-reader-toc::backdrop { background: transparent; }
 .project-reader-toc-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .project-reader-toc-heading h2 { margin: 0; font-family: var(--reader-serif); font-size: 44px; font-weight: 400; line-height: 1.1; }
 .project-reader-toc-close { display: inline-flex; align-items: center; gap: 14px; min-height: 40px; padding: 0; border: 0; background: none; font-family: var(--reader-book) !important; font-size: 18px !important; }
@@ -67,9 +69,11 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 .project-reader-toc-position > span:last-child { font-family: var(--reader-serif); font-size: 20px; }
 .project-reader-toc nav { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .project-reader-toc ol { margin: 0; padding: 0; list-style: none; }
-.project-reader-toc nav a { position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: baseline; gap: 20px; padding: 14px 8px; color: var(--reader-muted); font-size: 15px; line-height: 1.8; }
-.project-reader-toc nav a[aria-current] { color: var(--reader-ink); }
-.project-reader-toc nav a[aria-current]::before { content: ''; position: absolute; left: 0; top: 25px; width: 3px; height: 3px; border-radius: 50%; background: currentColor; }
+.project-reader-toc nav a { --toc-indicator-opacity: 0; --toc-indicator-duration: 0ms; position: relative; display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: baseline; gap: 20px; padding: 14px 8px; color: var(--reader-muted); font-size: 15px; line-height: 1.8; transition: color 200ms ease; }
+/* Only the incoming dot fades in; the outgoing dot never lingers beside it. */
+.project-reader-toc nav a::before { content: ''; position: absolute; left: 0; top: 25px; width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: var(--toc-indicator-opacity); transition: opacity var(--toc-indicator-duration) ease; }
+.project-reader-toc nav a:focus-visible,
+.project-reader-toc nav:not(:has(a:focus-visible)) a[aria-current='location'] { --toc-indicator-opacity: 1; --toc-indicator-duration: 200ms; color: var(--reader-ink); }
 .project-reader-toc-number { font-family: var(--reader-serif); font-size: 22px; line-height: 1.2; }
 .project-reader-toc-footer { padding-top: 20px; margin-top: 14px; border-top: 1px solid var(--reader-rule); }
 .project-reader-toc-footer a { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; line-height: 1.7; }
@@ -112,8 +116,9 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 .project-reader-collection { color: var(--reader-muted) !important; font-family: var(--reader-label); font-size: 11px; line-height: 1.5; text-transform: uppercase; letter-spacing: .04em; text-align: center; }
 .project-reader-end .project-reader-top { justify-self: end; min-height: 44px; font-size: 16px; gap: 8px; }
 @keyframes reader-chapter-enter { from { opacity: 0; transform: translateY(calc(18px * var(--chapter-direction))); } to { opacity: 1; transform: translateY(0); } }
-@keyframes reader-contents-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @media (hover: hover) and (pointer: fine) {
+  .project-reader-toc nav:not(:has(a:focus-visible)):has(a:hover) a[aria-current='location']:not(:hover) { --toc-indicator-opacity: 0; --toc-indicator-duration: 0ms; color: var(--reader-muted); }
+  .project-reader-toc nav:not(:has(a:focus-visible)) a:hover { --toc-indicator-opacity: 1; --toc-indicator-duration: 200ms; color: var(--reader-ink); }
   .project-reader-cover-image:hover img { filter: grayscale(0); }
   .project-reader[data-projects-cursor='active'] .project-reader-image-plus { opacity: 0; }
 }
@@ -135,7 +140,7 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
   .project-reader-chapter-chinese { font-size: 12px; }
   .project-reader-chapter-label .project-chapter-number { font-size: 52px; }
   .project-introduction h2 { font-size: 23px; }
-  .project-reader-toc { inset: 24px 20px auto; width: auto; max-height: calc(100dvh - 48px); padding: 26px; }
+  .project-reader-toc { padding: 26px; }
 }
 @media (max-width: 480px) {
   .project-reader { --reader-edge: 6vw; padding-top: 24px; }
@@ -173,4 +178,11 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 }
 @media (prefers-reduced-motion: reduce) {
   .project-reader *, .project-reader *::before, .project-reader *::after { transition: none !important; animation: none !important; }
+}
+@media (max-height: 480px) {
+  .project-reader-toc { padding: 16px 24px; }
+  .project-reader-toc-heading h2 { font-size: 32px; }
+  .project-reader-toc-position { margin-top: 10px; padding-bottom: 8px; }
+  .project-reader-toc nav a { padding-block: 10px; }
+  .project-reader-toc-footer { margin-top: 8px; padding-top: 10px; }
 }

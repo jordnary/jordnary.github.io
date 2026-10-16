@@ -38,9 +38,11 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
   }
   const chooseChapter = async (sections, index) => {
     await openContents()
+    const position = await page.evaluate(() => scrollY)
     await page.locator(`#project-toc-links a[href="#project-${sections[index].id}"]`).click()
     await contentsDialog().waitFor({ state: 'hidden' })
     await settledChapter(sections[index], index)
+    assert.ok(Math.abs(await page.evaluate(() => scrollY) - position) < 2, 'Contents selection preserves the page position')
   }
   const expectReaderAtTop = async (margin = 20) => {
     await page.waitForFunction(expected => {
@@ -255,10 +257,14 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     const firstChapterHash = await firstChapter.getAttribute('href')
     const vaeSections = projectIntroductions['vae-gan-digits'].sections
     assert.equal(firstChapterHash, `#project-${vaeSections[0].id}`)
+    const firstChapterPosition = await page.evaluate(() => scrollY)
     await firstChapter.click()
     await contentsDialog().waitFor({ state: 'hidden' })
     await settledChapter(vaeSections[0], 0)
-    await expectReaderAtTop()
+    await waitForPageScrollIdle()
+    assert.ok(Math.abs(await page.evaluate(() => scrollY) - firstChapterPosition) < 2,
+      'Selecting the current chapter from the contents preserves page scroll')
+    assert.equal(await readingArea().evaluate(element => element.scrollTop), 0)
     await page.getByRole('link', { name: '回到项目概览', exact: true }).click()
     await page.waitForFunction(() => {
       const cover = document.getElementById('project-cover')
@@ -267,11 +273,15 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await openContents()
     const heading = page.locator('#project-toc-links a').nth(1)
     const sectionHash = await heading.getAttribute('href')
+    const selectedChapterPosition = await page.evaluate(() => scrollY)
     await heading.click()
     await contentsDialog().waitFor({ state: 'hidden' })
     assert.equal(await contentsButton().getAttribute('aria-expanded'), 'false')
     await settledChapter(vaeSections[1], 1)
-    await expectReaderAtTop()
+    await waitForPageScrollIdle()
+    assert.ok(Math.abs(await page.evaluate(() => scrollY) - selectedChapterPosition) < 2,
+      'Selecting a different chapter from the contents preserves page scroll')
+    assert.equal(await readingArea().evaluate(element => element.scrollTop), 0)
     await page.reload()
     await loaded()
     await settledChapter(vaeSections[1], 1)
@@ -288,7 +298,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await loaded()
     await settledChapter(vaeSections[1], 1)
     await expectReaderAtTop()
-    pass('Chapter links, direct URLs, reload, Back and Forward preserve the selected chapter and reader alignment')
+    pass('Contents preserve page scroll; direct chapter URLs align the reader, and reload and history retain the selected chapter')
 
     const imageButton = page.locator('.project-introduction-figure button').first()
     await imageButton.scrollIntoViewIfNeeded()
@@ -354,7 +364,6 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await expectReadingScrollState(false)
     pass('Short chapters allow page scrolling in both directions; resizing updates containment without exposing a scrollbar or gutter')
     await chooseChapter(tritonSections, 2)
-    await expectReaderAtTop()
     for (const image of await page.locator('.project-introduction-figure img').all()) await image.evaluate(element => element.decode())
     assert.ok(Math.abs((await layout().boundingBox()).height - shortChapterSize.frameHeight) < 2, 'Long content does not increase the outer frame height')
     assert.ok(await readingArea().evaluate(element => element.scrollHeight > element.clientHeight + 40), 'Long chapters overflow within the body area')
@@ -414,7 +423,6 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
 
     await page.setViewportSize({ width: 2560, height: 1440 })
     await chooseChapter(tritonSections, 5)
-    await expectReaderAtTop()
     const wideFrame = await layout().boundingBox()
     const wideType = await page.evaluate(() => {
       const size = selector => parseFloat(getComputedStyle(document.querySelector(selector)).fontSize)
@@ -468,10 +476,11 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     const toc = contentsButton()
     await openContents()
     assert.equal(await toc.getAttribute('aria-expanded'), 'true')
+    const mobileChapterPosition = await page.evaluate(() => scrollY)
     await page.locator('#project-toc-links a').nth(2).click()
     await settledChapter(vaeSections[2], 2)
     assert.equal(await toc.getAttribute('aria-expanded'), 'false')
-    await expectReaderAtTop(16)
+    assert.ok(Math.abs(await page.evaluate(() => scrollY) - mobileChapterPosition) < 2, 'Mobile contents preserve page scroll')
     await imageButton.click()
     await dialog.waitFor()
     assert.ok(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1))

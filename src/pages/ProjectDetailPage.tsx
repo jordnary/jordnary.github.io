@@ -7,6 +7,7 @@ import { SmartLink } from '../components/SmartLink'
 import { ProjectChapterNumber } from '../components/ProjectChapterNumber'
 import { getRouteHref } from '../lib/routes'
 import { getHashTargetId } from '../lib/hashScroll'
+import { useReaderContents } from '../lib/useReaderContents'
 import './ProjectDetailPage.css'
 
 const categoryLabels = {
@@ -90,13 +91,11 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
       phase: reducedMotion ? 'idle' : 'leaving',
     })
   }
-  const [tocOpen, setTocOpen] = useState(false)
+  const { dialogRef, indexRef, tocOpen, openContents, closeContents, resetContents } = useReaderContents()
   const tocRef = useRef<HTMLElement>(null)
-  const dialogRef = useRef<HTMLDialogElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const focusFrame = useRef(0)
   const previousChapter = useRef(chapter.displayed)
-  const restoreOverflow = useRef<(() => void) | null>(null)
   const activeChapter = chapter.target
   const activeHeading = sections[activeChapter].id
   const section = sections[chapter.displayed]
@@ -114,31 +113,8 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
     }))
   }, [base, project, sections])
 
-  const resetContents = () => {
-    if (dialogRef.current?.open) return
-    restoreOverflow.current?.()
-    restoreOverflow.current = null
-    setTocOpen(false)
-  }
-  const closeContents = () => {
-    dialogRef.current?.close()
-    // Release the scroll lock before the shared navigation handles a chapter link.
-    resetContents()
-  }
-  const openContents = () => {
-    const dialog = dialogRef.current
-    if (!dialog || dialog.open) return
-    const previousOverflow = document.body.style.overflow
-    restoreOverflow.current = () => { document.body.style.overflow = previousOverflow }
-    document.body.style.overflow = 'hidden'
-    dialog.showModal()
-    setTocOpen(true)
-  }
-
   useEffect(() => () => {
     cancelAnimationFrame(focusFrame.current)
-    restoreOverflow.current?.()
-    restoreOverflow.current = null
   }, [])
 
   useEffect(() => {
@@ -182,7 +158,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         scrollRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
       }
     })
-  }, [chapter.displayed])
+  }, [chapter.displayed, dialogRef])
 
   useEffect(() => {
     const nav = tocRef.current
@@ -226,7 +202,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         </figure>}
       </header>
 
-      <dialog className="project-reader-toc" id="project-contents" ref={dialogRef} aria-labelledby="project-contents-title"
+      <dialog className="project-reader-toc" id="project-contents" ref={dialogRef} data-state="closed" aria-labelledby="project-contents-title"
         onCancel={event => { event.preventDefault(); closeContents() }} onClose={resetContents}
         onClick={event => {
           if (event.target !== event.currentTarget) return
@@ -235,19 +211,18 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         }}>
         <div className="project-reader-toc-heading">
           <h2 id="project-contents-title">Contents</h2>
-          <button type="button" className="project-reader-toc-close" aria-label="关闭目录" onClick={closeContents} autoFocus>
+          <button type="button" className="project-reader-toc-close" aria-label="关闭目录" onClick={() => closeContents()} autoFocus>
             <span>Close</span><span className="project-reader-close-symbol" aria-hidden="true" />
           </button>
         </div>
         <p className="project-reader-toc-position"><span>本页目录</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></p>
         <nav id="project-toc-links" ref={tocRef} aria-label="介绍目录">
           <ol>{sections.map((section, index) => <li key={section.id}>
-            <a href={`#project-${section.id}`} aria-current={activeHeading === section.id ? 'location' : undefined} onClick={() => {
-              closeContents()
+            <a href={`#project-${section.id}`} data-preserve-scroll aria-current={activeHeading === section.id ? 'location' : undefined} onClick={event => {
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+              closeContents(true)
               if (index !== chapter.displayed) return
               scrollRef.current?.scrollTo({ top: 0, behavior: 'instant' })
-              cancelAnimationFrame(focusFrame.current)
-              focusFrame.current = requestAnimationFrame(() => scrollRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true }))
             }}>
               <span className="project-reader-toc-number" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
               <span>{section.title}</span>
@@ -297,7 +272,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
           </div>
         </div>
         <footer className="project-reader-end">
-          <button className="project-reader-index" type="button" aria-label="本页目录" aria-haspopup="dialog"
+          <button className="project-reader-index" ref={indexRef} type="button" aria-label="本页目录" aria-haspopup="dialog"
             aria-expanded={tocOpen} aria-controls="project-contents" onClick={openContents}>
             <span>Index</span><ReaderSymbol direction="plus" />
           </button>
