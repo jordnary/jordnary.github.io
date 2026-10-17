@@ -5,12 +5,14 @@
   --reader-rule: rgb(23 23 23 / 20%);
   --reader-edge: 7.2vw;
   --reader-measure: clamp(980px, calc(640px + 25vw), 1120px);
+  --reader-art-room: calc((100cqw - min(100cqw, var(--reader-measure))) / 2 + var(--reader-edge) - 28px);
   --reader-serif: 'Projects Serif', 'Times New Roman', serif;
   --reader-book: 'Times New Roman', 'Noto Serif SC', 'Songti SC', SimSun, serif;
   --reader-label: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
   --reader-body: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
   position: relative;
   isolation: isolate;
+  container-type: inline-size;
   min-height: 100svh;
   padding: clamp(24px, 3.7vh, 52px) var(--reader-edge) max(64px, calc(100svh - 1100px));
   color: var(--reader-ink);
@@ -91,6 +93,19 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 .project-reader-chapter-label .project-chapter-number { font-family: var(--reader-serif); font-size: clamp(52px, 4.2vw, 64px); line-height: 1; letter-spacing: -.045em; }
 .project-reader-chapter-english { margin: 18px 0 0; font-family: var(--reader-serif); font-size: clamp(24px, 1.8vw, 28px); line-height: 1.08; text-wrap: balance; overflow-wrap: break-word; }
 .project-reader-chapter-chinese { margin: 18px 0 0; color: var(--reader-muted); font-family: var(--reader-book); font-size: 12px; line-height: 1.8; }
+/* Art lives in the outer margins; the complete reading frame stays clear. */
+.project-reader-decoration { position: absolute; pointer-events: none; user-select: none; }
+.project-reader-decoration img { display: none; position: absolute; top: 50%; right: 0; width: 17rem; max-width: none; height: auto; transform: translateY(-50%); filter: grayscale(1); }
+/* Like the About margin sketches, preserve the drawing's size and clip its outer edge. */
+.project-reader-side-art { --reader-art-fade-direction: to right; top: 20px; bottom: 20px; width: max(0px, var(--reader-art-room)); overflow: clip; container: reader-side-art / size; mask-image: linear-gradient(var(--reader-art-fade-direction), transparent, #000 24px), linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 36px), transparent); mask-composite: intersect; }
+.project-reader-side-art.is-left { right: calc(100% + 28px); }
+.project-reader-side-art.is-right { --reader-art-fade-direction: to left; left: calc(100% + 28px); }
+.project-reader-side-art img { opacity: .13; }
+.project-reader-side-art.is-right img { right: auto; left: 0; transform: translateY(-50%) scaleX(-1); }
+/* Both wings share the same available space, so resizing hides them together. */
+@container reader-side-art (min-width: 96px) and (min-height: 300px) {
+  .project-reader-side-art img { display: block; }
+}
 /* The frame limits reading width; the small inset keeps link focus rings visible. */
 .project-reader-scroll { width: calc(100% - var(--reader-rail)); height: 100%; min-height: 0; margin-left: var(--reader-rail); padding: 0 8px 0 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; scrollbar-gutter: auto; }
 .project-reader-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }

@@ -237,6 +237,11 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         {sections.map(item => <span className="project-reader-anchor" id={`project-${item.id}`} key={item.id} aria-hidden="true" />)}
         <div className="project-reader-document-meta"><span>The project / 项目介绍</span><span>{String(activeChapter + 1).padStart(2, '0')} / {String(sections.length).padStart(2, '0')}</span></div>
         <div className="project-reader-main">
+          {(['left', 'right'] as const).map(side => <div key={side}
+            className={`project-reader-decoration project-reader-side-art is-${side}`} aria-hidden="true">
+            <img src={`${base}images/project-reader/wing-lineart.webp`} width="473" height="1524"
+              alt="" loading="lazy" decoding="async" draggable={false} />
+          </div>)}
           <aside className="project-reader-chapter-label" aria-label={`第 ${activeChapter + 1} 章：${chapterEnglish} / ${chapterChinese}`}>
             <ProjectChapterNumber value={activeChapter + 1} direction={chapter.direction} reducedMotion={reducedMotion} />
             <p className="project-reader-chapter-english" lang="en">{chapterEnglish}</p>
