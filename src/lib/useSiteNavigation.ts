@@ -1,12 +1,13 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
+import type {} from './projectTransitionBoot'
 
 type Position = { left: number; top: number }
 type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior }
-type PageTransition = { id: number; onCovered: () => Promise<void>; onComplete: () => void }
+type PageTransition = { id: number; initiallyCovered?: boolean; onCovered: () => Promise<void>; onComplete: () => void }
 type PrepareNavigation = (url: URL) => Promise<unknown> | undefined
 const historyKey = 'siteNavigationKey'
 const positionKey = 'siteNavigationPosition'
@@ -32,7 +33,26 @@ async function prepareWithinBudget(promise: Promise<unknown> | undefined) {
 /** Keep the shared layout alive while retaining independently addressable HTML pages. */
 export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNavigation) {
   const [navigation, setNavigation] = useState<Navigation>({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false })
-  const [transition, setTransition] = useState<PageTransition | null>(null)
+  const [transitionState, setTransition] = useState<PageTransition | 'reload' | null>(() => {
+    const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    if (initialPage !== 'projects' || entry?.type !== 'reload'
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.hidden) return null
+    if (window.__projectTransitionBoot && window.__projectTransitionBoot.status !== 'active') return null
+    return 'reload'
+  })
+  const transition = useMemo(() => {
+    if (transitionState !== 'reload') return transitionState
+    const url = new URL(navigation.href)
+    // A reload already has its route and reading position. Animate the initial
+    // render without committing history or resetting either; later navigation IDs start at 1.
+    return {
+      id: 0,
+      initiallyCovered: true,
+      onCovered: () => prepareWithinBudget(prepare?.(url)),
+      onComplete: () => setTransition(current => current === 'reload' ? null : current),
+    }
+  }, [transitionState, navigation.href, prepare])
+  const transitioning = useRef(false)
 
   useEffect(() => {
     const previousRestoration = window.history.scrollRestoration
@@ -105,7 +125,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       const page = getPageFromUrl(url)
       if (!page) return
       // The overlay captures physical input; ignore synthetic repeat clicks as well.
-      if (active) { event.preventDefault(); return }
+      if (active || transitioning.current) { event.preventDefault(); return }
       if (anchor.hasAttribute('data-project-return') && Number.isInteger(window.history.state?.projectReturnDepth) && window.history.state.projectReturnDepth > 0) {
         event.preventDefault()
         persistPosition()
@@ -145,6 +165,8 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     document.addEventListener('click', click)
     window.addEventListener('popstate', pop)
     window.addEventListener('scroll', savePosition, { passive: true })
+    // Reload snapshots history before pagehide; save the last position earlier.
+    window.addEventListener('beforeunload', persistPosition)
     window.addEventListener('pagehide', persistPosition)
     return () => {
       active = null
@@ -152,11 +174,13 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       document.removeEventListener('click', click)
       window.removeEventListener('popstate', pop)
       window.removeEventListener('scroll', savePosition)
+      window.removeEventListener('beforeunload', persistPosition)
       window.removeEventListener('pagehide', persistPosition)
     }
   }, [prepare])
 
   useLayoutEffect(() => {
+    transitioning.current = Boolean(transition)
     if (!transition) {
       if (navigation.focus) document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true })
       return
@@ -192,7 +216,9 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     const frame = window.requestAnimationFrame(scroll)
     // A lazy document can arrive after the initial layout. Restore only until
     // the visitor starts interacting, so loading never pulls them away.
-    const interact = () => { interacted = true }
+    const interact = (event: Event) => {
+      if (!event.defaultPrevented && !transitioning.current) interacted = true
+    }
     const ready = () => { if (!interacted) scroll() }
     window.addEventListener('project-document-ready', ready)
     window.addEventListener('wheel', interact, { passive: true })

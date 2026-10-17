@@ -5,6 +5,7 @@ import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import { SmartLink } from '../SmartLink'
 import { GalleryIcon } from './GalleryIcon'
+import { useThumbnailWheel } from './useThumbnailWheel'
 import type { GalleryImage, ImageGalleryProps } from './types'
 import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/thumbnails.css'
@@ -12,7 +13,9 @@ import './ImageGallery.css'
 
 function GalleryStage({ children }: PropsWithChildren) {
   const { controller } = useLightboxProps()
-  return <div className="gallery-stage" onWheel={event => {
+  const stageRef = useRef<HTMLDivElement>(null)
+  useThumbnailWheel(stageRef)
+  return <div className="gallery-stage" ref={stageRef} onWheel={event => {
     // The lightbox's swipe setting only covers pointers, not trackpad gestures.
     if (controller.disableSwipeNavigation && Math.abs(event.deltaX) > Math.abs(event.deltaY)) event.stopPropagation()
   }}>{children}</div>
@@ -119,7 +122,6 @@ function GalleryCaption({ images }: { images: readonly GalleryImage[] }) {
       <p aria-live="polite">{current?.caption || current?.alt}</p>
       {current?.source && <SmartLink href={current.source} className="gallery-source" aria-label="查看图片来源" title="查看图片来源"><GalleryIcon name="external" /></SmartLink>}
     </div>
-    <p className="gallery-hint"><span className="gallery-hint-desktop">滚轮缩放 · 双击放大 · 放大后拖动 · ← → 切换 · Esc 关闭</span><span className="gallery-hint-touch">左右滑动切换 · 双指缩放 · 放大后拖动</span></p>
   </div>
 }
 
@@ -149,20 +151,20 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     slides={slides}
     plugins={plugins}
     labels={labels}
-    className={`image-gallery${images.length < 2 ? ' image-gallery-single' : ''}`}
+    className="image-gallery"
     portal={{ container: { onKeyDownCapture: releaseNavigationFocus, onKeyDown: containFocus, ...touchButtons } }}
     on={{ view: ({ index }) => { if (index !== activeIndex) onIndexChange(index) } }}
     carousel={{ finite: true, preload, padding: '16px', spacing: '20%' }}
     controller={{ closeOnBackdropClick: true, disableSwipeNavigation: !touchNavigation }}
     animation={{ fade: reducedMotion ? 0 : 180, swipe: reducedMotion ? 0 : 300, zoom: reducedMotion ? 0 : 220 }}
     zoom={{ maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, doubleClickMaxStops: 2 }}
-    thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: images.length > 1 }}
+    thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: true }}
     toolbar={{ buttons: [<GalleryHeading key="heading" images={images} />, 'zoom', 'thumbnails', 'fullscreen', 'close'] }}
     render={{
       buttonZoom: props => <ZoomControls {...props} />,
       buttonPrev: images.length < 2 ? () => null : undefined,
       buttonNext: images.length < 2 ? () => null : undefined,
-      buttonThumbnails: ({ visible, show, hide }) => images.length > 1 ? <button className="yarl__button" type="button" aria-label={visible ? '隐藏缩略图' : '显示缩略图'} title={visible ? '隐藏缩略图' : '显示缩略图'} aria-pressed={visible} onClick={visible ? hide : show}><GalleryIcon name="thumbnails" /></button> : null,
+      buttonThumbnails: ({ visible, show, hide }) => <button className="yarl__button" type="button" aria-label={visible ? '隐藏缩略图' : '显示缩略图'} title={visible ? '隐藏缩略图' : '显示缩略图'} aria-pressed={visible} onClick={visible ? hide : show}><GalleryIcon name="thumbnails" /></button>,
       iconPrev: () => <GalleryIcon name="previous" />,
       iconNext: () => <GalleryIcon name="next" />,
       iconClose: () => <GalleryIcon name="close" />,

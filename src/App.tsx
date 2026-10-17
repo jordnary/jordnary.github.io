@@ -41,7 +41,7 @@ function App({ page: initialPage }: { page: SitePage }) {
   return (
     <>
       <SiteLayout page={page} href={href} transitioning={Boolean(transition)} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} href={href} /></Suspense> : getPageContent(page, href)}</SiteLayout>
-      {transition && <ProjectPageTransition key={transition.id} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
+      {transition && <ProjectPageTransition key={transition.id} initiallyCovered={transition.initiallyCovered} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
     </>
   )
 }

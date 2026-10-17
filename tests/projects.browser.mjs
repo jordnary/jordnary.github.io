@@ -54,6 +54,59 @@ async function expectPreview(page, project) {
   }), 'The complete cover retains its original proportions')
 }
 
+async function expectCursorStableOnPress(page, target, mode, size) {
+  await target.hover()
+  const point = await target.evaluate(element => {
+    const rect = element.getBoundingClientRect()
+    return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+  })
+  await page.waitForFunction(({ mode, size, point }) => {
+    const cursor = document.querySelector('.projects-cursor')
+    if (!cursor || cursor.dataset.mode !== mode) return false
+    const rect = cursor.getBoundingClientRect()
+    return Math.abs(rect.width - size) < .02
+      && Math.hypot(rect.x + rect.width / 2 - point.x, rect.y + rect.height / 2 - point.y) < .08
+  }, { mode, size, point })
+
+  const samplesPromise = target.evaluate(async element => {
+    let clicks = 0
+    const countClick = () => { clicks++ }
+    element.addEventListener('click', countClick)
+    const samples = []
+    const start = performance.now()
+    try {
+      while (performance.now() - start < 420) {
+        const cursor = document.querySelector('.projects-cursor')
+        const rect = cursor.getBoundingClientRect()
+        samples.push({
+          mode: cursor.dataset.mode,
+          width: rect.width,
+          height: rect.height,
+          x: rect.x + rect.width / 2,
+          y: rect.y + rect.height / 2,
+        })
+        await new Promise(requestAnimationFrame)
+      }
+      return { samples, clicks }
+    } finally {
+      element.removeEventListener('click', countClick)
+    }
+  })
+  for (let index = 0; index < 3; index++) {
+    await page.mouse.down()
+    await page.waitForTimeout(45)
+    await page.mouse.up()
+  }
+  const { samples, clicks } = await samplesPromise
+  assert.equal(clicks, 3, `${mode}: every click reaches the underlying element`)
+  assert.ok(samples.length >= 5, `${mode}: presses are observed across rendered frames`)
+  assert.ok(samples.every(sample => sample.mode === mode
+    && Math.abs(sample.width - size) < .05 && Math.abs(sample.height - size) < .05),
+  `${mode}: pressing and rapid repeated clicks preserve the visible cursor size`)
+  assert.ok(samples.every(sample => Math.hypot(sample.x - point.x, sample.y - point.y) < .1),
+    `${mode}: pressing and rapid repeated clicks keep the circle centered on the pointer`)
+}
+
 export async function runProjectChecks(browser, baseURL, report = () => {}) {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 1000 },
@@ -215,24 +268,17 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
       assert.notEqual(await link.evaluate(element => getComputedStyle(element).cursor), 'none')
       pass('The desktop cursor replaces the pointer without intercepting clicks and yields to keyboard navigation')
 
-      await filterButton(motionPage, '全部项目').hover()
-      await motionPage.waitForFunction(() => {
-        const cursor = document.querySelector('.projects-cursor')
-        return cursor?.dataset.mode === 'interactive' && parseFloat(getComputedStyle(cursor).width) === 18
-      })
-      await motionPage.mouse.down()
-      await motionPage.waitForFunction(() => {
-        const cursor = document.querySelector('.projects-cursor')
-        const width = cursor && parseFloat(getComputedStyle(cursor).width)
-        return width > 0 && width < 17.5
-      })
-      await motionPage.mouse.up()
-      await motionPage.waitForFunction(() => {
-        const cursor = document.querySelector('.projects-cursor')
-        return cursor && parseFloat(getComputedStyle(cursor).width) === 18
-      })
-      assert.equal(await filterButton(motionPage, '全部项目').getAttribute('aria-pressed'), 'true')
-      pass('Primary clicks briefly compress the shared cursor and keep the underlying control usable')
+      const allButton = filterButton(motionPage, '全部项目')
+      await expectCursorStableOnPress(motionPage, motionPage.locator('.archive-title h1'), 'default', 10)
+      await expectCursorStableOnPress(motionPage, allButton, 'interactive', 18)
+      await allButton.evaluate(button => button.setAttribute('data-project-preview', ''))
+      try {
+        await expectCursorStableOnPress(motionPage, allButton, 'preview', 24)
+      } finally {
+        await allButton.evaluate(button => button.removeAttribute('data-project-preview'))
+      }
+      assert.equal(await allButton.getAttribute('aria-pressed'), 'true')
+      pass('Default, interactive and preview cursors keep their visible size and center during clicks and rapid repeated clicks')
 
       const samplesPromise = motionPage.evaluate(async () => {
         const samples = []

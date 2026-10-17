@@ -50,6 +50,14 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       return Math.abs(element.getBoundingClientRect().top - expected) < 3
     }, margin)
   }
+  const returnToPageTop = async () => {
+    const selectedChapter = await layout().getAttribute('data-chapter')
+    await page.getByRole('link', { name: '回到项目概览', exact: true }).click()
+    await page.waitForFunction(() => Math.abs(scrollY) < 1)
+    const back = await page.getByRole('link', { name: '返回项目', exact: true }).boundingBox()
+    assert.ok(back.y >= 0 && back.y + back.height < await page.evaluate(() => innerHeight), 'Top reveals the complete Back To Index link')
+    assert.equal(await layout().getAttribute('data-chapter'), selectedChapter, 'Returning to Top preserves the selected chapter')
+  }
   const expectNumber = async (index, direction) => {
     const number = page.locator('.project-chapter-number')
     assert.equal(await number.getAttribute('data-value'), String(index + 1).padStart(2, '0'))
@@ -74,8 +82,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
   const expectReadingScrollState = async scrollable => {
     await page.waitForFunction(expected => {
       const element = document.querySelector('.project-reader-scroll')
-      return element?.dataset.scrollable === String(expected)
-        && (element.scrollHeight > element.clientHeight + 1) === expected
+      return element && (element.scrollHeight > element.clientHeight + 1) === expected
     }, scrollable)
     const style = await readingArea().evaluate(element => {
       const computed = getComputedStyle(element)
@@ -90,7 +97,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     assert.equal(style.scrollbarWidth, 'none', 'Body scrollbars stay hidden')
     assert.equal(style.scrollbarGutter, 'auto', 'Hidden scrollbars leave no reserved gutter')
     assert.ok(style.reservedWidth <= 1, 'The body can use the width previously occupied by its scrollbar')
-    assert.equal(style.overscroll, scrollable ? 'contain' : 'auto', 'Only overflowing chapters contain wheel scrolling')
+    assert.equal(style.overscroll, 'auto', 'Native scrolling remains available as a fallback at chapter boundaries')
   }
   const waitForPageScrollIdle = () => page.evaluate(() => new Promise(resolve => {
     let previous = scrollY
@@ -105,7 +112,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
   }))
   const activateChapterWithoutPageScroll = async (sections, index, direction, input) => {
     const link = page.locator('.project-reader-chapter-navigation').getByRole('link', {
-      name: direction === 'next' ? 'Next chapter' : 'Previous chapter', exact: true,
+      name: direction === 'next' ? 'Next' : 'Previous', exact: true,
     })
     await readingArea().evaluate(element => { element.scrollTop = element.scrollHeight })
     await link.scrollIntoViewIfNeeded()
@@ -174,6 +181,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       assert.equal(await contentsButton().getAttribute('aria-expanded'), 'false')
       assert.equal((await contentsButton().innerText()).trim(), 'Index')
       assert.equal(await page.getByRole('button', { name: /^(?:Light|Dark)$/i }).count(), 0)
+      assert.equal(await page.locator('.project-reader-cover figcaption').count(), 0, 'Covers have no caption or image count beneath them')
       const duplicateIds = await page.locator('[id]').evaluateAll(nodes => {
         const ids = nodes.map(node => node.id)
         return [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))]
@@ -191,8 +199,8 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
         assert.equal(await page.locator('.project-introduction-figure').count(), section.figures?.length ?? 0)
         const chapterLinks = page.locator('.project-reader-chapter-navigation a')
         const expectedLinks = [
-          ...(index > 0 ? [{ text: 'Previous chapter', href: `#project-${sections[index - 1].id}` }] : []),
-          ...(index < sections.length - 1 ? [{ text: 'Next chapter', href: `#project-${sections[index + 1].id}` }] : []),
+          ...(index > 0 ? [{ text: 'Previous', href: `#project-${sections[index - 1].id}` }] : []),
+          ...(index < sections.length - 1 ? [{ text: 'Next', href: `#project-${sections[index + 1].id}` }] : []),
         ]
         assert.deepEqual(await chapterLinks.evaluateAll(nodes => nodes.map(node => ({ text: node.textContent.trim(), href: node.getAttribute('href') }))), expectedLinks)
         assert.ok(await readingArea().evaluate(element => element.contains(document.querySelector('.project-reader-chapter-navigation'))), 'Chapter controls follow the body inside its scroll area')
@@ -204,7 +212,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
         if (expectedLinks.length === 2) {
           const previous = await chapterLinks.nth(0).boundingBox()
           const next = await chapterLinks.nth(1).boundingBox()
-          assert.ok(previous.x + previous.width <= next.x, 'Previous chapter stays left of Next chapter')
+          assert.ok(previous.x + previous.width <= next.x, 'Previous stays left of Next')
         }
         for (const [figureIndex, figure] of (await page.locator('.project-introduction-figure').all()).entries()) {
           const image = figure.locator('img')
@@ -231,6 +239,32 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       }
     }
     pass('All static detail URLs show every chapter, matching text and images, with English controls in reading order')
+
+    await page.goto(url('projects/few-shot-learning/'))
+    await loaded()
+    await page.evaluate(() => document.fonts.ready)
+    for (const [width, height] of [[2560, 1440], [1440, 1000], [1024, 768], [800, 900], [768, 1000], [390, 844]]) {
+      await page.setViewportSize({ width, height })
+      const coverLayout = await page.evaluate(() => {
+        const rect = selector => document.querySelector(selector).getBoundingClientRect().toJSON()
+        return {
+          topbar: rect('.project-reader-topbar'), header: rect('.project-reader-header'),
+          heading: rect('.project-reader-heading'), cover: rect('.project-reader-cover'),
+          document: rect('.project-reader-layout'),
+        }
+      })
+      const { topbar, header, heading, cover, document } = coverLayout
+      assert.ok(header.top - topbar.bottom >= 48 && header.top - topbar.bottom <= 145, `${width}px: the cover retains moderate space below the top navigation`)
+      assert.ok(document.top - header.bottom >= 56 && document.top - header.bottom <= 145, `${width}px: the cover leaves moderate space before the article`)
+      if (width <= 800) {
+        assert.ok(Math.abs(cover.x - heading.x) < 2, `${width}px: the stacked title and cover share their left edge`)
+        assert.ok(cover.top - heading.bottom >= 24 && cover.top - heading.bottom <= 64, `${width}px: the stacked title and cover stay together with a bounded gap`)
+      } else {
+        assert.ok(Math.abs(heading.y + heading.height / 2 - cover.y - cover.height / 2) < 2, `${width}px: the title and cover align at their vertical centers`)
+        assert.ok(header.height <= Math.max(heading.height, cover.height) + 2, `${width}px: the header height follows its content without an empty minimum-height band`)
+      }
+    }
+    pass('The title and cover keep balanced space on wide screens and a compact aligned stack while resizing')
 
     await page.goto(url('projects/vae-gan-digits/'))
     await loaded()
@@ -265,11 +299,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     assert.ok(Math.abs(await page.evaluate(() => scrollY) - firstChapterPosition) < 2,
       'Selecting the current chapter from the contents preserves page scroll')
     assert.equal(await readingArea().evaluate(element => element.scrollTop), 0)
-    await page.getByRole('link', { name: '回到项目概览', exact: true }).click()
-    await page.waitForFunction(() => {
-      const cover = document.getElementById('project-cover')
-      return Math.abs(cover.getBoundingClientRect().top - parseFloat(getComputedStyle(cover).scrollMarginTop)) < 12
-    })
+    await returnToPageTop()
     await openContents()
     const heading = page.locator('#project-toc-links a').nth(1)
     const sectionHash = await heading.getAttribute('href')
@@ -282,10 +312,13 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     assert.ok(Math.abs(await page.evaluate(() => scrollY) - selectedChapterPosition) < 2,
       'Selecting a different chapter from the contents preserves page scroll')
     assert.equal(await readingArea().evaluate(element => element.scrollTop), 0)
+    await returnToPageTop()
+    await chooseChapter(vaeSections, 1)
+    const positionBeforeReload = await page.evaluate(() => scrollY)
     await page.reload()
     await loaded()
     await settledChapter(vaeSections[1], 1)
-    await expectReaderAtTop()
+    await page.waitForFunction(position => Math.abs(scrollY - position) < 2, positionBeforeReload)
     assert.equal(new URL(page.url()).hash, sectionHash)
     await chooseChapter(vaeSections, 3)
     await page.goBack()
@@ -298,7 +331,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await loaded()
     await settledChapter(vaeSections[1], 1)
     await expectReaderAtTop()
-    pass('Contents preserve page scroll; direct chapter URLs align the reader, and reload and history retain the selected chapter')
+    pass('Top reveals Back To Index and preserves the chapter; contents preserve page scroll and chapter URLs retain reload and history navigation')
 
     const imageButton = page.locator('.project-introduction-figure button').first()
     await imageButton.scrollIntoViewIfNeeded()
@@ -362,12 +395,17 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await expectReadingScrollState(true)
     await page.setViewportSize({ width: 1440, height: 1000 })
     await expectReadingScrollState(false)
-    pass('Short chapters allow page scrolling in both directions; resizing updates containment without exposing a scrollbar or gutter')
+    pass('Short chapters allow page scrolling in both directions; resizing retains scroll handoff without a scrollbar or gutter')
     await chooseChapter(tritonSections, 2)
     for (const image of await page.locator('.project-introduction-figure img').all()) await image.evaluate(element => element.decode())
     assert.ok(Math.abs((await layout().boundingBox()).height - shortChapterSize.frameHeight) < 2, 'Long content does not increase the outer frame height')
     assert.ok(await readingArea().evaluate(element => element.scrollHeight > element.clientHeight + 40), 'Long chapters overflow within the body area')
     await expectReadingScrollState(true)
+    await page.evaluate(() => {
+      const frame = document.querySelector('.project-reader-layout')
+      window.scrollBy({ top: frame.getBoundingClientRect().top - 180, behavior: 'instant' })
+    })
+    await waitForPageScrollIdle()
     const fixedPositions = () => page.evaluate(() => {
       const rect = selector => {
         const box = document.querySelector(selector).getBoundingClientRect()
@@ -384,7 +422,8 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     const beforeScroll = await fixedPositions()
     const scrollBox = await readingArea().boundingBox()
     await page.mouse.move(scrollBox.x + scrollBox.width / 2, scrollBox.y + scrollBox.height / 2)
-    await page.mouse.wheel(0, 350)
+    const interiorDistance = await readingArea().evaluate(element => Math.min(120, (element.scrollHeight - element.clientHeight) / 2))
+    await page.mouse.wheel(0, interiorDistance)
     await page.waitForFunction(() => document.querySelector('.project-reader-scroll').scrollTop > 20)
     const afterScroll = await fixedPositions()
     assert.equal(afterScroll.windowY, beforeScroll.windowY, 'Reading scroll does not move the page')
@@ -392,22 +431,26 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     assert.ok(afterScroll.headingY < beforeScroll.headingY - 20, 'Earlier text moves above the body viewport')
     await readingArea().evaluate(element => { element.scrollTop = element.scrollHeight })
     await page.mouse.wheel(0, 400)
-    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-    assert.equal((await fixedPositions()).windowY, beforeScroll.windowY, 'Scrolling at the body boundary does not move the frame')
-    await readingArea().evaluate(element => { element.scrollTop = 0 })
-    await page.mouse.wheel(0, -400)
+    await page.waitForFunction(y => scrollY > y + 20, beforeScroll.windowY)
     await waitForPageScrollIdle()
-    assert.equal((await fixedPositions()).windowY, beforeScroll.windowY, 'Scrolling upward at a long chapter boundary also stays within the frame')
-    assert.equal(await readingArea().evaluate(element => element.scrollTop), 0)
+    const afterBottomWheel = await page.evaluate(() => scrollY)
+    assert.ok(await readingArea().evaluate(element => Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) < 2), 'The body stays at its bottom while further downward scrolling moves the page')
+    await readingArea().evaluate(element => { element.scrollTop = 0 })
+    const boundaryBox = await readingArea().boundingBox()
+    await page.mouse.move(boundaryBox.x + boundaryBox.width / 2, Math.max(40, boundaryBox.y + boundaryBox.height / 2))
+    await page.mouse.wheel(0, -400)
+    await page.waitForFunction(y => scrollY < y - 20, afterBottomWheel)
+    await waitForPageScrollIdle()
+    assert.equal(await readingArea().evaluate(element => element.scrollTop), 0, 'The body stays at its top while further upward scrolling moves the page')
     await chooseChapter(tritonSections, 2)
     assert.equal(await readingArea().evaluate(element => element.scrollTop), 0, 'Reselecting the current chapter from Index restarts its body')
     await readingArea().evaluate(element => { element.scrollTop = element.scrollHeight })
-    await page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Next chapter', exact: true }).click()
+    await page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Next', exact: true }).click()
     await settledChapter(tritonSections[3], 3)
     assert.equal(await readingArea().evaluate(element => element.scrollTop), 0, 'A new chapter starts at its beginning')
     await page.waitForFunction(() => document.activeElement === document.querySelector('.project-introduction h2'))
     assert.ok(Math.abs((await layout().boundingBox()).height - shortChapterSize.frameHeight) < 2)
-    pass('The fixed frame isolates body scrolling; chapter changes reset scroll and focus, and reselecting a chapter restarts it')
+    pass('Long chapters scroll internally before chaining to the page at both boundaries; chapter changes reset body scroll and focus')
     await chooseChapter(tritonSections, 2)
     await activateChapterWithoutPageScroll(tritonSections, 3, 'next', 'mouse')
     await activateChapterWithoutPageScroll(tritonSections, 2, 'previous', 'keyboard')
@@ -481,6 +524,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await settledChapter(vaeSections[2], 2)
     assert.equal(await toc.getAttribute('aria-expanded'), 'false')
     assert.ok(Math.abs(await page.evaluate(() => scrollY) - mobileChapterPosition) < 2, 'Mobile contents preserve page scroll')
+    await returnToPageTop()
     await imageButton.click()
     await dialog.waitFor()
     assert.ok(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1))
@@ -508,9 +552,9 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
 
     const cover = page.locator('.project-reader-cover-image')
     await page.mouse.move(1, 1)
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('.project-reader-cover-image img')).filter === 'grayscale(1)')
+    assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'The cover starts in its original colors')
     await cover.hover()
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('.project-reader-cover-image img')).filter === 'grayscale(0)')
+    assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'Hover preserves the original cover colors')
     await page.waitForFunction(() => {
       const cursor = document.querySelector('.project-reader .projects-cursor')
       return cursor?.dataset.active === 'true' && cursor.dataset.mode === 'preview'
@@ -522,16 +566,31 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await page.keyboard.press('Escape')
     await dialog.waitFor({ state: 'hidden' })
     assert.ok(await cover.getByRole('button').evaluate(element => element === document.activeElement))
+    assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'Focus preserves the original cover colors')
     const backLink = page.getByRole('link', { name: '返回项目', exact: true })
     await backLink.focus()
     await backLink.hover()
-    await page.waitForFunction(() => getComputedStyle(document.querySelector('.project-reader-cover-image img')).filter === 'grayscale(1)')
+    assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'The cover stays in color after hover and focus leave')
     assert.equal(await backLink.evaluate(element => getComputedStyle(element).textDecorationLine), 'none')
     await page.waitForFunction(() => document.querySelector('.project-reader .projects-cursor')?.dataset.mode === 'interactive')
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.mouse.move(2, 2)
     await page.waitForFunction(() => document.querySelector('.project-reader .projects-cursor')?.dataset.active === 'false')
-    pass('The cover restores color on hover, uses the preview cursor and opens the matching gallery image; controls avoid hover underlines')
+    pass('The cover always uses its original colors, retains the preview cursor and opens the matching gallery image; controls avoid hover underlines')
+
+    const touchContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' })
+    try {
+      const touchPage = await touchContext.newPage()
+      touchPage.on('pageerror', error => errors.push(error.message))
+      await touchPage.goto(url('projects/few-shot-learning/'))
+      const touchCover = touchPage.locator('.project-reader-cover-image')
+      await touchCover.waitFor()
+      assert.equal(await touchCover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'Touch devices also show the original cover colors')
+      await touchCover.getByRole('button').tap()
+      await touchPage.locator('.image-gallery').waitFor()
+      assert.equal(await touchCover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'Touch activation does not change cover colors')
+    } finally { await touchContext.close() }
+    pass('Touch devices retain original cover colors before and after opening the gallery')
 
     await page.emulateMedia({ reducedMotion: 'no-preference' })
     await chooseChapter(tritonSections, 2)
@@ -563,8 +622,8 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       }
       requestAnimationFrame(sample)
     })
-    const nextChapter = () => page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Next chapter', exact: true })
-    const previousChapter = () => page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Previous chapter', exact: true })
+    const nextChapter = () => page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Next', exact: true })
+    const previousChapter = () => page.locator('.project-reader-chapter-navigation').getByRole('link', { name: 'Previous', exact: true })
     await nextChapter().click()
     await page.waitForFunction(() => {
       const frame = document.querySelector('.project-reader-layout')

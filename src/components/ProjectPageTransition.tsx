@@ -1,20 +1,22 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react'
+import { projectTransitionMotion } from '../lib/projectTransitionMotion'
+import type {} from '../lib/projectTransitionBoot'
 import './ProjectPageTransition.css'
 
-export const PROJECT_TRANSITION_COVER_MS = 560
-export const PROJECT_TRANSITION_HOLD_MS = 160
-export const PROJECT_TRANSITION_REVEAL_MS = 540
+const PROJECT_TRANSITION_COVER_MS = projectTransitionMotion.cover
+const PROJECT_TRANSITION_HOLD_MS = projectTransitionMotion.hold
+const PROJECT_TRANSITION_REVEAL_MS = projectTransitionMotion.reveal
 
-const lineDelays = [0, 95, 24, 140, 52, 180, 78, 158, 30, 110, 64, 165, 40]
-const easing = 'cubic-bezier(.4, 0, .2, 1)'
+const { lineDelays, easing, copyDelay, copyDuration } = projectTransitionMotion
 
 type ProjectPageTransitionProps = {
+  initiallyCovered?: boolean
   onCovered: () => void | Promise<void>
   onComplete: () => void
 }
 
 /** A paper interlude shared by navigation into, out of and within Projects. */
-export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTransitionProps) {
+export function ProjectPageTransition({ initiallyCovered = false, onCovered, onComplete }: ProjectPageTransitionProps) {
   const overlayRef = useRef<HTMLDialogElement>(null)
   const callbacksRef = useRef({ onCovered, onComplete })
 
@@ -41,8 +43,8 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
       serifReady = true
     }).catch(() => { /* Keep the local serif fallback for this transition. */ })
 
-    overlay.dataset.phase = 'covering'
-    paper.style.opacity = '0'
+    overlay.dataset.phase = initiallyCovered ? window.__projectTransitionBoot?.phase ?? 'covering' : 'covering'
+    paper.style.opacity = initiallyCovered ? '1' : '0'
 
     // Route changes can add/remove the root scrollbar gutter. Keep the paper,
     // lines and typography anchored to the browser viewport throughout them.
@@ -85,11 +87,12 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
       if (!disposed && !skipMotion) await nextPaint()
     }
 
-    const play = (element: HTMLElement, frames: Keyframe[], duration: number, delay = 0) =>
+    const play = (element: HTMLElement, frames: Keyframe[], duration: number, delay = 0, startTime?: number) =>
       new Promise<boolean>(resolve => {
         let animation: Animation
         try {
           animation = element.animate(frames, { duration, delay, easing, fill: 'both' })
+          if (startTime !== undefined) animation.startTime = startTime
           animations.add(animation)
         } catch {
           resolve(false)
@@ -109,6 +112,7 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
         }
         // Animation.finished drives normal sequencing. The watchdog covers
         // unavailable animation completion without leaving an opaque screen.
+        const elapsed = startTime === undefined ? 0 : Number(document.timeline.currentTime ?? performance.now()) - startTime
         const timer = window.setTimeout(() => {
           try {
             animation.finish()
@@ -116,7 +120,7 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
           } catch {
             cancel()
           }
-        }, duration + delay + 300)
+        }, Math.max(0, duration + delay - elapsed) + 300)
         pending.add(cancel)
         void animation.finished.then(() => settle(true), () => settle(false))
       })
@@ -158,22 +162,38 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
 
     const run = async () => {
       if (disposed) return
+      // StrictMode can replay the effect after the startup modal was adopted.
+      // Keep its original timeline; only an explicitly skipped boot cancels it.
+      const boot = initiallyCovered ? window.__projectTransitionBoot : undefined
+      if (boot?.status === 'skipped') skipMotion = true
       try {
         if (!skipMotion) {
+          const startTime = boot?.startedAt
+          const elapsed = startTime === undefined ? 0 : Math.max(0, Number(document.timeline.currentTime ?? performance.now()) - startTime)
           lines.forEach((line, index) => {
             const delay = lineDelays[index]
             void play(line, [
               { transform: 'scaleY(0)', opacity: 0 },
               { transform: 'scaleY(1)', opacity: 1 },
-            ], PROJECT_TRANSITION_COVER_MS - delay, delay)
+            ], PROJECT_TRANSITION_COVER_MS - delay, delay, startTime)
           })
-          void wait(150).then(() => {
+          const enterCopy = () => {
             if (disposed || skipMotion || completed) return
             // Choose once, while invisible: a late font must not move visible labels.
-            copy.style.fontFamily = serifReady ? '"Projects Serif", "Times New Roman", serif' : '"Times New Roman", Times, serif'
-            void play(copy, [{ opacity: 0 }, { opacity: 1 }], 270)
-          })
-          if (!await play(paper, [{ opacity: 0 }, { opacity: 1 }], PROJECT_TRANSITION_COVER_MS)) {
+            copy.style.fontFamily = boot?.fontFamily ?? (serifReady ? '"Projects Serif", "Times New Roman", serif' : '"Times New Roman", Times, serif')
+            if (boot) boot.fontFamily = copy.style.fontFamily
+            void play(copy, [{ opacity: 0 }, { opacity: 1 }], copyDuration, startTime === undefined ? 0 : copyDelay, startTime)
+          }
+          if (elapsed >= copyDelay) enterCopy()
+          else void wait(copyDelay - elapsed).then(enterCopy)
+          // The replacement modal and its animations are ready in this same
+          // task; removing the startup modal cannot expose an intermediate frame.
+          boot?.dispose('adopted')
+          if (initiallyCovered) {
+            const remaining = PROJECT_TRANSITION_COVER_MS - elapsed
+            if (remaining > 0) await wait(remaining)
+          }
+          else if (!await play(paper, [{ opacity: 0 }, { opacity: 1 }], PROJECT_TRANSITION_COVER_MS)) {
             skipMotion = true
           }
         }
@@ -194,6 +214,7 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
         void play(copy, [{ opacity: 1 }, { opacity: 0 }], 360, 180)
         await play(paper, [{ opacity: 1 }, { opacity: 0 }], PROJECT_TRANSITION_REVEAL_MS)
       } finally {
+        if (boot?.status === 'active') boot.dispose('skipped')
         complete()
       }
     }
@@ -208,12 +229,12 @@ export function ProjectPageTransition({ onCovered, onComplete }: ProjectPageTran
       cancelPending()
       if (overlay.open) overlay.close()
     }
-  }, [])
+  }, [initiallyCovered])
 
   return (
-    <dialog className="project-page-transition" ref={overlayRef} data-phase="covering" lang="en"
+    <dialog className="project-page-transition" ref={overlayRef} data-phase={initiallyCovered ? window.__projectTransitionBoot?.phase ?? 'covering' : 'covering'} lang="en"
       aria-label="Page transition" aria-modal="true" aria-busy="true" onCancel={event => event.preventDefault()}>
-      <div className="project-page-transition-paper" aria-hidden="true" />
+      <div className="project-page-transition-paper" style={{ opacity: initiallyCovered ? 1 : 0 }} aria-hidden="true" />
       <div className="project-page-transition-lines" aria-hidden="true">
         {lineDelays.map((_, index) => <span className="project-page-transition-line" key={index}
           style={{ '--transition-line-position': `${4.7 + index * 7.55}%` } as CSSProperties} />)}

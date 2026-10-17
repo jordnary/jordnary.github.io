@@ -9,10 +9,23 @@ async function recordTransition(page) {
     const source = document.querySelector('main')?.firstElementChild
     const samples = []
     let frame
+    const viewportCoverage = element => {
+      if (!element) return 0
+      const style = getComputedStyle(element)
+      const rect = element.getBoundingClientRect()
+      if (style.display === 'none' || style.visibility === 'hidden'
+        || rect.left > 0.5 || rect.top > 0.5
+        || rect.right < Math.min(innerWidth, document.documentElement.getBoundingClientRect().right) - 0.5
+        || rect.bottom < innerHeight - 0.5) return 0
+      const channels = style.backgroundColor.match(/[\d.]+/g) ?? []
+      const backgroundAlpha = channels.length === 4 ? Number(channels[3]) : channels.length === 3 ? 1 : 0
+      return Number(style.opacity) * backgroundAlpha
+    }
     const sample = () => {
       const overlay = document.querySelector('.project-page-transition')
       const paper = overlay?.querySelector('.project-page-transition-paper')
       const copy = overlay?.querySelector('.project-page-transition-copy')
+      const menu = document.querySelector('.archive-menu')
       const hit = document.elementFromPoint(innerWidth / 2, innerHeight / 2)
       const displayed = Boolean(overlay && getComputedStyle(overlay).display !== 'none')
       const box = displayed ? overlay.getBoundingClientRect() : null
@@ -20,6 +33,8 @@ async function recordTransition(page) {
         phase: overlay?.dataset.phase ?? null,
         opacity: paper ? Number(getComputedStyle(paper).opacity) : null,
         copyOpacity: copy ? Number(getComputedStyle(copy).opacity) : 0,
+        menuCoverage: viewportCoverage(menu),
+        paperCoverage: viewportCoverage(paper),
         oldPage: source?.isConnected ?? false,
         heading: document.querySelector('main h1')?.textContent,
         pathname: location.pathname,
@@ -41,6 +56,18 @@ async function recordTransition(page) {
     try { return await recorder.evaluate(recorder => recorder.stop()) }
     finally { await recorder.dispose() }
   }
+}
+
+function assertMenuNavigationCoverage(samples) {
+  const oldPageFrames = samples.filter(sample => sample.oldPage)
+  assert.ok(oldPageFrames.length > 1 && oldPageFrames[0].menuCoverage >= 0.999,
+    'Menu navigation starts from a completely covered page')
+  // Both papers may animate, but their composite must never reveal the source
+  // page. Merely checking the top dialog or either individual opacity misses it.
+  const coverage = oldPageFrames.map(sample =>
+    1 - (1 - sample.menuCoverage) * (1 - sample.paperCoverage))
+  assert.ok(coverage.every(alpha => alpha >= 0.999),
+    `Menu navigation must keep the previous page covered until replacement; minimum combined opacity ${Math.min(...coverage)}`)
 }
 
 function assertStableGeometry(samples) {
@@ -262,6 +289,269 @@ export async function runProjectPageTransitionFontChecks(browser, baseURL) {
   } finally { await context.close() }
 }
 
+export async function runProjectPageTransitionMenuChecks(browser, baseURL, report = () => {}) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
+  const page = await context.newPage()
+  const errors = []
+  const url = path => new URL(path, baseURL.endsWith('/') ? baseURL : `${baseURL}/`).href
+  const openMenu = async () => {
+    await page.getByRole('button', { name: 'Open menu', exact: true }).click()
+    await page.waitForFunction(() => document.querySelector('.archive-menu')?.dataset.state === 'open')
+  }
+  page.on('pageerror', error => errors.push(error.message))
+  try {
+    for (const scenario of [
+      { from: 'projects/', source: '.projects-archive', link: 'Contact', destination: '#contact', width: 1440 },
+      { from: 'projects/vae-digits/', source: '.project-reader', link: 'Contact', destination: '#contact', width: 1440 },
+      { from: 'projects/vae-digits/', source: '.project-reader', link: 'Projects', destination: '.projects-archive', width: 390, keyboard: true },
+    ]) {
+      await page.setViewportSize({ width: scenario.width, height: 1000 })
+      await page.goto(url(scenario.from))
+      await page.locator(scenario.source).waitFor()
+      await openMenu()
+      const link = page.locator('.archive-menu').getByRole('link', { name: scenario.link, exact: true })
+      if (scenario.keyboard) await link.focus()
+      const samples = await transition(page,
+        () => scenario.keyboard ? page.keyboard.press('Enter') : link.click(),
+        page.locator(scenario.destination))
+      assertMenuNavigationCoverage(samples)
+      assert.equal(await page.locator('.archive-menu[open]').count(), 0,
+        'The destination has no leftover modal menu')
+      report(`${scenario.from} menu to ${scenario.link} keeps the source covered${scenario.keyboard ? ' through narrow-screen keyboard navigation' : ''}`)
+    }
+
+    // Projects on the archive is a local action, so it must still close normally
+    // instead of waiting for a route replacement that will never happen.
+    const before = page.url()
+    const source = await page.locator('.projects-archive').elementHandle()
+    await openMenu()
+    await noTransition(page,
+      () => page.locator('.archive-menu').getByRole('link', { name: 'Projects', exact: true }).click(),
+      () => page.waitForFunction(() => document.querySelector('.archive-menu')?.dataset.state === 'closed'))
+    assert.equal(await source.evaluate(source => source.isConnected), true)
+    await source.dispose()
+    assert.equal(page.url(), before, 'The current Projects link stays on the archive')
+    assert.equal(await page.locator('.archive-menu[open]').count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Open menu', exact: true }).getAttribute('aria-expanded'), 'false')
+    assert.equal(await page.locator('.app-shell').evaluate(shell => shell.inert), false)
+    assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).overflowY), 'hidden')
+    await openMenu()
+    await noTransition(page, () => page.keyboard.press('Escape'),
+      () => page.waitForFunction(() => document.querySelector('.archive-menu')?.dataset.state === 'closed'))
+    assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).overflowY), 'hidden')
+    report('The current Projects menu link and Escape still close normally without navigation or leftover locks')
+    assert.deepEqual(errors, [])
+  } finally { await context.close() }
+}
+
+export async function runProjectPageTransitionReloadChecks(browser, baseURL) {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
+  // A reload destroys evaluate handles. Observe from initialization so even a
+  // short overlay cannot disappear before the test starts sampling the page.
+  await context.addInitScript(() => {
+    const probe = { created: 0, phases: [], samples: [] }
+    const seen = new WeakSet()
+    let running = false
+    let idleFrames = 0
+    window.__projectReloadTransitions = probe
+    const sample = frame => {
+      const visible = [...document.querySelectorAll('.project-page-transition')]
+        .filter(overlay => getComputedStyle(overlay).display !== 'none')
+      const hit = document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('.project-page-transition')
+      const overlay = visible.includes(hit) ? hit : visible.at(-1)
+      const root = document.getElementById('root')
+      const common = { at: performance.now(), frame, rootExists: Boolean(root), rootChildren: root?.childElementCount ?? 0 }
+      if (!overlay) {
+        probe.samples.push({ ...common, visible: false })
+        if (frame) running = false
+        return false
+      }
+      const initial = !seen.has(overlay)
+      seen.add(overlay)
+      // Bootstrap and React overlap during an atomic handoff. Count their
+      // uninterrupted visible interval as one logical transition.
+      if (!running) { probe.created++; running = true }
+      const phase = overlay.dataset.phase
+      if (phase && probe.phases.at(-1) !== phase) probe.phases.push(phase)
+      const paper = overlay.querySelector('.project-page-transition-paper')
+      probe.samples.push({
+        ...common,
+        visible: true,
+        phase,
+        opacity: Number(getComputedStyle(paper).opacity),
+        initial,
+        bootstrap: overlay.hasAttribute('data-bootstrap'),
+        detailReady: Boolean(document.querySelector('.project-reader')),
+        lineScales: [...overlay.querySelectorAll('.project-page-transition-line')]
+          .map(line => new DOMMatrixReadOnly(getComputedStyle(line).transform).d),
+      })
+      return true
+    }
+    const tick = () => {
+      const visible = sample(true)
+      const rendered = document.getElementById('root')?.childElementCount
+      idleFrames = !visible && rendered ? idleFrames + 1 : 0
+      if (idleFrames < 2) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+    new MutationObserver(() => { sample(false) }).observe(document, {
+      subtree: true, childList: true, attributes: true, attributeFilter: ['data-phase'],
+    })
+  })
+  const page = await context.newPage()
+  const errors = []
+  const url = path => new URL(path, baseURL.endsWith('/') ? baseURL : `${baseURL}/`).href
+  const settle = async selector => {
+    await page.locator(selector).waitFor()
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  }
+  const state = () => page.evaluate(() => ({
+    href: location.href,
+    historyLength: history.length,
+    top: scrollY,
+    chapter: document.querySelector('.project-reader-layout')?.dataset.chapter ?? null,
+  }))
+  const probe = () => page.evaluate(() => ({
+    created: window.__projectReloadTransitions.created,
+    phases: window.__projectReloadTransitions.phases,
+    navigationType: performance.getEntriesByType('navigation')[0]?.type,
+  }))
+  const assertCoveredReload = samples => {
+    const visible = samples.filter(sample => sample.visible)
+    assert.ok(visible.some(sample => sample.initial && sample.phase === 'covering' && sample.opacity >= 0.999),
+      'Reload paper is fully opaque when the overlay first appears')
+    const covered = visible.filter(sample => sample.phase === 'covering' || sample.phase === 'covered')
+    assert.ok(covered.length > 1 && covered.every(sample => sample.opacity >= 0.999),
+      'The page cannot show through the paper during reload covering or covered frames')
+    assert.ok(visible.some(sample => sample.phase === 'revealing' && sample.opacity > 0 && sample.opacity < 0.999),
+      'Reload keeps the reveal animation')
+    assert.ok(visible.filter(sample => sample.opacity < 0.999).every(sample => sample.phase === 'revealing'),
+      'The new page becomes visible only during reveal')
+    const frames = samples.filter(sample => sample.frame)
+    const first = frames.findIndex(sample => sample.visible)
+    const last = frames.findLastIndex(sample => sample.visible)
+    assert.ok(first >= 0 && frames.slice(first, last + 1).every(sample => sample.visible),
+      'The bootstrap handoff never leaves a frame without paper')
+    const growing = frames.filter(sample => sample.visible && sample.phase !== 'revealing')
+    for (let index = 1; index < growing.length; index++) {
+      assert.equal(growing[index].lineScales.length, 13)
+      assert.ok(growing[index].lineScales.every((scale, line) => scale >= growing[index - 1].lineScales[line] - 0.025),
+        'The growing rules do not restart or move backwards during the bootstrap handoff')
+    }
+  }
+  const detailModule = /\/(?:src\/pages\/ProjectDetailPage\.tsx|assets\/ProjectDetailPage-[^/?]+\.js)(?:\?.*)?$/
+  const mainModule = /\/(?:src\/main\.tsx|assets\/main-[^/?]+\.js)(?:\?.*)?$/
+  const heldDetailRoutes = []
+  const releaseDetail = () => Promise.all(heldDetailRoutes.splice(0).map(route => route.continue()))
+  const heldMainRoutes = []
+  const releaseMain = () => Promise.all(heldMainRoutes.splice(0).map(route => route.continue()))
+  page.on('pageerror', error => errors.push(error.message))
+  try {
+    for (const [path, selector] of [
+      ['projects/?source=reload-test', '.projects-archive'],
+      ['projects/vae-digits/?source=reload-test#project-implementation', '.project-reader-layout[data-chapter="implementation"]'],
+      ['projects/studio/', '.project-studio'],
+    ]) {
+      await page.goto(url(path))
+      await settle(selector)
+      assert.deepEqual(await probe(), { created: 0, phases: [], navigationType: 'navigate' },
+        'An initial direct visit must not play the reload transition')
+      await page.evaluate(() => window.scrollTo({ top: 240, behavior: 'instant' }))
+      await settle(selector)
+      const before = await state()
+      let requestedDetail
+      if (before.chapter) {
+        await page.route(detailModule, route => { heldDetailRoutes.push(route) })
+        requestedDetail = page.waitForRequest(detailModule, { timeout: 10000 })
+      }
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await page.waitForFunction(() => window.__projectReloadTransitions.created > 0)
+      if (before.chapter) {
+        await page.locator(`${overlaySelector}[data-phase="covering"]`).waitFor()
+        await page.mouse.wheel(0, 400)
+        await temporaryLink(page, url('contact/'))
+        await requestedDetail
+        await page.locator(`${overlaySelector}[data-phase="covered"]`).waitFor()
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+        assert.ok(await page.evaluate(() => window.__projectReloadTransitions.samples.some(sample =>
+          sample.phase === 'covered' && !sample.detailReady && sample.opacity >= 0.999)),
+        'Opaque paper covers the cold detail page while its module is still loading')
+        await releaseDetail()
+        await page.unroute(detailModule)
+      }
+      await page.locator(overlaySelector).waitFor({ state: 'detached' })
+      await settle(selector)
+      assert.deepEqual(await probe(), { created: 1, phases: ['covering', 'covered', 'revealing'], navigationType: 'reload' },
+        'Each Projects reload plays exactly one complete transition')
+      const samples = await page.evaluate(() => window.__projectReloadTransitions.samples)
+      assertCoveredReload(samples)
+      const after = await state()
+      assert.equal(after.href, before.href, 'Reload preserves the URL, including query and chapter hash')
+      assert.equal(after.historyLength, before.historyLength, 'Reload does not add browser history entries')
+      assert.equal(after.chapter, before.chapter, 'Reload preserves the selected chapter')
+      assert.ok(Math.abs(after.top - before.top) < 8,
+        `${path} reload preserves the page scroll position; before ${before.top}, after ${after.top}`)
+      assert.equal(await page.locator('.app-shell').evaluate(shell => shell.inert), false)
+      assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).overflowY), 'hidden')
+    }
+
+    for (const releaseAt of [250, 800]) {
+      await page.goto(url('projects/vae-digits/#project-implementation'))
+      await settle('.project-reader-layout[data-chapter="implementation"]')
+      await page.route(mainModule, route => { heldMainRoutes.push(route) })
+      const requestedMain = page.waitForRequest(mainModule, { timeout: 10000 })
+      // DOMContentLoaded waits for the module. Keep the reload pending while
+      // examining the independent HTML bootstrap before React can execute.
+      const reloaded = page.reload({ waitUntil: 'domcontentloaded' }).then(() => null, error => error)
+      await requestedMain
+      await page.waitForFunction(elapsed => document.getElementById('root')
+        && window.__projectTransitionBoot
+        && document.timeline.currentTime - window.__projectTransitionBoot.startedAt >= elapsed,
+      releaseAt, { timeout: 10000 })
+      const pending = await page.evaluate(() => ({
+        rootChildren: document.getElementById('root').childElementCount,
+        samples: window.__projectReloadTransitions.samples.filter(sample => sample.frame && sample.rootExists),
+      }))
+      assert.equal(pending.rootChildren, 0, 'The main module remains blocked before React mounts')
+      assert.ok(pending.samples.length > 1 && pending.samples.every(sample => sample.visible && sample.bootstrap && sample.opacity >= 0.999),
+        'The HTML bootstrap already animates behind opaque paper while the root is empty')
+      assert.ok(pending.samples.some(sample => sample.lineScales.some(scale => scale > 0.05)),
+        'The bootstrap rules grow before the main module arrives')
+      await releaseMain()
+      const reloadError = await reloaded
+      if (reloadError) throw reloadError
+      await page.unroute(mainModule)
+      await page.waitForFunction(() => !document.querySelector('.project-page-transition'))
+      await settle('.project-reader-layout[data-chapter="implementation"]')
+      assert.deepEqual(await probe(), { created: 1, phases: ['covering', 'covered', 'revealing'], navigationType: 'reload' },
+        'Early and late bootstrap handoffs continue one transition without replaying its phases')
+      const samples = await page.evaluate(() => window.__projectReloadTransitions.samples)
+      assert.ok(samples.some(sample => sample.visible && !sample.bootstrap), 'React takes over the active transition')
+      assertCoveredReload(samples)
+    }
+
+    for (const [path, selector, reducedMotion] of [
+      ['projects/', '.projects-archive', 'reduce'],
+      ['contact/', '#contact', 'no-preference'],
+    ]) {
+      await page.emulateMedia({ reducedMotion })
+      await page.goto(url(path))
+      await settle(selector)
+      await page.reload()
+      await settle(selector)
+      assert.deepEqual(await probe(), { created: 0, phases: [], navigationType: 'reload' },
+        'Reduced motion and ordinary page reloads do not create a transition')
+      assert.equal(await page.locator(overlaySelector).count(), 0)
+      assert.equal(await page.locator('.app-shell').evaluate(shell => shell.inert), false)
+    }
+    assert.deepEqual(errors, [])
+  } finally {
+    await Promise.allSettled(heldDetailRoutes.splice(0).map(route => route.continue()))
+    await Promise.allSettled(heldMainRoutes.splice(0).map(route => route.continue()))
+    await context.close()
+  }
+}
+
 export async function runProjectPageTransitionChecks(browser, baseURL, report = () => {}) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
   const page = await context.newPage()
@@ -299,6 +589,7 @@ export async function runProjectPageTransitionChecks(browser, baseURL, report = 
       page.locator('main').filter({ has: page.locator('#contact') }))
     assert.ok(menuSamples.filter(sample => sample.phase === 'covering').every(sample => sample.onTop),
       'A navigation transition receives pointer input above the open modal menu')
+    assertMenuNavigationCoverage(menuSamples)
     pass('Opening and closing the Projects menu do not animate navigation; a menu destination covers the modal')
 
     await temporaryLink(page, url('projects/'))
@@ -378,6 +669,9 @@ export async function runProjectPageTransitionChecks(browser, baseURL, report = 
     pass('Narrow desktop route changes and Back preserve geometry; real resizing updates the overlay coverage')
     await runProjectPageTransitionFontChecks(browser, baseURL)
     pass('A web font arriving after the labels become visible cannot move their text or delay transition completion')
+    await runProjectPageTransitionMenuChecks(browser, baseURL, pass)
+    await runProjectPageTransitionReloadChecks(browser, baseURL)
+    pass('Projects reloads play once and preserve URL, history, chapter and scroll; direct visits, reduced motion and ordinary reloads skip the overlay')
     assert.deepEqual(errors, [])
     return checks
   } finally { await context.close() }

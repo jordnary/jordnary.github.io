@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { getRouteHref } from '../lib/routes'
+import { shouldTransitionProjects } from '../lib/project-page-transition'
 
 const menuPages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 type MenuController = { open: () => void; close: () => void; reset: () => void }
@@ -13,11 +14,15 @@ export function ProjectsWordmark({ href, label }: { href?: string; label?: strin
   )
 }
 
-export function ProjectsMenu({ onOpen }: { onOpen: () => void }) {
+export function ProjectsMenu({ onOpen, onOpenChange }: { onOpen?: () => void; onOpenChange?: (open: boolean) => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<MenuController | null>(null)
   const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    onOpenChange?.(expanded)
+  }, [expanded, onOpenChange])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -108,13 +113,20 @@ export function ProjectsMenu({ onOpen }: { onOpen: () => void }) {
 
   const closeOnNavigation = (event: MouseEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-    if (event.target instanceof Element && event.target.closest('a[href]')) controllerRef.current?.close()
+    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[href]') : null
+    if (!link || link.hasAttribute('download') || (link.target && link.target.toLowerCase() !== '_self') || link.relList.contains('external')) return
+    const current = new URL(window.location.href)
+    const destination = new URL(link.href)
+    if (destination.origin !== current.origin) return
+    // Keep the menu opaque while navigation covers it; route replacement removes it.
+    // A same-page selection still uses the ordinary menu dismissal.
+    if (!shouldTransitionProjects(current, destination)) controllerRef.current?.close()
   }
 
   return (
     <>
       <button className="archive-menu-toggle" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={expanded}
-        onClick={() => { onOpen(); controllerRef.current?.open() }}>
+        onClick={() => { onOpen?.(); controllerRef.current?.open() }}>
         <span className="archive-menu-symbol" aria-hidden="true" /><span>MENU</span>
       </button>
       <dialog className="archive-menu" ref={dialogRef} data-state="closed" aria-label="Site navigation"

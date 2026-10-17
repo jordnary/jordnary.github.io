@@ -19,7 +19,6 @@ export function ProjectsCursor() {
     let position: CursorPoint | null = null
     let frame = 0
     let previousTime = 0
-    let pressAnimation: Animation | null = null
 
     const enabled = () => finePointer.matches && !reducedMotion.matches && !document.hidden
 
@@ -29,8 +28,6 @@ export function ProjectsCursor() {
       previousTime = 0
       target = null
       position = null
-      pressAnimation?.cancel()
-      pressAnimation = null
       cursor.dataset.active = 'false'
       cursor.dataset.mode = 'default'
       delete surface.dataset.projectsCursor
@@ -53,7 +50,6 @@ export function ProjectsCursor() {
       const mode = hit.closest('[data-project-preview]')
         ? 'preview'
         : hit.closest(interactiveSelector) ? 'interactive' : 'default'
-      if (cursor.dataset.mode !== mode) pressAnimation?.cancel()
       cursor.dataset.mode = mode
 
       if (!position) position = { ...target }
@@ -97,18 +93,6 @@ export function ProjectsCursor() {
       schedule()
     }
 
-    const press = (event: PointerEvent) => {
-      move(event)
-      if (!target || event.button !== 0) return
-      pressAnimation?.cancel()
-      const size = cursor.dataset.mode === 'preview' ? 24 : cursor.dataset.mode === 'interactive' ? 18 : 10
-      pressAnimation = cursor.animate([
-        { width: `${size}px`, height: `${size}px` },
-        { width: `${size * .72}px`, height: `${size * .72}px`, offset: .38 },
-        { width: `${size}px`, height: `${size}px` },
-      ], { duration: 220, easing: 'cubic-bezier(.2, .65, .3, 1)' })
-    }
-
     const leave = (event: PointerEvent) => {
       if (!event.relatedTarget) clear()
     }
@@ -131,7 +115,7 @@ export function ProjectsCursor() {
 
     document.addEventListener('pointermove', move, { passive: true })
     document.addEventListener('pointerover', move, { passive: true })
-    document.addEventListener('pointerdown', press, { passive: true })
+    document.addEventListener('pointerdown', move, { passive: true })
     document.addEventListener('pointerout', leave, { passive: true })
     document.addEventListener('pointercancel', clear)
     document.addEventListener('keydown', keyDown, true)
@@ -147,7 +131,7 @@ export function ProjectsCursor() {
       clear()
       document.removeEventListener('pointermove', move)
       document.removeEventListener('pointerover', move)
-      document.removeEventListener('pointerdown', press)
+      document.removeEventListener('pointerdown', move)
       document.removeEventListener('pointerout', leave)
       document.removeEventListener('pointercancel', clear)
       document.removeEventListener('keydown', keyDown, true)

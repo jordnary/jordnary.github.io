@@ -3,11 +3,13 @@ import { projects, type ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
 import { ImageGallery, type GalleryImage } from '../components/image-gallery'
 import { ProjectsCursor } from '../components/ProjectsCursor'
+import { ProjectsMenu } from '../components/ProjectsMenu'
 import { SmartLink } from '../components/SmartLink'
 import { ProjectChapterNumber } from '../components/ProjectChapterNumber'
 import { getRouteHref } from '../lib/routes'
 import { getHashTargetId } from '../lib/hashScroll'
 import { useReaderContents } from '../lib/useReaderContents'
+import { useProjectReaderWheel } from '../lib/useProjectReaderWheel'
 import './ProjectDetailPage.css'
 
 const categoryLabels = {
@@ -73,6 +75,7 @@ function ReaderImageButton({ label, onClick }: { label: string; onClick: () => v
 export default function ProjectDetailPage({ project, href }: { project: ProjectCase; href: string }) {
   const { sections } = projectIntroductions[project.id]
   const [previewIndex, setPreviewIndex] = useState<number | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const hash = new URL(href).hash
   const hashTarget = getHashTargetId(hash)
   const hashChapter = sections.findIndex(section => hashTarget === `project-${section.id}`)
@@ -94,6 +97,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
   const { dialogRef, indexRef, tocOpen, openContents, closeContents, resetContents } = useReaderContents()
   const tocRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  useProjectReaderWheel(scrollRef, menuOpen || tocOpen || previewIndex !== null)
   const focusFrame = useRef(0)
   const previousChapter = useRef(chapter.displayed)
   const activeChapter = chapter.target
@@ -121,21 +125,6 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
     const frame = requestAnimationFrame(() => window.dispatchEvent(new Event('project-document-ready')))
     return () => cancelAnimationFrame(frame)
   }, [sections])
-
-  useLayoutEffect(() => {
-    const viewport = scrollRef.current
-    const article = viewport?.firstElementChild
-    if (!viewport || !article) return
-    const updateOverflow = () => {
-      viewport.dataset.scrollable = String(viewport.scrollHeight > viewport.clientHeight + 1)
-    }
-    updateOverflow()
-    // Recheck both the frame and the content as chapters, images and fonts resize.
-    const observer = new ResizeObserver(updateOverflow)
-    observer.observe(viewport)
-    observer.observe(article)
-    return () => observer.disconnect()
-  }, [])
 
   useEffect(() => {
     if (chapter.phase === 'idle') return
@@ -172,7 +161,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
   }, [activeHeading, tocOpen])
 
   return (
-    <div className="project-reader">
+    <div className="project-reader" id="project-cover">
       <nav className="project-reader-topbar" aria-label="面包屑">
         <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回项目">
           <span className="project-reader-dash" aria-hidden="true" /><span>Back To Index</span>
@@ -180,7 +169,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         <span className="project-reader-edition">Selected works / {projectNumber}</span>
       </nav>
 
-      <header id="project-cover" className={`project-reader-header${project.image ? ' has-cover' : ''}`}>
+      <header className={`project-reader-header${project.image ? ' has-cover' : ''}`}>
         <div className="project-reader-heading">
           <p className="project-reader-eyebrow"><span>Selected project</span><span>{projectNumber} / {categoryLabels[project.category]}</span></p>
           <h1>{project.title}</h1>
@@ -198,7 +187,6 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
             <img src={images[0].src} alt={images[0].alt} width={images[0].width} height={images[0].height} fetchPriority="high" />
             <ReaderImageButton onClick={() => setPreviewIndex(0)} label={`放大查看 ${project.title} 项目图片`} />
           </div>
-          <figcaption><span>{images[0].caption}</span><span>{String(images.length).padStart(2, '0')} images</span></figcaption>
         </figure>}
       </header>
 
@@ -267,10 +255,10 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
               </div>
               <nav className="project-reader-chapter-navigation" aria-label="Chapter navigation">
                 {activeChapter > 0 && <a className="project-reader-previous" href={`#project-${sections[activeChapter - 1].id}`} data-preserve-scroll>
-                  <ReaderSymbol direction="previous" /><span>Previous chapter</span>
+                  <ReaderSymbol direction="previous" /><span>Previous</span>
                 </a>}
                 {activeChapter < sections.length - 1 && <a className="project-reader-next" href={`#project-${sections[activeChapter + 1].id}`} data-preserve-scroll>
-                  <span>Next chapter</span><ReaderSymbol direction="next" />
+                  <span>Next</span><ReaderSymbol direction="next" />
                 </a>}
               </nav>
             </article>
@@ -286,6 +274,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         </footer>
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
+      <ProjectsMenu onOpenChange={setMenuOpen} />
       <ProjectsCursor />
     </div>
   )

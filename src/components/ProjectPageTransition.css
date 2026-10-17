@@ -43,11 +43,16 @@
   left: var(--transition-line-position);
   width: 1px;
   height: 100%;
-  background: rgb(78 78 78 / 13%);
+  background: rgb(78 78 78 / 14%);
   opacity: 0;
   transform: scaleY(0);
-  transform-origin: center top;
+  transform-origin: left top;
   will-change: transform, opacity;
+}
+
+/* Quiet hairlines break up the grid without changing its animation. */
+.project-page-transition-line:is(:nth-child(3), :nth-child(5), :nth-child(6), :nth-child(8), :nth-child(11), :nth-child(13)) {
+  scale: .5 1;
 }
 
 .project-page-transition-copy {
