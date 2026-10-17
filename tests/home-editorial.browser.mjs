@@ -43,7 +43,8 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   }
   const bubbleGroups = ['.home-editorial-hero-bubble', '.home-editorial-hero-foam', '.home-editorial-intro-bubbles']
-  const motionSelectors = ['.home-editorial-headlines', '.home-editorial-line-enter', '.home-editorial-marquee', '.home-editorial-wave', '.home-editorial-wave path', '.home-editorial-hero-caption', '.home-editorial-scroll', '.home-editorial-scroll i', ...bubbleGroups.flatMap(selector => [selector, `${selector} i`])].join(', ')
+  const sectionBubbleGroups = ['.home-editorial-selected-bubbles', '.home-editorial-journal-bubbles']
+  const motionSelectors = ['.home-editorial-headlines', '.home-editorial-line-enter', '.home-editorial-marquee', '.home-editorial-wave', '.home-editorial-wave path', '.home-editorial-hero-caption', '.home-editorial-scroll', '.home-editorial-scroll i', ...[...bubbleGroups, ...sectionBubbleGroups].flatMap(selector => [selector, `${selector} i`])].join(', ')
   const motionSnapshot = page => page.evaluate(selector => [...document.querySelectorAll(selector)].map(element => {
     const style = getComputedStyle(element)
     const strokeTransform = element.matches('.home-editorial-scroll i') ? getComputedStyle(element, '::before').transform : null
@@ -321,6 +322,74 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     assert.ok(speeds[0] > .035 && speeds[0] < .04, 'The top row travels roughly 3.75% of the viewport per second, as in the reference')
     movements.forEach(({ seam }) => assert.ok(seam < 1, 'Repeated phrases meet without a visible jump at the loop boundary'))
   })
+
+  for (const width of [320, 1440]) {
+    await check(`The ${width}px section bubble pairs float, follow scrolling, and leave actions usable`, async page => {
+      await home(page)
+      for (const selector of sectionBubbleGroups) {
+        const group = page.locator(selector)
+        assert.equal(await group.locator('i').count(), 2, 'Each section contains one large and one small bubble')
+        assert.equal(await group.getAttribute('aria-hidden'), 'true', 'Decorative bubbles stay out of the accessibility tree')
+        const target = await group.evaluate(element => {
+          const anchor = element.closest('.home-editorial-section-bottom').getBoundingClientRect()
+          return Math.round(scrollY + anchor.top + anchor.height / 2 - innerHeight / 2)
+        })
+        await settleScroll(page, target)
+        const snapshot = () => group.evaluate(element => ({
+          y: element.getBoundingClientRect().y,
+          children: [...element.children].map(child => {
+            const style = getComputedStyle(child)
+            return { translate: style.translate, transform: style.transform, shape: style.borderRadius }
+          }),
+        }))
+        const idle = await snapshot()
+        await page.waitForTimeout(180)
+        const floating = await snapshot()
+        assert.equal(floating.y, idle.y, 'Idle motion does not move the scroll anchor')
+        assert.notDeepEqual(floating.children, idle.children, 'The bubbles keep floating and deforming while the page is still')
+        await settleScroll(page, target + 120)
+        const scrolled = await snapshot()
+        assert.ok(idle.y - scrolled.y > 150, 'The pair adds a clear vertical displacement beyond ordinary document scrolling')
+        await settleScroll(page, target)
+        assert.ok(Math.abs((await snapshot()).y - idle.y) < 1, 'Reversing scroll restores the original group position')
+        const actionsClear = await group.evaluate(element => {
+          const bubbles = [...element.children].map(child => child.getBoundingClientRect())
+          return [...element.closest('.home-editorial-section-bottom').querySelectorAll('a')].every(link => {
+            const box = link.getBoundingClientRect()
+            return link.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2))
+              && bubbles.every(bubble => bubble.right <= box.left || bubble.left >= box.right || bubble.bottom <= box.top || bubble.top >= box.bottom)
+          })
+        })
+        assert.equal(actionsClear, true, 'White bubbles neither cover the section action nor intercept its pointer')
+        for (const offset of [-300, 0, 300]) {
+          await settleScroll(page, target + offset)
+          const contentClear = await group.evaluate(element => {
+            const paper = element.closest('.home-editorial-paper')
+            const obstacles = [...paper.querySelectorAll('img')].map(image => image.getBoundingClientRect())
+            const text = document.createTreeWalker(paper, NodeFilter.SHOW_TEXT)
+            while (text.nextNode()) {
+              if (!text.currentNode.textContent.trim() || text.currentNode.parentElement.closest('[aria-hidden="true"], .home-editorial-sr, style, script')) continue
+              const range = document.createRange()
+              range.selectNodeContents(text.currentNode)
+              obstacles.push(...range.getClientRects())
+            }
+            return [0, 2500, 5000, 7500].every(time => {
+              element.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = time })
+              return [...element.children].every(child => {
+                const bubble = child.getBoundingClientRect()
+                return obstacles.every(box => bubble.right <= box.left || bubble.left >= box.right || bubble.bottom <= box.top || bubble.top >= box.bottom)
+              })
+            })
+          })
+          assert.equal(contentClear, true, 'The complete floating and scrolling envelope stays clear of text and images')
+        }
+      }
+      await settleScroll(page, 0)
+      assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().top > innerHeight), true, 'The lower pair starts below the viewport')
+      await settleScroll(page, await page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
+      assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().bottom < 0), true, 'The lower pair leaves the viewport with its section after scrolling past it')
+    }, { viewport: { width, height: 900 } })
+  }
 
   await check('Bubble pairs cross the hero edge, move with parallax, and return to the same scroll position', async page => {
     await home(page)

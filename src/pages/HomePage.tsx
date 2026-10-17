@@ -3,9 +3,11 @@ import { HomepagePortal } from '../components/HomepagePortal'
 import { LiveUpdates } from '../components/LiveUpdates'
 import { SmartLink } from '../components/SmartLink'
 import { useHomeEditorialMotion } from '../components/useHomeEditorialMotion'
+import { useHomeSectionParallax } from '../components/useHomeSectionParallax'
 import { homeEditorialCovers } from '../data/home-editorial'
 import { getProjectHref, getRouteHref, isHomepagePortalUrl } from '../lib/routes'
 import './HomePage.css'
+import '../components/HomeSectionParallax.css'
 import '../components/HomeEditorialLive.css'
 
 const introLines = [
@@ -29,6 +31,7 @@ function HomeEditorial() {
   const rootRef = useRef<HTMLDivElement>(null)
   const journalRef = useRef<HTMLDivElement>(null)
   useHomeEditorialMotion(rootRef)
+  useHomeSectionParallax(rootRef)
 
   const moveJournal = (direction: number) => {
     const rail = journalRef.current
@@ -101,7 +104,7 @@ function HomeEditorial() {
                 </div>
               </article>
             </div>
-            <div className="home-editorial-section-bottom"><p>边学，边做，边留下痕迹。</p><SmartLink className="home-editorial-pill" href={getRouteHref('projects')}>浏览全部项目 <Arrow /></SmartLink></div>
+            <div className="home-editorial-section-bottom"><p>边学，边做，边留下痕迹。</p><BubbleCluster className="home-editorial-selected-bubbles" /><SmartLink className="home-editorial-pill" href={getRouteHref('projects')}>浏览全部项目 <Arrow /></SmartLink></div>
           </section>
 
           <section className="home-editorial-journal home-editorial-section" id="journal" aria-labelledby="home-journal-title">
@@ -109,8 +112,10 @@ function HomeEditorial() {
             <div className="home-editorial-journal-controls" aria-label="浏览日常卡片"><button aria-label="上一张日常卡片" onClick={() => moveJournal(-1)} type="button"><Arrow /></button><button aria-label="下一张日常卡片" onClick={() => moveJournal(1)} type="button"><Arrow /></button></div>
             <div className="home-editorial-journal-rail" ref={journalRef} tabIndex={0} role="region" aria-label="学习与日常，可横向滚动">
               {journalEntries.map(entry => <article className="home-editorial-journal-card" key={entry.key} data-home-reveal>
-                <SmartLink className="home-editorial-photo" href={entry.href} aria-label={entry.action}><img src={homeEditorialCovers[entry.key].src} alt={homeEditorialCovers[entry.key].alt} width="1200" height="900" loading="lazy" /><span className="home-editorial-photo-cta" aria-hidden="true">Explore<br /><Arrow /></span></SmartLink>
-                <p className="home-editorial-card-meta">{entry.label}</p><h3><SmartLink href={entry.href}>{entry.title}</SmartLink></h3><p className="home-editorial-card-caption">{entry.caption}</p><SmartLink className="home-editorial-card-link" href={entry.href}>{entry.action}<Arrow /></SmartLink>
+                <div className="home-editorial-journal-card-content">
+                  <SmartLink className="home-editorial-photo" href={entry.href} aria-label={entry.action}><img src={homeEditorialCovers[entry.key].src} alt={homeEditorialCovers[entry.key].alt} width="1200" height="900" loading="lazy" /><span className="home-editorial-photo-cta" aria-hidden="true">Explore<br /><Arrow /></span></SmartLink>
+                  <p className="home-editorial-card-meta">{entry.label}</p><h3><SmartLink href={entry.href}>{entry.title}</SmartLink></h3><p className="home-editorial-card-caption">{entry.caption}</p><SmartLink className="home-editorial-card-link" href={entry.href}>{entry.action}<Arrow /></SmartLink>
+                </div>
               </article>)}
             </div>
             <div className="home-editorial-section-bottom"><BubbleCluster className="home-editorial-journal-bubbles" /><SmartLink className="home-editorial-pill" href={getRouteHref('learning')}>翻开学习手记 <Arrow /></SmartLink></div>
@@ -144,5 +149,5 @@ function Arrow() {
 }
 
 function BubbleCluster({ className }: { className: string }) {
-  return <span className={`home-editorial-bubbles ${className}`} aria-hidden="true"><i /><i /><i /></span>
+  return <span className={`home-editorial-bubbles ${className}`} aria-hidden="true"><i /><i /></span>
 }

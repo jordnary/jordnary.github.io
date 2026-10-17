@@ -11,6 +11,10 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
     const hero = root.querySelector<HTMLElement>('.home-editorial-hero')
     const intro = root.querySelector<HTMLElement>('.home-editorial-intro')
     const introCopy = intro?.querySelector<HTMLElement>('.home-editorial-intro-copy')
+    const sectionBubbleAnchors = ['selected', 'journal'].map(section => ({
+      node: root.querySelector<HTMLElement>(`.home-editorial-${section} .home-editorial-section-bottom`),
+      property: `--home-${section}-travel`,
+    }))
     const revealNodes = Array.from(root.querySelectorAll<HTMLElement>('[data-home-reveal]'))
     const headingReveals = new Map(revealNodes.flatMap(node => {
       const heading = node === introCopy || node.dataset.homeReveal === 'heading' ? node.querySelector('h2') : null
@@ -20,7 +24,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
     const previouslyRevealed = new Set(revealNodes.filter(node => node.classList.contains('is-revealed')))
     const previousAttributes = ['data-motion', 'data-hero-visible', 'data-reveal-ready']
       .map(name => [name, root.getAttribute(name)] as const)
-    const scrollProperties = ['--home-headline-travel', '--home-hero-travel', '--home-intro-travel']
+    const scrollProperties = ['--home-headline-travel', '--home-hero-travel', '--home-intro-travel', ...sectionBubbleAnchors.map(({ property }) => property)]
     const previousProperties = ['--home-play-state', ...scrollProperties].map(name => ({
       name,
       value: root.style.getPropertyValue(name),
@@ -77,9 +81,15 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
       const introTravel = introBounds
         ? Math.max(-browser.innerHeight, Math.min(browser.innerHeight, browser.innerHeight / 2 - introBounds.top - introBounds.height / 2))
         : 0
+      // Measure the untransformed action row so reversing scroll cannot accumulate drift.
+      const sectionTravel = sectionBubbleAnchors.map(({ node, property }) => {
+        const bounds = node?.getBoundingClientRect()
+        return { property, travel: bounds ? browser.innerHeight / 2 - bounds.top - bounds.height / 2 : 0 }
+      })
       root.style.setProperty('--home-headline-travel', `${headlineTravel.toFixed(2)}px`)
       root.style.setProperty('--home-hero-travel', `${heroTravel.toFixed(2)}px`)
       root.style.setProperty('--home-intro-travel', `${introTravel.toFixed(2)}px`)
+      sectionTravel.forEach(({ property, travel }) => root.style.setProperty(property, `${travel.toFixed(2)}px`))
     }
 
     const scheduleScroll = () => {
