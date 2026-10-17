@@ -331,7 +331,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
         assert.equal(await group.locator('i').count(), 2, 'Each section contains one large and one small bubble')
         assert.equal(await group.getAttribute('aria-hidden'), 'true', 'Decorative bubbles stay out of the accessibility tree')
         const target = await group.evaluate(element => {
-          const anchor = element.closest('.home-editorial-section-bottom').getBoundingClientRect()
+          const anchor = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
           return Math.round(scrollY + anchor.top + anchor.height / 2 - innerHeight / 2)
         })
         await settleScroll(page, target)
@@ -353,42 +353,217 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
         await settleScroll(page, target)
         assert.ok(Math.abs((await snapshot()).y - idle.y) < 1, 'Reversing scroll restores the original group position')
         const actionsClear = await group.evaluate(element => {
-          const bubbles = [...element.children].map(child => child.getBoundingClientRect())
           return [...element.closest('.home-editorial-section-bottom').querySelectorAll('a')].every(link => {
             const box = link.getBoundingClientRect()
             return link.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2))
-              && bubbles.every(bubble => bubble.right <= box.left || bubble.left >= box.right || bubble.bottom <= box.top || bubble.top >= box.bottom)
           })
         })
-        assert.equal(actionsClear, true, 'White bubbles neither cover the section action nor intercept its pointer')
-        for (const offset of [-300, 0, 300]) {
-          await settleScroll(page, target + offset)
-          const contentClear = await group.evaluate(element => {
-            const paper = element.closest('.home-editorial-paper')
-            const obstacles = [...paper.querySelectorAll('img')].map(image => image.getBoundingClientRect())
-            const text = document.createTreeWalker(paper, NodeFilter.SHOW_TEXT)
-            while (text.nextNode()) {
-              if (!text.currentNode.textContent.trim() || text.currentNode.parentElement.closest('[aria-hidden="true"], .home-editorial-sr, style, script')) continue
-              const range = document.createRange()
-              range.selectNodeContents(text.currentNode)
-              obstacles.push(...range.getClientRects())
-            }
-            return [0, 2500, 5000, 7500].every(time => {
-              element.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = time })
-              return [...element.children].every(child => {
-                const bubble = child.getBoundingClientRect()
-                return obstacles.every(box => bubble.right <= box.left || bubble.left >= box.right || bubble.bottom <= box.top || bubble.top >= box.bottom)
-              })
-            })
-          })
-          assert.equal(contentClear, true, 'The complete floating and scrolling envelope stays clear of text and images')
-        }
+        assert.equal(actionsClear, true, 'White bubbles leave section actions interactive')
       }
       await settleScroll(page, 0)
       assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().top > innerHeight), true, 'The lower pair starts below the viewport')
       await settleScroll(page, await page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
       assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().bottom < 0), true, 'The lower pair leaves the viewport with its section after scrolling past it')
     }, { viewport: { width, height: 900 } })
+  }
+
+  await check('Resizing preserves the normalized reference path throughout the visible bubble travel', async page => {
+    await home(page)
+    await page.evaluate(() => document.fonts.ready)
+    // Reuse one page across both sides of every layout breakpoint and back again.
+    for (const [width, height] of [[1440, 900], [1201, 900], [1200, 900], [1024, 768], [900, 600], [768, 1024], [601, 900], [600, 900], [390, 844], [320, 568], [1440, 600]]) {
+      await page.setViewportSize({ width, height })
+      for (const [index, selector] of sectionBubbleGroups.entries()) {
+        const group = page.locator(selector)
+        // Find the actual pair's visible path without assuming its layout anchor.
+        await group.scrollIntoViewIfNeeded()
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+        const rate = index === 0 ? .38 : .4
+        const centerOffset = index === 0 ? -.02 : -.173
+        const centerScroll = await group.evaluate((element, scrollRate) => {
+          const bounds = element.getBoundingClientRect()
+          return scrollY + (bounds.top + bounds.height / 2 - innerHeight / 2) / (1 + scrollRate)
+        }, rate)
+        const positions = []
+        for (const fraction of [-.3, -.15, 0, .15, .3]) {
+          await settleScroll(page, centerScroll + height * fraction)
+          const position = await group.evaluate(element => {
+            const button = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+            const animations = element.getAnimations({ subtree: true })
+            animations.forEach(animation => animation.pause())
+            const centers = Array.from({ length: 12 }, (_, sample) => {
+              animations.forEach(animation => { animation.currentTime = sample * 10000 / 12 })
+              const bubble = element.firstElementChild.getBoundingClientRect()
+              return bubble.top + bubble.height / 2
+            })
+            return {
+              y: element.getBoundingClientRect().y + scrollY,
+              scroll: scrollY,
+              buttonY: button.top + button.height / 2,
+              bubbleY: centers.reduce((sum, center) => sum + center, 0) / centers.length,
+            }
+          })
+          positions.push(position)
+          const relativeHeight = (position.bubbleY - position.buttonY) / height
+          const expectedHeight = centerOffset + rate * (position.buttonY / height - .5)
+          assert.ok(Math.abs(relativeHeight - expectedHeight) < .002,
+            `${width}x${height}: the pair retains the same relative height and travel against its stationary action`)
+        }
+        for (let sample = 1; sample < positions.length; sample++) {
+          const before = positions[sample - 1]
+          const after = positions[sample]
+          assert.ok(Math.abs((before.y - after.y) / (after.scroll - before.scroll) - rate) < .015,
+            `${width}x${height}: ${selector} keeps its scroll ratio through the entire visible path`)
+        }
+        await settleScroll(page, positions[0].scroll)
+        assert.ok(Math.abs(await group.evaluate(element => element.getBoundingClientRect().y + scrollY) - positions[0].y) < 1,
+          'Reversing scroll after a resize returns to the same document position')
+      }
+    }
+  })
+
+  await check('Removing section action links leaves both bubble paths unchanged through resizing and scrolling', async page => {
+    await home(page)
+    await page.evaluate(() => document.fonts.ready)
+    const capture = async () => {
+      const positions = []
+      for (const [width, height] of [[1440, 900], [390, 844], [1024, 768]]) {
+        await page.setViewportSize({ width, height })
+        for (const selector of sectionBubbleGroups) {
+          const group = page.locator(selector)
+          const centerScroll = await group.evaluate(element => {
+            const row = element.closest('.home-editorial-section-bottom').getBoundingClientRect()
+            return scrollY + row.top + row.height / 2 - innerHeight / 2
+          })
+          for (const fraction of [-.3, 0, .3]) {
+            await settleScroll(page, centerScroll + height * fraction)
+            positions.push(await group.evaluate(element => ({
+              y: element.getBoundingClientRect().y + scrollY,
+              pageHeight: document.documentElement.scrollHeight,
+            })))
+          }
+        }
+      }
+      return positions
+    }
+    const withActions = await capture()
+    await page.locator('.home-editorial-section-bottom .home-editorial-pill').evaluateAll(links => links.forEach(link => link.remove()))
+    assert.equal(await page.locator('.home-editorial-section-bottom a').count(), 0)
+    const withoutActions = await capture()
+    withoutActions.forEach((position, index) => {
+      assert.ok(Math.abs(position.y - withActions[index].y) < 1, 'The scroll origin and travel remain independent of action links')
+      assert.equal(position.pageHeight, withActions[index].pageHeight, 'Removing an action does not collapse the reserved motion space')
+    })
+  })
+
+  for (const width of [320, 1440]) {
+    await check(`The ${width}px bubbles pass underneath text, images, and actions`, async page => {
+      await home(page)
+      for (const section of ['selected', 'journal']) {
+        const scope = `.home-editorial-${section}`
+        for (const targetSelector of ['h2', 'h3', '.home-editorial-photo', '.home-editorial-pill']) {
+          const target = page.locator(`${scope} ${targetSelector}`).first()
+          await target.scrollIntoViewIfNeeded()
+          const layers = await target.evaluate(element => {
+            const group = element.closest('.home-editorial-section').querySelector('.home-editorial-bubbles')
+            const saved = group.getAttribute('style')
+            group.getAnimations({ subtree: true }).forEach(animation => { animation.pause(); animation.currentTime = 2500 })
+            const content = element.getBoundingClientRect()
+            const bubble = group.firstElementChild.getBoundingClientRect()
+            const x = content.left + content.width / 2
+            const y = content.top + content.height / 2
+            // Deliberately overlap the content, and enable hit testing on the
+            // decoration so pointer-events cannot disguise the painting order.
+            group.style.translate = `${x - bubble.left - bubble.width / 2}px ${y - bubble.top - bubble.height / 2}px`
+            group.style.pointerEvents = 'auto'
+            const contentAbove = element.contains(document.elementFromPoint(x, y))
+            // This control proves that the tested point really intersects a bubble.
+            group.style.zIndex = '1000'
+            const overlaps = group.contains(document.elementFromPoint(x, y))
+            if (saved === null) group.removeAttribute('style')
+            else group.setAttribute('style', saved)
+            return { contentAbove, overlaps }
+          })
+          assert.equal(layers.overlaps, true, `${section} ${targetSelector}: the overlap control hits the bubble`)
+          assert.equal(layers.contentAbove, true, `${section} ${targetSelector}: content paints above the overlapping bubble`)
+        }
+      }
+    }, { viewport: { width, height: 900 } })
+  }
+
+  const sectionReferences = [
+    { section: 'selected', viewport: { width: 2554, height: 1342 }, rate: .38, centerOffset: -.02, tolerance: 12,
+      samples: [[1007.5, 1115.5], [857.5, 904.5], [707.5, 691.5], [557.5, 482.5], [407.5, 279.5], [257.5, 84.5]] },
+    { section: 'journal', viewport: { width: 2558, height: 1348 }, rate: .4, centerOffset: -.173, tolerance: 32,
+      samples: [[469.5, 172.91], [619.5, 368.87], [769.5, 558.88], [919.5, 761.77], [1069.5, 981.46], [1219.5, 1229.25]] },
+  ]
+  for (const reference of sectionReferences) {
+    await check(`The ${reference.section} bubbles follow their recorded button-relative path independently of scroll direction and cadence`, async page => {
+      await home(page)
+      const group = page.locator(`.home-editorial-${reference.section}-bubbles`)
+      const buttonDocumentY = await group.evaluate(element => {
+        const box = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+        return scrollY + box.top + box.height / 2
+      })
+      const atButtonY = async y => settleScroll(page, buttonDocumentY - y)
+      const geometry = () => group.evaluate(element => {
+        const button = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+        const animations = element.getAnimations({ subtree: true })
+        animations.forEach(animation => animation.pause())
+        // Average a complete idle cycle instead of mistaking its current phase for scroll travel.
+        const centers = Array.from({ length: 12 }, (_, index) => {
+          animations.forEach(animation => { animation.currentTime = index * 10000 / 12 })
+          const box = element.firstElementChild.getBoundingClientRect()
+          return box.top + box.height / 2
+        })
+        const bubbleY = centers.reduce((sum, y) => sum + y, 0) / centers.length
+        const buttonY = button.top + button.height / 2
+        return { buttonY, bubbleY, relativeY: bubbleY - buttonY, documentY: bubbleY + scrollY }
+      })
+      const captured = []
+      for (const [buttonY, bubbleY] of reference.samples) {
+        await atButtonY(buttonY)
+        const actual = await geometry()
+        assert.ok(Math.abs(actual.buttonY - buttonY) < 1, 'The action stays attached to its document position')
+        assert.ok(Math.abs(actual.bubbleY - bubbleY) < reference.tolerance,
+          `${reference.section}: the mean large-bubble center agrees with the recorded anchor sample at ${buttonY}px`)
+        captured.push(actual)
+      }
+      for (let index = 1; index < captured.length; index++) {
+        const before = captured[index - 1]
+        const after = captured[index]
+        const ratio = (after.relativeY - before.relativeY) / (after.buttonY - before.buttonY)
+        assert.ok(Math.abs(ratio - reference.rate) < .015, 'The relative displacement remains proportional across the visible path without early clipping')
+      }
+      const center = reference.viewport.height / 2
+      await atButtonY(center)
+      const centered = await geometry()
+      assert.ok(Math.abs(centered.relativeY - reference.centerOffset * reference.viewport.height) < 1,
+        'Each pair retains its independently measured offset from the action at the viewport center')
+      for (const [buttonY] of [...reference.samples].reverse()) {
+        await atButtonY(buttonY)
+        const original = captured[reference.samples.findIndex(sample => sample[0] === buttonY)]
+        assert.ok(Math.abs((await geometry()).relativeY - original.relativeY) < 1, 'Reversing scrolling restores the same button-relative position')
+      }
+      // Reach the same place through unequal steps and a pause; geometry must depend on scroll position.
+      for (const offset of [-180, 85, -35, 0]) {
+        await atButtonY(center + offset)
+        if (offset === 85) await page.waitForTimeout(75)
+      }
+      assert.ok(Math.abs((await geometry()).relativeY - centered.relativeY) < 1, 'Changing wheel-sized steps and their cadence does not accumulate drift')
+
+      await page.emulateMedia({ reducedMotion: 'reduce' })
+      await page.waitForFunction(() => document.querySelector('.home-editorial').dataset.motion === 'paused')
+      const reduced = await geometry()
+      await atButtonY(center - 150)
+      const reducedScrolled = await geometry()
+      assert.ok(Math.abs(reducedScrolled.documentY - reduced.documentY) < 1, 'Runtime reduced motion leaves this pair in ordinary document coordinates')
+      assert.equal(await group.evaluate(element => element.getAnimations({ subtree: true }).length), 0, 'Runtime reduced motion removes both idle animations')
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      await page.waitForFunction(() => document.querySelector('.home-editorial').dataset.motion === 'running')
+      await atButtonY(center)
+      assert.ok(Math.abs((await geometry()).relativeY - centered.relativeY) < 1, 'Restoring motion restores the calibrated path at the current position')
+    }, { viewport: reference.viewport })
   }
 
   await check('Bubble pairs cross the hero edge, move with parallax, and return to the same scroll position', async page => {

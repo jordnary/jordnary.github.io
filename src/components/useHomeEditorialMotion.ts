@@ -81,7 +81,8 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
       const introTravel = introBounds
         ? Math.max(-browser.innerHeight, Math.min(browser.innerHeight, browser.innerHeight / 2 - introBounds.top - introBounds.height / 2))
         : 0
-      // Measure the untransformed action row so reversing scroll cannot accumulate drift.
+      // The stationary section row reproduces the measured reference path without
+      // depending on an action link. Viewport position drives each bubble pair.
       const sectionTravel = sectionBubbleAnchors.map(({ node, property }) => {
         const bounds = node?.getBoundingClientRect()
         return { property, travel: bounds ? browser.innerHeight / 2 - bounds.top - bounds.height / 2 : 0 }
