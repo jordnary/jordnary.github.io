@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties } from 'react'
+import { useRef, type CSSProperties } from 'react'
 import { HomepagePortal } from '../components/HomepagePortal'
 import { LiveUpdates } from '../components/LiveUpdates'
 import { SmartLink } from '../components/SmartLink'
@@ -7,6 +7,13 @@ import { homeEditorialCovers } from '../data/home-editorial'
 import { getProjectHref, getRouteHref, isHomepagePortalUrl } from '../lib/routes'
 import './HomePage.css'
 import '../components/HomeEditorialLive.css'
+
+const introLines = [
+  '在代码与生活之间，寻找每一个有趣的想法',
+  '把好奇写成笔记，让小小的想法成形',
+  '让每一天，多一点新发现',
+  'Curiosity shapes my days.',
+]
 
 const journalEntries = [
   { key: 'learning', label: '01 / LEARNING', title: '把“好像懂了”，写成自己的理解。', caption: '知识、笔记，和那些值得多问一句的问题。', href: `${getRouteHref('learning')}#notes`, action: '翻开学习笔记' },
@@ -21,8 +28,7 @@ export function HomePage({ href = window.location.href }: { href?: string }) {
 function HomeEditorial() {
   const rootRef = useRef<HTMLDivElement>(null)
   const journalRef = useRef<HTMLDivElement>(null)
-  const [paused, setPaused] = useState(false)
-  useHomeEditorialMotion(rootRef, paused)
+  useHomeEditorialMotion(rootRef)
 
   const moveJournal = (direction: number) => {
     const rail = journalRef.current
@@ -38,9 +44,6 @@ function HomeEditorial() {
 
         <section className="home-editorial-hero" id="home" aria-labelledby="home-editorial-title">
           <h1 className="home-editorial-sr" id="home-editorial-title">用好奇心，创造自己的世界。</h1>
-          <button className="home-editorial-motion" aria-label={paused ? '播放页面动效' : '暂停页面动效'} title={paused ? '播放页面动效' : '暂停页面动效'} aria-pressed={paused} onClick={() => setPaused(value => !value)} type="button">
-            {paused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 5 7 5-7 5Z" fill="currentColor" /></svg> : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5v10m6-10v10" stroke="currentColor" strokeWidth="2" /></svg>}
-          </button>
           <div className="home-editorial-hero-surface" aria-hidden="true">
             <div className="home-editorial-liquid">
               <svg className="home-editorial-wave home-editorial-wave--back" viewBox="0 0 1440 800" preserveAspectRatio="none"><path d="M0 255 C240 325 480 445 720 425 C960 405 1200 315 1440 245 V800 H0Z" /></svg>
@@ -51,7 +54,7 @@ function HomeEditorial() {
                 <div className={`home-editorial-line home-editorial-line--${index + 1}`} key={index}>
                   <div className="home-editorial-line-enter">
                     <div className="home-editorial-marquee">
-                      {[0, 1, 2, 3].map(copy => <span className="home-editorial-phrase" key={copy}>LEARN. <em>BUILD.</em> BECOME.&nbsp;</span>)}
+                      {[0, 1, 2, 3].map(copy => <span className="home-editorial-phrase" key={copy}>CURIOSITY <em>BRINGS</em> IDEAS TO LIFE.&nbsp;</span>)}
                     </div>
                   </div>
                 </div>
@@ -67,22 +70,23 @@ function HomeEditorial() {
         <div className="home-editorial-paper">
           <section className="home-editorial-intro" id="explore" aria-labelledby="home-intro-title">
             <div className="home-editorial-intro-copy" data-home-reveal>
-              <p className="home-editorial-eyebrow">A LITTLE CURIOSITY, EVERY DAY.</p>
-              <h2 id="home-intro-title">
-                {['从一个问题出发，', '在代码与生活之间，', '把好奇写成笔记，把想法变成作品。'].map((line, index) => <span className="home-editorial-story-line" key={line} style={{ '--line': index } as CSSProperties}>{line}</span>)}
+              <h2 id="home-intro-title" aria-label={introLines.join(' ')}>
+                {introLines.map((line, lineIndex) => <span className="home-editorial-story-line" key={line} lang={lineIndex === introLines.length - 1 ? 'en' : undefined} aria-hidden="true">
+                  {Array.from(line).map((character, index) => <span className="home-editorial-story-character" key={index} style={{ '--character': index } as CSSProperties}>{character}</span>)}
+                </span>)}
               </h2>
-              <p className="home-editorial-intro-english">Learning a little. Making a little.<br />Becoming a little more myself.</p>
-              <SmartLink className="home-editorial-text-link" href={getRouteHref('about')}>你好，认识一下 <Arrow /></SmartLink>
+              <p className="home-editorial-intro-english" lang="en">
+                <span>Finding little wonders in code and everyday life.</span>
+                <span>Turning curiosity into notes, and ideas into things.</span>
+                <span>A little discovery, every day.</span>
+                <span>Curiosity shapes my days.</span>
+              </p>
             </div>
             <span className="home-editorial-intro-bubbles" aria-hidden="true"><i /><i /></span>
-            <span className="home-editorial-side-note">CS / AI / WEB — AN ONGOING EXPLORATION</span>
           </section>
 
           <section className="home-editorial-selected home-editorial-section" id="selected" aria-labelledby="home-selected-title">
-            <div className="home-editorial-section-heading" data-home-reveal>
-              <p className="home-editorial-eyebrow">・一些正在生长的作品</p>
-              <h2 id="home-selected-title">Selected <em>work</em><span className="home-editorial-heading-index">(01)</span></h2>
-            </div>
+            <EditorialHeading id="home-selected-title" eyebrow="・一些正在生长的作品" title="Selected" accent="work" />
             <div className="home-editorial-feature-layout">
               <aside className="home-editorial-feature-aside" data-home-reveal><span>FROM AN IDEA<br />TO SOMETHING REAL.</span><p>从“如果可以”，<br />到“试试看吧”。</p><i aria-hidden="true">↘</i></aside>
               <article className="home-editorial-feature" data-home-reveal>
@@ -101,7 +105,7 @@ function HomeEditorial() {
           </section>
 
           <section className="home-editorial-journal home-editorial-section" id="journal" aria-labelledby="home-journal-title">
-            <div className="home-editorial-section-heading" data-home-reveal><p className="home-editorial-eyebrow">・学习，也记录生活</p><h2 id="home-journal-title">The <em>journal</em><span className="home-editorial-heading-index">(02)</span></h2></div>
+            <EditorialHeading id="home-journal-title" eyebrow="・学习，也记录生活" title="The" accent="journal" />
             <div className="home-editorial-journal-controls" aria-label="浏览日常卡片"><button aria-label="上一张日常卡片" onClick={() => moveJournal(-1)} type="button"><Arrow /></button><button aria-label="下一张日常卡片" onClick={() => moveJournal(1)} type="button"><Arrow /></button></div>
             <div className="home-editorial-journal-rail" ref={journalRef} tabIndex={0} role="region" aria-label="学习与日常，可横向滚动">
               {journalEntries.map(entry => <article className="home-editorial-journal-card" key={entry.key} data-home-reveal>
@@ -113,12 +117,24 @@ function HomeEditorial() {
           </section>
 
           <div className="home-editorial-live" data-home-reveal><LiveUpdates /></div>
-
-          <section className="home-editorial-contact" aria-label="联系与交流">
-            <div className="home-editorial-contact-copy" data-home-reveal><p className="home-editorial-eyebrow">GOOD THINGS START WITH A CONVERSATION.</p><SmartLink className="home-editorial-hello" href={getRouteHref('contact')}>Say <em>hello.</em><Arrow /></SmartLink><p>关于代码、关于学习，或者一个还没成形的灵感。</p></div>
-          </section>
         </div>
       </div>
+    </div>
+  )
+}
+
+function EditorialHeading({ id, eyebrow, title, accent }: { id: string; eyebrow: string; title: string; accent: string }) {
+  const characters = (word: string) => Array.from(word).map((character, order) => (
+    <span className="home-editorial-heading-character" key={order} style={{ '--character': order } as CSSProperties}>{character}</span>
+  ))
+
+  return (
+    <div className="home-editorial-section-heading" data-home-reveal="heading">
+      <p className="home-editorial-eyebrow">{eyebrow}</p>
+      <h2 id={id} aria-label={`${title} ${accent}`}>
+        <span className="home-editorial-heading-word" aria-hidden="true">{characters(title)}</span>{' '}
+        <em className="home-editorial-heading-word" aria-hidden="true">{characters(accent)}</em>
+      </h2>
     </div>
   )
 }

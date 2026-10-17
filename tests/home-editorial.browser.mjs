@@ -43,7 +43,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   }
   const bubbleGroups = ['.home-editorial-hero-bubble', '.home-editorial-hero-foam', '.home-editorial-intro-bubbles']
-  const motionSelectors = ['.home-editorial-line-enter', '.home-editorial-marquee', '.home-editorial-wave', '.home-editorial-wave path', '.home-editorial-hero-caption', '.home-editorial-scroll', '.home-editorial-scroll i', ...bubbleGroups.flatMap(selector => [selector, `${selector} i`])].join(', ')
+  const motionSelectors = ['.home-editorial-headlines', '.home-editorial-line-enter', '.home-editorial-marquee', '.home-editorial-wave', '.home-editorial-wave path', '.home-editorial-hero-caption', '.home-editorial-scroll', '.home-editorial-scroll i', ...bubbleGroups.flatMap(selector => [selector, `${selector} i`])].join(', ')
   const motionSnapshot = page => page.evaluate(selector => [...document.querySelectorAll(selector)].map(element => {
     const style = getComputedStyle(element)
     const strokeTransform = element.matches('.home-editorial-scroll i') ? getComputedStyle(element, '::before').transform : null
@@ -84,7 +84,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
       const box = hero?.getBoundingClientRect()
       return box && box.width > innerWidth * .75 && box.height > innerHeight * .25
     })
-    assert.equal(await page.locator('.home-editorial-headlines').innerText().then(text => text.includes('LEARN.') && text.includes('BUILD.') && text.includes('BECOME.')), true)
+    assert.equal(await page.locator('.home-editorial-headlines').innerText().then(text => text.includes('CURIOSITY BRINGS IDEAS TO LIFE.')), true)
     for (const image of await page.locator('.home-editorial-photo img').all()) {
       await image.scrollIntoViewIfNeeded()
       await image.evaluate(element => element.decode())
@@ -181,6 +181,51 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     }
   })
 
+  for (const width of [1440, 320]) {
+    await check(`The ${width}px introduction reveals characters only after its heading enters the viewport`, async page => {
+      await home(page)
+      await page.waitForFunction(() => document.querySelector('.home-editorial').dataset.revealReady === 'true')
+      const copy = page.locator('.home-editorial-intro-copy')
+      const heading = page.getByRole('heading', { name: '在代码与生活之间，寻找每一个有趣的想法 把好奇写成笔记，让小小的想法成形 让每一天，多一点新发现 Curiosity shapes my days.', exact: true })
+      assert.equal(await heading.count(), 1, 'The split characters retain one complete accessible heading')
+      assert.equal(await copy.locator('a').count(), 0, 'The introduction no longer has an About action')
+      assert.equal(await page.getByText('CS / AI / WEB — AN ONGOING EXPLORATION', { exact: true }).count(), 0)
+      const headingTop = await heading.evaluate(element => element.getBoundingClientRect().top + scrollY)
+      await settleScroll(page, Math.round(headingTop - page.viewportSize().height * .9))
+      await page.waitForTimeout(80)
+      assert.equal(await copy.evaluate(element => element.classList.contains('is-revealed')), false, 'The body animation waits until the heading reaches its reveal threshold')
+      await settleScroll(page, Math.round(headingTop - page.viewportSize().height * .65))
+      await page.waitForFunction(() => document.querySelector('.home-editorial-intro-copy').classList.contains('is-revealed'))
+      const samples = await copy.evaluate(element => {
+        const animations = element.getAnimations({ subtree: true })
+        animations.forEach(animation => animation.pause())
+        const snapshot = time => {
+          animations.forEach(animation => { animation.currentTime = time })
+          return {
+            firstLetters: [...element.querySelectorAll('.home-editorial-story-character:first-child')].map(character => Number(getComputedStyle(character).opacity)),
+            characters: [...element.querySelectorAll('.home-editorial-story-line:last-child .home-editorial-story-character')].map(character => {
+              const style = getComputedStyle(character)
+              return { opacity: Number(style.opacity), y: new DOMMatrixReadOnly(style.transform).m42 }
+            }),
+            englishOpacity: Number(getComputedStyle(element.querySelector('.home-editorial-intro-english')).opacity),
+          }
+        }
+        return { early: snapshot(200), middle: snapshot(800), finished: snapshot(2000) }
+      })
+      assert.ok(samples.early.firstLetters.every(opacity => opacity > .1), 'All four lines begin together')
+      assert.ok(Math.max(...samples.early.firstLetters) - Math.min(...samples.early.firstLetters) < .02)
+      assert.ok(samples.early.characters[0].opacity > samples.early.characters.at(-1).opacity + .2, 'Characters fade in from left to right')
+      assert.ok(samples.early.characters[0].y > 0, 'Characters rise gently into their final baseline')
+      assert.equal(samples.early.englishOpacity, 0, 'The English text follows the first characters')
+      assert.ok(samples.middle.englishOpacity > .2)
+      assert.ok(samples.finished.characters.every(character => character.opacity === 1 && character.y === 0), 'Every character finishes visible and aligned')
+      assert.equal(samples.finished.englishOpacity, 1)
+      await settleScroll(page, 0)
+      await settleScroll(page, Math.round(headingTop - page.viewportSize().height * .4))
+      assert.equal(await copy.evaluate(element => [...element.querySelectorAll('.home-editorial-story-character')].every(character => Number(getComputedStyle(character).opacity) === 1)), true, 'Returning to the section must not hide its text again')
+    }, { viewport: { width, height: 900 } })
+  }
+
   for (const width of [320, 390, 768, 1440]) {
     await check(`The ${width}px layout fits the screen and its arrows reveal the third journal card`, async page => {
       await home(page)
@@ -214,6 +259,68 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
       assert.equal(await page.getByRole('navigation', { name: 'Footer navigation', exact: true }).isVisible(), true, 'The shared footer stays accessible at every supported width')
     }, { viewport: { width, height: 900 }, isMobile: width < 600, hasTouch: width < 600 })
   }
+
+  for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
+    await check(`The ${viewport.width}px headlines drift toward the document-anchored caption and retrace on reverse scroll`, async page => {
+      await home(page)
+      const geometry = () => page.evaluate(() => {
+        const headlines = document.querySelector('.home-editorial-headlines').getBoundingClientRect()
+        const caption = document.querySelector('.home-editorial-hero-caption').getBoundingClientRect()
+        return { headlineY: headlines.y, documentY: headlines.y + scrollY, captionY: caption.y + scrollY, gap: caption.top - headlines.bottom }
+      })
+      const start = await geometry()
+      await settleScroll(page, viewport.height * .1)
+      assert.ok(Math.abs((await geometry()).documentY - start.documentY) < 1, 'A small initial scroll keeps the original composition')
+      const distance = viewport.height * .35
+      await settleScroll(page, distance)
+      const down = await geometry()
+      assert.ok(down.documentY - start.documentY > viewport.height * .04, 'The English moves down relative to the page by a visible amount')
+      assert.ok(down.headlineY < start.headlineY && start.headlineY - down.headlineY < distance, 'The English still leaves the viewport, more slowly than ordinary content')
+      assert.ok(Math.abs(down.captionY - start.captionY) < 1, 'The caption stays at its original document position')
+      assert.ok(down.gap < start.gap - viewport.height * .04 && down.gap > 0, 'The English approaches the caption without overlapping it')
+      await settleScroll(page, viewport.height * .6)
+      const further = await geometry()
+      assert.ok(further.documentY > down.documentY, 'The drift continues as scrolling advances')
+      await settleScroll(page, viewport.height * .85)
+      const late = await geometry()
+      assert.ok(late.documentY - further.documentY < further.documentY - down.documentY, 'The drift eases out before the hero leaves')
+      assert.ok(late.gap > 0, 'The maximum drift leaves room above the caption')
+      await settleScroll(page, viewport.height * 1.2)
+      assert.ok(Math.abs((await geometry()).documentY - late.documentY) < 1, 'The drift stops growing below the hero')
+      await settleScroll(page, distance)
+      const returned = await geometry()
+      assert.ok(Math.abs(returned.documentY - down.documentY) < 1, 'Reversing scroll restores the same text position without accumulated drift')
+      await settleScroll(page, 0)
+      assert.ok(Math.abs((await geometry()).documentY - start.documentY) < 1, 'Returning to the top restores the original composition')
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'The moving text never widens the page')
+    }, { viewport, isMobile: viewport.width < 600, hasTouch: viewport.width < 600 })
+  }
+
+  await check('The three English rows loop left, right, left at the reference pace', async page => {
+    await home(page)
+    const movements = await page.evaluate(() => [...document.querySelectorAll('.home-editorial-marquee')].map(element => {
+      const animation = element.getAnimations()[0]
+      const { delay, duration } = animation.effect.getTiming()
+      animation.pause()
+      const xAt = time => {
+        animation.currentTime = time
+        return new DOMMatrixReadOnly(getComputedStyle(element).transform).m41
+      }
+      const delta = xAt(delay + 7000) - xAt(delay + 5000)
+      const lastCopyX = xAt(delay + Number(duration) - 1) + element.children[1].offsetLeft
+      const firstCopyX = xAt(delay + Number(duration) + 1) + element.children[0].offsetLeft
+      // Compare in the track's coordinates, independent of the entrance rotation.
+      const phraseWidth = Number.parseFloat(getComputedStyle(element.children[0]).width)
+      // Either adjacent copy can cross the edge when a reversed animation wraps.
+      const seam = Math.abs(lastCopyX - firstCopyX) % phraseWidth
+      return { delta, seam: Math.min(seam, phraseWidth - seam) }
+    }))
+    assert.ok(movements[0].delta < 0 && movements[1].delta > 0 && movements[2].delta < 0, 'Adjacent rows travel in opposite directions')
+    const speeds = movements.map(({ delta }) => Math.abs(delta) / 2 / page.viewportSize().width)
+    assert.ok(speeds[0] > speeds[1] && speeds[1] > speeds[2], 'The top row leads, the middle row is slightly slower, and the bottom row is slowest')
+    assert.ok(speeds[0] > .035 && speeds[0] < .04, 'The top row travels roughly 3.75% of the viewport per second, as in the reference')
+    movements.forEach(({ seam }) => assert.ok(seam < 1, 'Repeated phrases meet without a visible jump at the loop boundary'))
+  })
 
   await check('Bubble pairs cross the hero edge, move with parallax, and return to the same scroll position', async page => {
     await home(page)
@@ -320,45 +427,12 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     }
   })
 
-  await check('Pause freezes continuous visible motion and Play resumes it', async page => {
-    await home(page)
-    await page.waitForTimeout(3400)
-    const before = await motionSnapshot(page)
-    await page.waitForTimeout(250)
-    assert.notDeepEqual(await motionSnapshot(page), before, 'The hero has motion before pausing')
-    await page.getByRole('button', { name: '暂停页面动效', exact: true }).click()
-    await page.waitForTimeout(80)
-    const paused = await motionSnapshot(page)
-    await page.waitForTimeout(400)
-    assert.deepEqual(await motionSnapshot(page), paused, 'Visible marquee, waves and decorative motion stop together')
-    await page.getByRole('button', { name: '播放页面动效', exact: true }).click()
-    await page.waitForTimeout(300)
-    assert.notDeepEqual(await motionSnapshot(page), paused, 'Play resumes the frozen visuals')
-  })
-
-  await check('Pause freezes parallax during document scrolling and Play catches up to the current position', async page => {
-    await home(page)
-    await readyBubbles(page)
-    const distance = page.viewportSize().height * .3
-    await settleScroll(page, distance)
-    const uninterrupted = await bubbleGeometry(page)
-    await settleScroll(page, 0)
-    await page.getByRole('button', { name: '暂停页面动效', exact: true }).click()
-    await page.waitForTimeout(80)
-    const before = await bubbleGeometry(page)
-    const frozen = await motionSnapshot(page)
-    await settleScroll(page, distance)
-    assertOnlyDocumentScroll(before, await bubbleGeometry(page))
-    await page.waitForTimeout(250)
-    assert.deepEqual(await motionSnapshot(page), frozen, 'Scrolling while paused changes neither bubble deformation nor parallax transforms')
-    // Avoid the test runner scrolling the offscreen pause button into view before activating it.
-    await page.getByRole('button', { name: '播放页面动效', exact: true }).evaluate(button => button.click())
-    await settleScroll(page, distance)
-    assertSameGroupPositions(await bubbleGeometry(page), uninterrupted, 'Play catches up to the current scroll position')
-  })
-
   await check('Reduced motion keeps the hero and section text readable without continuous motion', async page => {
     await home(page)
+    assert.equal(await page.locator('.home-editorial-intro-copy').evaluate(element => [...element.querySelectorAll('.home-editorial-story-character, .home-editorial-eyebrow, .home-editorial-intro-english')].every(child => {
+      const style = getComputedStyle(child)
+      return Number(style.opacity) === 1 && style.transform === 'none'
+    })), true, 'Reduced motion exposes every intro character and subtitle immediately')
     const before = await motionSnapshot(page)
     await page.waitForTimeout(300)
     assert.deepEqual(await motionSnapshot(page), before)
