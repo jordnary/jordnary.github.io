@@ -212,7 +212,53 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
         assert.equal(await links.nth(index).getAttribute('href'), `/${route}/`)
       }
       assert.equal(page.url(), homeURL, 'Dragging a directory image must not follow its link')
+      phase = 'drag start boundaries'
+      for (const [key, index, direction] of [['Home', 0, -1], ['End', 3, 1]]) {
+        await rail.focus()
+        await page.keyboard.press(key)
+        await center(page, index)
+        await rail.scrollIntoViewIfNeeded()
+        const photo = await rail.locator('.home-gallery-window').nth(index).boundingBox()
+        const viewport = await rail.boundingBox()
+        const edge = index === 0 ? photo.x : photo.x + photo.width
+        const outer = index === 0 ? viewport.x : viewport.x + viewport.width
+        const start = { x: (edge + outer) / 2, y: photo.y + 60 }
+        const before = await rail.evaluate(element => element.scrollLeft)
+        await drag(page, start, { x: start.x + direction * 180, y: start.y })
+        assert.equal(await rail.evaluate(element => element.scrollLeft), before,
+          `${key}: dragging the outer blank margin cannot move the gallery`)
+        assert.equal(await rail.getAttribute('data-dragging'), null,
+          `${key}: the outer blank margin cannot capture a drag`)
+      }
+
       if (width === 1440) {
+        phase = 'dragging between photos and beyond their edges'
+        await rail.focus()
+        await page.keyboard.press('Home')
+        await center(page, 0)
+        const firstPhoto = await rail.locator('.home-gallery-window').first().boundingBox()
+        const secondPhoto = await rail.locator('.home-gallery-window').nth(1).boundingBox()
+        const gap = { x: (firstPhoto.x + firstPhoto.width + secondPhoto.x) / 2, y: firstPhoto.y + 60 }
+        await drag(page, gap, { x: gap.x - firstPhoto.width, y: gap.y })
+        await center(page, 1)
+        assert.equal(page.url(), homeURL, 'The gap between photos remains a valid drag starting area')
+
+        await rail.focus()
+        await page.keyboard.press('Home')
+        await center(page, 0)
+        const start = { x: firstPhoto.x + firstPhoto.width * .8, y: firstPhoto.y + 60 }
+        await page.mouse.move(start.x, start.y)
+        await page.mouse.down()
+        await page.mouse.move(firstPhoto.x - 50, start.y, { steps: 20 })
+        assert.equal(await rail.getAttribute('data-dragging'), 'true',
+          'A drag started between the photo edges continues beyond its starting boundary')
+        await page.mouse.move(-150, start.y, { steps: 20 })
+        assert.equal(await rail.getAttribute('data-dragging'), 'true',
+          'An accepted drag retains capture outside the gallery')
+        await page.waitForTimeout(130)
+        await page.mouse.up()
+        await center(page, 2)
+
         phase = 'pointer cancellation and bounds'
         await rail.focus()
         await page.keyboard.press('Home')

@@ -29,6 +29,20 @@ To regenerate, install `fonttools` and `brotli`, then run:
 python scripts/subset-navigation-font.py "ChillRoundF v3.0.ttf"
 ```
 
+## Home gallery button
+
+`home-gallery-rounded.woff2` is another renamed subset of ChillRoundF v3.0,
+under the same SIL OFL 1.1 license in `LICENSE.navigation-rounded.txt`.
+It contains only `去别处随意逛逛` and a space, and is renamed to
+`Home Gallery Round`. Copyright and license name records are retained.
+Only the Home gallery's random-page link uses it, at the source's regular weight.
+
+To regenerate, install `fonttools` and `brotli`, then run:
+
+```sh
+python scripts/subset-home-gallery-font.py "ChillRoundF v3.0.ttf"
+```
+
 ## Projects archive
 
 `projects-instrument-serif.ttf` is the regular weight of Instrument Serif,

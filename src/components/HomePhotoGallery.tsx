@@ -181,6 +181,11 @@ export function HomePhotoGallery() {
         return
       }
       if (event.button !== 0) return
+      // Use visible photo edges, including entrance, parallax, and hover motion.
+      // Check only the start: an accepted drag may continue beyond these edges.
+      const first = cards[0].querySelector('.home-gallery-window')!.getBoundingClientRect()
+      const last = cards.at(-1)!.querySelector('.home-gallery-window')!.getBoundingClientRect()
+      if (event.clientX < first.left || event.clientX > last.right) return
       clearWheel()
       stop()
       suppressClick = false

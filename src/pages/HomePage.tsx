@@ -95,8 +95,8 @@ function HomeEditorial() {
             <HomePhotoGallery />
             <div className="home-editorial-section-bottom">
               <BubbleCluster className="home-editorial-selected-bubbles" />
-              <SmartLink className="home-editorial-pill home-editorial-random-link" href={randomHref} aria-label="随处逛逛，随机打开一个站内页面">
-                <span>随处逛逛</span><Arrow />
+              <SmartLink className="home-editorial-pill home-editorial-random-link" href={randomHref} aria-label="去别处随意逛逛，随机打开一个站内页面">
+                <span>去别处随意逛逛</span><Arrow />
               </SmartLink>
             </div>
           </section>
