@@ -17,8 +17,9 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
     const sections = Array.from(root.querySelectorAll<HTMLElement>('.home-editorial-section')).map(section => ({
       section,
       heading: section.querySelector<HTMLElement>('.home-editorial-section-heading h2'),
-      cards: section.querySelector<HTMLElement>('.home-editorial-feature-layout, .home-editorial-journal-rail'),
-      cardContents: Array.from(section.querySelectorAll<HTMLElement>('.home-editorial-feature, .home-editorial-journal-card-content')),
+      cards: section.querySelector<HTMLElement>('.home-gallery, .home-editorial-feature-layout, .home-editorial-journal-rail'),
+      cardContents: Array.from(section.querySelectorAll<HTMLElement>('.home-gallery-card-content, .home-editorial-feature, .home-editorial-journal-card-content')),
+      gallery: Boolean(section.querySelector('.home-gallery')),
       documentTops: [0, 0],
       current: [0, 0],
       target: [0, 0],
@@ -78,7 +79,12 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
           const [headingTop, cardsTop] = state.documentTops.map(top => top - scrollTop)
           const progress = clamp((viewportHeight * headingEntry - headingTop) / (viewportHeight * (headingEntry - headingExit)), 0, 1)
           const eased = progress * (2 - progress)
-          state.target = [state.heading ? headingStart + eased * (headingEnd - headingStart) : 0, clamp((cardsTop - viewportHeight / 2) * .2, -photoLimit, photoLimit)]
+          // The gallery drifts left as it rises, reversing along the same path
+          // when scrolling back. Its native drag positions remain stationary.
+          const photoTarget = state.gallery
+            ? (cardsTop - viewportHeight * .4) * .175
+            : (cardsTop - viewportHeight / 2) * .2
+          state.target = [state.heading ? headingStart + eased * (headingEnd - headingStart) : 0, clamp(photoTarget, -photoLimit, photoLimit)]
           if (snapToPosition) state.current = [...state.target]
         })
         targetsDirty = false

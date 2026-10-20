@@ -3,7 +3,6 @@ import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const sections = [
-  { id: 'selected', anchor: '.home-editorial-feature-layout', card: '.home-editorial-feature' },
   { id: 'journal', anchor: '.home-editorial-journal-rail', card: '.home-editorial-journal-card-content' },
 ]
 const screenshotDirectory = 'node_modules/.cache/home-section-parallax'

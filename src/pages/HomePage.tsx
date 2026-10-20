@@ -1,11 +1,12 @@
-import { useRef, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
+import { HomePhotoGallery } from '../components/HomePhotoGallery'
 import { HomepagePortal } from '../components/HomepagePortal'
 import { LiveUpdates } from '../components/LiveUpdates'
 import { SmartLink } from '../components/SmartLink'
 import { useHomeEditorialMotion } from '../components/useHomeEditorialMotion'
 import { useHomeSectionParallax } from '../components/useHomeSectionParallax'
-import { homeEditorialCovers } from '../data/home-editorial'
-import { getProjectHref, getRouteHref, isHomepagePortalUrl } from '../lib/routes'
+import { homeDirectory, homeEditorialCovers } from '../data/home-editorial'
+import { getRouteHref, isHomepagePortalUrl } from '../lib/routes'
 import './HomePage.css'
 import '../components/HomeSectionParallax.css'
 import '../components/HomeEditorialLive.css'
@@ -30,6 +31,7 @@ export function HomePage({ href = window.location.href }: { href?: string }) {
 function HomeEditorial() {
   const rootRef = useRef<HTMLDivElement>(null)
   const journalRef = useRef<HTMLDivElement>(null)
+  const [randomHref] = useState(() => getRouteHref(homeDirectory[Math.floor(Math.random() * homeDirectory.length)].page))
   useHomeEditorialMotion(rootRef)
   useHomeSectionParallax(rootRef)
 
@@ -89,22 +91,14 @@ function HomeEditorial() {
           </section>
 
           <section className="home-editorial-selected home-editorial-section" id="selected" aria-labelledby="home-selected-title">
-            <EditorialHeading id="home-selected-title" eyebrow="・一些正在生长的作品" title="Selected" accent="work" />
-            <div className="home-editorial-feature-layout">
-              <aside className="home-editorial-feature-aside" data-home-reveal><span>FROM AN IDEA<br />TO SOMETHING REAL.</span><p>从“如果可以”，<br />到“试试看吧”。</p><i aria-hidden="true">↘</i></aside>
-              <article className="home-editorial-feature" data-home-reveal>
-                <SmartLink className="home-editorial-photo home-editorial-feature-photo" href={getProjectHref('briefing-atlas')} aria-label="查看 Briefing Atlas 项目">
-                  <img src={homeEditorialCovers.featured.src} alt={homeEditorialCovers.featured.alt} width="1600" height="1067" loading="lazy" />
-                  <span className="home-editorial-photo-label">SELECTED PROJECT</span>
-                  <span className="home-editorial-photo-cta" aria-hidden="true">Explore<br /><Arrow /></span>
-                </SmartLink>
-                <div className="home-editorial-feature-caption">
-                  <div><p className="home-editorial-card-meta">WEB APPLICATION / PERSONAL PROJECT</p><h3><SmartLink href={getProjectHref('briefing-atlas')}>Briefing Atlas</SmartLink></h3><p>让读过的科技简报，成为可以再次发现的知识。</p></div>
-                  <SmartLink href={getProjectHref('briefing-atlas')} className="home-editorial-round-link" aria-label="阅读 Briefing Atlas 项目案例"><Arrow /></SmartLink>
-                </div>
-              </article>
+            <EditorialHeading id="home-selected-title" eyebrow="・网页目录" title="Dire" accent="ctory" joined />
+            <HomePhotoGallery />
+            <div className="home-editorial-section-bottom">
+              <BubbleCluster className="home-editorial-selected-bubbles" />
+              <SmartLink className="home-editorial-pill home-editorial-random-link" href={randomHref} aria-label="随处逛逛，随机打开一个站内页面">
+                <span>随处逛逛</span><Arrow />
+              </SmartLink>
             </div>
-            <div className="home-editorial-section-bottom"><p>边学，边做，边留下痕迹。</p><BubbleCluster className="home-editorial-selected-bubbles" /><SmartLink className="home-editorial-pill" href={getRouteHref('projects')}>浏览全部项目 <Arrow /></SmartLink></div>
           </section>
 
           <section className="home-editorial-journal home-editorial-section" id="journal" aria-labelledby="home-journal-title">
@@ -128,7 +122,7 @@ function HomeEditorial() {
   )
 }
 
-function EditorialHeading({ id, eyebrow, title, accent }: { id: string; eyebrow: string; title: string; accent: string }) {
+function EditorialHeading({ id, eyebrow, title, accent, joined = false }: { id: string; eyebrow: string; title: string; accent: string; joined?: boolean }) {
   const characters = (word: string) => Array.from(word).map((character, order) => (
     <span className="home-editorial-heading-character" key={order} style={{ '--character': order } as CSSProperties}>{character}</span>
   ))
@@ -136,8 +130,8 @@ function EditorialHeading({ id, eyebrow, title, accent }: { id: string; eyebrow:
   return (
     <div className="home-editorial-section-heading" data-home-reveal="heading">
       <p className="home-editorial-eyebrow">{eyebrow}</p>
-      <h2 id={id} aria-label={`${title} ${accent}`}>
-        <span className="home-editorial-heading-word" aria-hidden="true">{characters(title)}</span>{' '}
+      <h2 id={id} aria-label={`${title}${joined ? '' : ' '}${accent}`}>
+        <span className="home-editorial-heading-word" aria-hidden="true">{characters(title)}</span>{!joined && ' '}
         <em className="home-editorial-heading-word" aria-hidden="true">{characters(accent)}</em>
       </h2>
     </div>

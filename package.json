@@ -14,6 +14,7 @@
     "sync:projects": "node --use-env-proxy scripts/sync-project-docs.mjs",
     "test:homepage": "node tests/homepage-touch.browser.mjs && node tests/homepage-transition.browser.mjs && node tests/homepage-grid.browser.mjs",
     "test:homepage-performance": "node tests/homepage-performance.browser.mjs",
+    "test:home-gallery": "node tests/home-photo-gallery.browser.mjs && node tests/home-gallery-motion.browser.mjs && node tests/home-gallery-scroll.browser.mjs",
     "test:about": "node --test tests/about-journey-motion.test.ts && node tests/about-decorations.browser.mjs",
     "test:projects": "node tests/projects.browser.mjs",
     "test:project-transition": "node scripts/inline-project-transition.mjs --check && node --test tests/project-page-transition.test.ts && node tests/project-page-transition.browser.mjs",

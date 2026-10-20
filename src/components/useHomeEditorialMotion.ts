@@ -1,7 +1,8 @@
-import { useEffect, type RefObject } from 'react'
+import { useLayoutEffect, type RefObject } from 'react'
 
 export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>) {
-  useEffect(() => {
+  // Arm the reveals before paint so a refresh cannot flash the settled gallery.
+  useLayoutEffect(() => {
     const root = rootRef.current
     const ownerDocument = root?.ownerDocument
     const browser = ownerDocument?.defaultView

@@ -21,6 +21,9 @@ public/data/github.json.tmp
 # Downloaded source assets (runtime assets belong in public/)
 /downloads/
 
+# Home artwork originals stay local; optimized WebP assets are deployed.
+/public/images/home/*.png
+
 # Local environment files
 .env
 .env.*

@@ -170,7 +170,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await input.waitFor({ state: 'hidden' })
   }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
 
-  await check('Explore, selected work, journal and live anchors reach readable sections', async page => {
+  await check('Explore, directory, journal and live anchors reach readable sections', async page => {
     await home(page)
     await page.getByRole('link', { name: 'EXPLORE MORE', exact: true }).click()
     await atAnchor(page, 'explore')
@@ -331,7 +331,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
         assert.equal(await group.locator('i').count(), 2, 'Each section contains one large and one small bubble')
         assert.equal(await group.getAttribute('aria-hidden'), 'true', 'Decorative bubbles stay out of the accessibility tree')
         const target = await group.evaluate(element => {
-          const anchor = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+          const anchor = (element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill') ?? element.closest('.home-editorial-section-bottom')).getBoundingClientRect()
           return Math.round(scrollY + anchor.top + anchor.height / 2 - innerHeight / 2)
         })
         await settleScroll(page, target)
@@ -388,7 +388,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
         for (const fraction of [-.3, -.15, 0, .15, .3]) {
           await settleScroll(page, centerScroll + height * fraction)
           const position = await group.evaluate(element => {
-            const button = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+            const button = (element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill') ?? element.closest('.home-editorial-section-bottom')).getBoundingClientRect()
             const animations = element.getAnimations({ subtree: true })
             animations.forEach(animation => animation.pause())
             const centers = Array.from({ length: 12 }, (_, sample) => {
@@ -461,7 +461,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
       await home(page)
       for (const section of ['selected', 'journal']) {
         const scope = `.home-editorial-${section}`
-        for (const targetSelector of ['h2', 'h3', '.home-editorial-photo', '.home-editorial-pill']) {
+        for (const targetSelector of section === 'selected' ? ['h2', '.home-gallery-window', '.home-gallery-caption'] : ['h2', 'h3', '.home-editorial-photo', '.home-editorial-pill']) {
           const target = page.locator(`${scope} ${targetSelector}`).first()
           await target.scrollIntoViewIfNeeded()
           const layers = await target.evaluate(element => {
@@ -502,12 +502,12 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
       await home(page)
       const group = page.locator(`.home-editorial-${reference.section}-bubbles`)
       const buttonDocumentY = await group.evaluate(element => {
-        const box = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+        const box = (element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill') ?? element.closest('.home-editorial-section-bottom')).getBoundingClientRect()
         return scrollY + box.top + box.height / 2
       })
       const atButtonY = async y => settleScroll(page, buttonDocumentY - y)
       const geometry = () => group.evaluate(element => {
-        const button = element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill').getBoundingClientRect()
+        const button = (element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill') ?? element.closest('.home-editorial-section-bottom')).getBoundingClientRect()
         const animations = element.getAnimations({ subtree: true })
         animations.forEach(animation => animation.pause())
         // Average a complete idle cycle instead of mistaking its current phase for scroll travel.
@@ -749,7 +749,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
 
   await check('Projects entry and browser Back both retain their visible page transition', async page => {
     await home(page)
-    await page.getByRole('link', { name: '浏览全部项目', exact: true }).click()
+    await page.locator('.home-gallery-link').filter({ hasText: 'Projects' }).click()
     const transition = page.getByRole('dialog', { name: 'Page transition', exact: true })
     await transition.waitFor({ state: 'visible' })
     await page.waitForURL(url('projects/'))

@@ -1,0 +1,115 @@
+.home-gallery-bleed { width: calc(100% + var(--home-gutter) * 2); margin-inline: calc(var(--home-gutter) * -1); }
+
+.home-gallery {
+  --gallery-width: 40vw;
+  --gallery-gap: 4vw;
+  position: relative;
+  display: flex;
+  gap: var(--gallery-gap);
+  padding: 12px calc((100% - var(--gallery-width)) / 2) 20px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* A single motion controller owns horizontal dragging and settling. */
+  scroll-behavior: auto;
+  touch-action: pan-y pinch-zoom;
+  overflow-anchor: none;
+  scrollbar-width: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.home-gallery::-webkit-scrollbar { display: none; }
+.home-editorial .home-gallery:focus-visible { outline-offset: -4px; }
+.home-gallery-card { flex: 0 0 var(--gallery-width); min-width: 0; }
+
+/* Reveal and scroll translation use separate properties inside fixed drag targets. */
+.home-editorial[data-reveal-ready='true'] [data-home-reveal='gallery'] {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+.home-editorial[data-reveal-ready='true'] [data-home-reveal='gallery'] .home-gallery-card-content {
+  opacity: 0;
+  transform: translate3d(clamp(32px, 6vw, 154px), 0, 0);
+}
+.home-editorial[data-reveal-ready='true'] [data-home-reveal='gallery'].is-revealed .home-gallery-card-content {
+  opacity: 1;
+  transform: none;
+  transition: opacity 850ms ease, transform 1500ms cubic-bezier(.16, 1, .3, 1);
+  transition-delay: calc(var(--gallery-index) * 180ms);
+}
+.home-editorial[data-reveal-ready='true'][data-motion='paused'] [data-home-reveal='gallery'] .home-gallery-card-content,
+.home-editorial[data-reveal-ready='true'] [data-home-reveal='gallery']:focus-within .home-gallery-card-content {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
+
+.home-gallery-link {
+  display: block;
+  transform: scale(1);
+  transition: transform 650ms cubic-bezier(.22, 1, .36, 1);
+}
+.home-gallery-caption { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(6px, .55vw, 12px); margin: clamp(20px, 1.8vw, 44px) 2% 0; }
+.home-gallery-caption > span:first-child { font-family: var(--home-serif); font-size: clamp(24px, 1.8vw, 42px); line-height: 1.2; letter-spacing: -.025em; }
+.home-gallery-caption > span:last-child { color: var(--home-muted); font-size: clamp(11px, .8vw, 18px); line-height: 1.6; letter-spacing: .1em; }
+.home-gallery-window {
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: clamp(22px, 2.5vw, 64px);
+  /* Keep the rounded mask fixed while the card and photograph scale separately. */
+  isolation: isolate;
+}
+.home-gallery-window img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  filter: grayscale(1);
+  opacity: .55;
+  transform: scale(1);
+  transition: filter 650ms ease, opacity 650ms ease, transform 800ms cubic-bezier(.22, 1, .36, 1);
+}
+.home-gallery-card[data-centered='true'] img { filter: grayscale(0); opacity: 1; }
+.home-gallery-line {
+  display: block;
+  width: 12%;
+  height: 1px;
+  margin: clamp(18px, 1.8vw, 44px) 2% 0;
+  background: #222;
+  scale: 1 .5;
+  transform: scaleX(1);
+  transform-origin: left center;
+  transition: transform 500ms cubic-bezier(.65, 0, .35, 1);
+}
+/* Stroke weight switches at transition boundaries; only length interpolates. */
+.home-gallery-line[data-stretching] { scale: 1 1; }
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  /* The stationary card is the hit area, so shrinking cannot retrigger hover. */
+  .home-gallery:not([data-dragging='true']):not([data-moving='true']) .home-gallery-card:hover .home-gallery-link { transform: scale(.975); }
+  .home-gallery:not([data-dragging='true']):not([data-moving='true']) .home-gallery-card:hover img { transform: scale(1.075); }
+  .home-gallery:not([data-dragging='true']):not([data-moving='true']) .home-gallery-card:hover .home-gallery-line { transform: scaleX(2); }
+}
+
+.home-gallery-link:focus-visible { transform: scale(.975); }
+.home-gallery-link:focus-visible img { transform: scale(1.075); }
+.home-gallery-link:focus-visible .home-gallery-line { transform: scaleX(2); }
+
+@media (max-width: 900px) { .home-gallery { --gallery-width: 60vw; } }
+@media (max-width: 600px) { .home-gallery { --gallery-width: 80vw; --gallery-gap: 6vw; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-editorial[data-reveal-ready='true'] [data-home-reveal='gallery'] .home-gallery-card-content {
+    opacity: 1;
+    transform: none;
+    translate: none;
+    transition: none;
+  }
+  .home-gallery-link, .home-gallery-window img, .home-gallery-line { transition: none; }
+  .home-gallery .home-gallery-line { scale: 1 .5; }
+  .home-gallery .home-gallery-card .home-gallery-link,
+  .home-gallery .home-gallery-card img,
+  .home-gallery .home-gallery-card .home-gallery-line { transform: none; }
+}
