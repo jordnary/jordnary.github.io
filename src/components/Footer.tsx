@@ -84,7 +84,9 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
               <ul>
                 {footerPages.map(({ page, label }) => (
                   <li key={page}>
-                    <SmartLink className="footer-link" href={getRouteHref(page)}>{label}</SmartLink>
+                    <SmartLink className="footer-link" href={getRouteHref(page)}>
+                      <span className="footer-link-label">{label}</span>
+                    </SmartLink>
                   </li>
                 ))}
               </ul>
@@ -95,7 +97,7 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
                 {contactLinks.filter(({ title }) => title === 'GitHub' || title === 'Email').map(({ title, href }) => (
                   <li key={title}>
                     <SmartLink className="footer-link" href={href}>
-                      {title}<span className="footer-link-arrow" aria-hidden="true">↗</span>
+                      <span className="footer-link-label">{title}</span>
                     </SmartLink>
                   </li>
                 ))}

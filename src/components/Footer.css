@@ -146,7 +146,6 @@
 .footer-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
   min-height: 2rem;
   color: var(--footer-ink);
   font-size: clamp(0.95rem, 1.15vw, 1.2rem);
@@ -154,25 +153,45 @@
   line-height: 1.55;
   letter-spacing: -0.025em;
   text-decoration: none;
-  text-underline-offset: 0.3em;
-  transition: color 180ms ease;
 }
 
-.footer-link:hover {
-  color: var(--footer-accent);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
+.footer-link-label {
+  position: relative;
+  display: block;
+  transition: filter 300ms ease;
 }
 
-.footer-link-arrow {
-  font-size: 0.8em;
-  color: var(--footer-muted);
-  transition: transform 180ms ease, color 180ms ease;
+.footer-link-label::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: max(1px, 0.08em);
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.footer-link:hover .footer-link-arrow {
-  color: var(--footer-accent);
-  transform: translate(2px, -2px);
+.footer-link:focus-visible .footer-link-label::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* Each list softens only its own siblings, leaving the other column clear. */
+.footer-nav-column ul:has(.footer-link:focus-visible) .footer-link:not(:focus-visible):not(:hover) .footer-link-label {
+  filter: blur(0.075em);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .footer-link:hover .footer-link-label::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .footer-nav-column ul:has(.footer-link:hover) .footer-link:not(:hover):not(:focus-visible) .footer-link-label {
+    filter: blur(0.075em);
+  }
 }
 
 .footer-link:focus-visible {
@@ -218,8 +237,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .footer-surface { transform: none; }
-  .footer-link,
-  .footer-link-arrow { transition: none; }
+  .footer-link-label,
+  .footer-link-label::after { transition: none; }
 }
 
 @media (forced-colors: active) {
