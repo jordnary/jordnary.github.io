@@ -33,9 +33,9 @@ python scripts/subset-navigation-font.py "ChillRoundF v3.0.ttf"
 
 `home-gallery-rounded.woff2` is another renamed subset of ChillRoundF v3.0,
 under the same SIL OFL 1.1 license in `LICENSE.navigation-rounded.txt`.
-It contains only `去别处随意逛逛` and a space, and is renamed to
+It contains only `去别处随意逛逛返回顶部` and a space, and is renamed to
 `Home Gallery Round`. Copyright and license name records are retained.
-Only the Home gallery's random-page link uses it, at the source's regular weight.
+The Home gallery's random-page link and back-to-top button use it at the source's regular weight.
 
 To regenerate, install `fonttools` and `brotli`, then run:
 

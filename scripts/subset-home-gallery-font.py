@@ -19,7 +19,7 @@ options = subset.Options()
 options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14, 16, 17]
 options.name_languages = [0x409]
 subsetter = subset.Subsetter(options=options)
-subsetter.populate(text="去别处随意逛逛 ")
+subsetter.populate(text="去别处随意逛逛返回顶部 ")
 subsetter.subset(font)
 
 names = {

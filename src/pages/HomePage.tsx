@@ -33,7 +33,7 @@ function HomeEditorial() {
         <a className="home-editorial-skip" href="#explore">跳到首页内容</a>
 
         <section className="home-editorial-hero" id="home" aria-labelledby="home-editorial-title">
-          <h1 className="home-editorial-sr" id="home-editorial-title">用好奇心，创造自己的世界。</h1>
+          <h1 className="home-editorial-sr" id="home-editorial-title" tabIndex={-1}>用好奇心，创造自己的世界。</h1>
           <div className="home-editorial-hero-surface" aria-hidden="true">
             <div className="home-editorial-liquid">
               <svg className="home-editorial-wave home-editorial-wave--back" viewBox="0 0 1440 800" preserveAspectRatio="none"><path d="M0 255 C240 325 480 445 720 425 C960 405 1200 315 1440 245 V800 H0Z" /></svg>
@@ -80,7 +80,7 @@ function HomeEditorial() {
             <HomePhotoGallery />
             <div className="home-editorial-section-bottom">
               <BubbleCluster className="home-editorial-selected-bubbles" />
-              <SmartLink className="home-editorial-pill home-editorial-random-link" href={randomHref} aria-label="去别处随意逛逛，随机打开一个站内页面">
+              <SmartLink className="home-editorial-pill home-editorial-action-link home-editorial-random-link" href={randomHref} aria-label="去别处随意逛逛，随机打开一个站内页面">
                 <span>去别处随意逛逛</span><Arrow />
               </SmartLink>
             </div>
@@ -89,7 +89,15 @@ function HomeEditorial() {
           <section className="home-editorial-now home-editorial-section" id="now" aria-labelledby="home-now-title">
             <EditorialHeading id="home-now-title" eyebrow="・最近在做什么" title="Now &" accent="notes" />
             <HomeNow />
-            <div className="home-editorial-section-bottom"><BubbleCluster className="home-editorial-now-bubbles" /></div>
+            <div className="home-editorial-section-bottom">
+              <BubbleCluster className="home-editorial-now-bubbles" />
+              <button className="home-editorial-pill home-editorial-action-link home-editorial-back-to-top" type="button" onClick={() => {
+                rootRef.current?.querySelector<HTMLElement>('#home-editorial-title')?.focus({ preventScroll: true })
+                window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+              }}>
+                <span>返回顶部</span><Arrow />
+              </button>
+            </div>
           </section>
         </div>
       </div>
