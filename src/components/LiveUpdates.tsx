@@ -79,27 +79,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
         <ul className="live-list github-repository-list">
           {snapshot.repos.map((repository) => (
             <li key={repository.url}>
-              <a
-                className="github-repository"
-                data-language={repository.language ?? undefined}
-                href={repository.url}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <span className="github-repository-icon"><ActivityIcon kind="repository" /></span>
-                <span className="github-repository-body">
-                  <span className="github-repository-main">
-                    <strong>{repository.name}</strong>
-                    <span>{repository.description || '这个项目暂时还没有简介。'}</span>
-                  </span>
-                  <span className="github-repository-meta">
-                    <span className="github-language">{repository.language || 'Code'}</span>
-                    <span>★ {formatNumber(repository.stars)}</span>
-                    <span>{formatDate(repository.updatedAt)} 更新</span>
-                  </span>
-                </span>
-                <span className="github-repository-arrow" aria-hidden="true">↗</span>
-              </a>
+              <GitHubRepository repository={repository} />
             </li>
           ))}
         </ul>
@@ -109,6 +89,74 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
       <p className="live-sync-note">同步于：{formatTime(snapshot.fetchedAt)}</p>
     </>
   )
+}
+
+function GitHubRepository({ repository }: { repository: GitHubSnapshot['repos'][number] }) {
+  const ornamentRef = useRef<HTMLSpanElement>(null)
+  const visited = useRef(false)
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
+  const active = hovered || focused
+
+  useEffect(() => {
+    const ornament = ornamentRef.current
+    if (!ornament || (!active && !visited.current)) return
+    visited.current = true
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let animation: Animation | undefined
+    const animate = () => {
+      const current = getComputedStyle(ornament).clipPath
+      animation?.cancel()
+      // Enter by opening the right edge; leave by sweeping the left edge rightward.
+      // A completed exit resets offscreen, while interrupted motion keeps its current clip.
+      const from = active && current.includes('100%') ? 'inset(0 100% 0 0)' : current
+      const to = active ? 'inset(0)' : 'inset(0 0 0 100%)'
+      ornament.style.clipPath = to
+      if (!reducedMotion.matches) {
+        animation = ornament.animate([{ clipPath: from }, { clipPath: to }], {
+          duration: active ? 820 : 620,
+          easing: 'cubic-bezier(.25, .65, .25, 1)',
+        })
+      }
+    }
+    animate()
+    reducedMotion.addEventListener('change', animate)
+    return () => {
+      ornament.style.clipPath = getComputedStyle(ornament).clipPath
+      animation?.cancel()
+      reducedMotion.removeEventListener('change', animate)
+    }
+  }, [active])
+
+  return <a
+    className="github-repository"
+    data-language={repository.language ?? undefined}
+    href={repository.url}
+    rel="noreferrer"
+    target="_blank"
+    onPointerEnter={event => {
+      if (event.pointerType !== 'touch' && window.matchMedia('(hover: hover)').matches) setHovered(true)
+    }}
+    onPointerLeave={() => setHovered(false)}
+    onFocus={event => setFocused(event.currentTarget.matches(':focus-visible'))}
+    onBlur={() => setFocused(false)}
+  >
+    <strong className="github-repository-name" lang="en">{repository.name}</strong>
+    <span className="github-repository-body">
+      <span className="github-repository-main">
+        <span>{repository.description || '这个项目暂时还没有简介。'}</span>
+      </span>
+      <span className="github-repository-meta">
+        <span className="github-language">{repository.language || 'Code'}</span>
+        <span>★ {formatNumber(repository.stars)}</span>
+        <span>{formatDate(repository.updatedAt)} 更新</span>
+      </span>
+    </span>
+    <span className="github-repository-ornament" ref={ornamentRef} aria-hidden="true">
+      <img src={`${import.meta.env.BASE_URL}images/home/repository-flourish.webp`} alt="" width="2172" height="724" />
+    </span>
+    <span className="github-repository-arrow" aria-hidden="true">↗</span>
+  </a>
 }
 
 function RssContent({ feed }: { feed: RssFeed }) {
@@ -154,31 +202,6 @@ function RssContent({ feed }: { feed: RssFeed }) {
       </div>
       <p className="live-sync-note">整理于：{formatTime(feed.generatedAt)}</p>
     </>
-  )
-}
-
-function ActivityIcon({ kind }: { kind: 'code' | 'reading' | 'repository' }) {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      {kind === 'code' ? (
-        <>
-          <circle cx="6" cy="5" r="2.5" />
-          <circle cx="6" cy="19" r="2.5" />
-          <circle cx="18" cy="6" r="2.5" />
-          <path d="M6 7.5v9M18 8.5v1A6.5 6.5 0 0 1 11.5 16H6" />
-        </>
-      ) : kind === 'reading' ? (
-        <>
-          <path d="M12 6C9.5 4.4 6.5 4 3 4.5v14c3.5-.5 6.5 0 9 1.5 2.5-1.5 5.5-2 9-1.5v-14c-3.5-.5-6.5 0-9 1.5ZM12 6v14" />
-          <path d="m6 9 3 1m6 0 3-1M6 13l3 1m6 0 3-1" />
-        </>
-      ) : (
-        <>
-          <path d="M5 3.5h13v17H5a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2Zm0 0v13m-2 2a2 2 0 0 1 2-2h13" />
-          <path d="m9 7-2 2 2 2m4-4 2 2-2 2" />
-        </>
-      )}
-    </svg>
   )
 }
 

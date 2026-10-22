@@ -88,20 +88,74 @@
 .home-now-reader .live-refresh-button:hover:not(:disabled) { background: var(--now-accent); box-shadow: none; transform: none; }
 .home-now-reader :is(.live-refresh-button, .live-refresh-feedback) svg { width: 16px; height: 16px; flex: 0 0 16px; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
 .home-now-reader .live-refresh-feedback { display: flex; flex-basis: 100%; align-items: center; gap: 8px; margin: 0; color: var(--now-muted); font-size: 14px; }
-.home-now-reader .live-list { margin: 0; padding: 0; list-style: none; counter-reset: woodland-entry; }
+.home-now-reader .live-list { gap: 0; margin: 0; padding: 0; list-style: none; counter-reset: woodland-entry; }
 .home-now-reader .live-list > li { position: relative; counter-increment: woodland-entry; }
 .home-now-reader .live-list > li + li { margin: 0; }
 .home-now-reader :is(.github-repository, .rss-item) { position: relative; display: flex; align-items: start; gap: 16px; margin: 0; padding: 25px 0 27px; border: 0; border-top: 1px solid var(--now-rule); border-radius: 0; color: var(--now-ink); background: transparent; box-shadow: none; text-decoration: none; transition: background 180ms ease; }
-.home-now-reader :is(.github-repository, .rss-item):hover { background: rgb(220 229 202 / .3); transform: none; box-shadow: none; }
+.home-now-reader :is(.github-repository, .rss-item):hover { border-color: var(--now-rule); background: transparent; transform: none; box-shadow: none; }
 .home-now-reader :is(.github-repository, .rss-item):focus-visible { outline-offset: 3px; }
-.home-now-reader .github-repository-icon { display: none; }
-.home-now-reader .github-repository-body { display: block; min-width: 0; flex: 1; }
+.home-now-reader .github-repository-list { container: repositories / inline-size; }
+.home-now-reader .github-repository {
+  --repository-gap: 28px;
+  display: grid;
+  grid-template-columns: 40% minmax(0, 1fr);
+  align-items: center;
+  gap: var(--repository-gap);
+  min-height: 184px;
+  padding: 36px 0 54px;
+  border: 0;
+  transition: none;
+}
+/* Zero row gaps keep the separators on the link's actual boundaries. */
+.home-now-reader .github-repository::before,
+.home-now-reader .github-repository-list > li:last-child .github-repository::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: var(--now-rule);
+  pointer-events: none;
+}
+.home-now-reader .github-repository-list > li:last-child .github-repository::after { top: 100%; }
+.home-now-reader .github-repository-name {
+  min-width: 0;
+  color: var(--now-ink);
+  font-family: var(--now-display);
+  font-size: clamp(36px, 7.2cqi, 48px);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+.home-now-reader .github-repository-body { display: block; min-width: 0; padding-right: 30px; }
 .home-now-reader .github-repository-main { display: grid; gap: 10px; min-width: 0; }
-.home-now-reader :is(.github-repository-main, .rss-item-copy) strong { color: var(--now-ink); font-family: var(--now-type); font-size: 21px; line-height: 1.65; font-weight: 400; overflow-wrap: anywhere; white-space: normal; overflow: visible; text-overflow: clip; }
+.home-now-reader .rss-item-copy strong { color: var(--now-ink); font-family: var(--now-type); font-size: 21px; line-height: 1.65; font-weight: 400; overflow-wrap: anywhere; white-space: normal; overflow: visible; text-overflow: clip; }
 .home-now-reader :is(.github-repository-main, .rss-item-copy) > span { display: block; overflow: visible; color: var(--now-muted); font-size: 17px; line-height: 1.9; overflow-wrap: anywhere; -webkit-line-clamp: unset; }
 .home-now-reader .github-repository-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; color: var(--now-muted); font-size: 14px; }
+.home-now-reader .github-repository-meta span:not(:last-child)::after { color: #84966b; }
 .home-now-reader .github-language { color: inherit; }
-.home-now-reader .github-repository-arrow { flex: 0 0 auto; font-size: 24px; color: #728260; }
+.home-now-reader .github-repository-arrow { position: absolute; top: 34px; right: 0; font-size: 24px; line-height: 1; color: #728260; }
+.home-now-reader .github-repository-ornament {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: 0;
+  width: 38%;
+  pointer-events: none;
+  /* Compensate for the source's transparent lower margin, seating ink on the rule. */
+  transform: translateY(20%);
+  clip-path: inset(0 100% 0 0);
+}
+.home-now-reader .github-repository-ornament img { display: block; width: 100%; height: auto; }
+@container repositories (max-width: 520px) {
+  .home-now-reader .github-repository { grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 30px 54px; }
+  .home-now-reader .github-repository-name { padding-right: 30px; font-size: clamp(34px, 8.5cqi, 44px); }
+  .home-now-reader .github-repository-body { padding-right: 0; }
+  .home-now-reader .github-repository-arrow { top: 32px; }
+  .home-now-reader .github-repository-ornament { width: min(66%, 260px); }
+}
 .home-now-reader .rss-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .home-now-reader .rss-item-source { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--now-muted); font-size: 14px; font-weight: 400; text-align: left; overflow-wrap: anywhere; }
 .home-now-reader .rss-item-source::before { content: counter(woodland-entry, decimal-leading-zero); color: #7b8c61; font-family: var(--now-display); font-size: 18px; }
@@ -150,10 +204,10 @@
   .home-now-reader-divider { margin-block: 22px; }
   .home-now-reader .home-live-caption { font-size: 10px; letter-spacing: .06em; }
   .home-now-reader .live-refresh-button { font-size: 12px; gap: 5px; }
-  .home-now-reader :is(.github-repository-main, .rss-item-copy) strong { font-size: 20px; }
+  .home-now-reader .rss-item-copy strong { font-size: 20px; }
   .home-now-reader :is(.github-repository-main, .rss-item-copy) > span { font-size: 17px; }
   .home-now-reader .github-repository-meta { font-size: 13px; gap: 5px 11px; }
-  .home-now-reader :is(.github-repository, .rss-item) { padding-block: 22px; }
+  .home-now-reader .rss-item { padding-block: 22px; }
   .home-now-reader-trail { width: calc(100% - 56px); min-height: 28px; margin-bottom: 4px; font-size: 9px; letter-spacing: .05em; }
   .home-now-trail-label { font-size: 12px; gap: 8px; }
   .home-now-trail-label i { width: 28px; }
