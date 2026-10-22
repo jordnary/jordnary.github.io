@@ -23,9 +23,11 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
     assert.equal(await toolkit.getByRole('button', { name: /暂停|播放/ }).count(), 0)
     await page.evaluate(() => {
       window.toolkitStartTimes = []
+      window.toolkitStopTimes = []
       const track = document.querySelector('.learning-toolkit-track')
       new MutationObserver(() => {
         if (track.dataset.moving === 'true') window.toolkitStartTimes.push(performance.now())
+        else window.toolkitStopTimes.push(performance.now())
       }).observe(track, { attributes: true, attributeFilter: ['data-moving'] })
     })
     await page.waitForFunction(() => window.toolkitStartTimes.length === 1)
@@ -41,11 +43,11 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
       await settle()
       assert.deepEqual(await names(), windowAt(offset))
     }
-    const startTimes = await page.evaluate(() => window.toolkitStartTimes)
+    const { startTimes, stopTimes } = await page.evaluate(() => ({ startTimes: window.toolkitStartTimes, stopTimes: window.toolkitStopTimes }))
     for (let index = 1; index < startTimes.length; index++) {
-      assert.ok(Math.abs(startTimes[index] - startTimes[index - 1] - 3000) < 250, 'Automatic steps start three seconds apart, including animation time')
+      assert.ok(Math.abs(startTimes[index] - stopTimes[index - 1] - 3000) < 250, 'Each automatic step waits three seconds after the previous movement ends')
     }
-    report('Autoplay moves left every three seconds and completes an eleven-tool cycle in steps of 3, 3, 3, and 2')
+    report('Autoplay waits three seconds after each movement and completes an eleven-tool cycle in steps of 3, 3, 3, and 2')
 
     const python = toolkit.getByRole('link', { name: 'Python 官方文档（在新标签页打开）' })
     assert.equal(await python.locator('.learning-tool-icon').evaluate(element => getComputedStyle(element).filter), 'grayscale(1)', 'Idle artwork stays grayscale')
@@ -74,19 +76,32 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
       return { blue, yellow }
     })
     assert.deepEqual(pythonColors, { blue: true, yellow: true }, 'The original Python artwork retains its blue and yellow palette')
-    const hoveredNames = await names()
-    await page.waitForTimeout(3600)
-    assert.deepEqual(await names(), hoveredNames, 'Hover pauses automatic movement')
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(3), 'Hovering an icon does not pause automatic movement')
     await page.mouse.move(0, 0)
-    await python.focus()
-    await page.waitForTimeout(3600)
-    assert.deepEqual(await names(), hoveredNames, 'Keyboard focus pauses automatic movement')
-    assert.notEqual(await color(python), monochrome, 'Keyboard focus reveals the same brand color')
-    assert.equal(await python.locator('.learning-tool-icon').evaluate(element => getComputedStyle(element).filter), 'grayscale(0)', 'Keyboard focus reveals the original SVG colors')
-    report('Hover and keyboard focus reveal original brand artwork and keep the selected tool still')
+    const focusedTool = toolkit.getByRole('link', { name: 'TypeScript 官方文档（在新标签页打开）' })
+    await focusedTool.focus()
+    await page.waitForTimeout(300)
+    assert.notEqual(await color(focusedTool), monochrome, 'Keyboard focus reveals the brand color')
+    assert.equal(await focusedTool.locator('.learning-tool-icon').evaluate(element => getComputedStyle(element).filter), 'grayscale(0)', 'Keyboard focus reveals the original SVG colors')
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(6), 'Keyboard focus does not pause automatic movement')
+    await page.evaluate(() => document.activeElement.blur())
+    await toolkit.locator('.learning-toolkit-caption').hover()
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(9), 'Hovering the caption does not pause automatic movement')
 
     const next = toolkit.getByRole('button', { name: '向右浏览工具' })
     const previous = toolkit.getByRole('button', { name: '向左浏览工具' })
+    await next.hover()
+    await next.focus()
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(0), 'Hover and focus on an arrow do not pause automatic movement')
+    report('Hovering icons, arrows, or the caption and retaining keyboard focus do not pause autoplay; original brand colors remain available')
     for (const offset of [3, 6, 9, 0]) {
       const before = await movingPython.boundingBox()
       await next.click()
@@ -112,6 +127,43 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
     await previous.click()
     await settle()
     report('Both arrows move in the expected direction, reverse the same pages, and wrap without empty slots')
+
+    await page.waitForTimeout(2000)
+    await next.click()
+    await settle()
+    await page.waitForTimeout(2700)
+    assert.deepEqual(await names(), windowAt(3), 'A manual step restarts the full waiting period')
+    assert.equal(await page.locator('.learning-toolkit-track').getAttribute('data-moving'), 'false')
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(6))
+    const manualDelay = await page.evaluate(() => window.toolkitStartTimes.at(-1) - window.toolkitStopTimes.at(-2))
+    assert.ok(Math.abs(manualDelay - 3000) < 250, 'Autoplay waits three seconds after a manual movement ends')
+    report('Manual navigation also waits a full three seconds after settling before autoplay resumes')
+
+    await page.evaluate(() => {
+      const bounds = document.querySelector('.learning-toolkit').getBoundingClientRect()
+      scrollTo({ top: scrollY + bounds.top - innerHeight + bounds.height * 0.1, behavior: 'instant' })
+    })
+    const visibleFraction = await toolkit.evaluate(element => {
+      const bounds = element.getBoundingClientRect()
+      return (Math.min(innerHeight, bounds.bottom) - Math.max(0, bounds.top)) / bounds.height
+    })
+    assert.ok(visibleFraction > 0 && visibleFraction < 0.25, 'The toolkit is only partially visible')
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(9), 'Autoplay continues with less than 25 percent visible')
+    await page.evaluate(() => {
+      const bounds = document.querySelector('.learning-toolkit').getBoundingClientRect()
+      scrollTo({ top: scrollY + bounds.top - innerHeight - 32, behavior: 'instant' })
+    })
+    await page.waitForTimeout(4000)
+    assert.deepEqual(await names(), windowAt(9), 'Autoplay pauses only once the toolkit is fully outside the viewport')
+    await toolkit.scrollIntoViewIfNeeded()
+    await page.waitForFunction(() => document.querySelector('.learning-toolkit-track').dataset.moving === 'true')
+    await settle()
+    assert.deepEqual(await names(), windowAt(0), 'Autoplay resumes when the toolkit returns to the viewport')
+    report('A partially visible toolkit continues autoplay; fully leaving and re-entering the viewport pauses and resumes it')
 
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.waitForTimeout(1000)

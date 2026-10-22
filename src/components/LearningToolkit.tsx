@@ -32,8 +32,6 @@ export function LearningToolkit({ reducedMotion }: { reducedMotion: boolean }) {
   const [visibleCount, setVisibleCount] = useState(5)
   const [moving, setMoving] = useState(false)
   const [instant, setInstant] = useState(false)
-  const [hovered, setHovered] = useState(false)
-  const [focused, setFocused] = useState(false)
   const [inView, setInView] = useState(false)
   const [pageVisible, setPageVisible] = useState(true)
 
@@ -43,7 +41,7 @@ export function LearningToolkit({ reducedMotion }: { reducedMotion: boolean }) {
     const resize = new ResizeObserver(([entry]) => {
       setVisibleCount(entry.contentRect.width < 420 ? 3 : entry.contentRect.width < 620 ? 4 : 5)
     })
-    const intersection = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.25 })
+    const intersection = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0 })
     const updateVisibility = () => setPageVisible(!document.hidden)
     resize.observe(root)
     intersection.observe(root)
@@ -87,10 +85,10 @@ export function LearningToolkit({ reducedMotion }: { reducedMotion: boolean }) {
   }, [moving, finishMove])
 
   useEffect(() => {
-    if (reducedMotion || hovered || focused || !inView || !pageVisible) return
-    const timer = window.setInterval(() => move(1), 3000)
-    return () => window.clearInterval(timer)
-  }, [reducedMotion, hovered, focused, inView, pageVisible, move])
+    if (reducedMotion || moving || !inView || !pageVisible) return
+    const timer = window.setTimeout(() => move(1), 3000)
+    return () => window.clearTimeout(timer)
+  }, [reducedMotion, moving, inView, pageVisible, move])
 
   return (
     <section
@@ -99,10 +97,6 @@ export function LearningToolkit({ reducedMotion }: { reducedMotion: boolean }) {
       aria-label="学习工具箱"
       aria-roledescription="轮播"
       style={{ '--tool-visible': visibleCount } as CSSProperties}
-      onPointerEnter={event => { if (event.pointerType === 'mouse') setHovered(true) }}
-      onPointerLeave={() => setHovered(false)}
-      onFocusCapture={() => setFocused(true)}
-      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false) }}
     >
       <header className="learning-toolkit-header">
         <h3>学习工具箱 <span lang="en">MY TOOLKIT</span></h3>
