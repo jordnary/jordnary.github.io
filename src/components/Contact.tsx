@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react'
 import { Toast } from './Toast'
-import { SectionBackdrop } from './SectionBackdrop'
 import { ContactAirmail } from './ContactAirmail'
 import { CopyIcon } from './icons'
 import { ArtisticLabel } from './ArtisticLabel'
@@ -26,7 +25,6 @@ export function Contact() {
 
   return (
     <section className="correspondence site-container section-surface" id="contact" aria-labelledby="contact-title">
-      <SectionBackdrop tone="lilac" edge="none" />
       <div className="correspondence-masthead">
         <p><span aria-hidden="true" /> CONTACT / KEEP IN TOUCH</p>
         <span className="correspondence-edition" aria-hidden="true">A SPACE FOR CONNECTION</span>
@@ -75,7 +73,6 @@ export function Contact() {
       </div>
 
       <div className="correspondence-bottom section-surface">
-        <SectionBackdrop decoration="halftone-right" />
         <div className="correspondence-connect">
           <div className="correspondence-connect-heading">
             <span>CORRESPONDENCE / 联系</span><span aria-hidden="true">A PLACE FOR YOUR IDEAS</span>
