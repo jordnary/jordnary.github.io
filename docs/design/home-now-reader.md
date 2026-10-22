@@ -10,7 +10,7 @@
 - 阅读列最大 660px，正文约 1.9 倍行高。元信息保持清晰的次级层次。
 - 阅读窗口在所有屏幕上保持桌面构图的横向 3:2 比例，包括手机竖屏。统一使用横向背景，四周保留留白，宽、高同时受视口可用空间限制，不切换竖版，也不随浏览器单独拉长某一边。完整展示背景，不拉伸或裁切插画；小屏幕收紧顶部、底部和标题间距，为滚动正文保留空间。
 - 内部滚动区隐藏滚动条，保留滚轮、触控、PageDown 与键盘焦点。底部短线和文字提示阅读进度。
-- 标题标记和收起按钮位于面板顶部两端。收起按钮保留 44px 高点击区；支持 Escape、背景点击与焦点归还，外围不使用白色描边。
+- 两个阅读界面的左上角均不显示标题标记。右上角只保留植物形 × 关闭图标，无可见文字、按钮底色、边框或阴影，悬停仅轻微放大图案。关闭按钮保留 44×44px 点击区与屏幕阅读器名称；支持 Escape、背景点击、键盘焦点提示与焦点归还。
 
 ## 连续过渡
 
@@ -23,6 +23,10 @@
 滚动锁定保留背景页面原有滚动条和布局，不切换 overflow 或 scrollbar-gutter，避免传统滚动条环境下 vw 重算导致卡片和页面高度跳动。滚轮与触控只允许阅读区滚动，滚动键导向正文；捕获被拒绝的背景滚动，在主页视差监听器执行前还原原位置。关闭后清理监听器并归还焦点。
 
 ## 插画提示词
+
+植物形 × 使用内置 `image_gen` 生成，部署文件为 `public/images/home/woodland-close.webp`，保留透明背景与镂空叶片。两个阅读界面共用此图标，进入画廊附近时预载。完整生成提示词：
+
+> Use case: stylized-concept. Asset type: a single transparent botanical X close icon for an elegant woodland journal website, to be displayed at about 36 pixels. Primary request: a clearly readable multiplication-sign silhouette (×) made of two delicate plant sprigs crossing diagonally at their midpoints. Four arms of equal length, oriented at 45 and 135 degrees. Minimal, graceful botanical pen illustration: slender gently curved dark forest-green stems (#42583d), with just one or two tiny hollow pointed leaves on each arm and at most two subtle curled tips. Match refined open-outline botanical ornamentation: empty leaf interiors, fine confident graceful contours, no dense detail. Keep the X recognizable instantly at small size; the crossing stems should be visually dominant. Elegant and plant-inspired, not two realistic sticks, not a flower, not a wreath. Square canvas, centered, icon occupies about 82% of width and height with balanced transparent margins. Clean outlines approximately 18 to 22 pixels thick at a 1024px canvas so the icon remains legible on a pale cream page at 36px. Restrained muted forest green, no bright colors. TRUE transparent background, including all negative spaces and leaf interiors. No circle, no badge, no button container, no rectangular backdrop, no shadow, no glow, no paper texture, no shading, no photography, no text, no watermark. One standalone icon only.
 
 仓库条目的行间距为零，分隔线与链接的上下边缘对齐。仅在右侧下沿保留镂空植物卷草花纹，由细线、弧线、叶形构成；不使用上沿装饰。花纹贴着下边线向条目内舒展，鼠标悬停或键盘聚焦时从左至右展开，离开时也从左至右擦除。Web Animations 分别控制进入时的右侧裁切与离开时的左侧裁切；动画打断时保留当前裁切状态，再次完整进入时重新从左端开始。条目背景保持透明。窄屏花纹仍靠右，内容下方预留空间；减少动态效果模式直接切换显隐。
 

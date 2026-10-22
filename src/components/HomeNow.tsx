@@ -14,9 +14,11 @@ export function HomeNow() {
     // Prepare the reading assets as the gallery approaches, before the click.
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return
-      const image = new Image()
-      image.src = `${import.meta.env.BASE_URL}images/home/now-woodland-frame.webp`
-      void image.decode().catch(() => {})
+      for (const file of ['now-woodland-frame.webp', 'woodland-close.webp']) {
+        const image = new Image()
+        image.src = `${import.meta.env.BASE_URL}images/home/${file}`
+        void image.decode().catch(() => {})
+      }
       void document.fonts.load('18px "Woodland WenKai"').catch(() => {})
       void document.fonts.load('48px "Woodland Display"').catch(() => {})
       observer.disconnect()
@@ -81,8 +83,9 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
       </picture>
       <div className="home-now-reader-paper">
         <header className="home-now-reader-bar">
-          <span className="home-now-reader-mark"><svg aria-hidden="true" viewBox="0 0 32 32" fill="none"><path d="m16 2 3.5 10.5L30 16l-10.5 3.5L16 30l-3.5-10.5L2 16l10.5-3.5Z" /><circle cx="16" cy="16" r="3" /></svg><span>林间手记 <span lang="en">/ 0{visit.index + 1}</span></span></span>
-          <button type="button" className="home-now-close" aria-label="关闭近况 / Close" onClick={close} autoFocus><span>收起手记</span><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m6 6 8 8M14 6l-8 8" /></svg></button>
+          <button type="button" className="home-now-close" aria-label="关闭近况 / Close" onClick={close} autoFocus>
+            <img src={`${import.meta.env.BASE_URL}images/home/woodland-close.webp`} alt="" aria-hidden="true" width="1254" height="1254" />
+          </button>
         </header>
         <div className="home-now-reader-scroll" ref={scrollRef} tabIndex={0} role="region" aria-label="近况正文，可滚动阅读">
           <div className="home-now-reader-column">
