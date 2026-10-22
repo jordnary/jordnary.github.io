@@ -1,5 +1,6 @@
 .correspondence {
   --contact-display-font: 'Noto Serif SC', 'Songti SC', 'STSong', SimSun, serif;
+  --color-text-muted: #4b5b70;
   max-width: calc(var(--max-page-width) + var(--page-gutter) * 2);
   padding: clamp(2rem, 4vw, 3.5rem) var(--page-gutter) 1.75rem;
   scroll-margin-top: 6rem;
@@ -15,26 +16,49 @@
   --contact-blue: #7b9db9;
 }
 
-.correspondence-masthead,
-.correspondence-masthead p,
+.correspondence-graffiti {
+  /* Keep image repeats and reflection masks on the same pixel boundaries. */
+  --graffiti-tile-height: round(nearest, calc(100vw * 2 / 3), 1px);
+  position: absolute;
+  z-index: -1;
+  inset: 0 calc(50% - 50vw);
+  pointer-events: none;
+  user-select: none;
+  background-image: url('/images/contact/street-graffiti.webp');
+  background-position: center top;
+  background-size: 100% var(--graffiti-tile-height);
+  background-repeat: repeat-y;
+}
+
+.correspondence-graffiti::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: inherit;
+  background-position: center bottom;
+  background-size: inherit;
+  background-repeat: inherit;
+  transform: scaleY(-1);
+  /* Alternate reflected tiles so each join meets the same source edge. */
+  mask-image: repeating-linear-gradient(to top,
+    transparent 0 var(--graffiti-tile-height),
+    #000 var(--graffiti-tile-height) calc(var(--graffiti-tile-height) * 2));
+}
+
+.correspondence-intro,
+.correspondence-connect-heading,
+.correspondence-elsewhere,
+.correspondence-colophon,
+.correspondence-airmail-caption,
+.correspondence-art-caption {
+  text-shadow: 0 1px 2px #fff, 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff, 0 0 7px #fff;
+}
+
 .correspondence-availability,
 .correspondence-colophon {
   display: flex;
   align-items: center;
 }
-
-.correspondence-masthead {
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 1.1rem;
-  border-bottom: 1px solid var(--contact-rule);
-  font-size: 0.625rem;
-  letter-spacing: 0.17em;
-}
-
-.correspondence-masthead p { gap: 0.65rem; color: var(--contact-accent); }
-.correspondence-masthead p > span { width: 0.4rem; height: 0.4rem; background: currentColor; transform: rotate(45deg); }
-.correspondence-edition { color: var(--color-text-muted); }
 
 .correspondence-hero {
   position: relative;
@@ -293,8 +317,6 @@
 
 @media (max-width: 600px) {
   .correspondence { padding-top: 1.5rem; }
-  .correspondence-edition { display: none; }
-  .correspondence-masthead { font-size: 0.58rem; }
   .correspondence-hero { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; padding-block: 2rem 1.75rem; }
   .correspondence-preface { font-size: 0.75rem; }
   .correspondence-note { max-width: 28rem; padding-left: 1rem; }
@@ -370,4 +392,8 @@
   .correspondence *, .correspondence *::before, .correspondence *::after { animation: none; transition: none; }
   .correspondence-airmail[data-flying="true"] .correspondence-plane-model,
   .correspondence-airmail[data-flying="true"] .correspondence-airmail-trail { animation: none; }
+}
+
+@media (forced-colors: active) {
+  .correspondence-graffiti { display: none; }
 }

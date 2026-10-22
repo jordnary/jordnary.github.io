@@ -25,10 +25,7 @@ export function Contact() {
 
   return (
     <section className="correspondence site-container section-surface" id="contact" aria-labelledby="contact-title">
-      <div className="correspondence-masthead">
-        <p><span aria-hidden="true" /> CONTACT / KEEP IN TOUCH</p>
-        <span className="correspondence-edition" aria-hidden="true">A SPACE FOR CONNECTION</span>
-      </div>
+      <div className="correspondence-graffiti" aria-hidden="true" />
 
       <div className="correspondence-hero section-surface">
         <header className="correspondence-intro">
