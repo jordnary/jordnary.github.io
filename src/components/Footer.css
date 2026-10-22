@@ -170,12 +170,16 @@
   background: currentColor;
   transform: scaleX(0);
   transform-origin: right;
-  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), height 0s;
 }
 
 .footer-link:focus-visible .footer-link-label::after {
+  height: 1px;
   transform: scaleX(1);
   transform-origin: left;
+  /* Settle to a fine rule only after the horizontal reveal finishes. */
+  transition-duration: 300ms, 160ms;
+  transition-delay: 0s, 300ms;
 }
 
 /* Each list softens only its own siblings, leaving the other column clear. */
@@ -185,8 +189,11 @@
 
 @media (hover: hover) and (pointer: fine) {
   .footer-link:hover .footer-link-label::after {
+    height: 1px;
     transform: scaleX(1);
     transform-origin: left;
+    transition-duration: 300ms, 160ms;
+    transition-delay: 0s, 300ms;
   }
 
   .footer-nav-column ul:has(.footer-link:hover) .footer-link:not(:hover):not(:focus-visible) .footer-link-label {
