@@ -93,37 +93,71 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
 
 function GitHubRepository({ repository }: { repository: GitHubSnapshot['repos'][number] }) {
   const ornamentRef = useRef<HTMLSpanElement>(null)
-  const visited = useRef(false)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const active = hovered || focused
 
   useEffect(() => {
     const ornament = ornamentRef.current
-    if (!ornament || (!active && !visited.current)) return
-    visited.current = true
+    if (!ornament) return
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const hidden = 'inset(0 100% 0 0)'
+    const visible = 'inset(0)'
     let animation: Animation | undefined
+    const stop = () => {
+      if (!animation) return
+      animation.onfinish = null
+      animation.cancel()
+      animation = undefined
+    }
+    const play = (from: string, to: string, duration: number, onFinish?: () => void) => {
+      stop()
+      ornament.style.clipPath = to
+      const running = ornament.animate([{ clipPath: from }, { clipPath: to }], {
+        duration,
+        easing: 'cubic-bezier(.25, .65, .25, 1)',
+      })
+      animation = running
+      running.onfinish = () => {
+        if (animation !== running) return
+        animation = undefined
+        onFinish?.()
+      }
+    }
     const animate = () => {
       const current = getComputedStyle(ornament).clipPath
-      animation?.cancel()
-      // Enter by opening the right edge; leave by sweeping the left edge rightward.
-      // A completed exit resets offscreen, while interrupted motion keeps its current clip.
-      const from = active && current.includes('100%') ? 'inset(0 100% 0 0)' : current
-      const to = active ? 'inset(0)' : 'inset(0 0 0 100%)'
-      ornament.style.clipPath = to
-      if (!reducedMotion.matches) {
-        animation = ornament.animate([{ clipPath: from }, { clipPath: to }], {
-          duration: active ? 820 : 620,
-          easing: 'cubic-bezier(.25, .65, .25, 1)',
-        })
+      stop()
+      if (reducedMotion.matches) {
+        ornament.style.clipPath = active ? visible : hidden
+        return
+      }
+      // Our inset edges are percentages (zero may serialize as px or shorthand).
+      const edges = current.match(/-?[\d.]+(?:e[+-]?\d+)?/gi)?.map(Number) ?? []
+      const right = edges[1] ?? 0
+      const left = edges[3] ?? right
+      const remaining = Math.max(0, 100 - left - right)
+      const cleared = `inset(0 ${right}% 0 ${100 - right}%)`
+      if (!active) {
+        // Freeze the reveal edge, erasing only the portion that is already visible.
+        if (remaining <= .01) ornament.style.clipPath = hidden
+        else play(current, cleared, 620 * remaining / 100)
+      } else if (left > .01 && remaining > .01) {
+        // Never pull an erased left edge backwards. Clear its remainder quickly,
+        // then start a fresh left-to-right reveal if this visit is still active.
+        play(current, cleared, Math.min(100, 620 * remaining / 100), () => play(hidden, visible, 820))
+      } else if (remaining <= .01) {
+        play(hidden, visible, 820)
+      } else if (right > .01) {
+        play(current, visible, 820 * right / 100)
+      } else {
+        ornament.style.clipPath = visible
       }
     }
     animate()
     reducedMotion.addEventListener('change', animate)
     return () => {
       ornament.style.clipPath = getComputedStyle(ornament).clipPath
-      animation?.cancel()
+      stop()
       reducedMotion.removeEventListener('change', animate)
     }
   }, [active])
