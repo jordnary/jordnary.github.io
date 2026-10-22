@@ -3,7 +3,7 @@ import { useEffect, useRef, type RefObject } from 'react'
 const sides = [4, 5, 6, 7, 8, 9, 10]
 const beatMs = 1000
 const moveMs = 580
-const radius = 59
+const radius = 53
 const outerRing = 'M0 -78C45 -82 79 -49 78 0C82 48 46 79 0 78C-48 82 -80 48 -78 0C-82 -46 -44 -80 0 -78Z'
 
 type Point = [number, number]
