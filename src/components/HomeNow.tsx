@@ -82,7 +82,9 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
       <div className="home-now-reader-paper">
         <header className="home-now-reader-bar">
           <button type="button" className="home-now-close" aria-label="关闭近况 / Close" onClick={close} autoFocus>
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="m6 6 8 8M14 6l-8 8" /></svg>
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+              <path d="m4 4 12 12M16 4 4 16" />
+            </svg>
           </button>
         </header>
         <div className="home-now-reader-scroll" ref={scrollRef} tabIndex={0} role="region" aria-label="近况正文，可滚动阅读">
