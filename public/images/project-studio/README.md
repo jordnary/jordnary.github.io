@@ -18,10 +18,3 @@ when displayed.
 | `starlight-dream-train.webp` | 星月夜行列车的梦境旅人 | 1774 × 887 |
 | `scarlet-gothic-chess.webp` | 猩红虚空中的哥特棋局 | 1254 × 1254 |
 | `cloud-lantern-workshop.webp` | 云端星灯工坊 | 1536 × 1024 |
-
-The unchanged original PNG files are retained in
-`downloads/project-studio-originals/` relative to the project root, using the same
-English basenames. This original-asset directory is ignored by Git.
-
-The replaced artwork is also retained as
-`downloads/project-studio-originals/fantasy-romance-in-feathers-line-art.png`.

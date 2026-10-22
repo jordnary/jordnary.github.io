@@ -1,6 +1,6 @@
 const imageBase = `${import.meta.env.BASE_URL}images/`
 
-// Optimized covers use the supplied artwork; prompts live in docs/home-cover-prompts.md.
+// Optimized WebP covers use the supplied artwork.
 export const homeNow = [
   { key: 'code', label: 'What I’m building', chinese: '我最近在维护', description: '继续打磨手边的项目，让小小的想法慢慢成形。', english: 'Small improvements, ongoing experiments, and projects in progress.', src: `${imageBase}home/now-building.webp`, alt: '暖光与绿植环绕的木质工作室，一侧结构延伸为细铅笔线稿' },
   { key: 'reading', label: 'What I’m following', chinese: '我最近在关注', description: '收集值得停下来读一读的文章，给下一次探索留些线索。', english: 'Recent reads, fresh perspectives, and ideas to come back to.', src: `${imageBase}home/now-following.webp`, alt: '摊开的自然手账与植物、风景纸片，放大镜映出细小白花' },

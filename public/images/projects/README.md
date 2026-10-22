@@ -52,37 +52,10 @@ L2ColorFit metrics refer to complete original images. The published crops are on
 - Original result figures use a maximum dimension of 2000 pixels without upscaling. Click the expand control to inspect figures and navigate the complete project gallery.
 - Repository links remain the project's public references; they do not reveal local source locations.
 
-## Rebuilding figures
 
-`scripts/prepare-project-figures.py` uses Pillow, NumPy and Matplotlib. Prepare a reviewed reference directory, then run:
-
-```powershell
-python scripts/prepare-project-figures.py --references downloads/project-reference
-```
-
-The reference directory is ignored by Git. Its relative layout is:
-
-| Folder | Selected source files |
-| --- | --- |
-| `fewshot/` | The four PNGs listed under FewShot_Final_Project above. |
-| `gaussian/` | The five PNGs listed under Gaussian_Image_Fitting above. |
-| `colorfit-input/` | `img1_input.png`, `img1_output.png`, `img2_input.png`. |
-| `colorfit/` | `img1_predicted.png`, `img2_predicted.png`. |
-| `vae/` | The four additional VAE PNGs listed above. |
-| `vaegan/` | The five additional VAE-GAN PNGs listed above. |
-| `orientation/` | `trial_timeline.png` only. |
-
-The preparation script includes only aggregate values for the redrawn charts. Inspect photo crops and all image text after changing source files. Running the script is image preparation, not model training or an independent experiment reproduction.
+The Triton figures use `Triton_Attention_Optimization` revision `11f56d3`, especially `doc/report.md`. The 1.48× long-sequence result is distinct from the 1.18× sampling speedup relative to SDPA. No new inference runs are represented.
 
 ## Rebuilding posters
-
-The Triton figures and introduction use `Triton_Attention_Optimization` revision `11f56d3`, especially `doc/report.md`. The 1.48× long-sequence result is distinct from the 1.18× sampling speedup relative to SDPA. No new inference runs are represented. Re-encode the five complete source figures with the existing Playwright / browser setup:
-
-```powershell
-node scripts/prepare-triton-figures.mjs <source-repository>
-```
-
-Replace `<source-repository>` with the repository location. The script decodes pixels and exports WebP without source metadata, cropping, recoloring or upscaling.
 
 Run `npm run posters:render` with Playwright and Microsoft Edge available, using the same browser setup as the browser checks. `PROJECTS_BROWSER_CHANNEL` or `PROJECTS_BROWSER_EXECUTABLE` can select another installed browser. No network requests or API keys are needed. To render selected covers only:
 
