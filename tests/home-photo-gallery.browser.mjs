@@ -9,7 +9,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
   const homeURL = new URL('home/', baseURL).href
   const center = async (page, index) => {
     await page.waitForFunction(expected => {
-      const rail = document.querySelector('.home-gallery')
+      const rail = document.querySelector('#selected .home-gallery')
       const card = rail.children[expected]
       const bounds = card.getBoundingClientRect()
       const container = rail.getBoundingClientRect()
@@ -17,7 +17,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
         Math.abs(bounds.left + bounds.width / 2 - container.left - container.width / 2) < 2
     }, index)
     await page.evaluate(() => new Promise((resolve, reject) => {
-      const rail = document.querySelector('.home-gallery')
+      const rail = document.querySelector('#selected .home-gallery')
       let previous = rail.scrollLeft
       let stable = 0
       const deadline = performance.now() + 5000
@@ -33,8 +33,8 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
   }
   const open = async page => {
     await page.goto(homeURL)
-    await page.locator('.home-gallery').scrollIntoViewIfNeeded()
-    await page.locator('.home-gallery img').evaluateAll(images => Promise.all(images.map(image => { image.loading = 'eager'; return image.decode() })))
+    await page.locator('#selected .home-gallery').scrollIntoViewIfNeeded()
+    await page.locator('#selected .home-gallery img').evaluateAll(images => Promise.all(images.map(image => { image.loading = 'eager'; return image.decode() })))
     await center(page, 0)
   }
   const drag = async (page, start, end, button = 'left') => {
@@ -60,11 +60,11 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
     try {
       report(`CHECK: ${width}px gallery interactions`)
       await open(page)
-      const rail = page.locator('.home-gallery')
-      assert.deepEqual(await page.locator('.home-gallery-caption').allTextContents(), ['About关于', 'Learning学习', 'Projects项目', 'Contact联系'])
+      const rail = page.locator('#selected .home-gallery')
+      assert.deepEqual(await page.locator('#selected .home-gallery-caption').allTextContents(), ['About关于', 'Learning学习', 'Projects项目', 'Contact联系'])
       assert.equal(await page.locator('#selected button').count(), 0, 'The directory gallery has no surrounding action controls')
-      assert.equal(await page.getByRole('heading', { name: 'The journal', exact: true }).count(), 1, 'The original journal remains unchanged')
-      assert.equal(await page.locator('.home-editorial-journal-card').count(), 3)
+      assert.equal(await page.getByRole('heading', { name: 'Now & notes', exact: true }).count(), 1, 'The recent activity replaces the old journal')
+      assert.equal(await page.locator('#now .home-gallery-card').count(), 2)
       assert.equal(await page.locator('#selected').getByText('浏览全部项目', { exact: true }).count(), 0)
       assert.equal(await rail.locator('img').count(), 4)
       assert.ok(await rail.locator('img').evaluateAll(images => images.every(image => image.naturalWidth === 1536 && image.alt && new URL(image.src).pathname.includes('/images/home/'))))
@@ -206,7 +206,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
       phase = 'directory'
       await page.locator('#selected').scrollIntoViewIfNeeded()
       assert.equal(await page.getByRole('heading', { name: 'Directory', exact: true }).count(), 1)
-      const links = page.locator('.home-gallery-link')
+      const links = page.locator('#selected .home-gallery-link')
       assert.equal(await links.count(), 4)
       for (const [index, route] of ['about', 'learning', 'projects', 'contact'].entries()) {
         assert.equal(await links.nth(index).getAttribute('href'), `/${route}/`)
@@ -302,7 +302,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
   try {
     await open(page)
     const cdp = await context.newCDPSession(page)
-    const rail = page.locator('.home-gallery')
+    const rail = page.locator('#selected .home-gallery')
     const box = await rail.boundingBox()
     const y = box.y + 100
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 320, y }] })

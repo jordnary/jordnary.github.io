@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const sections = [
-  { id: 'journal', anchor: '.home-editorial-journal-rail', card: '.home-editorial-journal-card-content' },
+  { id: 'now', anchor: '.home-gallery', card: '.home-gallery-card-content' },
 ]
 const screenshotDirectory = 'node_modules/.cache/home-section-parallax'
 
@@ -19,7 +19,7 @@ async function scrollPage(page, top) {
 
 async function settleMotion(page) {
   await page.evaluate(() => new Promise((resolve, reject) => {
-    const moving = Array.from(document.querySelectorAll('.home-editorial-section-heading h2, .home-editorial-feature, .home-editorial-journal-card-content'))
+    const moving = Array.from(document.querySelectorAll('.home-editorial-section-heading h2, .home-editorial-feature, #now .home-gallery-card-content'))
     const read = () => moving.map(element => {
       const x = Number.parseFloat(getComputedStyle(element).translate) || 0
       const section = element.closest('.home-editorial-section')
@@ -155,7 +155,14 @@ export async function runHomeSectionParallaxChecks(browser, baseURL, report = ()
       await page.goto(new URL('home/', baseURL).href)
       await page.locator('.home-editorial-section').first().waitFor({ state: 'attached' })
       await page.evaluate(() => document.fonts.ready)
-      const rail = page.locator('.home-editorial-journal-rail')
+      // The last section needs test-only scroll space to replay both motion endpoints.
+      await page.evaluate(() => {
+        const spacer = document.createElement('div')
+        spacer.style.height = '300vh'
+        spacer.setAttribute('aria-hidden', 'true')
+        document.body.append(spacer)
+      })
+      const rail = page.locator('#now .home-gallery')
       assert.equal(await rail.evaluate(element => element.scrollLeft), 0, 'The carousel starts at its first card')
       const distance = width < 600 ? 30 : 100
       const headingRange = width <= 600 ? 20 : Math.min(width * .026, 80) + Math.min(width * .036, 112)
@@ -211,11 +218,20 @@ export async function runHomeSectionParallaxChecks(browser, baseURL, report = ()
         assert.ok(middle.heading.x > early.heading.x && middle.heading.x < upper.x, 'The heading moves right as the page scrolls down')
         assert.ok((upper.x - early.heading.x) / fullHeadingTravel > .85 && (upper.x - early.heading.x) / fullHeadingTravel < .92, `${width}px ${id} retains the reference's gentle remaining travel at the upper edge`)
         const photoLimit = await page.locator(`#${id}`).evaluate(element => Number.parseFloat(getComputedStyle(element).getPropertyValue('--home-section-photo-limit')))
-        assert.ok(early.card.x - late.card.x > photoLimit * 1.9 && early.card.x - late.card.x <= photoLimit * 2 + .1, `${width}px ${id} uses its finite image travel range`)
+        // Gallery and heading anchors have different spacing; measure photo
+        // endpoints from the gallery itself rather than the retired journal.
+        const photoTop = await page.locator(`#${id} ${anchor}`).evaluate(element => scrollY + element.getBoundingClientRect().top)
+        await settleScroll(page, photoTop - height * 1.5)
+        const photoStart = await geometry(page, content)
+        await settleScroll(page, photoTop + height * 1.5)
+        const photoEnd = await geometry(page, content)
+        assert.ok(photoStart.x - photoEnd.x > photoLimit * 1.9 && photoStart.x - photoEnd.x <= photoLimit * 2 + .1, `${width}px ${id} uses its finite image travel range`)
         const returned = await atHeading(.5)
         assert.ok(Math.abs(returned.heading.x - middle.heading.x) < .1, 'Returning from either heading boundary restores the same horizontal position')
 
-        const center = await centerAnchor(page, `#${id} ${anchor}`)
+        // Directory-style galleries cross their neutral position at 40% of
+        // viewport height; sample around that point on narrow screens too.
+        const center = await centerAnchor(page, `#${id} ${anchor}`) + height * .1
         await settleScroll(page, center - distance)
         const before = await geometry(page, content)
         let following
@@ -251,26 +267,28 @@ export async function runHomeSectionParallaxChecks(browser, baseURL, report = ()
       }
 
       assert.equal(await rail.evaluate(element => element.scrollLeft), 0, 'Vertical parallax never changes the horizontal carousel position')
-      const next = page.getByRole('button', { name: '下一张日常卡片', exact: true })
+      const next = rail
       await next.scrollIntoViewIfNeeded()
       const start = await rail.evaluate(element => element.scrollLeft)
-      await next.click()
-      await page.waitForFunction(value => document.querySelector('.home-editorial-journal-rail').scrollLeft > value + 20, start)
+      await next.focus()
+      await page.keyboard.press('End')
+      await page.waitForFunction(value => document.querySelector('#now .home-gallery').scrollLeft > value + 20, start)
       await page.waitForTimeout(700)
       const selectedCard = await rail.evaluate(element => element.scrollLeft)
-      const journalCenter = await centerAnchor(page, '#journal .home-editorial-journal-rail')
-      await settleScroll(page, journalCenter - 120)
-      await settleScroll(page, journalCenter + 120)
+      const nowCenter = await centerAnchor(page, '#now .home-gallery')
+      await settleScroll(page, nowCenter - 120)
+      await settleScroll(page, nowCenter + 120)
       assert.ok(Math.abs(await rail.evaluate(element => element.scrollLeft) - selectedCard) < 1, 'Vertical parallax preserves a manually selected carousel card')
       await next.scrollIntoViewIfNeeded()
-      await next.click()
+      await next.focus()
+      await page.keyboard.press('End')
       await page.waitForFunction(() => {
-        const box = document.querySelector('.home-editorial-journal-card:last-child .home-editorial-photo').getBoundingClientRect()
+        const box = document.querySelector('#now .home-gallery-card:last-child .home-gallery-window').getBoundingClientRect()
         return box.left >= 0 && box.right <= innerWidth
       })
       await page.waitForTimeout(700)
       const lastCard = await rail.evaluate(element => element.scrollLeft)
-      await settleScroll(page, journalCenter - 120)
+      await settleScroll(page, nowCenter - 120)
       assert.ok(Math.abs(await rail.evaluate(element => element.scrollLeft) - lastCard) < 1, 'Vertical parallax also preserves the final carousel snap position')
       report(`PASS: ${width}px headings approach boundaries smoothly, ease out near the upper edge, and preserve carousel positions`)
 
@@ -299,9 +317,9 @@ export async function runHomeSectionParallaxChecks(browser, baseURL, report = ()
         assert.equal((await geometry(page, `#${id} h2`)).translate, 'none', 'Reduced motion removes horizontal heading parallax')
       }
       await page.emulateMedia({ reducedMotion: 'no-preference' })
-      const restored = await centerAnchor(page, '#journal .home-editorial-journal-rail')
+      const restored = await centerAnchor(page, '#now .home-gallery')
       await settleScroll(page, restored + distance)
-      assert.notEqual((await geometry(page, '.home-editorial-journal-card-content')).translate, 'none', 'Enabling motion again restores the scroll effect')
+      assert.notEqual((await geometry(page, '#now .home-gallery-card-content')).translate, 'none', 'Enabling motion again restores the scroll effect')
       assert.deepEqual(errors, [], 'The page produces no uncaught browser errors')
       report(`PASS: ${width}px respects live reduced-motion changes`)
     } finally {

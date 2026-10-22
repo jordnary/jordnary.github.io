@@ -12,7 +12,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
     const hero = root.querySelector<HTMLElement>('.home-editorial-hero')
     const intro = root.querySelector<HTMLElement>('.home-editorial-intro')
     const introCopy = intro?.querySelector<HTMLElement>('.home-editorial-intro-copy')
-    const sectionBubbleAnchors = ['selected', 'journal'].map(section => ({
+    const sectionBubbleAnchors = ['selected', 'now'].map(section => ({
       node: root.querySelector<HTMLElement>(`.home-editorial-${section} .home-editorial-section-bottom`),
       property: `--home-${section}-travel`,
     }))

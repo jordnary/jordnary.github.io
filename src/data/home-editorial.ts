@@ -1,12 +1,10 @@
 const imageBase = `${import.meta.env.BASE_URL}images/`
 
-// Replace these existing photographs with the covers described in docs/home-cover-prompts.md.
-export const homeEditorialCovers = {
-  featured: { src: `${imageBase}navigation/coding-workspace-1920.webp`, alt: '屏幕、代码与一杯咖啡组成的日常工作台' },
-  learning: { src: `${imageBase}learning/notebook.webp`, alt: '木桌上的笔记本与钢笔' },
-  experiments: { src: `${imageBase}learning/circuits.webp`, alt: '电路板与芯片的细节，记录技术探索' },
-  everyday: { src: `${imageBase}navigation/forest-details-1920.webp`, alt: '阳光与绿叶之间，值得停下来观察的日常' },
-} as const
+// Optimized covers use the supplied artwork; prompts live in docs/home-cover-prompts.md.
+export const homeNow = [
+  { key: 'code', label: 'What I’m building', chinese: '我最近在维护', description: '继续打磨手边的项目，让小小的想法慢慢成形。', english: 'Small improvements, ongoing experiments, and projects in progress.', src: `${imageBase}home/now-building.webp`, alt: '暖光与绿植环绕的木质工作室，一侧结构延伸为细铅笔线稿' },
+  { key: 'reading', label: 'What I’m following', chinese: '我最近在关注', description: '收集值得停下来读一读的文章，给下一次探索留些线索。', english: 'Recent reads, fresh perspectives, and ideas to come back to.', src: `${imageBase}home/now-following.webp`, alt: '摊开的自然手账与植物、风景纸片，放大镜映出细小白花' },
+] as const
 
 export const homeDirectory = [
   { page: 'about', label: 'About', chinese: '关于', src: `${imageBase}home/about.webp`, alt: '从冰山表面延伸至深处图书馆的知识之路' },

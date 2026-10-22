@@ -32,6 +32,14 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await page.goto(url('home/'))
     await page.locator('.home-editorial').waitFor()
   }
+  // Replay the full reference path even though Now is now the final section.
+  // Extra scroll space belongs only to motion calibration, not layout checks.
+  const extendScrollRange = page => page.evaluate(() => {
+    const spacer = document.createElement('div')
+    spacer.style.height = '300vh'
+    spacer.setAttribute('aria-hidden', 'true')
+    document.body.append(spacer)
+  })
   const atAnchor = async (page, id) => {
     await page.waitForFunction(targetId => {
       const element = document.getElementById(targetId)
@@ -43,7 +51,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
   }
   const bubbleGroups = ['.home-editorial-hero-bubble', '.home-editorial-hero-foam', '.home-editorial-intro-bubbles']
-  const sectionBubbleGroups = ['.home-editorial-selected-bubbles', '.home-editorial-journal-bubbles']
+  const sectionBubbleGroups = ['.home-editorial-selected-bubbles', '.home-editorial-now-bubbles']
   const motionSelectors = ['.home-editorial-headlines', '.home-editorial-line-enter', '.home-editorial-marquee', '.home-editorial-wave', '.home-editorial-wave path', '.home-editorial-hero-caption', '.home-editorial-scroll', '.home-editorial-scroll i', ...[...bubbleGroups, ...sectionBubbleGroups].flatMap(selector => [selector, `${selector} i`])].join(', ')
   const motionSnapshot = page => page.evaluate(selector => [...document.querySelectorAll(selector)].map(element => {
     const style = getComputedStyle(element)
@@ -86,7 +94,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
       return box && box.width > innerWidth * .75 && box.height > innerHeight * .25
     })
     assert.equal(await page.locator('.home-editorial-headlines').innerText().then(text => text.includes('CURIOSITY BRINGS IDEAS TO LIFE.')), true)
-    for (const image of await page.locator('.home-editorial-photo img').all()) {
+    for (const image of await page.locator('#selected .home-gallery img').all()) {
       await image.scrollIntoViewIfNeeded()
       await image.evaluate(element => element.decode())
       assert.equal(await image.evaluate(element => element.naturalWidth > 0), true, 'A cover must render a real image')
@@ -170,11 +178,11 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     await input.waitFor({ state: 'hidden' })
   }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
 
-  await check('Explore, directory, journal and live anchors reach readable sections', async page => {
+  await check('Explore, directory and now anchors reach readable sections', async page => {
     await home(page)
     await page.getByRole('link', { name: 'EXPLORE MORE', exact: true }).click()
     await atAnchor(page, 'explore')
-    for (const id of ['explore', 'selected', 'journal', 'live']) {
+    for (const id of ['explore', 'selected', 'now']) {
       await page.goto(url(`home/#${id}`))
       await atAnchor(page, id)
       const heading = page.locator(`#${id} h2`).first()
@@ -228,31 +236,23 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
   }
 
   for (const width of [320, 390, 768, 1440]) {
-    await check(`The ${width}px layout fits the screen and its arrows reveal the third journal card`, async page => {
+    await check(`The ${width}px layout fits the screen and its keyboard controls reveal both recent activity cards`, async page => {
       await home(page)
-      for (const id of ['home', 'explore', 'selected', 'journal', 'live']) {
+      for (const id of ['home', 'explore', 'selected', 'now']) {
         await page.locator(`#${id}`).scrollIntoViewIfNeeded()
         const dimensions = await page.evaluate(() => ({ content: document.documentElement.scrollWidth, viewport: document.documentElement.clientWidth }))
         assert.ok(dimensions.content <= dimensions.viewport + 1, `${id} must not create document-wide horizontal scrolling: ${JSON.stringify(dimensions)}`)
       }
-      const controls = page.getByRole('button', { name: '下一张日常卡片', exact: true })
-      await controls.scrollIntoViewIfNeeded()
-      const rail = page.getByRole('region', { name: '学习与日常，可横向滚动', exact: true })
+      const rail = page.locator('#now .home-gallery')
+      await rail.scrollIntoViewIfNeeded()
+      await rail.focus()
       const initial = await rail.evaluate(element => element.scrollLeft)
-      await controls.click()
-      await page.waitForFunction(start => document.querySelector('.home-editorial-journal-rail').scrollLeft > start + 20, initial)
-      await page.waitForTimeout(650)
-      await controls.click()
-      await page.waitForFunction(() => {
-        const rail = document.querySelector('.home-editorial-journal-rail')
-        const card = rail?.querySelector('article:last-child')
-        if (!card) return false
-        const bounds = card.getBoundingClientRect()
-        return bounds.left >= -1 && bounds.right <= innerWidth + 1
-      })
+      await page.keyboard.press('ArrowRight')
+      await page.waitForFunction(start => document.querySelector('#now .home-gallery').scrollLeft > start + 20, initial)
+      await page.waitForFunction(() => document.querySelector('#now .home-gallery-card:last-child').dataset.centered === 'true')
       const last = await rail.evaluate(element => element.scrollLeft)
-      await page.getByRole('button', { name: '上一张日常卡片', exact: true }).click()
-      await page.waitForFunction(start => document.querySelector('.home-editorial-journal-rail').scrollLeft < start - 20, last)
+      await page.keyboard.press('ArrowLeft')
+      await page.waitForFunction(start => document.querySelector('#now .home-gallery').scrollLeft < start - 20, last)
       const header = await page.locator('.nav-shell').boundingBox()
       assert.ok(header.x >= -1 && header.x + header.width <= width + 1, 'Fixed navigation remains inside the viewport')
       assert.equal(await page.locator('.nav-desktop-list').isVisible(), width >= 720, 'The original desktop/mobile navigation breakpoint is preserved')
@@ -326,6 +326,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
   for (const width of [320, 1440]) {
     await check(`The ${width}px section bubble pairs float, follow scrolling, and leave actions usable`, async page => {
       await home(page)
+      await extendScrollRange(page)
       for (const selector of sectionBubbleGroups) {
         const group = page.locator(selector)
         assert.equal(await group.locator('i').count(), 2, 'Each section contains one large and one small bubble')
@@ -361,14 +362,15 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
         assert.equal(actionsClear, true, 'White bubbles leave section actions interactive')
       }
       await settleScroll(page, 0)
-      assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().top > innerHeight), true, 'The lower pair starts below the viewport')
+      assert.equal(await page.locator('.home-editorial-now-bubbles').evaluate(element => element.getBoundingClientRect().top > innerHeight), true, 'The lower pair starts below the viewport')
       await settleScroll(page, await page.evaluate(() => document.documentElement.scrollHeight - innerHeight))
-      assert.equal(await page.locator('.home-editorial-journal-bubbles').evaluate(element => element.getBoundingClientRect().bottom < 0), true, 'The lower pair leaves the viewport with its section after scrolling past it')
+      assert.equal(await page.locator('.home-editorial-now-bubbles').evaluate(element => element.getBoundingClientRect().bottom < 0), true, 'The lower pair leaves the viewport with its section after scrolling past it')
     }, { viewport: { width, height: 900 } })
   }
 
   await check('Resizing preserves the normalized reference path throughout the visible bubble travel', async page => {
     await home(page)
+    await extendScrollRange(page)
     await page.evaluate(() => document.fonts.ready)
     // Reuse one page across both sides of every layout breakpoint and back again.
     for (const [width, height] of [[1440, 900], [1201, 900], [1200, 900], [1024, 768], [900, 600], [768, 1024], [601, 900], [600, 900], [390, 844], [320, 568], [1440, 600]]) {
@@ -424,6 +426,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
 
   await check('Removing section action links leaves both bubble paths unchanged through resizing and scrolling', async page => {
     await home(page)
+    await extendScrollRange(page)
     await page.evaluate(() => document.fonts.ready)
     const capture = async () => {
       const positions = []
@@ -459,9 +462,9 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
   for (const width of [320, 1440]) {
     await check(`The ${width}px bubbles pass underneath text, images, and actions`, async page => {
       await home(page)
-      for (const section of ['selected', 'journal']) {
+      for (const section of ['selected', 'now']) {
         const scope = `.home-editorial-${section}`
-        for (const targetSelector of section === 'selected' ? ['h2', '.home-gallery-window', '.home-gallery-caption'] : ['h2', 'h3', '.home-editorial-photo', '.home-editorial-pill']) {
+        for (const targetSelector of ['h2', '.home-gallery-window', '.home-gallery-caption']) {
           const target = page.locator(`${scope} ${targetSelector}`).first()
           await target.scrollIntoViewIfNeeded()
           const layers = await target.evaluate(element => {
@@ -494,12 +497,13 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
   const sectionReferences = [
     { section: 'selected', viewport: { width: 2554, height: 1342 }, rate: .38, centerOffset: -.02, tolerance: 12,
       samples: [[1007.5, 1115.5], [857.5, 904.5], [707.5, 691.5], [557.5, 482.5], [407.5, 279.5], [257.5, 84.5]] },
-    { section: 'journal', viewport: { width: 2558, height: 1348 }, rate: .4, centerOffset: -.173, tolerance: 32,
+    { section: 'now', viewport: { width: 2558, height: 1348 }, rate: .4, centerOffset: -.173, tolerance: 32,
       samples: [[469.5, 172.91], [619.5, 368.87], [769.5, 558.88], [919.5, 761.77], [1069.5, 981.46], [1219.5, 1229.25]] },
   ]
   for (const reference of sectionReferences) {
     await check(`The ${reference.section} bubbles follow their recorded button-relative path independently of scroll direction and cadence`, async page => {
       await home(page)
+      await extendScrollRange(page)
       const group = page.locator(`.home-editorial-${reference.section}-bubbles`)
       const buttonDocumentY = await group.evaluate(element => {
         const box = (element.closest('.home-editorial-section-bottom').querySelector('.home-editorial-pill') ?? element.closest('.home-editorial-section-bottom')).getBoundingClientRect()
@@ -687,7 +691,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
     assert.deepEqual(await motionSnapshot(page), before, 'Reduced motion disables deformation and scroll-driven transforms')
     await page.getByRole('link', { name: 'EXPLORE MORE', exact: true }).click()
     await atAnchor(page, 'explore')
-    for (const id of ['explore', 'selected', 'journal', 'live']) {
+    for (const id of ['explore', 'selected', 'now']) {
       await page.goto(url(`home/#${id}`))
       await atAnchor(page, id)
       assert.equal(await page.locator(`#${id} h2`).first().evaluate(element => {

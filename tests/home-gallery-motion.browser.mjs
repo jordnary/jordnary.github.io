@@ -9,10 +9,10 @@ export async function runHomeGalleryMotionChecks(browser, baseURL, report = () =
   const page = await context.newPage()
   page.setDefaultTimeout(6000)
   const homeURL = new URL('home/', baseURL).href
-  const rail = page.locator('.home-gallery')
+  const rail = page.locator('#selected .home-gallery')
   const settle = async index => {
     await page.waitForFunction(expected => {
-      const element = document.querySelector('.home-gallery')
+      const element = document.querySelector('#selected .home-gallery')
       const card = element.children[expected]
       const box = card.getBoundingClientRect()
       const viewport = element.getBoundingClientRect()

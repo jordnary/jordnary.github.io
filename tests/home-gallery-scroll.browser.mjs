@@ -10,7 +10,7 @@ function captureEntrance() {
   window.homeGalleryEntrance = { done: false, samples: [] }
   let started
   const sample = time => {
-    const rail = document.querySelector('.home-gallery')
+    const rail = document.querySelector('#selected .home-gallery')
     if (rail && (started !== undefined || rail.getBoundingClientRect().top < innerHeight)) {
       started ??= time
       const cards = Array.from(rail.querySelectorAll('.home-gallery-card-content')).slice(0, 2)
@@ -51,7 +51,7 @@ async function checkEntrance(page, label) {
 
 async function scrollAndSample(page, top) {
   return page.evaluate(async top => {
-    const rail = document.querySelector('.home-gallery')
+    const rail = document.querySelector('#selected .home-gallery')
     const content = rail.querySelector('.home-gallery-card-content')
     const samples = []
     const started = performance.now()
@@ -87,10 +87,10 @@ export async function runHomeGalleryScrollChecks(browser, baseURL, report = () =
     try {
       await page.goto(homeURL)
       await page.evaluate(() => document.fonts.ready)
-      const bleed = page.locator('.home-gallery-bleed')
+      const bleed = page.locator('#selected .home-gallery-bleed')
       assert.equal(await bleed.evaluate(element => element.classList.contains('is-revealed')), false,
         'The gallery waits below the first screen until it enters the viewport')
-      const top = await page.locator('.home-gallery').evaluate(element => element.getBoundingClientRect().top + scrollY)
+      const top = await page.locator('#selected .home-gallery').evaluate(element => element.getBoundingClientRect().top + scrollY)
       await page.evaluate(top => window.scrollTo({ top: top - innerHeight * .75, behavior: 'instant' }), top)
       await checkEntrance(page, `${width}px first scroll`)
       report(`PASS: ${width}px first scroll fades and slides neighboring cards in sequence`)
@@ -120,9 +120,9 @@ export async function runHomeGalleryScrollChecks(browser, baseURL, report = () =
       assert.ok(reentry.every(sample => sample.opacity === 1 && sample.entrance === 0),
         'Leaving and re-entering the gallery does not repeat its one-time entrance')
       await page.emulateMedia({ reducedMotion: 'reduce' })
-      await page.waitForFunction(() => Array.from(document.querySelectorAll('.home-gallery-card-content'))
+      await page.waitForFunction(() => Array.from(document.querySelectorAll('#selected .home-gallery-card-content'))
         .every(card => getComputedStyle(card).translate === 'none'))
-      assert.ok(await page.locator('.home-gallery-card-content').evaluateAll(cards => cards.every(card => {
+      assert.ok(await page.locator('#selected .home-gallery-card-content').evaluateAll(cards => cards.every(card => {
         const style = getComputedStyle(card)
         return style.opacity === '1' && style.transform === 'none' && style.translate === 'none' && style.transitionDuration === '0s'
       })), 'Reduced motion immediately shows all cards without entrance or parallax motion')

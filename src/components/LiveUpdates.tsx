@@ -1,250 +1,80 @@
 import { useEffect, useRef, useState } from 'react'
 import { githubProfileUrl, getGitHubSnapshot, type GitHubSnapshot } from '../lib/github'
-import { PageSection } from './PageSection'
-import { Reveal } from './Reveal'
 
-type LoadState<T> = {
-  data: T | null
-  status: 'error' | 'loading' | 'ready'
-}
+type LoadState<T> = { data: T | null; status: 'error' | 'loading' | 'ready' }
+type RssItem = { description: string; id: string; publishedAt: string | null; source: string; sourceUrl: string; title: string; url: string }
+type RssFeed = { generatedAt: string; items: RssItem[] }
 
-type RssItem = {
-  description: string
-  id: string
-  publishedAt: string | null
-  source: string
-  sourceUrl: string
-  title: string
-  url: string
-}
-
-type RssFeed = {
-  generatedAt: string
-  items: RssItem[]
-}
-
-const initialGitHubState: LoadState<GitHubSnapshot> = {
-  data: null,
-  status: 'loading',
-}
-
-const initialFeedState: LoadState<RssFeed> = {
-  data: null,
-  status: 'loading',
-}
-
-export function LiveUpdates() {
-  const [githubState, setGitHubState] = useState(initialGitHubState)
-  const [feedState, setFeedState] = useState(initialFeedState)
+export function LiveUpdates({ kind }: { kind: 'code' | 'reading' }) {
+  const [githubState, setGitHubState] = useState<LoadState<GitHubSnapshot>>({ data: null, status: 'loading' })
+  const [feedState, setFeedState] = useState<LoadState<RssFeed>>({ data: null, status: 'loading' })
   const [refreshIndex, setRefreshIndex] = useState(0)
-  const [refreshFeedback, setRefreshFeedback] = useState<'error' | 'idle' | 'loading' | 'success'>('idle')
-  const feedbackTimerRef = useRef<number | null>(null)
+  const [feedback, setFeedback] = useState<'error' | 'idle' | 'success'>('idle')
+  const feedbackTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    let isCurrent = true
-    const isManualRefresh = refreshIndex > 0
-
-    void Promise.allSettled([
-      getGitHubSnapshot(),
-      loadRssFeed(),
-    ]).then(([githubResult, feedResult]) => {
-      if (!isCurrent) return
-
-      if (githubResult.status === 'fulfilled') {
-        setGitHubState({
-          data: githubResult.value.snapshot,
-          status: githubResult.value.fromCache ? 'error' : 'ready',
-        })
-      } else {
-        setGitHubState((previous) => ({ ...previous, status: 'error' }))
+    let current = true
+    const load = async () => {
+      let success = false
+      try {
+        if (kind === 'code') {
+          const result = await getGitHubSnapshot()
+          if (!current) return
+          success = !result.fromCache
+          setGitHubState({ data: result.snapshot, status: success ? 'ready' : 'error' })
+        } else {
+          const feed = await loadRssFeed()
+          if (!current) return
+          success = true
+          setFeedState({ data: feed, status: 'ready' })
+        }
+      } catch {
+        if (!current) return
+        if (kind === 'code') setGitHubState(previous => ({ ...previous, status: 'error' }))
+        else setFeedState(previous => ({ ...previous, status: 'error' }))
       }
-
-      if (feedResult.status === 'fulfilled') {
-        setFeedState({ data: feedResult.value, status: 'ready' })
-      } else {
-        setFeedState({ data: null, status: 'error' })
-      }
-
-      if (isManualRefresh) {
-        setRefreshFeedback(
-          githubResult.status === 'fulfilled' && !githubResult.value.fromCache && feedResult.status === 'fulfilled'
-            ? 'success'
-            : 'error',
-        )
-        feedbackTimerRef.current = window.setTimeout(() => {
-          setRefreshFeedback('idle')
-        }, 3600)
-      }
-    })
-
-    return () => {
-      isCurrent = false
-    }
-  }, [refreshIndex])
-
-  useEffect(() => {
-    return () => {
-      if (feedbackTimerRef.current !== null) {
-        window.clearTimeout(feedbackTimerRef.current)
+      if (refreshIndex > 0) {
+        setFeedback(success ? 'success' : 'error')
+        feedbackTimer.current = window.setTimeout(() => setFeedback('idle'), 3600)
       }
     }
-  }, [])
+    void load()
+    return () => { current = false; window.clearTimeout(feedbackTimer.current) }
+  }, [kind, refreshIndex])
 
+  const state = kind === 'code' ? githubState : feedState
+  const refreshing = state.status === 'loading'
   const refresh = () => {
-    if (feedbackTimerRef.current !== null) {
-      window.clearTimeout(feedbackTimerRef.current)
-    }
-
-    setRefreshFeedback('loading')
-    setGitHubState((previous) => ({ ...previous, status: 'loading' }))
-    setFeedState({ data: null, status: 'loading' })
-    setRefreshIndex((index) => index + 1)
+    window.clearTimeout(feedbackTimer.current)
+    setFeedback('idle')
+    if (kind === 'code') setGitHubState(previous => ({ ...previous, status: 'loading' }))
+    else setFeedState(previous => ({ ...previous, status: 'loading' }))
+    setRefreshIndex(index => index + 1)
   }
 
-  const isRefreshing =
-    refreshFeedback === 'loading' ||
-    githubState.status === 'loading' ||
-    feedState.status === 'loading'
-
-  return (
-    <PageSection
-      description="这里汇集我公开的代码动态与最近在读的内容，记录持续学习、动手实践和整理思考的日常足迹。"
-      eyebrow="Now & Notes"
-      id="live"
-      tone="paper"
-      title={<>最近在<span className="live-title-accent">做什么
-        <svg viewBox="0 0 160 12" fill="none" aria-hidden="true">
-          <path d="M3 8C41 2 105 2 157 6M88 10c23-3 43-3 62-2" />
-        </svg>
-      </span></>}
-    >
-      <div className="live-updates-toolbar">
-        <p className="home-live-caption"><span aria-hidden="true" />学习与创作，持续发生中</p>
-        <button
-          className="live-refresh-button"
-          disabled={isRefreshing}
-          onClick={refresh}
-          type="button"
-        >
-          <RefreshIcon />
-          <span>{isRefreshing ? '更新中…' : '刷新动态'}</span>
-        </button>
-        {refreshFeedback === 'success' && (
-          <p className="live-refresh-feedback is-success" role="status">
-            <CheckIcon />
-            已更新
-          </p>
-        )}
-        {refreshFeedback === 'error' && (
-          <p className="live-refresh-feedback is-error" role="status">
-            <AlertIcon />
-            更新失败，请稍后再试
-          </p>
-        )}
-      </div>
-
-      <div className="live-updates-grid">
-        <Reveal as="article" className="live-panel live-panel--code glass-card">
-          <PanelHeader
-            actionHref={githubProfileUrl}
-            actionLabel="前往 GitHub"
-            eyebrow="Code Activity"
-            kind="code"
-            title="我最近在维护"
-          />
-          {githubState.data ? (
-            <>
-              <GitHubContent snapshot={githubState.data} />
-              {githubState.status === 'error' && (
-                <p className="live-inline-note" role="status">暂时无法更新，显示上次成功的数据。</p>
-              )}
-            </>
-          ) : (
-            <LiveState
-              kind={githubState.status === 'error' ? 'error' : 'loading'}
-              source="GitHub"
-            />
-          )}
-        </Reveal>
-
-        <Reveal
-          as="article"
-          baseDelay={0.08}
-          className="live-panel live-panel--reading glass-card"
-          index={1}
-        >
-          <PanelHeader eyebrow="Reading Notes" kind="reading" title="我最近在关注" />
-          {feedState.status === 'ready' && feedState.data ? (
-            <RssContent feed={feedState.data} />
-          ) : (
-            <LiveState
-              kind={feedState.status === 'error' ? 'error' : 'loading'}
-              source="RSS 阅读流"
-            />
-          )}
-        </Reveal>
-      </div>
-    </PageSection>
-  )
-}
-
-function PanelHeader({
-  actionHref,
-  actionLabel,
-  eyebrow,
-  kind,
-  title,
-}: {
-  actionHref?: string
-  actionLabel?: string
-  eyebrow: string
-  kind: 'code' | 'reading'
-  title: string
-}) {
-  const isExternal = actionHref?.startsWith('http')
-
-  return (
-    <header className="live-panel-header">
-      <div className="live-panel-heading">
-        <span className="live-panel-symbol"><JournalIcon kind={kind} /></span>
-        <div>
-          <p className="meta-label">{eyebrow}</p>
-          <h3>{title}</h3>
-        </div>
-      </div>
-      {actionHref && (
-        <a
-          className="live-panel-link"
-          href={actionHref}
-          rel={isExternal ? 'noreferrer' : undefined}
-          target={isExternal ? '_blank' : undefined}
-        >
-          {actionLabel}
-          <span aria-hidden="true">↗</span>
-        </a>
-      )}
-    </header>
-  )
+  return <div className="home-now-live">
+    <div className="live-updates-toolbar">
+      <p className="home-live-caption" lang="en">{kind === 'code' ? 'CODE ACTIVITY' : 'READING NOTES'}</p>
+      <button className="live-refresh-button" type="button" disabled={refreshing} onClick={refresh}>
+        <RefreshIcon /><span>{refreshing ? '更新中…' : '刷新动态'} <span lang="en">/ {refreshing ? 'Loading' : 'Refresh'}</span></span>
+      </button>
+      {feedback !== 'idle' && <p className={`live-refresh-feedback is-${feedback}`} role="status">
+        {feedback === 'success' ? <><CheckIcon />已更新 / Updated</> : <><AlertIcon />更新失败，请重试 / Please try again</>}
+      </p>}
+    </div>
+    <div className="home-now-live-content" aria-busy={refreshing}>
+      {kind === 'code'
+        ? githubState.data ? <GitHubContent snapshot={githubState.data} /> : <LiveState kind={githubState.status === 'error' ? 'error' : 'loading'} source="GitHub" />
+        : feedState.data ? <RssContent feed={feedState.data} /> : <LiveState kind={feedState.status === 'error' ? 'error' : 'loading'} source="RSS 阅读流" />}
+      {state.data && state.status === 'error' && <p className="live-inline-note" role="status">暂时无法更新，显示上次成功的数据。<span lang="en"> Showing the last available update.</span></p>}
+    </div>
+    {kind === 'code' && <a className="home-now-source" href={githubProfileUrl} target="_blank" rel="noreferrer">前往 GitHub <span lang="en">/ View on GitHub ↗</span></a>}
+  </div>
 }
 
 function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
   return (
     <>
-      <dl className="github-metrics">
-        <div>
-          <dt>公开仓库</dt>
-          <dd>{formatNumber(snapshot.profile.publicRepos)}</dd>
-        </div>
-        <div>
-          <dt>关注者</dt>
-          <dd>{formatNumber(snapshot.profile.followers)}</dd>
-        </div>
-        <div>
-          <dt>最近状态</dt>
-          <dd className="github-live-status"><span />定期同步</dd>
-        </div>
-      </dl>
-
       {snapshot.repos.length > 0 ? (
         <ul className="live-list github-repository-list">
           {snapshot.repos.map((repository) => (
@@ -256,7 +86,7 @@ function GitHubContent({ snapshot }: { snapshot: GitHubSnapshot }) {
                 rel="noreferrer"
                 target="_blank"
               >
-                <span className="github-repository-icon"><JournalIcon kind="repository" /></span>
+                <span className="github-repository-icon"><ActivityIcon kind="repository" /></span>
                 <span className="github-repository-body">
                   <span className="github-repository-main">
                     <strong>{repository.name}</strong>
@@ -285,7 +115,7 @@ function RssContent({ feed }: { feed: RssFeed }) {
   const items = feed.items.slice(0, 4)
 
   if (items.length === 0) {
-    return <LiveState kind="error" source="RSS 阅读流" />
+    return <p className="live-inline-note" role="status">还没有收录的文章。<span lang="en"> No articles yet.</span></p>
   }
 
   return (
@@ -327,7 +157,7 @@ function RssContent({ feed }: { feed: RssFeed }) {
   )
 }
 
-function JournalIcon({ kind }: { kind: 'code' | 'reading' | 'repository' }) {
+function ActivityIcon({ kind }: { kind: 'code' | 'reading' | 'repository' }) {
   return (
     <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
       {kind === 'code' ? (
@@ -357,7 +187,7 @@ function LiveState({ kind, source }: { kind: 'error' | 'loading'; source: string
     return (
       <div className="live-state" role="status">
         <span className="live-state-orbit" />
-        <p>正在获取我的 {source}…</p>
+        <p>正在获取 {source}…<span lang="en"> Loading…</span></p>
       </div>
     )
   }
@@ -365,7 +195,7 @@ function LiveState({ kind, source }: { kind: 'error' | 'loading'; source: string
   return (
     <div className="live-state live-state-error">
       <p>暂时无法获取{source}。</p>
-      <span>其他页面内容不受影响，可以稍后再试。</span>
+      <span>请使用上方的刷新按钮重试。 / Please refresh to try again.</span>
     </div>
   )
 }
@@ -380,7 +210,17 @@ async function loadRssFeed(): Promise<RssFeed> {
     throw new Error(`RSS feed request failed with ${response.status}`)
   }
 
-  return response.json() as Promise<RssFeed>
+  const feed: unknown = await response.json()
+  if (!feed || typeof feed !== 'object') throw new Error('Invalid RSS feed')
+  const value = feed as RssFeed
+  if (typeof value.generatedAt !== 'string' || !Array.isArray(value.items) || !value.items.every(item =>
+    item && typeof item.id === 'string' && typeof item.title === 'string' &&
+    typeof item.description === 'string' && typeof item.source === 'string' &&
+    typeof item.url === 'string' && /^https?:\/\//.test(item.url) &&
+    typeof item.sourceUrl === 'string' && /^https?:\/\//.test(item.sourceUrl) &&
+    (item.publishedAt === null || typeof item.publishedAt === 'string'),
+  )) throw new Error('Invalid RSS feed')
+  return value
 }
 
 function formatNumber(value: number) {

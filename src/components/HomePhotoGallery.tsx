@@ -4,7 +4,18 @@ import { getRouteHref } from '../lib/routes'
 import { SmartLink } from './SmartLink'
 import './HomePhotoGallery.css'
 
-const photos = homeDirectory
+export type HomeGalleryItem = {
+  key: string
+  label: string
+  chinese: string
+  src?: string
+  alt?: string
+  href?: string
+}
+
+const directoryPhotos: HomeGalleryItem[] = homeDirectory.map(photo => ({
+  ...photo, key: photo.page, href: getRouteHref(photo.page),
+}))
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 type Drag = {
@@ -18,7 +29,11 @@ type Drag = {
   samples: { x: number; time: number }[]
 }
 
-export function HomePhotoGallery() {
+export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回廊', onExplore }: {
+  photos?: readonly HomeGalleryItem[]
+  label?: string
+  onExplore?: (index: number, trigger: HTMLButtonElement) => void
+}) {
   const railRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -69,7 +84,7 @@ export function HomePhotoGallery() {
       if (painted >= 0) cards[painted].dataset.centered = 'false'
       cards[active].dataset.centered = 'true'
       painted = active
-      rail.setAttribute('aria-label', `照片回廊，第 ${active + 1} 张，共 ${cards.length} 张；使用左右方向键切换`)
+      rail.setAttribute('aria-label', `${label}，第 ${active + 1} 张，共 ${cards.length} 张；使用左右方向键切换`)
     }
 
     const stop = () => {
@@ -347,17 +362,23 @@ export function HomePhotoGallery() {
       delete rail.dataset.dragging
       delete rail.dataset.moving
     }
-  }, [])
+  }, [photos, label])
 
-  return <div className="home-gallery-bleed" data-home-reveal="gallery"><div className="home-gallery" ref={railRef} role="region" aria-roledescription="轮播图" aria-label="照片回廊，使用左右方向键切换" tabIndex={0}>
-    {photos.map((photo, index) => <div className="home-gallery-card" key={photo.page} data-centered={index === 0} role="group" aria-roledescription="幻灯片" aria-label={`${index + 1} / ${photos.length}`}>
+  return <div className="home-gallery-bleed" data-home-reveal="gallery"><div className="home-gallery" ref={railRef} role="region" aria-roledescription="轮播图" aria-label={`${label}，使用左右方向键切换`} tabIndex={0}>
+    {photos.map((photo, index) => {
+      const content = <>
+        <span className={`home-gallery-window${photo.src ? '' : ' home-gallery-window--blank'}`}>
+          {photo.src && <img src={photo.src} alt={photo.alt ?? ''} width="1536" height="1024" loading="lazy" decoding="async" draggable={false} />}
+        </span>
+        <span className="home-gallery-caption"><span lang="en">{photo.label}</span><span lang="zh-CN">{photo.chinese}</span></span>
+        <span className="home-gallery-line" aria-hidden="true" />
+      </>
+      return <div className="home-gallery-card" key={photo.key} data-centered={index === 0} role="group" aria-roledescription="幻灯片" aria-label={`${index + 1} / ${photos.length}`}>
       <div className="home-gallery-card-content" style={{ '--gallery-index': index } as CSSProperties}>
-        <SmartLink className="home-gallery-link" href={getRouteHref(photo.page)} draggable={false}>
-          <div className="home-gallery-window"><img src={photo.src} alt={photo.alt} width="1536" height="1024" loading="lazy" decoding="async" draggable={false} /></div>
-          <span className="home-gallery-caption"><span lang="en">{photo.label}</span><span>{photo.chinese}</span></span>
-          <span className="home-gallery-line" aria-hidden="true" />
-        </SmartLink>
+        {onExplore
+          ? <button className="home-gallery-link home-gallery-open" type="button" aria-haspopup="dialog" aria-label={`阅读近况：${photo.chinese} / ${photo.label}`} onClick={event => onExplore(index, event.currentTarget)}>{content}</button>
+          : <SmartLink className="home-gallery-link" href={photo.href!} draggable={false}>{content}</SmartLink>}
       </div>
-    </div>)}
+    </div>})}
   </div></div>
 }

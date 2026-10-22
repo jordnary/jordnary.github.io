@@ -54,12 +54,17 @@
 .home-gallery-caption > span:first-child { font-family: var(--home-serif); font-size: clamp(24px, 1.8vw, 42px); line-height: 1.2; letter-spacing: -.025em; }
 .home-gallery-caption > span:last-child { color: var(--home-muted); font-size: clamp(14px, 1.04vw, 26px); line-height: 1.6; letter-spacing: .1em; }
 .home-gallery-window {
+  display: block;
+  position: relative;
   aspect-ratio: 3 / 2;
   overflow: hidden;
   border-radius: clamp(22px, 2.5vw, 64px);
   /* Keep the rounded mask fixed while the card and photograph scale separately. */
   isolation: isolate;
 }
+.home-gallery-open { width: 100%; padding: 0; border: 0; background: transparent; text-align: left; }
+.home-gallery-window--blank { background: var(--home-paper); }
+.home-gallery-window[data-now-origin] { opacity: 0; }
 .home-gallery-window img {
   display: block;
   width: 100%;
@@ -96,6 +101,17 @@
 .home-gallery-link:focus-visible { transform: scale(.975); }
 .home-gallery-link:focus-visible img { transform: scale(1.075); }
 .home-gallery-link:focus-visible .home-gallery-line { transform: scaleX(2); }
+
+/* Match the return target before the dialog restores keyboard focus. These
+   short-lived overrides are removed as soon as native focus/hover takes over. */
+.home-gallery-open[data-now-returning],
+.home-gallery-open[data-now-returning] :is(img, .home-gallery-line) { transition: none !important; }
+.home-gallery-open[data-now-returning='rest'],
+.home-gallery-open[data-now-returning='rest'] img { transform: scale(1) !important; }
+.home-gallery-open[data-now-returning='rest'] .home-gallery-line { transform: scaleX(1) !important; }
+.home-gallery-open[data-now-returning='active'] { transform: scale(.975) !important; }
+.home-gallery-open[data-now-returning='active'] img { transform: scale(1.075) !important; }
+.home-gallery-open[data-now-returning='active'] .home-gallery-line { transform: scaleX(2) !important; }
 
 @media (max-width: 900px) { .home-gallery { --gallery-width: 60vw; } }
 @media (max-width: 600px) { .home-gallery { --gallery-width: 80vw; --gallery-gap: 6vw; } }

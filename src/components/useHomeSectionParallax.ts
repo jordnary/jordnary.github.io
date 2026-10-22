@@ -17,8 +17,8 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
     const sections = Array.from(root.querySelectorAll<HTMLElement>('.home-editorial-section')).map(section => ({
       section,
       heading: section.querySelector<HTMLElement>('.home-editorial-section-heading h2'),
-      cards: section.querySelector<HTMLElement>('.home-gallery, .home-editorial-feature-layout, .home-editorial-journal-rail'),
-      cardContents: Array.from(section.querySelectorAll<HTMLElement>('.home-gallery-card-content, .home-editorial-feature, .home-editorial-journal-card-content')),
+      cards: section.querySelector<HTMLElement>('.home-gallery'),
+      cardContents: Array.from(section.querySelectorAll<HTMLElement>('.home-gallery-card-content')),
       gallery: Boolean(section.querySelector('.home-gallery')),
       documentTops: [0, 0],
       current: [0, 0],

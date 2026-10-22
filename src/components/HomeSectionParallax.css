@@ -4,22 +4,12 @@
 
 /* Independent translation preserves the existing character and card entrances. */
 .home-editorial-section-heading h2,
-.home-gallery-card-content,
-.home-editorial-feature,
-.home-editorial-journal-card-content {
+.home-gallery-card-content {
   translate: 0;
   will-change: translate;
 }
 
-/* Move content inside stationary snap targets so vertical scroll cannot snap the rail. */
-.home-editorial-journal-rail {
-  padding-right: calc(var(--home-gutter) + var(--home-section-photo-limit));
-}
-
 @media (prefers-reduced-motion: reduce) {
   .home-editorial-section-heading h2,
-  .home-gallery-card-content,
-  .home-editorial-feature,
-  .home-editorial-journal-card-content { translate: none; will-change: auto; }
-  .home-editorial-journal-rail { padding-right: var(--home-gutter); }
+  .home-gallery-card-content { translate: none; will-change: auto; }
 }
