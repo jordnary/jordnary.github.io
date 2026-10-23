@@ -1,0 +1,43 @@
+import { createHash } from 'node:crypto'
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises'
+import sharp from 'sharp'
+
+// Keep originals for high-density screens and zoom; generate only display-sized copies.
+const output = 'public/images/responsive'
+await mkdir(output, { recursive: true })
+await mkdir('src/generated', { recursive: true })
+const manifest = {}
+const groups = {
+  home: { widths: [480, 768, 1024], files: /^(about|learning|projects|contact|now-building|now-following)\.webp$/ },
+  learning: { widths: [480, 768, 1024, 1440], files: /\.webp$/ },
+  'project-studio': { widths: [480, 768, 1024], files: /\.webp$/ },
+  projects: { widths: [240], files: /\.webp$/ },
+}
+let generated = 0
+const existing = new Set(await readdir(output))
+const required = new Set()
+for (const [group, { widths, files }] of Object.entries(groups)) {
+  for (const file of (await readdir(`public/images/${group}`)).sort().filter(file => files.test(file))) {
+    const source = await readFile(`public/images/${group}/${file}`)
+    const { width, height } = await sharp(source).metadata()
+    const hash = createHash('sha256').update(source).update(JSON.stringify({ widths, quality: 90, sharp: sharp.versions })).digest('hex').slice(0, 12)
+    const variants = []
+    for (const size of widths.filter(size => size < width)) {
+      const name = `${file.replace('.webp', '')}-${hash}-${size}.webp`
+      required.add(name)
+      if (!existing.has(name)) {
+        await sharp(source).resize({ width: size, withoutEnlargement: true })
+          .webp({ quality: 90, alphaQuality: 100, effort: 6 }).toFile(`${output}/${name}`)
+        generated++
+      }
+      variants.push({ width: size, file: `images/responsive/${name}` })
+    }
+    manifest[`images/${group}/${file}`] = { width, height, variants }
+  }
+}
+// Prune only files owned by this generator, never source artwork or other files.
+for (const file of existing) {
+  if (/^[a-z0-9-]+-[a-f0-9]{12}-\d+\.webp$/.test(file) && !required.has(file)) await unlink(`${output}/${file}`)
+}
+await writeFile('src/generated/responsive-images.json', `${JSON.stringify(manifest, null, 2)}\n`)
+console.log(`Responsive images: ${Object.keys(manifest).length} originals, ${generated} copies generated`)

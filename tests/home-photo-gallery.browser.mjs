@@ -67,7 +67,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
       assert.equal(await page.locator('#now .home-gallery-card').count(), 2)
       assert.equal(await page.locator('#selected').getByText('浏览全部项目', { exact: true }).count(), 0)
       assert.equal(await rail.locator('img').count(), 4)
-      assert.ok(await rail.locator('img').evaluateAll(images => images.every(image => image.naturalWidth === 1536 && image.alt && new URL(image.src).pathname.includes('/images/home/'))))
+      assert.ok(await rail.locator('img').evaluateAll(images => images.every(image => image.naturalWidth > 0 && image.getAttribute('width') === '1536' && image.alt && new URL(image.src).pathname.includes('/images/home/'))))
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1))
 
       phase = 'hover'

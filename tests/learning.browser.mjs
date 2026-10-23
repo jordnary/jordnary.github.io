@@ -58,8 +58,8 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       }
       const photoGate = new Promise(resolve => { releasePhoto = resolve })
       const treeGate = new Promise(resolve => { releaseTrees = resolve })
-      const photoRoute = '**/images/learning/hero-campus-sketch.webp'
-      const treeRoute = '**/images/learning/hero-campus-trees.webp'
+      const photoRoute = /\/images\/(?:learning|responsive)\/hero-campus-sketch[^/]*\.webp$/
+      const treeRoute = /\/images\/(?:learning|responsive)\/hero-campus-trees[^/]*\.webp$/
       await loadingPage.route(photoRoute, async route => {
         await photoGate
         await route.continue()
@@ -89,7 +89,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
       await loadingPage.unroute(photoRoute)
       await loadingPage.unroute(treeRoute)
       await loadingPage.reload()
-      await loadingPage.waitForFunction(() => document.querySelector('.learning-cover-image').dataset.ready === 'true')
+      await loadingPage.waitForFunction(() => document.querySelector('.learning-cover-image')?.dataset.ready === 'true')
       assert.ok(await loadingPage.locator('.learning-cover-image img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)))
       assert.ok(await loadingPage.locator('.learning-cover-photo-reveal').evaluate(element => element.getAnimations().some(animation => animation.animationName === 'learning-cover-reveal')))
       pass('The inline structural drawing waits for both architecture and tree images before animating and reloads correctly with caching enabled')
@@ -173,9 +173,10 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     const story = page.locator('.learning-hero-story')
     const heroImages = page.locator('img.learning-cover-panorama, img.learning-ink-outline, img.learning-ink-texture')
     assert.equal(await heroImages.count(), 3)
+    await page.locator('.learning-ink-art img').evaluateAll(images => { images.forEach(image => { image.loading = 'eager' }) })
     await page.waitForFunction(() => [...document.querySelectorAll('.learning-cover-image img, .learning-ink-art img')].every(image => image.complete && image.naturalWidth > 0))
     assert.ok(await heroImages.evaluateAll(images => images.every(image => {
-      const source = new URL(image.currentSrc)
+      const source = new URL(image.src)
       return source.origin === location.origin && /\/images\/learning\/hero-(campus|tower)-(outline\.svg|sketch\.webp)$/.test(source.pathname)
     })))
     assert.equal(await heroImages.evaluateAll(images => new Set(images.map(image => new URL(image.currentSrc).pathname)).size), 3)
@@ -193,7 +194,7 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
     const heroTrees = page.locator('.learning-cover-trees > img, .learning-ink-trees > img')
     assert.equal(await heroTrees.count(), 2, 'Each architectural scene has its own aligned landscape tree layer')
     assert.ok(await heroTrees.evaluateAll(images => images.every(image => {
-      const source = new URL(image.currentSrc)
+      const source = new URL(image.src)
       return source.origin === location.origin && /\/images\/learning\/hero-(campus|tower)-trees\.webp$/.test(source.pathname) && image.complete && image.naturalWidth > 0
     })))
     assert.equal(await page.locator('#skills img, #timeline img').count(), 0)
@@ -609,6 +610,8 @@ export async function runLearningChecks(browser, baseURL, report = () => {}) {
   try {
     await touch.goto(url)
     const mobileStory = touch.locator('.learning-hero-story')
+    await mobileStory.waitFor()
+    await touch.locator('.learning-ink-art img').evaluateAll(images => { images.forEach(image => { image.loading = 'eager' }) })
     await touch.waitForFunction(() => [...document.querySelectorAll('.learning-cover-image img, .learning-ink-art img')].every(image => image.complete && image.naturalWidth > 0))
     await touch.locator('.learning-cover-image').tap()
     assert.notEqual(await touch.locator('.learning-cover-image').getAttribute('data-pointer'), 'true')

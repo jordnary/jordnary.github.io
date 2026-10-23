@@ -4,6 +4,7 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import { SmartLink } from '../SmartLink'
+import { imageThumbnail } from '../../lib/responsive-images'
 import { GalleryIcon } from './GalleryIcon'
 import { useThumbnailWheel } from './useThumbnailWheel'
 import type { GalleryImage, ImageGalleryProps } from './types'
@@ -140,7 +141,7 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const reducedMotion = useMotionPreference()
   const touchNavigation = useSyncExternalStore(subscribeTouchNavigation, () => window.matchMedia(touchNavigationQuery).matches, () => false)
   const touchButtons = useTouchButtons()
-  const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail, width, height })), [images])
+  const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail: thumbnail ?? imageThumbnail(src), width, height })), [images])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
   // The thumbnail plugin shares this window with the carousel.
   const preload = Math.min(6, Math.max(0, images.length - 1))
@@ -161,6 +162,9 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: true }}
     toolbar={{ buttons: [<GalleryHeading key="heading" images={images} />, 'zoom', 'thumbnails', 'fullscreen', 'close'] }}
     render={{
+      // Preserve the full thumbnail strip without decoding its offscreen originals.
+      // A React element bypasses Zoom's default image renderer; null would not.
+      slide: ({ offset }) => Math.abs(offset) > 1 ? <span aria-hidden="true" /> : undefined,
       buttonZoom: props => <ZoomControls {...props} />,
       buttonPrev: images.length < 2 ? () => null : undefined,
       buttonNext: images.length < 2 ? () => null : undefined,

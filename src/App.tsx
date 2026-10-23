@@ -1,21 +1,21 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { SiteLayout } from './layouts/SiteLayout'
-import { getProjectFromUrl, getProjectStudioHref, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
-import { AboutPage } from './pages/AboutPage'
-import { ContactPage } from './pages/ContactPage'
-import { HomePage } from './pages/HomePage'
-import { LearningPage } from './pages/LearningPage'
-import { ProjectsPage } from './pages/ProjectsPage'
-import { ProjectStudioPage } from './pages/ProjectStudioPage'
+import { getProjectFromUrl, getProjectStudioHref, isHomepagePortalUrl, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
+import { pageLoaders, preparePage } from './lib/page-loaders'
 import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
 
-const loadProjectDetail = () => import('./pages/ProjectDetailPage')
-const ProjectDetailPage = lazy(loadProjectDetail)
-const prepareNavigation = (url: URL) => getProjectFromUrl(url) ? loadProjectDetail() : undefined
+const HomepagePortal = lazy(pageLoaders.portal)
+const HomePage = lazy(pageLoaders.home)
+const AboutPage = lazy(pageLoaders.about)
+const LearningPage = lazy(pageLoaders.learning)
+const ProjectsPage = lazy(pageLoaders.projects)
+const ContactPage = lazy(pageLoaders.contact)
+const ProjectStudioPage = lazy(pageLoaders.studio)
+const ProjectDetailPage = lazy(pageLoaders.detail)
 
 function App({ page: initialPage }: { page: SitePage }) {
-  const { page, href, transition } = useSiteNavigation(initialPage, prepareNavigation)
+  const { page, href, transition } = useSiteNavigation(initialPage, preparePage)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
   useEffect(() => {
@@ -40,10 +40,21 @@ function App({ page: initialPage }: { page: SitePage }) {
 
   return (
     <>
-      <SiteLayout page={page} href={href} transitioning={Boolean(transition)} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开项目…</div>}><ProjectDetailPage key={project.id} project={project} href={href} /></Suspense> : getPageContent(page, href)}</SiteLayout>
+      <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开页面…</div>}>
+        <SiteLayout page={page} href={href} transitioning={Boolean(transition)} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <ProjectDetailPage key={project.id} project={project} href={href} /> : getPageContent(page, href)}</SiteLayout>
+        <PageReady href={href} />
+      </Suspense>
       {transition && <ProjectPageTransition key={transition.id} initiallyCovered={transition.initiallyCovered} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
     </>
   )
+}
+
+function PageReady({ href }: { href: string }) {
+  useEffect(() => {
+    // A deferred route can commit after the navigation hook's first scroll restore.
+    window.dispatchEvent(new Event('site-page-ready'))
+  }, [href])
+  return null
 }
 
 function getPageContent(page: SitePage, href: string) {
@@ -57,7 +68,7 @@ function getPageContent(page: SitePage, href: string) {
     case 'contact':
       return <ContactPage />
     case 'home':
-      return <HomePage href={href} />
+      return isHomepagePortalUrl(new URL(href)) ? <HomepagePortal /> : <HomePage />
   }
 }
 

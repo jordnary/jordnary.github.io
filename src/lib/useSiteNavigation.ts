@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
@@ -83,7 +83,8 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       const commit = () => {
         commitHistory()
         renderedHref = next.href
-        setNavigation(next)
+        // Keep the current layout visible while a newly visited route is fetched.
+        startTransition(() => setNavigation(next))
       }
       const animate = shouldTransitionProjects(new URL(renderedHref), new URL(next.href))
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -220,6 +221,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       if (!event.defaultPrevented && !transitioning.current) interacted = true
     }
     const ready = () => { if (!interacted) scroll() }
+    window.addEventListener('site-page-ready', ready)
     window.addEventListener('project-document-ready', ready)
     window.addEventListener('wheel', interact, { passive: true })
     window.addEventListener('touchstart', interact, { passive: true })
@@ -227,6 +229,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     window.addEventListener('keydown', interact)
     return () => {
       window.cancelAnimationFrame(frame)
+      window.removeEventListener('site-page-ready', ready)
       window.removeEventListener('project-document-ready', ready)
       window.removeEventListener('wheel', interact)
       window.removeEventListener('touchstart', interact)

@@ -1,3 +1,5 @@
+@import '../components/Projects.fonts.css';
+
 .project-studio {
   --studio-paper: #f2f2f2;
   --studio-ink: #171717;

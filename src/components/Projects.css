@@ -1,10 +1,4 @@
-@font-face {
-  font-family: 'Projects Serif';
-  src: url('/fonts/projects-instrument-serif.ttf') format('truetype');
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
+@import './Projects.fonts.css';
 
 .projects-archive {
   --archive-ink: #171717;

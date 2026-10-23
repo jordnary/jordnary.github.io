@@ -60,16 +60,21 @@ async function waitForArtworkFilter(page, activeIndex = -1) {
 }
 
 async function assertArtworkLayout(page) {
+  // Layout checks cover every frame; normal browsing keeps distant frames lazy.
+  await page.locator('.studio-gallery-frame img').evaluateAll(images => Promise.all(images.map(image => {
+    image.loading = 'eager'
+    return image.decode()
+  })))
   const displayed = await page.locator('.studio-gallery-frame').evaluateAll(frames => frames.map(frame => {
     const image = frame.querySelector('img')
     const box = frame.getBoundingClientRect()
     const imageBox = image.getBoundingClientRect()
     return {
       complete: image.complete,
-      file: decodeURIComponent(new URL(image.currentSrc).pathname).split('/').at(-1),
+      file: decodeURIComponent(new URL(image.src).pathname).split('/').at(-1),
       alt: image.alt,
-      width: image.naturalWidth,
-      height: image.naturalHeight,
+      width: Number(image.getAttribute('width')),
+      height: Number(image.getAttribute('height')),
       frameRatio: box.width / box.height,
       imageRatio: imageBox.width / imageBox.height,
       objectFit: getComputedStyle(image).objectFit,
@@ -106,10 +111,17 @@ async function sampleGallery(page, duration = 500) {
 }
 
 async function waitForGalleryPosition(page, fraction) {
-  await page.waitForFunction(value => {
-    const gallery = document.querySelector('.studio-gallery')
-    return gallery && Math.abs(gallery.scrollLeft - (gallery.scrollWidth - gallery.clientWidth) * value) < 0.6
-  }, fraction, { timeout: 6000 })
+  try {
+    await page.waitForFunction(value => {
+      const gallery = document.querySelector('.studio-gallery')
+      return gallery && Math.abs(gallery.scrollLeft - (gallery.scrollWidth - gallery.clientWidth) * value) < 0.6
+    }, fraction, { timeout: 6000 })
+  } catch {
+    const state = await page.locator('.studio-gallery').evaluate(gallery => ({
+      left: gallery.scrollLeft, maximum: gallery.scrollWidth - gallery.clientWidth, hidden: document.hidden,
+    }))
+    assert.fail(`Gallery did not reach ${fraction}: ${JSON.stringify(state)}`)
+  }
 }
 
 function assertStableHeight(samples) {
@@ -175,8 +187,8 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     assert.notEqual(await page.locator('.studio-gallery-track').getAttribute('aria-hidden'), 'true')
     assert.ok(await frames.evaluateAll(elements => elements.every(element => element.tabIndex === 0)),
       'Every artwork is reachable by keyboard')
-    await page.waitForFunction(() => [...document.querySelectorAll('.studio-gallery-frame img')]
-      .every(image => image.complete && image.naturalWidth > 0))
+    assert.ok(await images.evaluateAll(elements => elements.some(image => image.loading === 'lazy')),
+      'Distant artwork is loaded on demand')
     await assertArtworkLayout(page)
     await waitForArtworkFilter(page)
     assert.equal(await root.evaluate(element => element.getAnimations({ subtree: true })
@@ -185,8 +197,9 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     const initialSamples = await sampleGallery(page, 250)
     assert.ok(Math.max(...initialSamples.map(sample => sample.left)) - Math.min(...initialSamples.map(sample => sample.left)) < 1)
     assertStableHeight(initialSamples)
-    const requestedFiles = new Set(imageRequests.map(path => decodeURIComponent(path).split('/').at(-1)))
-    assert.ok(studioArtworks.every(artwork => requestedFiles.has(artwork.file.split('/').at(-1))),
+    const requestedFiles = new Set(imageRequests)
+    const selectedFiles = await images.evaluateAll(elements => elements.map(image => new URL(image.currentSrc).pathname))
+    assert.ok(selectedFiles.every(path => requestedFiles.has(path)),
       'Every configured artwork is requested from local image assets')
     pass(`The independent English studio loads all ${studioArtworks.length} accessible artworks at their native proportions without shared controls or an entrance animation`)
 
@@ -336,6 +349,9 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     pass('Narrow, desktop and short landscape layouts fit without title overlap and keep overflow inside the gallery')
 
     await page.setViewportSize({ width: 1440, height: 1000 })
+    // The preceding reload checks may still have the input-blocking paper overlay.
+    await page.locator('.project-page-transition').waitFor({ state: 'detached' })
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     const galleryBox = await gallery.boundingBox()
     const pointerY = Math.max(1, Math.min(999, galleryBox.y + galleryBox.height / 2))
     await page.mouse.move(1440 * 0.2, pointerY)
@@ -501,6 +517,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     console.log(`${checks.length} project studio checks passed`)
   } catch (error) {
     console.error('Project studio browser checks failed:', error.message)
+    console.error(error.stack?.match(/project-studio\.browser\.mjs:\d+:\d+/g)?.join('\n') || '')
     process.exitCode = 1
   } finally { await browser.close() }
 }

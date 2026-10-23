@@ -1,6 +1,7 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import { homeDirectory } from '../data/home-editorial'
 import { getRouteHref } from '../lib/routes'
+import { responsiveImage } from '../lib/responsive-images'
 import { SmartLink } from './SmartLink'
 import './HomePhotoGallery.css'
 
@@ -368,7 +369,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
     {photos.map((photo, index) => {
       const content = <>
         <span className={`home-gallery-window${photo.src ? '' : ' home-gallery-window--blank'}`}>
-          {photo.src && <img src={photo.src} alt={photo.alt ?? ''} width="1536" height="1024" loading="lazy" decoding="async" draggable={false} />}
+          {photo.src && <img src={photo.src} {...responsiveImage(photo.src, '(max-width: 600px) 86vw, (max-width: 900px) 65vw, 43vw')} alt={photo.alt ?? ''} width="1536" height="1024" loading="lazy" decoding="async" draggable={false} />}
         </span>
         <span className="home-gallery-caption"><span lang="en">{photo.label}</span><span lang="zh-CN">{photo.chinese}</span></span>
         <span className="home-gallery-line" aria-hidden="true" />

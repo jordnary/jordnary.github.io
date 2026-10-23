@@ -21,6 +21,10 @@ public/data/github.json.tmp
 # Downloaded source assets (runtime assets belong in public/)
 /downloads/
 
+# Rebuilt from original images before development and production builds.
+/public/images/responsive/
+/src/generated/responsive-images.json
+
 # Deploy optimized WebP artwork; exclude source PNG files.
 /public/images/home/*.png
 

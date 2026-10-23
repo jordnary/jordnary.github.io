@@ -1,8 +1,33 @@
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
+import { learningCampusSizes } from './src/data/image-sizes'
+
+function criticalImages(): Plugin {
+  let base = '/'
+  return {
+    name: 'critical-responsive-images',
+    configResolved(config) { base = config.base },
+    transformIndexHtml(_html, context) {
+      if (!context.filename.replace(/\\/g, '/').endsWith('/learning/index.html')) return []
+      const images = JSON.parse(readFileSync(new URL('./src/generated/responsive-images.json', import.meta.url), 'utf8'))
+      return ['hero-campus-sketch.webp', 'hero-campus-trees.webp'].map(file => {
+        const path = `images/learning/${file}`
+        const entry = images[path] as { width: number; variants: { file: string; width: number }[] }
+        return {
+          tag: 'link',
+          attrs: { rel: 'preload', as: 'image', href: `${base}${path}`, fetchpriority: 'high',
+            imagesrcset: [...entry.variants.map(image => `${base}${image.file} ${image.width}w`), `${base}${path} ${entry.width}w`].join(', '),
+            imagesizes: learningCampusSizes },
+          injectTo: 'head' as const,
+        }
+      })
+    },
+  }
+}
 
 function projectPages(): Plugin {
   let base = '/'
@@ -50,7 +75,7 @@ function projectPages(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectPages()],
+  plugins: [react(), tailwindcss(), projectPages(), criticalImages()],
   build: {
     rollupOptions: {
       input: {

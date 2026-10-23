@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { ProjectsCursor } from '../components/ProjectsCursor'
 import { studioArtworks } from '../data/project-studio'
 import { getRouteHref } from '../lib/routes'
+import { responsiveImage } from '../lib/responsive-images'
 import './ProjectStudioPage.css'
 
 export function ProjectStudioPage() {
@@ -126,7 +127,9 @@ export function ProjectStudioPage() {
             <figure className="studio-gallery-frame" key={artwork.file} tabIndex={0}
               style={{ '--frame-ratio': artwork.width / artwork.height } as CSSProperties}>
               <img src={`${import.meta.env.BASE_URL}images/project-studio/${artwork.file}`}
+                {...responsiveImage(`${import.meta.env.BASE_URL}images/project-studio/${artwork.file}`, `(max-width: 700px) ${34 * artwork.width / artwork.height}svh, ${36.1 * artwork.width / artwork.height}svh`)}
                 width={artwork.width} height={artwork.height} alt={artwork.alt}
+                loading={index < 3 ? 'eager' : 'lazy'}
                 decoding="async" fetchPriority={index === 0 ? 'high' : 'auto'} draggable={false} />
             </figure>
           ))}

@@ -87,6 +87,7 @@ export async function runHomeNowChecks(browser, baseURL, report = () => {}) {
     await page.route('**/data/rss.json', route => route.fulfill({ status: feedMode === 'error' ? 503 : 200, json: feedMode === 'empty' ? { ...feed, items: [] } : feedMode === 'invalid' ? {} : feed }))
     try {
       await page.goto(new URL('home/', baseURL).href)
+      await page.locator('.home-editorial').waitFor()
       await page.evaluate(() => document.fonts.ready)
       const section = page.locator('#now')
       const rail = section.locator('.home-gallery')
@@ -104,8 +105,8 @@ export async function runHomeNowChecks(browser, baseURL, report = () => {}) {
       await rail.scrollIntoViewIfNeeded()
       await section.locator('img').evaluateAll(images => Promise.all(images.map(image => { image.loading = 'eager'; return image.decode() })))
       assert.ok(await section.locator('img').evaluateAll(images => images.every(image =>
-        image.complete && image.naturalWidth === 1536 && image.naturalHeight === 1024 && image.alt.trim().length > 0)),
-      'Both covers load at their original dimensions with descriptive alternative text')
+        image.complete && image.naturalWidth > 0 && image.getAttribute('width') === '1536' && image.getAttribute('height') === '1024' && image.alt.trim().length > 0)),
+      'Both responsive covers retain their intrinsic aspect ratio and descriptive alternative text')
       await page.waitForFunction(() => document.querySelector('#now [data-home-reveal="gallery"]').classList.contains('is-revealed'))
       await page.waitForTimeout(1800)
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'The page fits the viewport')

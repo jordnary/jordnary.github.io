@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react'
 
 export type ReadingVisit = {
+  coverSrc?: string
   index: number
   trigger: HTMLButtonElement
   origin: DOMRect

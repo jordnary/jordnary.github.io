@@ -4,6 +4,7 @@ import { SectionBackdrop } from './SectionBackdrop'
 import { learningNotes, noteDifficulties, noteProgresses, noteTopics, type LearningNote } from '../data/notes'
 import { learningPhotos, noteCovers } from '../data/note-covers'
 import { useNoteGallery } from '../lib/useNoteGallery'
+import { responsiveImage } from '../lib/responsive-images'
 
 const noteFontSizes = [90, 100, 110, 120, 130]
 const noteFontSizeKey = 'learning-note-font-size'
@@ -52,7 +53,7 @@ export function LearningNotes() {
                     const bounds = event.currentTarget.getBoundingClientRect()
                     if (event.currentTarget.matches(':focus-visible') && (bounds.left < 0 || bounds.right > window.innerWidth)) goTo(index, true)
                   }}>
-                    <img className="note-cover-photo" src={`${import.meta.env.BASE_URL}images/learning/${photo.file}`} alt="" aria-hidden="true" width={960} height={1280} loading="lazy" decoding="async" style={{ objectPosition: cover.position ?? 'center' }} />
+                    <img className="note-cover-photo" src={`${import.meta.env.BASE_URL}images/learning/${photo.file}`} {...responsiveImage(`${import.meta.env.BASE_URL}images/learning/${photo.file}`, '(max-width: 640px) 100vw, 600px')} alt="" aria-hidden="true" width={960} height={1280} loading="lazy" decoding="async" style={{ objectPosition: cover.position ?? 'center' }} />
                     <div className="note-cover-top"><span className="note-cover-number">{String(coverIndex + 1).padStart(2, '0')}</span><span>{note.topic}</span><span>{note.difficulty}</span></div>
                     <div className="note-cover-copy">
                       <p className="note-cover-label">{cover.label}</p>

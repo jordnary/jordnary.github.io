@@ -1,12 +1,11 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import { HomePhotoGallery } from '../components/HomePhotoGallery'
 import { HomeNow } from '../components/HomeNow'
-import { HomepagePortal } from '../components/HomepagePortal'
 import { SmartLink } from '../components/SmartLink'
 import { useHomeEditorialMotion } from '../components/useHomeEditorialMotion'
 import { useHomeSectionParallax } from '../components/useHomeSectionParallax'
 import { homeDirectory } from '../data/home-editorial'
-import { getRouteHref, isHomepagePortalUrl } from '../lib/routes'
+import { getRouteHref } from '../lib/routes'
 import './HomePage.css'
 import '../components/HomeSectionParallax.css'
 
@@ -17,8 +16,8 @@ const introLines = [
   'Curiosity shapes my days.',
 ]
 
-export function HomePage({ href = window.location.href }: { href?: string }) {
-  return isHomepagePortalUrl(new URL(href)) ? <HomepagePortal /> : <HomeEditorial />
+export function HomePage() {
+  return <HomeEditorial />
 }
 
 function HomeEditorial() {

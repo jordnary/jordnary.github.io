@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { getRouteHref } from '../lib/routes'
 import { shouldTransitionProjects } from '../lib/project-page-transition'
+import './Projects.css'
 
 const menuPages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 type MenuController = { open: () => void; close: () => void; reset: () => void }

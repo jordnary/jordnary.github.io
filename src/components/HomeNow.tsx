@@ -27,7 +27,7 @@ export function HomeNow() {
   const explore = (index: number, trigger: HTMLButtonElement) => {
     const cover = trigger.querySelector<HTMLElement>('.home-gallery-window')!
     const style = getComputedStyle(cover.querySelector('img')!)
-    setVisit({ index, trigger, origin: cover.getBoundingClientRect(), radius: getComputedStyle(cover).borderTopLeftRadius, imageTransform: style.transform, imageFilter: style.filter, imageOpacity: style.opacity })
+    setVisit({ index, trigger, coverSrc: cover.querySelector<HTMLImageElement>('img')!.currentSrc, origin: cover.getBoundingClientRect(), radius: getComputedStyle(cover).borderTopLeftRadius, imageTransform: style.transform, imageFilter: style.filter, imageOpacity: style.opacity })
   }
   return <div ref={containerRef}>
     <HomePhotoGallery photos={homeNow} label="最近在做什么" onExplore={explore} />
@@ -74,7 +74,7 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
       const box = event.currentTarget.getBoundingClientRect()
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close()
     }}>
-    <div className="home-now-reader-cover" aria-hidden="true"><img src={entry.src} alt="" /></div>
+    <div className="home-now-reader-cover" aria-hidden="true"><img src={visit.coverSrc || entry.src} alt="" /></div>
     <div className="home-now-reader-shell">
       <picture className="home-now-reader-scene" aria-hidden="true">
         <img src={`${import.meta.env.BASE_URL}images/home/now-woodland-frame.webp`} alt="" width="1536" height="1024" />

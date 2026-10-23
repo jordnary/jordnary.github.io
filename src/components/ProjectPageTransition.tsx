@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react'
 import { projectTransitionMotion } from '../lib/projectTransitionMotion'
 import type {} from '../lib/projectTransitionBoot'
+import './Projects.fonts.css'
 import './ProjectPageTransition.css'
 
 const PROJECT_TRANSITION_COVER_MS = projectTransitionMotion.cover
