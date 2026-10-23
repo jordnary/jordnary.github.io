@@ -130,6 +130,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       await watch()
       await page.locator('.journey-next-link[href="/learning/#notes"]').evaluate(el => el.click())
       await page.waitForURL('**/learning/#notes')
+      await page.locator('#notes').waitFor({ state: 'attached' })
       await page.waitForFunction(() => Math.abs(document.querySelector('#notes').getBoundingClientRect().top - 80) < 5)
       await page.waitForTimeout(150)
       await staysVisible(`${label}: cross-page anchor and its delayed layout retry do not hide`)

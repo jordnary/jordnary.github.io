@@ -6,12 +6,6 @@
   font-display: swap;
 }
 
-@property --nav-panel-height {
-  syntax: '<length>';
-  inherits: true;
-  initial-value: 0px;
-}
-
 @layer components {
   .nav-shell,
   .mobile-nav-dialog {
@@ -27,8 +21,6 @@
 
   .nav-shell {
     --nav-panel-height: 0px;
-    --nav-panel-duration: 220ms;
-    --nav-panel-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
     position: sticky;
     inset: 0 0 auto;
     z-index: 50;
@@ -39,7 +31,6 @@
     transform: translate3d(0, 0, 0);
     will-change: transform;
     transition: transform 250ms cubic-bezier(0.42, 0, 0.58, 1),
-      --nav-panel-height var(--nav-panel-duration) var(--nav-panel-ease),
       box-shadow 200ms ease;
     isolation: isolate;
   }
@@ -47,7 +38,6 @@
   .nav-shell.is-scrolled { box-shadow: var(--nav-scrolled-shadow); }
 
   .nav-shell:has(.nav-mega-panel:not([hidden])) {
-    --nav-panel-duration: 300ms;
     border-bottom-color: transparent;
     box-shadow: none;
   }
@@ -64,14 +54,11 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--nav-panel-duration) var(--nav-panel-ease),
-      visibility 0ms linear var(--nav-panel-duration);
   }
 
   .nav-shell:has(.nav-mega-panel:not([hidden]))::after {
     opacity: 1;
     visibility: visible;
-    transition-delay: 0ms;
   }
 
   .nav-shell.is-hidden:not(:has(:focus-visible)) {
@@ -118,7 +105,6 @@
   .nav-item-heading {
     --nav-item-color: var(--navigation-ink);
     --nav-item-underline: 0;
-    --nav-item-duration: 0ms;
     position: relative;
     display: flex;
     align-items: center;
@@ -129,7 +115,6 @@
   .nav-desktop-list:not(:has(.is-expanded, .nav-item-heading:hover)) .nav-item.is-active .nav-item-heading {
     --nav-item-color: var(--navigation-accent);
     --nav-item-underline: 1;
-    --nav-item-duration: 180ms;
   }
   .nav-item-heading::after {
     position: absolute;
@@ -141,7 +126,6 @@
     content: '';
     transform: scaleX(var(--nav-item-underline));
     transform-origin: left;
-    transition: transform var(--nav-item-duration) ease;
   }
 
   .nav-link {
@@ -154,7 +138,6 @@
     font-weight: 550;
     letter-spacing: 0.015em;
     white-space: nowrap;
-    transition: color var(--nav-item-duration) ease;
   }
 
   .nav-link-label,
@@ -174,7 +157,6 @@
     border-radius: 0.3rem;
     color: var(--nav-item-color);
     cursor: pointer;
-    transition: color var(--nav-item-duration) ease;
   }
   .nav-chevron,
   .nav-arrow { width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
@@ -231,26 +213,13 @@
     max-height: calc(100dvh - var(--nav-height));
     overflow-y: auto;
     overscroll-behavior: contain;
-    /* One animated height drives the surface and the visible content edge. */
-    clip-path: inset(0 0 max(0px, calc(100% - var(--nav-panel-height))) 0);
-    transition: display var(--nav-panel-duration) allow-discrete;
   }
   .nav-mega-panel[hidden] { display: none; pointer-events: none; }
-  /* Keep the shared surface, but never paint two sets of links over each other. */
-  .nav-shell:has(.nav-mega-panel:not([hidden])) .nav-mega-panel[hidden] { display: none; transition: none; }
   .nav-mega-content {
     display: grid;
     grid-template-columns: 1fr 1.15fr 0.85fr;
     gap: clamp(1.5rem, 3vw, 2.75rem);
     padding-block: 0.85rem 1.75rem;
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-    transition: opacity var(--nav-panel-duration) var(--nav-panel-ease),
-      transform var(--nav-panel-duration) var(--nav-panel-ease);
-  }
-  .nav-mega-panel[hidden] .nav-mega-content { opacity: 0; transform: translate3d(0, -12px, 0); }
-  @starting-style {
-    .nav-mega-panel:not([hidden]) .nav-mega-content { opacity: 0; transform: translate3d(0, -12px, 0); }
   }
   .nav-mega-content > * { min-width: 0; }
   .nav-mega-intro { padding: 0.2rem 0.5rem 0 0; }

@@ -21,16 +21,22 @@ export async function runNavbarMotionChecks(browser, baseURL, pass) {
       panelStart: panel.getBoundingClientRect().top - header.getBoundingClientRect().top,
       surfaceOpacity: Number(getComputedStyle(header, '::after').opacity),
       opacity: Number(getComputedStyle(panel.querySelector('.nav-mega-content')).opacity),
+      transform: getComputedStyle(panel.querySelector('.nav-mega-content')).transform,
+      arrowAngle: Math.acos(Math.max(-1, Math.min(1, new DOMMatrixReadOnly(getComputedStyle(document.querySelector(`#nav-toggle-${section} .nav-chevron`)).transform).a))) * 180 / Math.PI,
       display: getComputedStyle(panel).display,
       hidden: panel.hidden,
       inert: panel.inert,
       documentTop: document.querySelector('main').getBoundingClientRect().top + scrollY,
     })
     frames.push(sample())
-    document.querySelector(`#nav-toggle-${section}`).click()
+    const toggle = document.querySelector(`#nav-toggle-${section}`)
+    if (action === 'hover') toggle.closest('.nav-item').dispatchEvent(new PointerEvent('pointerover', {
+      bubbles: true, pointerType: 'mouse', relatedTarget: document.body,
+    }))
+    else toggle.click()
     const start = performance.now()
     let reversed = false
-    while (performance.now() - start < 480) {
+    while (performance.now() - start < 240) {
       await new Promise(resolve => requestAnimationFrame(resolve))
       frames.push(sample())
       if (action === 'reverse' && !reversed && performance.now() - start > 65) {
@@ -40,35 +46,34 @@ export async function runNavbarMotionChecks(browser, baseURL, pass) {
     }
     return frames
   }, { section, action })
-  const boundedSteps = frames => {
-    const largest = Math.max(...frames.map(frame => frame.height))
-    return frames.slice(1).every((frame, index) => Math.abs(frame.height - frames[index].height) < Math.max(4, largest * 0.65))
-  }
+  const panelFullyOpen = frame => !frame.hidden && !frame.inert && frame.opacity === 1
+    && frame.transform === 'none' && Math.abs(frame.height - Math.ceil(frame.targetHeight)) < 1
   try {
     await page.goto(new URL('about/', baseURL).href)
     await page.locator('.nav-shell').waitFor()
-    const opening = await samplePanel('learning', 'open')
+    const opening = await samplePanel('learning', 'hover')
     const expandedHeight = opening.at(-1).height
-    assert.ok(expandedHeight > 100 && opening.some(frame => frame.height > 5 && frame.height < expandedHeight - 5), 'Dropdown height interpolates instead of appearing in one step')
-    assert.ok(opening.some(frame => frame.opacity > 0.05 && frame.opacity < 0.95), 'Dropdown content fades as its surface expands')
-    assert.ok(opening.every(frame => Math.abs(frame.documentTop - opening[0].documentTop) < 1), 'Dropdown animation never moves document layout')
-    assert.ok(opening.every(frame => frame.surface >= frame.panelStart + Math.min(frame.height, frame.targetHeight) - 0.1), 'The shared surface covers the clipped panel on every frame')
-    pass('Dropdown opening smoothly expands a continuous surface without moving the page')
+    assert.ok(expandedHeight > 100 && opening.slice(2).every(panelFullyOpen), 'Hover reveals the complete menu within two paint frames without a dwell timer or transition')
+    assert.ok(opening.every(frame => Math.abs(frame.documentTop - opening[0].documentTop) < 1), 'Opening never moves document layout')
+    assert.ok(opening.filter(frame => !frame.hidden).every(frame => frame.surface >= frame.panelStart + frame.targetHeight - 0.1), 'The shared surface immediately covers the entire panel')
+    assert.ok(opening.some(frame => frame.arrowAngle > 1 && frame.arrowAngle < 179), 'The disclosure arrow rotates while the menu content is already fully visible')
+    assert.ok(Math.abs(opening.at(-1).arrowAngle - 180) < 1, 'The expanded arrow finishes pointing upward')
+    pass('Hover opens the complete dropdown immediately without a fade, slide, height animation or page shift')
 
-    const switching = await samplePanel('about', 'open')
+    const switching = await samplePanel('about', 'hover')
     assert.ok(switching.every(frame => frame.surfaceOpacity === 1), 'Switching sections does not fade the shared background')
-    assert.ok(boundedSteps(switching), 'A differently sized menu transitions from the current height')
+    assert.ok(switching.slice(2).every(panelFullyOpen), 'Switching immediately replaces the content and surface height')
     assert.equal(await page.locator('#nav-panel-learning').getAttribute('inert'), '', 'Outgoing content cannot take focus or clicks')
     const reversed = await samplePanel('about', 'reverse')
-    assert.ok(reversed.some(frame => frame.hidden && frame.display !== 'none' && frame.inert && frame.opacity > 0 && frame.opacity < 1), 'Closing content stays painted but inert during its exit')
-    assert.ok(boundedSteps(reversed), 'Reopening during exit reverses smoothly from the current height')
+    assert.ok(reversed.some(frame => frame.hidden), 'Rapid reopening includes a closed state')
+    assert.ok(reversed.filter(frame => frame.hidden).every(frame => frame.display === 'none' && frame.inert && frame.height === 0), 'Closed links disappear immediately and cannot receive input')
     assert.equal(reversed.at(-1).hidden, false)
-    assert.equal(reversed.at(-1).opacity, 1)
+    assert.ok(panelFullyOpen(reversed.at(-1)), 'Rapid reopening leaves the complete menu visible')
     const closing = await samplePanel('about', 'close')
-    assert.ok(closing.some(frame => frame.height > 1 && frame.height < closing[0].height - 1), 'Closing contracts the surface instead of removing it abruptly')
-    assert.equal(closing.at(-1).display, 'none')
-    assert.equal(closing.at(-1).height, 0)
-    pass('Switching, closing and interrupted reopening keep the background continuous and retiring links inert')
+    assert.ok(closing.slice(2).every(frame => frame.hidden && frame.inert && frame.display === 'none' && frame.height === 0), 'Closing clears the menu and its surface without an exit animation')
+    assert.ok(closing.some(frame => frame.arrowAngle > 1 && frame.arrowAngle < 179), 'The disclosure arrow rotates back after the menu has disappeared')
+    assert.ok(closing.at(-1).arrowAngle < 1, 'The collapsed arrow finishes pointing downward')
+    pass('Switching, closing and rapid reopening settle immediately while the shared background and focus safety remain intact')
 
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 844 })
@@ -237,7 +242,8 @@ export async function runNavbarMotionChecks(browser, baseURL, pass) {
     assert.equal(await page.locator('#mobile-navigation').evaluate(el => el.getAnimations({ subtree: true }).length), 0)
     await page.keyboard.press('Escape')
     await page.setViewportSize({ width: 1440, height: 844 })
-    await page.locator('#nav-toggle-learning').click()
+    await page.locator('#nav-toggle-learning').focus()
+    await page.keyboard.press('Enter')
     assert.equal(await page.locator('.nav-shell').evaluate(el => el.getAnimations({ subtree: true }).length), 0)
     await page.keyboard.press('Escape')
     assert.equal(await page.locator('#nav-panel-learning').evaluate(el => getComputedStyle(el).display), 'none')

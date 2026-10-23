@@ -21,7 +21,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const mobilePanelRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useLayoutEffect(() => {
     const header = headerRef.current
@@ -53,14 +52,12 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   useEffect(() => {
     const dismiss = () => {
       if (closeTimer.current) clearTimeout(closeTimer.current)
-      if (openTimer.current) clearTimeout(openTimer.current)
       setExpandedPage(null)
       dialogRef.current?.close()
       setIsOpen(false)
     }
     const outside = (event: PointerEvent) => {
       if (event.target instanceof Node && !headerRef.current?.contains(event.target)) {
-        if (openTimer.current) clearTimeout(openTimer.current)
         if (closeTimer.current) clearTimeout(closeTimer.current)
         setExpandedPage(null)
       }
@@ -71,7 +68,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     document.addEventListener('pointerdown', outside)
     return () => {
       if (closeTimer.current) clearTimeout(closeTimer.current)
-      if (openTimer.current) clearTimeout(openTimer.current)
       desktop.removeEventListener('change', dismiss)
       window.removeEventListener('popstate', dismiss)
       document.removeEventListener('pointerdown', outside)
@@ -104,9 +100,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
 
   const cancelClose = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current)
-    if (openTimer.current) clearTimeout(openTimer.current)
     closeTimer.current = null
-    openTimer.current = null
   }
   const closeMenu = () => {
     cancelClose()
@@ -144,7 +138,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
           closeTimer.current = setTimeout(() => {
             // Preserve the panel while a keyboard user is reading its links.
             if (!headerRef.current?.querySelector('.nav-mega-panel:focus-within')) setExpandedPage(null)
-          }, 180)
+          }, 80)
         }}
         onBlur={(event) => {
           // Switching panels makes outgoing links inert and clears their focus.
@@ -173,10 +167,8 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                   onPointerEnter={(event) => {
                     if (event.pointerType !== 'mouse') return
                     cancelClose()
-                    if (section) openTimer.current = setTimeout(() => setExpandedPage(page), 120)
-                    else setExpandedPage(null)
+                    setExpandedPage(section ? page : null)
                   }}
-                  onPointerLeave={() => { if (openTimer.current) clearTimeout(openTimer.current) }}
                 >
                   <div className="nav-item-heading">
                     <a

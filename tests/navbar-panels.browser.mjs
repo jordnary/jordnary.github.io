@@ -40,7 +40,6 @@ export async function runNavbarPanelChecks(browser, baseURL, pass) {
 
     await open('about')
     await page.locator('.nav-link[href="/projects/"]').hover()
-    await page.waitForTimeout(450)
     assert.equal(await page.locator('#nav-toggle-projects').getAttribute('aria-expanded'), 'true', 'Hover can take over from a keyboard-focused panel without an inert focusout dismissing it')
     await open('about')
     const frames = await page.evaluate(async () => {
@@ -56,10 +55,13 @@ export async function runNavbarPanelChecks(browser, baseURL, pass) {
           document.querySelector(`#nav-toggle-${changes[next++].section}`).click()
         }
         await new Promise(resolve => requestAnimationFrame(resolve))
+        const active = header.querySelector('.nav-mega-panel:not([hidden])')
         frames.push({
           painted: panels.filter(panel => getComputedStyle(panel).display !== 'none').length,
           interactive: panels.filter(panel => !panel.inert).length,
           surfaceOpacity: Number(getComputedStyle(header, '::after').opacity),
+          contentOpacity: Number(getComputedStyle(active.querySelector('.nav-mega-content')).opacity),
+          heightDifference: Math.abs(parseFloat(getComputedStyle(header).getPropertyValue('--nav-panel-height')) - Math.ceil(active.getBoundingClientRect().height)),
           documentTop: document.querySelector('main').getBoundingClientRect().top + scrollY,
         })
       }
@@ -67,6 +69,7 @@ export async function runNavbarPanelChecks(browser, baseURL, pass) {
     })
     assert.ok(frames.every(frame => frame.painted === 1 && frame.interactive === 1), 'Rapid switching never superimposes outgoing and incoming links')
     assert.ok(frames.every(frame => frame.surfaceOpacity === 1), 'The shared background stays opaque during rapid switching')
+    assert.ok(frames.every(frame => frame.contentOpacity === 1 && frame.heightDifference < 1), 'Rapid switching shows complete content and its full height without transitional frames')
     assert.ok(frames.every(frame => Math.abs(frame.documentTop - frames[0].documentTop) < 1), 'Changing photo layouts never shifts document content')
     assert.equal(await page.locator('#nav-toggle-projects').getAttribute('aria-expanded'), 'true')
     pass('Hover takes over from keyboard focus; rapid photo/text switching keeps one set of links, a continuous background and stable page layout')

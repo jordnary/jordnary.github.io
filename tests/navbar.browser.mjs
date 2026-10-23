@@ -64,7 +64,8 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await menuOpen()
     await page.setViewportSize({ width: 720, height: 900 })
     await menuClosed()
-    await page.locator('#nav-toggle-learning').click()
+    await page.locator('#nav-toggle-learning').focus()
+    await page.keyboard.press('Enter')
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
     await page.setViewportSize({ width: 719, height: 900 })
     await closed()
@@ -73,12 +74,16 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await page.mouse.move(20, 700)
     pass('Full navigation fits down to 720px; crossing the mobile boundary dismisses menus and releases scroll locking')
 
+    await page.locator('#nav-toggle-learning').hover()
+    await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
+    await page.locator('#nav-toggle-learning').click()
+    await closed()
     await page.locator('#nav-toggle-learning').click()
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
     await page.keyboard.press('Escape')
     await closed()
     assert.equal(await page.locator('#nav-toggle-learning').evaluate(el => el === document.activeElement), true)
-    pass('Click opens a disclosure; Escape closes it and restores trigger focus')
+    pass('Hover opens a disclosure immediately; clicking toggles it; Escape closes it and restores trigger focus')
 
     const headerPaint = await page.locator('.nav-shell').evaluate(el => ({ image: getComputedStyle(el).backgroundImage, color: getComputedStyle(el).backgroundColor }))
     await page.locator('#nav-toggle-learning').focus()
@@ -110,7 +115,7 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
       assert.ok(frames.every(frame => frame.opacity === '1'), 'Switching panels never fades their shared background out')
       assert.ok(frames.every(frame => frame.image === headerPaint.image && frame.color === headerPaint.color), 'Opening and switching panels preserve the header background')
       assert.ok(frames.every(frame => frame.gap <= 0 && frame.gap >= -2 && frame.contentInset <= 16), 'Dropdowns meet the header with compact top spacing')
-      assert.ok(frames.every(frame => frame.surfaceTop === 0 && frame.surfaceHeight >= frame.visibleHeight - 0.1), 'One continuous surface covers the visible dropdown throughout its height transition')
+      assert.ok(frames.every(frame => frame.surfaceTop === 0 && frame.surfaceHeight >= frame.visibleHeight - 0.1), 'One continuous surface covers each visible dropdown immediately')
     }
     await page.keyboard.press('Escape')
     await closed()
@@ -138,9 +143,11 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     pass('Keyboard opens the panel; a cross-page section link closes it and focuses the destination')
 
     for (const route of ['home', 'about', 'learning', 'projects', 'contact']) {
+      await page.goto(new URL('about/', baseURL).href)
       await page.locator(`.nav-link[href="/${route}/"]`).click()
       await page.waitForFunction(value => document.body.dataset.page === value, route)
-      assert.equal(await page.locator(`.nav-link[href="/${route}/"]`).getAttribute('aria-current'), 'page')
+      const currentLink = route === 'projects' ? '.archive-menu a[href="/projects/"]' : `.nav-link[href="/${route}/"]`
+      assert.equal(await page.locator(currentLink).getAttribute('aria-current'), 'page')
       await closed()
     }
     pass('All primary labels navigate directly and track the active page')
