@@ -1,12 +1,15 @@
-import { useMemo, useRef, useSyncExternalStore, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
-import Lightbox, { createModule, useLightboxProps, useLightboxState, useMotionPreference, type Plugin, type ZoomRef } from 'yet-another-react-lightbox'
+import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
+import Lightbox, { createModule, MODULE_NO_SCROLL, useLightboxProps, useLightboxState, useMotionPreference, type Plugin, type ZoomRef } from 'yet-another-react-lightbox'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import { SmartLink } from '../SmartLink'
 import { imageThumbnail } from '../../lib/responsive-images'
 import { GalleryIcon } from './GalleryIcon'
+import { GalleryScrollLock } from './GalleryScrollLock'
 import { useThumbnailWheel } from './useThumbnailWheel'
+import { useGalleryNavigationFeedback } from './useGalleryNavigationFeedback'
+import { GalleryTraversalContext, useThumbnailTraversal, type GalleryTraversal } from './useThumbnailTraversal'
 import type { GalleryImage, ImageGalleryProps } from './types'
 import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/thumbnails.css'
@@ -16,10 +19,15 @@ function GalleryStage({ children }: PropsWithChildren) {
   const { controller } = useLightboxProps()
   const stageRef = useRef<HTMLDivElement>(null)
   useThumbnailWheel(stageRef)
+  useThumbnailTraversal(stageRef)
+  useGalleryNavigationFeedback(stageRef)
   return <div className="gallery-stage" ref={stageRef} onWheel={event => {
     // The lightbox's swipe setting only covers pointers, not trackpad gestures.
     if (controller.disableSwipeNavigation && Math.abs(event.deltaX) > Math.abs(event.deltaY)) event.stopPropagation()
-  }}>{children}</div>
+  }}>{children}
+    <span className="gallery-edge-glow" data-side="left" aria-hidden="true" />
+    <span className="gallery-edge-glow" data-side="right" aria-hidden="true" />
+  </div>
 }
 
 const touchNavigationQuery = '(pointer: coarse)'
@@ -31,7 +39,8 @@ function subscribeTouchNavigation(callback: () => void) {
 
 // Clip neighboring slides without clipping the toolbar outside the measured stage.
 const StageBoundary: Plugin = ({ addParent }) => addParent('carousel', createModule('gallery-stage', GalleryStage))
-const plugins = [StageBoundary, Zoom, Thumbnails, Fullscreen]
+const StableScrollLock: Plugin = ({ replace }) => replace(MODULE_NO_SCROLL, createModule(MODULE_NO_SCROLL, GalleryScrollLock))
+const plugins = [StableScrollLock, StageBoundary, Zoom, Thumbnails, Fullscreen]
 const labels = {
   Lightbox: '图片浏览器',
   'Photo gallery': '图片浏览区域',
@@ -141,11 +150,13 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const reducedMotion = useMotionPreference()
   const touchNavigation = useSyncExternalStore(subscribeTouchNavigation, () => window.matchMedia(touchNavigationQuery).matches, () => false)
   const touchButtons = useTouchButtons()
+  const zoomRef = useRef<ZoomRef>(null)
+  const [traversal, setTraversal] = useState<GalleryTraversal>(null)
   const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail: thumbnail ?? imageThumbnail(src), width, height })), [images])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
   // The thumbnail plugin shares this window with the carousel.
-  const preload = Math.min(6, Math.max(0, images.length - 1))
-  return <Lightbox
+  const preload = traversal ? Math.max(0, images.length - 1) : Math.min(6, Math.max(0, images.length - 1))
+  return <GalleryTraversalContext.Provider value={setTraversal}><Lightbox
     open={open}
     close={onClose}
     index={activeIndex ?? 0}
@@ -155,19 +166,22 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     className="image-gallery"
     portal={{ container: { onKeyDownCapture: releaseNavigationFocus, onKeyDown: containFocus, ...touchButtons } }}
     on={{ view: ({ index }) => { if (index !== activeIndex) onIndexChange(index) } }}
-    carousel={{ finite: true, preload, padding: '16px', spacing: '20%' }}
-    controller={{ closeOnBackdropClick: true, disableSwipeNavigation: !touchNavigation }}
+    carousel={{ finite: true, preload, padding: '16px', spacing: traversal ? '0%' : '20%' }}
+    controller={{ closeOnBackdropClick: false, disableSwipeNavigation: !touchNavigation }}
     animation={{ fade: reducedMotion ? 0 : 180, swipe: reducedMotion ? 0 : 300, zoom: reducedMotion ? 0 : 220 }}
-    zoom={{ maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, doubleClickMaxStops: 2 }}
+    zoom={{ ref: zoomRef, maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, wheelZoomDistanceFactor: 1000, doubleClickMaxStops: 2 }}
     thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: true }}
     toolbar={{ buttons: [<GalleryHeading key="heading" images={images} />, 'zoom', 'thumbnails', 'fullscreen', 'close'] }}
     render={{
-      // Preserve the full thumbnail strip without decoding its offscreen originals.
-      // A React element bypasses Zoom's default image renderer; null would not.
-      slide: ({ offset }) => Math.abs(offset) > 1 ? <span aria-hidden="true" /> : undefined,
+      // Keep the complete animated path rendered until the carousel settles.
+      slide: ({ slide, offset }) => {
+        const index = slides.findIndex(image => image.src === ('src' in slide ? slide.src : undefined))
+        const onPath = traversal && index >= traversal.first && index <= traversal.last
+        return Math.abs(offset) > 1 && !onPath ? <span aria-hidden="true" /> : undefined
+      },
       buttonZoom: props => <ZoomControls {...props} />,
-      buttonPrev: images.length < 2 ? () => null : undefined,
-      buttonNext: images.length < 2 ? () => null : undefined,
+      buttonPrev: images.length < 2 || touchNavigation ? () => null : undefined,
+      buttonNext: images.length < 2 || touchNavigation ? () => null : undefined,
       buttonThumbnails: ({ visible, show, hide }) => <button className="yarl__button" type="button" aria-label={visible ? '隐藏缩略图' : '显示缩略图'} title={visible ? '隐藏缩略图' : '显示缩略图'} aria-pressed={visible} onClick={visible ? hide : show}><GalleryIcon name="thumbnails" /></button>,
       iconPrev: () => <GalleryIcon name="previous" />,
       iconNext: () => <GalleryIcon name="next" />,
@@ -177,5 +191,5 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
       iconError: () => <div className="gallery-error" role="status"><GalleryIcon name="error" /><p>图片暂时未能加载</p><small>可以切换其他图片，或关闭后重试</small></div>,
       controls: () => <GalleryCaption images={images} />,
     }}
-  />
+  /></GalleryTraversalContext.Provider>
 }

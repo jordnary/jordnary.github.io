@@ -2,6 +2,16 @@ import { useLayoutEffect, useRef } from 'react'
 
 const coverMotionQuery = '(prefers-reduced-motion: no-preference) and (min-width: 701px) and (hover: hover) and (pointer: fine)'
 
+function readTimeMs(value: string, fallback: number) {
+  const time = value.trim()
+  const amount = parseFloat(time)
+  if (!Number.isFinite(amount)) return fallback
+  // Production CSS can shorten 850ms to .85s; Web Animations always uses milliseconds.
+  if (time.endsWith('ms')) return amount
+  if (time.endsWith('s')) return amount * 1000
+  return fallback
+}
+
 export function useAboutCoverReveal() {
   const coverRef = useRef<HTMLElement>(null)
 
@@ -59,8 +69,8 @@ export function useAboutCoverReveal() {
             ? [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }]
             : [{ opacity: 0, translate: `0 ${style.getPropertyValue('--cover-reveal-distance') || '14px'}` }, { opacity: style.opacity, translate: '0 0' }]
           const animation = item.animate(keyframes, {
-            duration: parseFloat(style.getPropertyValue('--cover-reveal-duration')) || 720,
-            delay: parseFloat(style.getPropertyValue('--cover-reveal-delay')) || 0,
+            duration: readTimeMs(style.getPropertyValue('--cover-reveal-duration'), 720),
+            delay: readTimeMs(style.getPropertyValue('--cover-reveal-delay'), 0),
             easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
             fill: 'both',
           })

@@ -72,6 +72,7 @@ npm run dev
 
 - `public/data/github.json` 最多保留 3 个项目，`public/data/rss.json` 最多保留 12 条内容；生成文件被 Git 忽略。
 - GitHub 同步失败时使用最新有效快照，并保留原同步时间；没有可用快照时停止构建。RSS 同步失败时保留上次成功数据。
+- 导航栏和首页目录直接加载随网站发布的 `src/assets/github-avatar.webp`，不等待 GitHub 数据或远端头像。`npm run sync:github` 会检查头像内容，变化时才更新本地图片；下载失败时保留默认头像。生产构建为图片生成内容哈希地址，头像更新后不会继续使用旧缓存。
 - 本地可通过进程环境变量 `GH_TOKEN` 或 `GITHUB_TOKEN` 认证；Actions 使用内置令牌。令牌不写入前端文件。站点地址由 `SITE_URL` 指定。
 - 推送到 `main`、手动触发或每 6 小时的定时任务都会运行部署工作流；北京时间为 08:17、14:17、20:17 和次日 02:17。
 - Actions 先检查快照及文档同步，再构建并发布 `dist`；构建产物保留 1 天。

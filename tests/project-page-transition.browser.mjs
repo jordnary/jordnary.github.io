@@ -45,6 +45,8 @@ async function recordTransition(page) {
         viewport: { width: innerWidth, height: innerHeight },
         box: box && { x: box.x, y: box.y, width: box.width, height: box.height },
         lineXs: displayed ? [...overlay.querySelectorAll('.project-page-transition-line')].map(line => line.getBoundingClientRect().x) : [],
+        lineProgress: displayed ? [...overlay.querySelectorAll('.project-page-transition-line')].map(line => line.getBoundingClientRect().height / innerHeight) : [],
+        lineOpacities: displayed ? [...overlay.querySelectorAll('.project-page-transition-line')].map(line => Number(getComputedStyle(line).opacity)) : [],
         labelXs: displayed ? [...overlay.querySelectorAll('.project-page-transition-label')].map(label => label.getBoundingClientRect().x) : [],
       })
     }
@@ -98,6 +100,27 @@ function assertStableGeometry(samples) {
   }
 }
 
+function assertLineCascade(samples) {
+  const entering = samples.filter(sample => sample.displayed && sample.phase === 'covering')
+  assert.ok(entering.some(sample => sample.lineProgress[0] > .35 && sample.lineProgress.at(-1) < .1),
+    'The first rule descends visibly before the last rule starts')
+  assert.ok(entering.some(sample => sample.lineProgress[0] >= .999 && sample.lineProgress.at(-1) < .9),
+    'Rules keep equal travel times instead of accelerating later rules to finish together')
+  for (const sample of entering) {
+    assert.ok(sample.lineProgress.every((progress, index, all) => index === 0 || progress <= all[index - 1] + .01),
+      'Every rendered entrance frame preserves left-to-right order')
+  }
+  const leaving = samples.filter(sample => sample.displayed && sample.phase === 'revealing')
+  assert.ok(leaving.every(sample => sample.lineProgress.every(progress => Math.abs(progress - 1) < .001)),
+    'Rules remain full height throughout exit, without shrinking upward')
+  assert.ok(leaving.some(sample => sample.lineOpacities[0] < .15 && sample.lineOpacities.at(-1) > .65),
+    'The exit fades from left to right')
+  for (const sample of leaving) {
+    assert.ok(sample.lineOpacities.every((value, index, all) => index === 0 || value >= all[index - 1] - .01),
+      'Every rendered exit frame preserves left-to-right fade order')
+  }
+}
+
 async function temporaryLink(page, href) {
   await page.evaluate(href => {
     const link = document.createElement('a')
@@ -129,6 +152,7 @@ async function transition(page, action, destination, { history = false, during }
     await assertReleased(page)
   } finally { samples = await stop() }
   const covering = samples.filter(sample => sample.phase === 'covering')
+  assertLineCascade(samples)
   assert.ok(covering.some(sample => sample.opacity > 0.01 && sample.opacity < 0.98),
     'The paper fades through intermediate opacity before the route changes')
   assert.ok(covering.every(sample => sample.oldPage), 'The previous page stays rendered during cover')

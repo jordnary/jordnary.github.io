@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { projects, projectFilters, type ProjectCase, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
-import { ProjectsCursor } from './ProjectsCursor'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
 import './Projects.css'
@@ -17,6 +16,15 @@ const background = `${import.meta.env.BASE_URL}images/project-archive/linework-b
 const backgroundSrcSet = `${background} 1920w, ${import.meta.env.BASE_URL}images/project-archive/linework-background-3840.webp 3840w`
 // Match object-fit: cover, including the wider image crop on portrait screens.
 const backgroundSizes = '(min-aspect-ratio: 1672/941) 100vw, 177.7lvh'
+
+function isVisibleProject(element: Element | null) {
+  if (!element) return false
+  const bounds = element.getBoundingClientRect()
+  const headerBottom = document.querySelector('.archive-header')?.getBoundingClientRect().bottom ?? 0
+  const viewport = window.visualViewport
+  const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight)
+  return bounds.bottom > headerBottom && bounds.top < bottom
+}
 
 function savedFilter(): ProjectFilter {
   const saved = window.history.state?.projectFilter
@@ -93,7 +101,8 @@ export function Projects() {
         ? document.querySelector('.archive-project-link:hover') : null
       const focused = document.activeElement?.matches('.archive-project-link:focus-visible')
         ? document.activeElement : null
-      const id = (hovered ?? focused)?.closest('.archive-project')?.id
+      const candidate = hovered ?? focused
+      const id = isVisibleProject(candidate) ? candidate?.closest('.archive-project')?.id : undefined
       setActiveProject(projects.find(project => project.id === id) ?? null)
     }
     window.addEventListener('popstate', restore)
@@ -112,8 +121,8 @@ export function Projects() {
 
   return (
     <div className="projects-archive" id="projects" lang="en">
-      <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" />
-      <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" />
+      <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
+      <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
       <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />
       <header className="archive-header">
         <div className="archive-title"><h1>PROJECTS</h1></div>
@@ -129,7 +138,13 @@ export function Projects() {
               onPointerEnter={event => { if (event.pointerType === 'mouse') setActiveProject(project) }}
               onPointerMove={event => { if (event.pointerType === 'mouse') setActiveProject(project) }}
               onPointerLeave={() => setActiveProject(null)}
-              onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setActiveProject(project) }}
+              onFocus={event => {
+                if (!event.currentTarget.matches(':focus-visible')) return
+                const edge = (document.querySelector('.archive-header')?.getBoundingClientRect().bottom ?? 0) + 24
+                const top = event.currentTarget.getBoundingClientRect().top
+                if (top < edge) window.scrollBy({ top: top - edge, behavior: 'instant' })
+                setActiveProject(project)
+              }}
               onBlur={() => setActiveProject(null)}>
               <span className="archive-project-number" aria-hidden="true">{projects.indexOf(project) + 1}</span>
               <h2>{project.title}</h2>
@@ -140,7 +155,6 @@ export function Projects() {
       </ol>
       <ProjectsPreview project={activeProject} />
       <ProjectsMenu onOpen={() => setActiveProject(null)} />
-      <ProjectsCursor />
     </div>
   )
 }

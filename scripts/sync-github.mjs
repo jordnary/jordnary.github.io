@@ -2,6 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isGitHubSnapshot } from '../src/lib/github-snapshot.ts'
+import { syncGitHubAvatar } from './sync-github-avatar.mjs'
 
 const username = 'jordnary'
 const defaultOutput = new URL('../public/data/github.json', import.meta.url)
@@ -78,6 +79,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       ? `GitHub sync unavailable; retained snapshot from ${snapshot.fetchedAt}.`
       : `GitHub sync complete: ${snapshot.repos.length} public repositories.`)
     if (reused && process.env.GITHUB_ACTIONS) console.log('::warning::GitHub sync unavailable; retained the last successful snapshot.')
+    const avatar = await syncGitHubAvatar({ avatarUrl: snapshot.profile.avatarUrl })
+    console.log(`GitHub avatar: ${avatar.status} (${avatar.bytes} bytes).`)
   } catch {
     console.error('GitHub sync failed and no valid previous snapshot is available; deployment stopped.')
     process.exitCode = 1

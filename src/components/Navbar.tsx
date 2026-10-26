@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createPortal } from 'react-dom'
-import { getGitHubSnapshot } from '../lib/github'
+import { GitHubAvatar } from './GitHubAvatar'
 import { useNavScrollVisibility } from '../lib/useNavScrollVisibility'
 import { getHomepagePortalHref, getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
 import { navigationSections, type NavigationIcon } from '../data/navigation'
@@ -14,7 +14,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [mobilePage, setMobilePage] = useState<SitePage | null>(null)
   const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(false)
   const [expandedPage, setExpandedPage] = useState<SitePage | null>(null)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const headerRef = useRef<HTMLElement>(null)
   const { isScrolled, isHidden } = useNavScrollVisibility(headerRef, Boolean(expandedPage || isOpen), activePage)
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -38,16 +37,6 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     observer.observe(panel)
     return () => observer.disconnect()
   }, [expandedPage])
-
-  useEffect(() => {
-    let active = true
-    getGitHubSnapshot().then(({ snapshot }) => {
-      if (active) setAvatarUrl(snapshot.profile.avatarUrl ?? 'https://github.com/jordnary.png?size=96')
-    }).catch(() => {
-      if (active) setAvatarUrl('https://github.com/jordnary.png?size=96')
-    })
-    return () => { active = false }
-  }, [])
 
   useEffect(() => {
     const dismiss = () => {
@@ -120,7 +109,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const brand = (
     <a className="nav-brand" href={getHomepagePortalHref()} onClick={closeMenu}>
       <span className="brand-mark">
-        {avatarUrl ? <img alt="" aria-hidden="true" onError={() => setAvatarUrl(null)} src={avatarUrl} /> : <span aria-hidden="true">J</span>}
+        <GitHubAvatar decorative />
       </span>
       <span>Jordnary</span>
     </a>

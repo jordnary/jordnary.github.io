@@ -45,15 +45,6 @@
     #000 var(--graffiti-tile-height) calc(var(--graffiti-tile-height) * 2));
 }
 
-.correspondence-intro,
-.correspondence-connect-heading,
-.correspondence-elsewhere,
-.correspondence-colophon,
-.correspondence-airmail-caption,
-.correspondence-art-caption {
-  text-shadow: 0 1px 2px #fff, 0 -1px 2px #fff, 1px 0 2px #fff, -1px 0 2px #fff, 0 0 7px #fff;
-}
-
 .correspondence-availability,
 .correspondence-colophon {
   display: flex;
@@ -250,7 +241,8 @@
 .correspondence-elsewhere { min-width: 0; }
 .correspondence-links { display: grid; grid-template-rows: 1fr 1fr; gap: 1.5rem; height: 100%; }
 .correspondence-link { position: relative; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 0.5rem 0 1.25rem; border-bottom: 1px solid var(--contact-rule); transition: border-color 180ms ease; }
-.correspondence-link::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 1px; background: var(--contact-accent); transform: scaleX(0); transform-origin: left center; transition: transform 300ms ease; }
+/* Keep the original hairline geometry while revealing its length without scaling. */
+.correspondence-link::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 1px; background: var(--contact-accent); clip-path: inset(0 100% 0 0); transition: clip-path 300ms ease; pointer-events: none; }
 .correspondence-link-kicker { display: block; margin-bottom: 0.7rem; color: var(--contact-accent); font-size: 0.625rem; letter-spacing: 0.13em; }
 .correspondence-link-kicker > span { font-variant-numeric: tabular-nums; }
 .correspondence-link-body { display: flex; align-items: center; gap: 1.5rem; }
@@ -277,12 +269,12 @@
   .correspondence-link:hover { border-color: var(--contact-accent); }
   .correspondence-link:hover .correspondence-link-arrow { transform: translateX(4px); }
   .correspondence-link[data-external="true"]:hover .correspondence-link-arrow { transform: translate(3px, -3px); }
-  .correspondence-link:hover::after { transform: scaleX(1); }
+  .correspondence-link:hover::after { clip-path: inset(0); }
   .correspondence-link:hover .artistic-label-text { color: var(--contact-accent); }
   .correspondence-link:hover .artistic-label-stroke { transform: scaleX(1) rotate(-1deg); opacity: 0.8; }
 }
 
-.correspondence-link:focus-visible::after { transform: scaleX(1); }
+.correspondence-link:focus-visible::after { clip-path: inset(0); }
 
 @media (prefers-reduced-motion: no-preference) {
   .correspondence:has(.correspondence-airmail[data-flying="true"]) .correspondence-mail-mark { animation: correspondence-mark-receive 4400ms ease both; }
@@ -323,9 +315,10 @@
   .correspondence-intro h1 { margin-block: 1rem 1.25rem; font-size: clamp(2.65rem, 10vw, 3.7rem); line-height: 1.35; }
   .correspondence-description { max-width: 28rem; font-size: 0.8125rem; }
   .correspondence-availability { margin-top: 1.25rem; font-size: 0.6875rem; }
-  .correspondence-airmail { position: relative; top: auto; left: auto; justify-self: end; width: 52%; max-width: 12rem; margin: -0.5rem 1rem -2.5rem 0; }
-  .correspondence-airmail-scene { transform: rotate(-12deg); }
-  .correspondence-airmail-caption { display: block; left: -15%; top: 74%; font-size: 0.625rem; }
+  /* The stacked hero gives the flight its own centered space between copy and mail. */
+  .correspondence-airmail { position: relative; top: auto; left: auto; justify-self: center; width: 76%; max-width: 15rem; margin: 0.75rem 0 0.25rem; }
+  .correspondence-airmail-scene { transform: none; }
+  .correspondence-airmail-caption { display: block; left: 50%; top: auto; bottom: 0; font-size: 0.625rem; transform: translateX(-50%) rotate(-4deg); animation: none; }
   .correspondence-art { width: 85%; max-width: 24rem; margin-top: 0.3rem; }
   .correspondence-seal strong { font-size: clamp(1.6rem, 7vw, 2.2rem); }
   .correspondence-connect-heading > span:last-child { display: none; }

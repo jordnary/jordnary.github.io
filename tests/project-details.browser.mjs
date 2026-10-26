@@ -556,7 +556,7 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await cover.hover()
     assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'Hover preserves the original cover colors')
     await page.waitForFunction(() => {
-      const cursor = document.querySelector('.project-reader .projects-cursor')
+      const cursor = document.querySelector('.projects-cursor')
       return cursor?.dataset.active === 'true' && cursor.dataset.mode === 'preview'
     })
     const coverSource = await cover.locator('img').getAttribute('src')
@@ -572,10 +572,10 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
     await backLink.hover()
     assert.equal(await cover.locator('img').evaluate(element => getComputedStyle(element).filter), 'none', 'The cover stays in color after hover and focus leave')
     assert.equal(await backLink.evaluate(element => getComputedStyle(element).textDecorationLine), 'none')
-    await page.waitForFunction(() => document.querySelector('.project-reader .projects-cursor')?.dataset.mode === 'interactive')
+    await page.waitForFunction(() => document.querySelector('.projects-cursor')?.dataset.mode === 'interactive')
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.mouse.move(2, 2)
-    await page.waitForFunction(() => document.querySelector('.project-reader .projects-cursor')?.dataset.active === 'false')
+    await page.waitForFunction(() => document.querySelector('.projects-cursor')?.dataset.active === 'false')
     pass('The cover always uses its original colors, retains the preview cursor and opens the matching gallery image; controls avoid hover underlines')
 
     const touchContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, reducedMotion: 'reduce' })

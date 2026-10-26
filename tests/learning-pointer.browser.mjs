@@ -218,10 +218,90 @@ async function samplePressFeedback(page, button, buttons, chord = false) {
   }, { button, buttons, chord })
 }
 
+export async function runLearningPointerRevealChecks(browser, baseURL, report = () => {}) {
+  const context = await browser.newContext({ viewport: { width: 500, height: 833 }, deviceScaleFactor: 1.5, reducedMotion: 'no-preference' })
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  try {
+    for (const width of [500, 390, 600]) {
+      await page.setViewportSize({ width, height: 833 })
+      await page.goto(new URL('learning/', baseURL).href)
+      await page.locator('.footer-shell[data-reveal="true"]').waitFor({ state: 'attached' })
+      await waitForPointerLayout(page)
+      const diagrams = page.locator('#skills .learning-geometry, #timeline .learning-geometry')
+      for (let index = 0; index < await diagrams.count(); index++) {
+        await page.mouse.move(1, 100)
+        const diagram = diagrams.nth(index)
+        const point = await diagram.evaluate(element => {
+          const hiddenNav = document.querySelector('.footer-nav').getBoundingClientRect()
+          const y = Math.min(innerHeight - 110, hiddenNav.top + hiddenNav.height * 0.65)
+          scrollTo({ top: scrollY + element.getBoundingClientRect().top - y + 80, behavior: 'instant' })
+          const bounds = element.getBoundingClientRect()
+          return { start: bounds.left + 60, end: bounds.right - 60, y }
+        })
+        await waitForPointerLayout(page)
+        const handle = await diagram.elementHandle()
+        await page.waitForFunction(element => element.dataset.visible === 'true', handle)
+        assert.equal(await diagram.evaluate(element => element.getAnimations({ subtree: true }).length), 0,
+          'The first hover has not started construction yet')
+        assert.ok(await page.evaluate(({ end: x, y }) => {
+          const footer = document.querySelector('.footer-shell').getBoundingClientRect()
+          const nav = document.querySelector('.footer-nav').getBoundingClientRect()
+          return footer.top > innerHeight && nav.left < x && nav.right > x && nav.top < y && nav.bottom > y
+            && !document.elementFromPoint(x, y)?.closest('.footer-shell')
+        }, point), 'The hidden fixed footer nav overlaps the test coordinates but is clipped out of view')
+
+        await page.mouse.move(point.start, point.y)
+        await page.mouse.move(point.end, point.y, { steps: 24 })
+        await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
+        const result = await diagram.evaluate((element, { start, end, y }) => {
+          const canvas = document.querySelector('canvas.learning-pointer-trail')
+          const scale = canvas.width / innerWidth
+          const left = Math.floor(start * scale)
+          const top = Math.floor((y - 12) * scale)
+          const width = Math.ceil((end - start + 12) * scale)
+          const pixels = canvas.getContext('2d').getImageData(left, top, width, Math.ceil(24 * scale)).data
+          let marker = false
+          let tail = false
+          for (let pixel = 0; pixel < pixels.length / 4; pixel++) {
+            const x = (left + pixel % width) / scale
+            const alpha = pixels[pixel * 4 + 3]
+            if (x > end - 12 && alpha > 220) marker = true
+            if (x < end - 16 && alpha > 0) tail = true
+          }
+          return { marker, tail, active: canvas.dataset.active,
+            constructing: element.getAnimations({ subtree: true }).some(animation =>
+              animation.animationName === 'learning-wire-build' && animation.playState === 'running') }
+        }, point)
+        assert.deepEqual(result, { marker: true, tail: true, active: 'true', constructing: true },
+          `${width}px drawing ${index + 1}: the first construction animation retains both pointer and tail`)
+        await handle.dispose()
+      }
+
+      const boundary = await page.evaluate(() => {
+        const footer = document.querySelector('.footer-shell')
+        scrollTo({ top: scrollY + footer.getBoundingClientRect().top - innerHeight + 140, behavior: 'instant' })
+        const top = footer.getBoundingClientRect().top
+        return { x: innerWidth / 2, y: top - 40, top }
+      })
+      await waitForPointerLayout(page)
+      await page.mouse.move(boundary.x, boundary.y)
+      await page.waitForFunction(() => document.querySelector('canvas.learning-pointer-trail').dataset.active === 'true')
+      assert.ok(await page.evaluate(({ x, y }) => !document.elementFromPoint(x, y)?.closest('.footer-shell'), boundary))
+      await page.mouse.move(boundary.x, boundary.top + 35)
+      await assertCleared(page, 'The actually revealed footer')
+      report(`${width}px: all seven first-hover drawings retain the trail; only the revealed footer suppresses it`)
+    }
+    assert.deepEqual(errors, [])
+  } finally { await context.close() }
+}
+
 export async function runLearningPointerChecks(browser, baseURL, report = () => {}) {
   const checks = []
   const pass = name => { checks.push(name); report(name) }
   const url = new URL('learning/', baseURL).href
+  await runLearningPointerRevealChecks(browser, baseURL, pass)
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 })
   await context.addInitScript(() => {
     sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
@@ -261,6 +341,7 @@ export async function runLearningPointerChecks(browser, baseURL, report = () => 
   try {
     await page.goto(url)
     const trail = page.locator(trailSelector)
+    await trail.waitFor({ state: 'attached' })
     assert.equal(await trail.count(), 1)
     assert.equal(await trail.getAttribute('aria-hidden'), 'true')
     assert.equal(await trail.evaluate(canvas => getComputedStyle(canvas).pointerEvents), 'none')

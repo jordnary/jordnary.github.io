@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalS
 import { projects, type ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
 import { ImageGallery, type GalleryImage } from '../components/image-gallery'
-import { ProjectsCursor } from '../components/ProjectsCursor'
 import { ProjectsMenu } from '../components/ProjectsMenu'
 import { SmartLink } from '../components/SmartLink'
 import { ProjectChapterNumber } from '../components/ProjectChapterNumber'
@@ -65,11 +64,35 @@ function ReaderSymbol({ direction }: { direction: 'external' | 'up' | 'previous'
   </svg>
 }
 
+const readPixelRatio = () => window.devicePixelRatio || 1
+const subscribePixelRatio = (notify: () => void) => {
+  let query = window.matchMedia(`(resolution: ${readPixelRatio()}dppx)`)
+  const update = () => {
+    query.removeEventListener('change', update)
+    query = window.matchMedia(`(resolution: ${readPixelRatio()}dppx)`)
+    query.addEventListener('change', update)
+    notify()
+  }
+  query.addEventListener('change', update)
+  window.addEventListener('resize', update, { passive: true })
+  return () => {
+    query.removeEventListener('change', update)
+    window.removeEventListener('resize', update)
+  }
+}
+
+function ReaderDash() {
+  const ratio = useSyncExternalStore(subscribePixelRatio, readPixelRatio)
+  // Whole device pixels keep the thin rule stable at fractional display scales.
+  const thickness = Math.max(1, Math.round(ratio)) / ratio
+  return <svg className="project-reader-dash" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+    <rect y={(16 - thickness) / 2} width="16" height={thickness} />
+  </svg>
+}
+
 function ReaderImageButton({ label, onClick }: { label: string; onClick: () => void }) {
   return <button className="project-reader-image-trigger" type="button" data-project-preview
-    aria-label={label} aria-haspopup="dialog" onClick={onClick}>
-    <span className="project-reader-image-plus" aria-hidden="true" />
-  </button>
+    aria-label={label} aria-haspopup="dialog" onClick={onClick} />
 }
 
 export default function ProjectDetailPage({ project, href }: { project: ProjectCase; href: string }) {
@@ -164,7 +187,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
     <div className="project-reader" id="project-cover">
       <nav className="project-reader-topbar" aria-label="面包屑">
         <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回项目">
-          <span className="project-reader-dash" aria-hidden="true" /><span>Back To Index</span>
+          <ReaderDash /><span>Back To Index</span>
         </a>
         <span className="project-reader-edition">Selected works / {projectNumber}</span>
       </nav>
@@ -275,7 +298,6 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
       <ProjectsMenu onOpenChange={setMenuOpen} />
-      <ProjectsCursor />
     </div>
   )
 }

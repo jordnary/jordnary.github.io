@@ -46,7 +46,12 @@ export async function runResourceLoadingChecks(browser, baseURL, report = () => 
     assert.ok(await page.locator('.yarl__thumbnails_thumbnail img').evaluateAll(images =>
       images.length > 0 && images.every(image => image.src.includes('/images/responsive/'))))
     await page.getByRole('button', { name: '第 7 张，共 7 张' }).click()
-    await page.locator('.yarl__slide_current img').evaluate(image => image.decode())
+    await page.waitForFunction(() => {
+      const image = document.querySelector('.yarl__slide_current img')
+      return image?.src.endsWith('/vaegan-samples.webp') && image.complete && image.naturalWidth > 0
+        && document.querySelectorAll('.yarl__slide img').length <= 3
+        && !document.querySelector('.yarl__carousel').getAnimations().some(animation => animation.playState === 'running')
+    })
     assert.ok(await page.locator('.yarl__slide_current img').evaluate(image => image.src.includes('/images/projects/')))
     await page.keyboard.press('Escape')
     await dialog.waitFor({ state: 'detached' })

@@ -233,14 +233,14 @@ export async function runProjectStudioChecks(browser, baseURL, report = () => {}
     await assertTheme(page, 'dark')
     await page.mouse.move(1, 1)
     await page.waitForFunction(() => {
-      const cursor = document.querySelector('.project-studio .projects-cursor')
+      const cursor = document.querySelector('.projects-cursor')
       return cursor?.dataset.active === 'true' && cursor.dataset.mode === 'default'
         && getComputedStyle(cursor).backgroundColor === 'rgb(242, 242, 242)'
         && getComputedStyle(cursor).borderTopColor === 'rgb(242, 242, 242)'
     })
     await darkButton.hover()
     await page.waitForFunction(() => {
-      const cursor = document.querySelector('.project-studio .projects-cursor')
+      const cursor = document.querySelector('.projects-cursor')
       return cursor?.dataset.mode === 'interactive'
         && getComputedStyle(cursor).backgroundColor === 'rgba(0, 0, 0, 0)'
         && getComputedStyle(cursor).borderTopColor === 'rgb(242, 242, 242)'

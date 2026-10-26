@@ -8,7 +8,7 @@ const PROJECT_TRANSITION_COVER_MS = projectTransitionMotion.cover
 const PROJECT_TRANSITION_HOLD_MS = projectTransitionMotion.hold
 const PROJECT_TRANSITION_REVEAL_MS = projectTransitionMotion.reveal
 
-const { lineDelays, easing, copyDelay, copyDuration } = projectTransitionMotion
+const { lineDelays, lineDuration, lineFadeDuration, easing, copyDelay, copyDuration } = projectTransitionMotion
 
 type ProjectPageTransitionProps = {
   initiallyCovered?: boolean
@@ -174,9 +174,9 @@ export function ProjectPageTransition({ initiallyCovered = false, onCovered, onC
           lines.forEach((line, index) => {
             const delay = lineDelays[index]
             void play(line, [
-              { transform: 'scaleY(0)', opacity: 0 },
+              { transform: 'scaleY(0)', opacity: 1 },
               { transform: 'scaleY(1)', opacity: 1 },
-            ], PROJECT_TRANSITION_COVER_MS - delay, delay, startTime)
+            ], lineDuration, delay, startTime)
           })
           const enterCopy = () => {
             if (disposed || skipMotion || completed) return
@@ -205,15 +205,18 @@ export function ProjectPageTransition({ initiallyCovered = false, onCovered, onC
         await Promise.all([wait(PROJECT_TRANSITION_HOLD_MS), twoPaints()])
         if (disposed || skipMotion) return
         overlay.dataset.phase = 'revealing'
-        lines.forEach((line, index) => {
-          const delay = lineDelays[lines.length - index - 1] / 2
-          void play(line, [
+        const fadingLines = lines.map((line, index) => {
+          return play(line, [
             { transform: 'scaleY(1)', opacity: 1 },
-            { transform: 'scaleY(0)', opacity: 0 },
-          ], PROJECT_TRANSITION_REVEAL_MS - delay, delay)
+            { transform: 'scaleY(1)', opacity: 0 },
+          ], lineFadeDuration, lineDelays[index])
         })
         void play(copy, [{ opacity: 1 }, { opacity: 0 }], 360, 180)
-        await play(paper, [{ opacity: 1 }, { opacity: 0 }], PROJECT_TRANSITION_REVEAL_MS)
+        // The paper clears first; let the last full-height rule finish its fade.
+        await Promise.all([
+          play(paper, [{ opacity: 1 }, { opacity: 0 }], PROJECT_TRANSITION_REVEAL_MS),
+          ...fadingLines,
+        ])
       } finally {
         if (boot?.status === 'active') boot.dispose('skipped')
         complete()

@@ -158,8 +158,8 @@ export async function runProjectChecks(browser, baseURL, report = () => {}) {
     await page.waitForURL(url(`projects/${projects[0].id}/`))
     await page.locator('.project-introduction').waitFor()
     assert.equal(await page.locator('.nav-shell, #site-footer, .live2d-companion').count(), 0)
-    assert.equal(await page.locator('.project-reader .projects-cursor').count(), 1)
-    assert.ok(await page.locator('.project-reader .projects-cursor').evaluate(element => {
+    assert.equal(await page.locator('.projects-cursor').count(), 1)
+    assert.ok(await page.locator('.projects-cursor').evaluate(element => {
       const style = getComputedStyle(element)
       return style.display === 'none' || Number(style.opacity) === 0
     }), 'The standalone reader preserves the system pointer with reduced motion')

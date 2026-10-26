@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { getRouteHref, siteRoutes, type SitePage } from '../lib/routes'
-import { getGitHubSnapshot, githubProfileUrl } from '../lib/github'
+import { githubProfileUrl } from '../lib/github'
+import { GitHubAvatar } from './GitHubAvatar'
 import { ContactIcon } from './icons'
 
 const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
@@ -34,19 +35,8 @@ const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
 ]
 
 export function HomepageHub({ active = true, revealed = true }: { active?: boolean; revealed?: boolean }) {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   // The foreground and wave finish together; start the background on that commit.
   const backgroundActive = active && revealed
-
-  useEffect(() => {
-    let active = true
-    getGitHubSnapshot().then(({ snapshot }) => {
-      if (active) setAvatarUrl(snapshot.profile.avatarUrl ?? 'https://github.com/jordnary.png?size=256')
-    }).catch(() => {
-      if (active) setAvatarUrl('https://github.com/jordnary.png?size=256')
-    })
-    return () => { active = false }
-  }, [])
 
   return (
     <section aria-labelledby="hub-title" className="homepage-hub" data-background-active={backgroundActive} data-revealed={revealed} id="directory">
@@ -56,7 +46,7 @@ export function HomepageHub({ active = true, revealed = true }: { active?: boole
       </a>
       <div className="homepage-hub-content">
         <div className="homepage-hub-avatar homepage-hub-reveal-item" aria-label="GitHub 头像" data-grid-exclusion="circle">
-          {avatarUrl ? <img alt="Jordnary 的 GitHub 头像" onError={() => setAvatarUrl(null)} src={avatarUrl} /> : <span>J</span>}
+          <GitHubAvatar />
         </div>
         <p className="homepage-hub-kicker homepage-hub-reveal-item">AI × CS × WEB</p>
         <h1 className="homepage-hub-reveal-item" id="hub-title"><span data-grid-exclusion>Jordnary</span></h1>

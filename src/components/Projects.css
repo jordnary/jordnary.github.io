@@ -17,7 +17,11 @@
 
 html:has(.projects-archive) {
   scrollbar-width: none;
+  background: #f2f2f2;
+  overscroll-behavior-y: none;
 }
+
+body:has(.projects-archive) { background: #f2f2f2; }
 
 html:has(.projects-archive)::-webkit-scrollbar {
   display: none;
@@ -61,6 +65,10 @@ html:has(.projects-archive)::-webkit-scrollbar {
 .archive-header-mask {
   z-index: 3;
   clip-path: inset(0 0 calc(100% - var(--archive-header-bottom)) 0);
+  /* The covered list must be excluded from hit testing as well as painting. */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .archive-wordmark {
@@ -177,6 +185,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   max-width: 100%;
   min-height: inherit;
   padding: 0 0 var(--archive-project-edge);
+  scroll-margin-top: calc(var(--archive-header-bottom) + 35px);
   transition: opacity 220ms ease;
 }
 
@@ -289,6 +298,24 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 .archive-menu-symbol::after {
   height: 60%;
+}
+
+@media (pointer: coarse) {
+  button.archive-menu-toggle {
+    --menu-safe-top: env(safe-area-inset-top, 0px);
+    --menu-safe-bottom: env(safe-area-inset-bottom, 0px);
+    /* Composite the rotated control independently during asynchronous touch scrolling. */
+    transform: translate3d(0, 0, 0) rotate(180deg);
+    backface-visibility: hidden;
+    will-change: transform;
+    /* Browser chrome can resize the viewport without changing the control's inset. */
+    bottom: max(24px, var(--menu-safe-bottom));
+  }
+  button.archive-menu-toggle[data-viewport-anchor='true'] {
+    top: 0;
+    height: max-content;
+    transform: translate3d(0, var(--menu-viewport-y), 0) rotate(180deg);
+  }
 }
 
 .archive-menu {

@@ -52,13 +52,13 @@
         width: 1px;
         height: 100%;
         background: rgb(78 78 78 / 14%);
-        opacity: 0;
+        opacity: 1;
         transform: scaleY(0);
         transform-origin: left top;
         will-change: transform, opacity;
       }
 
-      /* Quiet hairlines break up the grid without changing its animation. */
+      /* Restore the alternating light hairlines without changing the left-to-right timing. */
       .project-page-transition-line:is(:nth-child(3), :nth-child(5), :nth-child(6), :nth-child(8), :nth-child(11), :nth-child(13)) {
         scale: .5 1;
       }
@@ -187,7 +187,7 @@
           reducedMotion.addEventListener('change', motionChanged)
           overlay.querySelectorAll('.project-page-transition-line').forEach((line, index) => {
             const delay = motion.lineDelays[index]
-            play(line, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], motion.cover - delay, delay)
+            play(line, [{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1)', opacity: 1 }], motion.lineDuration, delay)
           })
           timers.push(window.setTimeout(() => {
             const copy = overlay.querySelector             ('.project-page-transition-copy')
@@ -204,7 +204,7 @@
         } catch {
           skip()
         }
-      })({"cover":560,"hold":160,"reveal":540,"copyDelay":150,"copyDuration":270,"lineDelays":[0,95,24,140,52,180,78,158,30,110,64,165,40],"easing":"cubic-bezier(.4, 0, .2, 1)"});
+      })({"cover":800,"hold":160,"reveal":540,"lineDuration":500,"lineFadeDuration":500,"copyDelay":150,"copyDuration":270,"lineDelays":[0,25,50,75,100,125,150,175,200,225,250,275,300],"easing":"cubic-bezier(.4, 0, .2, 1)"});
     </script>
     <!-- project-transition-bootstrap:end -->
     <meta name="color-scheme" content="light" />

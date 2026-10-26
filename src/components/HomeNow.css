@@ -94,7 +94,7 @@
 }
 .home-now-close svg { position: relative; display: block; width: calc(var(--now-close-size) * 6 / 11 / var(--now-type-scale)); height: calc(var(--now-close-size) * 6 / 11 / var(--now-type-scale)); overflow: visible; color: var(--now-ink); stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; }
 .home-now-reader .home-now-close:focus-visible { outline: none; }
-.home-now-close:focus-visible::before { outline: 2px solid #748663; outline-offset: 3px; background: var(--now-paper); border-color: rgb(80 102 64 / .36); }
+html:not([data-input-modality='pointer']) .home-now-close:focus-visible::before { outline: 2px solid #748663; outline-offset: 3px; background: var(--now-paper); border-color: rgb(80 102 64 / .36); }
 @media (hover: hover) {
   .home-now-close:hover::before { background: var(--now-paper); border-color: rgb(80 102 64 / .36); box-shadow: 0 3px 10px rgb(30 46 31 / .1); }
 }

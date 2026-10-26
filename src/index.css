@@ -1115,6 +1115,17 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Pointer-triggered dialogs and route changes can inherit :focus-visible.
+   Keep their focus and keyboard behavior, but don't paint an extra touch ring. */
+html[data-input-modality='pointer'] :where(a[href], button, summary, [role='button'], [tabindex]):not(input, textarea, select, [contenteditable]):focus,
+html[data-input-modality='pointer'] :where(a[href], button, summary, [role='button'], [tabindex]):not(input, textarea, select, [contenteditable]):focus::before,
+html[data-input-modality='pointer'] :where(a[href], button, summary, [role='button'], [tabindex]):not(input, textarea, select, [contenteditable]):focus::after {
+  outline: none !important;
+}
+
+/* This is a route focus destination, not an interactive control. */
+main[tabindex='-1']:focus { outline: none; }
+
 a {
   text-decoration: none;
 }

@@ -30,16 +30,6 @@
   --studio-theme-duration: 600ms;
 }
 
-.project-studio .projects-cursor {
-  border-color: currentColor;
-  color: inherit;
-  background-color: currentColor;
-}
-
-.project-studio .projects-cursor[data-mode='interactive'] {
-  background-color: transparent;
-}
-
 .project-studio ::selection {
   color: var(--studio-paper);
   background: var(--studio-ink);

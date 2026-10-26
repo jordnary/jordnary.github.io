@@ -4,7 +4,8 @@ import './LearningPointerTrail.css'
 type TrailPoint = { x: number; y: number; time: number; strength: number }
 
 const excludedSelector = [
-  '.learning-cover-image', '.nav-shell', '.navbar', '.footer-shell', 'nav:not(.learning-contents)',
+  // Fixed footer children keep viewport bounds while clipped out of view; mask only their shell.
+  '.learning-cover-image', '.nav-shell', '.navbar', '.footer-shell', 'nav:not(.learning-contents):not(.footer-shell nav)',
   '.mobile-nav-panel', 'dialog', '[role="dialog"]', '[role="menu"]',
   '[role="tooltip"]', '[popover]', '.site-search-backdrop', '.image-gallery',
   '.yarl__portal', '.live2d-companion', '.live2d-tools', '.live2d-dialogue', '.toast',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { getRouteHref } from '../lib/routes'
 import { shouldTransitionProjects } from '../lib/project-page-transition'
+import { useProjectsMenuViewport } from './useProjectsMenuViewport'
 import './Projects.css'
 
 const menuPages = ['home', 'about', 'learning', 'projects', 'contact'] as const
@@ -16,6 +17,8 @@ export function ProjectsWordmark({ href, label }: { href?: string; label?: strin
 }
 
 export function ProjectsMenu({ onOpen, onOpenChange }: { onOpen?: () => void; onOpenChange?: (open: boolean) => void }) {
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  useProjectsMenuViewport(buttonRef)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<MenuController | null>(null)
@@ -126,7 +129,7 @@ export function ProjectsMenu({ onOpen, onOpenChange }: { onOpen?: () => void; on
 
   return (
     <>
-      <button className="archive-menu-toggle" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={expanded}
+      <button ref={buttonRef} className="archive-menu-toggle" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={expanded}
         onClick={() => { onOpen?.(); controllerRef.current?.open() }}>
         <span className="archive-menu-symbol" aria-hidden="true" /><span>MENU</span>
       </button>

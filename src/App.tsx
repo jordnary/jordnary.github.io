@@ -4,6 +4,8 @@ import { getProjectFromUrl, getProjectStudioHref, isHomepagePortalUrl, isProject
 import { pageLoaders, preparePage } from './lib/page-loaders'
 import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
+import { ProjectsCursor } from './components/ProjectsCursor'
+import { useInputModality } from './lib/useInputModality'
 
 const HomepagePortal = lazy(pageLoaders.portal)
 const HomePage = lazy(pageLoaders.home)
@@ -15,6 +17,7 @@ const ProjectStudioPage = lazy(pageLoaders.studio)
 const ProjectDetailPage = lazy(pageLoaders.detail)
 
 function App({ page: initialPage }: { page: SitePage }) {
+  useInputModality()
   const { page, href, transition } = useSiteNavigation(initialPage, preparePage)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
@@ -45,6 +48,7 @@ function App({ page: initialPage }: { page: SitePage }) {
         <PageReady href={href} />
       </Suspense>
       {transition && <ProjectPageTransition key={transition.id} initiallyCovered={transition.initiallyCovered} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
+      <ProjectsCursor />
     </>
   )
 }

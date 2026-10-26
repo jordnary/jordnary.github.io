@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { ProjectsCursor } from '../components/ProjectsCursor'
 import { studioArtworks } from '../data/project-studio'
 import { getRouteHref } from '../lib/routes'
 import { responsiveImage } from '../lib/responsive-images'
@@ -143,7 +142,6 @@ export function ProjectStudioPage() {
           </svg>
         </span><span>BACK</span>
       </a>
-      <ProjectsCursor />
     </div>
   )
 }

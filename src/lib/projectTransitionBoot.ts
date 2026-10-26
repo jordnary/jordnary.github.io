@@ -106,7 +106,7 @@ export function bootstrapProjectTransition(motion: typeof projectTransitionMotio
     reducedMotion.addEventListener('change', motionChanged)
     overlay.querySelectorAll('.project-page-transition-line').forEach((line, index) => {
       const delay = motion.lineDelays[index]
-      play(line, [{ transform: 'scaleY(0)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1 }], motion.cover - delay, delay)
+      play(line, [{ transform: 'scaleY(0)', opacity: 1 }, { transform: 'scaleY(1)', opacity: 1 }], motion.lineDuration, delay)
     })
     timers.push(window.setTimeout(() => {
       const copy = overlay.querySelector<HTMLElement>('.project-page-transition-copy')!
