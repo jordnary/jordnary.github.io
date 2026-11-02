@@ -321,22 +321,16 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 @media (pointer: coarse) {
   button.archive-menu-toggle {
-    --menu-safe-top: env(safe-area-inset-top, 0px);
     --menu-safe-bottom: env(safe-area-inset-bottom, 0px);
     /* Composite the rotated control independently during asynchronous touch scrolling. */
     transform: translate3d(0, 0, 0) rotate(180deg);
     backface-visibility: hidden;
     will-change: transform;
-    /* Browser chrome can resize the viewport without changing the control's inset. */
+    /* Native bottom anchoring follows browser chrome on the compositor. Do not
+       chase visualViewport events with a second, delayed transform animation. */
     bottom: max(24px, var(--menu-safe-bottom));
   }
-  button.archive-menu-toggle[data-viewport-anchor='true'] {
-    top: 0;
-    height: max-content;
-    transform: translate3d(0, var(--menu-viewport-y), 0) rotate(180deg);
-  }
   .projects-archive button.archive-menu-toggle {
-    --menu-safe-top: var(--archive-safe-top);
     --menu-safe-bottom: var(--archive-safe-bottom);
     /* Include the control's negative margin when clearing a landscape notch. */
     left: max(4.7vw, calc(var(--archive-safe-left) + 12px));
