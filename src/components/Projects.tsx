@@ -4,6 +4,7 @@ import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
+import { useProjectsViewport } from './useProjectsViewport'
 import './Projects.css'
 
 const filterLabels: Record<ProjectFilter, string> = {
@@ -35,6 +36,8 @@ function initialFilter(): ProjectFilter {
 }
 
 export function Projects() {
+  const archiveRef = useRef<HTMLDivElement>(null)
+  useProjectsViewport(archiveRef)
   const [filter, setFilter] = useState<ProjectFilter>(initialFilter)
   const [displayFilter, setDisplayFilter] = useState<ProjectFilter>(initialFilter)
   const [phase, setPhase] = useState<'idle' | 'leaving' | 'entering'>('idle')
@@ -120,9 +123,10 @@ export function Projects() {
   }, [])
 
   return (
-    <div className="projects-archive" id="projects" lang="en">
+    <div ref={archiveRef} className="projects-archive" id="projects" lang="en">
       <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
       <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
+      <img className="archive-footer-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
       <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />
       <header className="archive-header">
         <div className="archive-title"><h1>PROJECTS</h1></div>

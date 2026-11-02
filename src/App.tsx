@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { SiteLayout } from './layouts/SiteLayout'
 import { getProjectFromUrl, getProjectStudioHref, isHomepagePortalUrl, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
 import { pageLoaders, preparePage } from './lib/page-loaders'
@@ -21,6 +21,18 @@ function App({ page: initialPage }: { page: SitePage }) {
   const { page, href, transition } = useSiteNavigation(initialPage, preparePage)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
+  const isProjectArchive = page === 'projects' && !project && !isStudio
+
+  useLayoutEffect(() => {
+    const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+    if (!viewport) return
+    // Keep direct entry and client-side navigation on the same viewport policy.
+    const content = viewport.content.split(',').map(value => value.trim())
+      .filter(value => value && !value.startsWith('viewport-fit='))
+    if (isProjectArchive) content.push('viewport-fit=cover')
+    viewport.content = content.join(', ')
+  }, [isProjectArchive])
+
   useEffect(() => {
     const preventMiddleButtonAutoscroll = (event: MouseEvent) => {
       if (event.button === 1) event.preventDefault()

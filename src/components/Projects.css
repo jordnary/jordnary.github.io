@@ -3,12 +3,16 @@
 .projects-archive {
   --archive-ink: #171717;
   --archive-paper: #f2f2f2;
-  --archive-header-bottom: max(100px, 12vh);
+  --archive-safe-top: env(safe-area-inset-top, 0px);
+  --archive-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --archive-safe-left: env(safe-area-inset-left, 0px);
+  --archive-safe-right: env(safe-area-inset-right, 0px);
+  --archive-header-bottom: calc(max(100px, 12vh) + var(--archive-safe-top));
   --archive-project-edge: 18px;
   position: relative;
   isolation: isolate;
   min-height: 100svh;
-  padding: max(175px, 23.7vh) 0 8vh;
+  padding: calc(max(175px, 23.7vh) + var(--archive-safe-top)) 0 calc(8vh + var(--archive-safe-bottom));
   color: var(--archive-ink);
   font-family: 'Projects Serif', 'Times New Roman', serif;
   font-weight: 400;
@@ -22,6 +26,12 @@ html:has(.projects-archive) {
 }
 
 body:has(.projects-archive) { background: #f2f2f2; }
+
+/* The shared shell must not clip the fixed artwork or expose its opaque paper. */
+.app-shell:has(.projects-archive) {
+  overflow: visible;
+  background: transparent;
+}
 
 html:has(.projects-archive)::-webkit-scrollbar {
   display: none;
@@ -46,7 +56,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   outline-offset: 7px;
 }
 
-.archive-background, .archive-header-mask {
+.archive-background, .archive-header-mask, .archive-footer-mask {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -62,20 +72,28 @@ html:has(.projects-archive)::-webkit-scrollbar {
   z-index: -1;
 }
 
-.archive-header-mask {
+.archive-header-mask, .archive-footer-mask {
   z-index: 3;
-  clip-path: inset(0 0 calc(100% - var(--archive-header-bottom)) 0);
   /* The covered list must be excluded from hit testing as well as painting. */
   pointer-events: auto;
   user-select: none;
   -webkit-touch-callout: none;
 }
 
+.archive-header-mask {
+  clip-path: inset(0 0 calc(100% - var(--archive-header-bottom)) 0);
+}
+
+.archive-footer-mask {
+  /* Share the full-size artwork crop: the browser edge never reveals a solid strip. */
+  clip-path: inset(max(0px, calc(var(--archive-viewport-bottom, 100dvh) - var(--archive-safe-bottom))) 0 0);
+}
+
 .archive-wordmark {
   position: fixed;
   z-index: 5;
-  top: 4.7vh;
-  left: 4.7vw;
+  top: calc(4.7vh + var(--archive-safe-top, 0px));
+  left: max(4.7vw, var(--archive-safe-left, 0px));
   display: flex;
   flex-direction: column;
   width: max-content;
@@ -91,8 +109,8 @@ html:has(.projects-archive)::-webkit-scrollbar {
 .archive-header {
   position: fixed;
   z-index: 5;
-  inset: 3.7vh 4.7vw auto 34.9vw;
-  height: calc(var(--archive-header-bottom) - 3.7vh);
+  inset: calc(3.7vh + var(--archive-safe-top)) max(4.7vw, var(--archive-safe-right)) auto 34.9vw;
+  height: calc(var(--archive-header-bottom) - 3.7vh - var(--archive-safe-top));
   display: flex;
   justify-content: space-between;
   align-items: baseline;
@@ -161,6 +179,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   list-style: none;
   opacity: 1;
   transition: opacity 200ms ease, transform 200ms ease;
+  padding-right: var(--archive-safe-right);
 }
 
 .archive-list[data-phase='leaving'] {
@@ -316,6 +335,13 @@ html:has(.projects-archive)::-webkit-scrollbar {
     height: max-content;
     transform: translate3d(0, var(--menu-viewport-y), 0) rotate(180deg);
   }
+  .projects-archive button.archive-menu-toggle {
+    --menu-safe-top: var(--archive-safe-top);
+    --menu-safe-bottom: var(--archive-safe-bottom);
+    /* Include the control's negative margin when clearing a landscape notch. */
+    left: max(4.7vw, calc(var(--archive-safe-left) + 12px));
+    bottom: max(24px, var(--archive-safe-bottom));
+  }
 }
 
 .archive-menu {
@@ -342,7 +368,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  padding: max(160px, 23.5dvh) 8vw max(110px, 12dvh) 38vw;
+  padding: calc(max(160px, 23.5dvh) + var(--archive-safe-top, 0px)) 8vw calc(max(110px, 12dvh) + var(--archive-safe-bottom, 0px)) 38vw;
   opacity: 0;
 }
 
@@ -419,21 +445,21 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 @media (max-width: 600px) {
   .projects-archive {
-    --archive-header-bottom: 170px;
-    padding-top: 210px;
-    padding-bottom: 60px;
+    --archive-header-bottom: calc(170px + var(--archive-safe-top));
+    padding-top: calc(210px + var(--archive-safe-top));
+    padding-bottom: calc(60px + var(--archive-safe-bottom));
   }
-  .archive-background, .archive-header-mask {
+  .archive-background, .archive-header-mask, .archive-footer-mask {
     object-position: 48% center;
     background-position: 48% center;
   }
   .archive-wordmark {
-    top: 28px;
-    left: 6vw;
+    top: calc(28px + var(--archive-safe-top, 0px));
+    left: max(6vw, var(--archive-safe-left, 0px));
     font-size: 23px;
   }
   .archive-header {
-    inset: 100px 6vw auto;
+    inset: calc(100px + var(--archive-safe-top)) max(6vw, var(--archive-safe-right)) auto max(6vw, var(--archive-safe-left));
     height: 70px;
     gap: 0;
     align-items: center;
@@ -478,8 +504,11 @@ html:has(.projects-archive)::-webkit-scrollbar {
     left: 6vw;
     bottom: 24px;
   }
+  .projects-archive button.archive-menu-toggle {
+    left: max(6vw, calc(var(--archive-safe-left) + 12px));
+  }
   .archive-menu-content {
-    padding: max(140px, 23dvh) 8vw 80px 28vw;
+    padding: calc(max(140px, 23dvh) + var(--archive-safe-top, 0px)) 8vw calc(80px + var(--archive-safe-bottom, 0px)) 28vw;
   }
   .archive-menu nav {
     gap: 0.1em;
@@ -493,8 +522,8 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 @media (max-height: 600px) and (max-width: 600px) {
   .archive-menu-content {
-    padding-top: clamp(120px, 23dvh, 140px);
-    padding-bottom: 64px;
+    padding-top: calc(clamp(120px, 23dvh, 140px) + var(--archive-safe-top, 0px));
+    padding-bottom: calc(64px + var(--archive-safe-bottom, 0px));
   }
   .archive-menu nav {
     font-size: clamp(34px, 7dvh, 38px);
@@ -503,8 +532,8 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 @media (max-height: 600px) and (min-width: 601px) {
   .archive-menu-content {
-    padding-top: 12dvh;
-    padding-bottom: 40px;
+    padding-top: calc(12dvh + var(--archive-safe-top, 0px));
+    padding-bottom: calc(40px + var(--archive-safe-bottom, 0px));
     padding-left: 42vw;
   }
   .archive-menu nav {
