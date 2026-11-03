@@ -151,7 +151,8 @@
   padding: 0 max(18px, 1.2vw);
   overflow: hidden;
   border-color: var(--home-ink);
-  background: var(--home-accent);
+  /* Let background bubbles remain visible beneath the label and outline. */
+  background: transparent;
   font-family: 'Home Gallery Round', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   font-size: max(13px, .96vw);
   font-weight: 400;
@@ -177,7 +178,7 @@
   height: max(13px, .8vw);
 }
 .home-editorial-action-link svg path { stroke-width: 2; }
-.home-editorial .home-editorial-action-link:is(:hover, :focus-visible) { color: var(--home-accent); background: var(--home-accent); }
+.home-editorial .home-editorial-action-link:is(:hover, :focus-visible) { color: var(--home-accent); background: transparent; }
 .home-editorial-action-link:is(:hover, :focus-visible)::before { transform: translateY(0); }
 .home-editorial-action-link:focus-visible { outline-color: var(--home-ink); }
 .home-editorial-action-link:focus-visible svg { transform: translateX(4px); }
