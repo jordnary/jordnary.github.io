@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
+import { runHomeGalleryTouchChecks } from './home-gallery-touch.browser.mjs'
 
 const output = 'node_modules/.cache/home-gallery'
 
@@ -297,45 +298,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
     }
   }
 
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
-  const page = await context.newPage()
-  try {
-    await open(page)
-    const cdp = await context.newCDPSession(page)
-    const rail = page.locator('#selected .home-gallery')
-    const box = await rail.boundingBox()
-    const y = box.y + 100
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 320, y }] })
-    for (let step = 1; step <= 15; step++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 320 - step * 17, y }] })
-      await page.waitForTimeout(20)
-    }
-    await page.waitForTimeout(160)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await center(page, 1)
-    await rail.focus()
-    await page.keyboard.press('Home')
-    await center(page, 0)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 345, y }] })
-    for (let step = 1; step <= 4; step++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 345 - step * 76, y }] })
-    }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await center(page, 1)
-    assert.equal(page.url(), homeURL, 'A fast touch flick cannot activate a directory link')
-    const before = await page.evaluate(() => scrollY)
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 200, y }] })
-    for (let step = 1; step <= 12; step++) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 200, y: y - step * 9 }] })
-      await page.waitForTimeout(20)
-    }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await page.waitForFunction(start => scrollY > start + 30, before)
-    await center(page, 1)
-    report('PASS: slow and fast touch swipes advance one photo while vertical gestures still scroll the page')
-  } finally {
-    await context.close()
-  }
+  await runHomeGalleryTouchChecks(browser, baseURL, report)
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

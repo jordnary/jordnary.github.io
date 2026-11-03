@@ -21,6 +21,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 type Drag = {
   id: number
+  touch: boolean
   x: number
   y: number
   scroll: number
@@ -85,7 +86,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       if (painted >= 0) cards[painted].dataset.centered = 'false'
       cards[active].dataset.centered = 'true'
       painted = active
-      rail.setAttribute('aria-label', `${label}，第 ${active + 1} 张，共 ${cards.length} 张；使用左右方向键切换`)
+      rail.setAttribute('aria-label', `${label}，第 ${active + 1} 张，共 ${cards.length} 张；左右滑动或使用左右方向键切换`)
     }
 
     const stop = () => {
@@ -156,7 +157,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       paintCenter()
     }
     const withinRail = (left: number) => clamp(left, centers[0], centers.at(-1)!)
-    const chooseDestination = (origin: number, left: number, speed = 0) => {
+    const chooseDestination = (origin: number, left: number, speed = 0, touch = false) => {
       const stride = strideAt(nearest(left))
       const travel = left - centerAt(origin)
       // Distance is unrestricted: a held drag can pass every card center.
@@ -167,7 +168,8 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       if (landing !== origin) return landing
       // A short, intentional swipe can still advance without dragging half a
       // screen. This biases the initial snap, never limits multi-card travel.
-      const deliberate = Math.abs(travel) >= Math.min(96, stride * .2) &&
+      const threshold = touch ? Math.min(48, stride * .12) : Math.min(96, stride * .2)
+      const deliberate = Math.abs(travel) >= threshold &&
         (travel * speed >= 0 || Math.abs(speed) < .15)
       const flick = Math.abs(travel) >= 12 && Math.abs(speed) >= .35 && travel * speed > 0
       return origin + (deliberate || flick ? Math.sign(travel) : 0)
@@ -188,7 +190,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       const last = previous.samples.at(-1)!
       const speed = performance.now() - last.time > 100 || last.time === first.time
         ? 0 : clamp((first.x - last.x) / (last.time - first.time), -1.5, 1.5)
-      goTo(!previous.moved ? previous.resume : cancelled ? nearest(position) : chooseDestination(previous.origin, target, speed))
+      goTo(!previous.moved ? previous.resume : cancelled ? nearest(position) : chooseDestination(previous.origin, target, speed, previous.touch))
     }
 
     const onDown = (event: PointerEvent) => {
@@ -197,11 +199,14 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
         return
       }
       if (event.button !== 0) return
-      // Use visible photo edges, including entrance, parallax, and hover motion.
-      // Check only the start: an accepted drag may continue beyond these edges.
-      const first = cards[0].querySelector('.home-gallery-window')!.getBoundingClientRect()
-      const last = cards.at(-1)!.querySelector('.home-gallery-window')!.getBoundingClientRect()
-      if (event.clientX < first.left || event.clientX > last.right) return
+      const touch = event.pointerType === 'touch'
+      // Touch can start anywhere on the rail, including its side gutters.
+      // Mouse dragging starts within the visible photo edges, then may leave.
+      if (!touch) {
+        const first = cards[0].querySelector('.home-gallery-window')!.getBoundingClientRect()
+        const last = cards.at(-1)!.querySelector('.home-gallery-window')!.getBoundingClientRect()
+        if (event.clientX < first.left || event.clientX > last.right) return
+      }
       clearWheel()
       stop()
       suppressClick = false
@@ -209,7 +214,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       target = position
       velocity = 0
       drag = {
-        id: event.pointerId, x: event.clientX, y: event.clientY, scroll: position,
+        id: event.pointerId, touch, x: event.clientX, y: event.clientY, scroll: position,
         origin: nearest(position), resume: destination, moved: false,
         samples: [{ x: event.clientX, time: performance.now() }],
       }
@@ -221,12 +226,18 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       const distance = event.clientX - drag.x
       if (!drag.moved) {
         const vertical = Math.abs(event.clientY - drag.y)
-        if (Math.max(Math.abs(distance), vertical) < 6) return
-        if (event.pointerType === 'touch' && vertical > Math.abs(distance)) {
-          release(true)
-          return
+        const threshold = drag.touch ? 12 : 6
+        // Wait past finger jitter before choosing an axis. Ambiguous diagonal
+        // movement stays native until horizontal or vertical intent is clear.
+        if (Math.max(Math.abs(distance), vertical) < threshold) return
+        if (drag.touch) {
+          if (vertical > Math.abs(distance) * 1.2) {
+            release(true)
+            return
+          }
+          if (Math.abs(distance) <= vertical * 1.2) return
         }
-        if (Math.abs(distance) < 6) return
+        if (Math.abs(distance) < threshold) return
         rail.setPointerCapture(event.pointerId)
         rail.focus({ preventScroll: true })
         rail.dataset.dragging = 'true'
@@ -365,7 +376,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
     }
   }, [photos, label])
 
-  return <div className="home-gallery-bleed" data-home-reveal="gallery"><div className="home-gallery" ref={railRef} role="region" aria-roledescription="轮播图" aria-label={`${label}，使用左右方向键切换`} tabIndex={0}>
+  return <div className="home-gallery-bleed" data-home-reveal="gallery"><div className="home-gallery" ref={railRef} role="region" aria-roledescription="轮播图" aria-label={`${label}，左右滑动或使用左右方向键切换`} tabIndex={0}>
     {photos.map((photo, index) => {
       const content = <>
         <span className={`home-gallery-window${photo.src ? '' : ' home-gallery-window--blank'}`}>
