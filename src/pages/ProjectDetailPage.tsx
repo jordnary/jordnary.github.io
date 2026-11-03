@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { projects, type ProjectCase } from '../data/projects'
 import { projectIntroductions } from '../data/project-introductions'
 import { ImageGallery, type GalleryImage } from '../components/image-gallery'
@@ -297,7 +298,10 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         </footer>
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
-      <ProjectsMenu onOpenChange={setMenuOpen} />
+      {createPortal(
+        <div className="project-reader-menu"><ProjectsMenu onOpenChange={setMenuOpen} /></div>,
+        document.body,
+      )}
     </div>
   )
 }

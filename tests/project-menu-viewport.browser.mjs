@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
+import sharp from 'sharp'
 
 const trigger = page => page.getByRole('button', { name: 'Open menu', exact: true })
 const frames = (page, count = 3) => page.evaluate(count => new Promise(resolve => {
@@ -27,12 +28,60 @@ const assertAnchored = (samples, inset = 24) => {
     'Every frame keeps the native bottom inset without delayed catch-up motion')
 }
 
+async function assertReaderMenuPaintIsStable(page, baseURL) {
+  for (const route of ['projects/personal-website/', 'projects/triton-attention-optimization/#project-sparsity']) {
+    await page.goto(new URL(route, baseURL).href)
+    await trigger(page).waitFor()
+    await page.evaluate(() => document.fonts.ready)
+    await page.waitForFunction(() => !document.querySelector('.project-page-transition[open]'))
+    await page.locator('#site-scroll').evaluate(element => element.scrollTo({ top: 0, behavior: 'instant' }))
+    await frames(page)
+    const initial = await trigger(page).boundingBox()
+    const clip = { x: Math.floor(initial.x) - 2, y: Math.floor(initial.y) - 2,
+      width: Math.ceil(initial.width) + 4, height: Math.ceil(initial.height) + 4 }
+    const pixels = async () => sharp(await page.screenshot({ clip, scale: 'css' })).removeAlpha().raw().toBuffer()
+    const reference = await pixels()
+    assert.ok(reference.some(channel => channel < 100), 'The menu comparison includes visible text and its icon')
+    const positions = []
+
+    // Desktop WebKit cannot reproduce iOS momentum compositing. Move content and
+    // frame layers independently to ensure none can carry the fixed menu with them.
+    // Pixel comparisons also catch clipping and painting changes missed by rects.
+    for (const selector of ['#site-scroll', '.project-reader', '#root']) {
+      try {
+        for (const [top, offset] of [[120, -7], [300, 6], [80, -4], [0, 0]]) {
+          await page.locator(selector).evaluate((element, offset) => {
+            element.style.transform = `translate3d(0, ${offset}px, 0)`
+          }, offset)
+          positions.push(await page.evaluate(top => {
+            const scroller = document.getElementById('site-scroll')
+            scroller.scrollTo({ top, behavior: 'instant' })
+            document.querySelector('.project-reader-scroll').scrollTop = top
+            return scroller.scrollTop
+          }, top))
+          await frames(page)
+          const current = await trigger(page).boundingBox()
+          assert.ok(Math.abs(current.y - initial.y) < .1 && Math.abs(current.x - initial.x) < .1,
+            `${route}: moving ${selector} must not displace the menu (${initial.x}, ${initial.y} -> ${current.x}, ${current.y})`)
+          assert.ok(reference.equals(await pixels()),
+            `${route}: the painted menu must not shift, clip or smear with the scrolling content`)
+        }
+      } finally {
+        await page.locator(selector).evaluate(element => element.style.removeProperty('transform'))
+      }
+    }
+    assert.ok(new Set(positions).size > 1, 'The content actually scrolls during the menu paint checks')
+  }
+}
+
 export async function runProjectMenuViewportChecks(browser, baseURL, report = () => {}) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' })
   const page = await context.newPage()
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   try {
+    await assertReaderMenuPaintIsStable(page, baseURL)
+    report('Reader menu pixels remain unchanged when content and outer frame layers move independently')
     await page.goto(new URL('projects/triton-attention-optimization/#project-sparsity', baseURL).href)
     await trigger(page).waitFor()
     await page.evaluate(() => document.fonts.ready)
@@ -48,15 +97,37 @@ export async function runProjectMenuViewportChecks(browser, baseURL, report = ()
     })
     if (browser.browserType().name() === 'chromium') {
       const session = await context.newCDPSession(page)
-      for (const [start, end] of [[550, 250], [250, 550]]) {
-        await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 380, y: start, id: 0 }] })
-        for (let step = 1; step <= 12; step++) {
-          await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 380, y: start + (end - start) * step / 12, id: 0 }] })
+      const bounds = await trigger(page).boundingBox()
+      const crop = { left: Math.floor(bounds.x) - 2, top: Math.floor(bounds.y) - 2,
+        width: Math.ceil(bounds.width) + 4, height: Math.ceil(bounds.height) + 4 }
+      const painted = [], acknowledgements = []
+      session.on('Page.screencastFrame', event => {
+        painted.push(Buffer.from(event.data, 'base64'))
+        acknowledgements.push(session.send('Page.screencastFrameAck', { sessionId: event.sessionId }))
+      })
+      try {
+        await session.send('Page.startScreencast', { format: 'png', everyNthFrame: 1 })
+        for (const [start, end] of [[600, 180], [180, 600], [580, 200], [200, 580]]) {
+          await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 380, y: start, id: 0 }] })
+          for (let step = 1; step <= 20; step++) {
+            await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 380, y: start + (end - start) * step / 20, id: 0 }] })
+            await frames(page, 1)
+          }
+          await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+          await frames(page, 10)
         }
-        await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-        await frames(page, 10)
+        await session.send('Page.stopScreencast')
+        await Promise.all(acknowledgements)
+        assert.ok(painted.length >= 20, 'Capture compositor frames throughout rapid native touch scrolling and reversals')
+        const reference = await sharp(painted[0]).extract(crop).removeAlpha().raw().toBuffer()
+        for (const screenshot of painted) {
+          const pixels = await sharp(screenshot).extract(crop).removeAlpha().raw().toBuffer()
+          assert.ok(reference.equals(pixels), 'Every captured touch-scroll frame paints the menu in exactly the same pixels')
+        }
+        report(`${painted.length} compositor frames keep identical menu pixels during rapid touch scrolling and reversals`)
+      } finally {
+        await session.detach()
       }
-      await session.detach()
     }
     const scrolling = await stopProbe(page)
     assertAnchored(scrolling)

@@ -1,8 +1,16 @@
 @import '../components/Projects.fonts.css';
 
-.project-reader {
+.project-reader, .project-reader-menu {
   --reader-paper: #f2f2f2;
   --reader-ink: #171717;
+  --reader-serif: 'Projects Serif', 'Times New Roman', serif;
+  color: var(--reader-ink);
+  font-weight: 400;
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+}
+
+.project-reader {
   --reader-muted: #666661;
   --reader-rule: rgb(23 23 23 / 20%);
   --reader-edge: clamp(6vw, calc(9vw - 14.4px), 7.2vw);
@@ -10,7 +18,6 @@
   --reader-left-inset: max(var(--reader-edge), calc(var(--reader-menu-edge) + 36px));
   --reader-measure: clamp(980px, calc(640px + 25vw), 1120px);
   --reader-art-room: calc((100cqw - min(100cqw, var(--reader-measure))) / 2 + var(--reader-edge) - 28px);
-  --reader-serif: 'Projects Serif', 'Times New Roman', serif;
   --reader-book: 'Times New Roman', 'Noto Serif SC', 'Songti SC', SimSun, serif;
   --reader-label: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
   --reader-body: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
@@ -21,21 +28,20 @@
   padding: clamp(24px, 3.7vh, 52px) var(--reader-edge) max(64px, calc(var(--site-viewport-height, 100svh) - 1100px));
   /* Keep the fixed menu in its own margin as the reading content scrolls. */
   padding-left: var(--reader-left-inset);
-  color: var(--reader-ink);
   background: var(--reader-paper);
   font-family: var(--reader-body);
-  font-weight: 400;
-  color-scheme: light;
-  -webkit-font-smoothing: antialiased;
 }
 
 html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f2; scrollbar-gutter: stable; }
-.project-reader ::selection { color: var(--reader-paper); background: var(--reader-ink); }
-.project-reader :is(a, button) { color: inherit; text-decoration: none; }
-.project-reader button { font: inherit; cursor: pointer; }
-.project-reader :is(a, button):focus-visible { outline: 1px solid currentColor; outline-offset: 6px; }
-.project-reader .archive-menu { --archive-ink: var(--reader-ink); --archive-paper: var(--reader-paper); font-family: var(--reader-serif); }
-.project-reader .archive-menu-toggle { font-family: var(--reader-serif); line-height: 1; }
+:is(.project-reader, .project-reader-menu) ::selection { color: var(--reader-paper); background: var(--reader-ink); }
+:is(.project-reader, .project-reader-menu) :is(a, button) { color: inherit; text-decoration: none; }
+:is(.project-reader, .project-reader-menu) button { font: inherit; cursor: pointer; }
+:is(.project-reader, .project-reader-menu) :is(a, button):focus-visible { outline: 1px solid currentColor; outline-offset: 6px; }
+/* Keep the menu outside both scrolling content and the transformed page frame.
+   Share the frame's stable height without inheriting its scroll compensation. */
+.project-reader-menu { position: fixed; z-index: 6; inset: 0 0 auto; height: var(--site-viewport-height, 100%); overflow: clip; pointer-events: none; font-family: var(--reader-serif); }
+.project-reader-menu .archive-menu { --archive-ink: var(--reader-ink); --archive-paper: var(--reader-paper); pointer-events: auto; }
+.project-reader-menu button.archive-menu-toggle { position: absolute; pointer-events: auto; font-family: var(--reader-serif); line-height: 1; }
 /* Preserve the wide-screen gutters, keeping the return link outside the reading frame as it narrows. */
 .project-reader-topbar {
   --reader-topbar-edge: min(var(--reader-edge), max(16px, calc(var(--reader-left-inset) + max(0px, (100cqw - var(--reader-measure)) / 2) - 36px)));
