@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react'
 import { createNavScrollVisibility } from './navScrollVisibility'
-import { pageNavigationScrollEvent } from './pageScrollSource'
+import { pageNavigationScrollEvent, getPageScrollTop, getPageScrollLeft, scrollPageTo, scrollPageBy, getPageScroller, getPageViewportHeight } from './pageScrollSource'
 
 export function useNavScrollVisibility(headerRef: RefObject<HTMLElement | null>, menuOpen: boolean, page: string) {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -14,8 +14,8 @@ export function useNavScrollVisibility(headerRef: RefObject<HTMLElement | null>,
     let source: 'manual' | 'navigation' = 'navigation'
     let nativeSmooth = false
     let touchY: number | null = null
-    const readTop = () => Math.max(0, Math.min(window.scrollY,
-      Math.max(0, document.documentElement.scrollHeight - window.innerHeight)))
+    const readTop = () => Math.max(0, Math.min(getPageScrollTop(),
+      Math.max(0, getPageScroller().scrollHeight - getPageViewportHeight())))
     let previousTop = readTop()
     const visibility = createNavScrollVisibility(previousTop)
     const update = () => {
@@ -49,7 +49,7 @@ export function useNavScrollVisibility(headerRef: RefObject<HTMLElement | null>,
         // Preserve only its observed travel, excluding the automatic jump.
         const manualDistance = Math.sign(observed) === Math.sign(inputDistance)
           ? Math.sign(inputDistance) * Math.min(Math.abs(observed), Math.abs(inputDistance)) : 0
-        window.scrollTo({ top: window.scrollY, left: window.scrollX, behavior: 'instant' })
+        scrollPageTo({ top: getPageScrollTop(), left: getPageScrollLeft(), behavior: 'instant' })
         previousTop = top - manualDistance
         visibility({ top: previousTop, source, now: performance.now(), headerHeight: header?.offsetHeight ?? 72, keepVisible: true })
         endNativeSmooth()
@@ -58,12 +58,12 @@ export function useNavScrollVisibility(headerRef: RefObject<HTMLElement | null>,
       // Preserve the last sampled position so that first gesture still counts.
       source = 'manual'
     }
-    const wheelDistance = (event: WheelEvent) => event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1)
+    const wheelDistance = (event: WheelEvent) => event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? getPageViewportHeight() : 1)
     const interruptAutomaticWheel = (event: WheelEvent) => {
       if (!nativeSmooth || event.defaultPrevented || event.ctrlKey || event.deltaY === 0) return
       // Leave nested scrollable controls in charge of their own wheel input.
       const nestedScroll = event.composedPath().some(target => target instanceof HTMLElement
-        && target !== document.body && target !== document.documentElement
+        && target !== document.body && target !== getPageScroller()
         && /auto|scroll/.test(getComputedStyle(target).overflowY)
         && (event.deltaY > 0 ? target.scrollTop + target.clientHeight < target.scrollHeight : target.scrollTop > 0))
       if (nestedScroll) return
@@ -71,11 +71,11 @@ export function useNavScrollVisibility(headerRef: RefObject<HTMLElement | null>,
       // Intercept only during that automatic animation, then keep its full input.
       event.preventDefault()
       manual()
-      window.scrollBy({ top: wheelDistance(event), behavior: 'instant' })
+      scrollPageBy({ top: wheelDistance(event), behavior: 'instant' })
     }
     const options = { passive: true, signal: events.signal }
-    window.addEventListener('scroll', schedule, options)
-    window.addEventListener('scrollend', endNativeSmooth, options)
+    window.addEventListener('scroll', schedule, { ...options, capture: true })
+    window.addEventListener('scrollend', endNativeSmooth, { ...options, capture: true })
     window.addEventListener(pageNavigationScrollEvent, navigation, options)
     window.addEventListener('popstate', navigation, options)
     window.addEventListener('hashchange', navigation, options)

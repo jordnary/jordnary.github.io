@@ -1,10 +1,10 @@
+import { scrollPageTo, scrollPageBy, getPageViewportHeight } from '../lib/pageScrollSource'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { projects, projectFilters, type ProjectCase, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
-import { useProjectsViewport } from './useProjectsViewport'
 import './Projects.css'
 
 const filterLabels: Record<ProjectFilter, string> = {
@@ -23,7 +23,7 @@ function isVisibleProject(element: Element | null) {
   const bounds = element.getBoundingClientRect()
   const headerBottom = document.querySelector('.archive-header')?.getBoundingClientRect().bottom ?? 0
   const viewport = window.visualViewport
-  const bottom = (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight)
+  const bottom = Math.min((viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight), getPageViewportHeight())
   return bounds.bottom > headerBottom && bounds.top < bottom
 }
 
@@ -36,8 +36,6 @@ function initialFilter(): ProjectFilter {
 }
 
 export function Projects() {
-  const archiveRef = useRef<HTMLDivElement>(null)
-  useProjectsViewport(archiveRef)
   const [filter, setFilter] = useState<ProjectFilter>(initialFilter)
   const [displayFilter, setDisplayFilter] = useState<ProjectFilter>(initialFilter)
   const [phase, setPhase] = useState<'idle' | 'leaving' | 'entering'>('idle')
@@ -57,7 +55,7 @@ export function Projects() {
     const reveal = () => {
       setDisplayFilter(value)
       setPhase(reducedMotion ? 'idle' : 'entering')
-      window.scrollTo({ top: 0, behavior: 'instant' })
+      scrollPageTo({ top: 0, behavior: 'instant' })
       if (!reducedMotion) {
         const count = projects.filter(project => value === '全部项目' || project.category === value).length
         filterTimer.current = window.setTimeout(() => setPhase('idle'), 650 + (count - 1) * 70)
@@ -111,22 +109,21 @@ export function Projects() {
     window.addEventListener('popstate', restore)
     window.addEventListener('hashchange', restore)
     window.addEventListener('blur', clearPreview)
-    window.addEventListener('scroll', refreshPreview, { passive: true })
+    window.addEventListener('scroll', refreshPreview, { passive: true, capture: true })
     document.addEventListener('click', revealAnchor, true)
     return () => {
       window.removeEventListener('popstate', restore)
       window.removeEventListener('hashchange', restore)
       window.removeEventListener('blur', clearPreview)
-      window.removeEventListener('scroll', refreshPreview)
+      window.removeEventListener('scroll', refreshPreview, true)
       document.removeEventListener('click', revealAnchor, true)
     }
   }, [])
 
   return (
-    <div ref={archiveRef} className="projects-archive" id="projects" lang="en">
+    <div className="projects-archive" id="projects" lang="en">
       <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
       <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
-      <img className="archive-footer-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
       <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />
       <header className="archive-header">
         <div className="archive-title"><h1>PROJECTS</h1></div>
@@ -146,7 +143,7 @@ export function Projects() {
                 if (!event.currentTarget.matches(':focus-visible')) return
                 const edge = (document.querySelector('.archive-header')?.getBoundingClientRect().bottom ?? 0) + 24
                 const top = event.currentTarget.getBoundingClientRect().top
-                if (top < edge) window.scrollBy({ top: top - edge, behavior: 'instant' })
+                if (top < edge) scrollPageBy({ top: top - edge, behavior: 'instant' })
                 setActiveProject(project)
               }}
               onBlur={() => setActiveProject(null)}>

@@ -1,3 +1,4 @@
+import { getPageScroller } from '../lib/pageScrollSource'
 import { useEffect, useRef } from 'react'
 
 export function ScrollProgress() {
@@ -15,7 +16,7 @@ export function ScrollProgress() {
     const updateProgress = () => {
       frameId = 0
 
-      const root = document.documentElement
+      const root = getPageScroller()
       const maxScroll = root.scrollHeight - root.clientHeight
       const currentProgress =
         maxScroll > 0 ? root.scrollTop / maxScroll : 0
@@ -31,11 +32,11 @@ export function ScrollProgress() {
     }
 
     scheduleUpdate()
-    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('scroll', scheduleUpdate, { passive: true, capture: true })
     window.addEventListener('resize', scheduleUpdate)
 
     return () => {
-      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('scroll', scheduleUpdate, true)
       window.removeEventListener('resize', scheduleUpdate)
 
       if (frameId !== 0) {

@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from 'react'
-import { pageNavigationScrollEvent } from './pageScrollSource'
+import { pageNavigationScrollEvent, getPageScrollTop, scrollPageBy, getPageViewportHeight } from './pageScrollSource'
 
 /** Route wheel motion by the current pointer position, including during a gesture. */
 export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, paused: boolean) {
@@ -48,9 +48,9 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
           remaining = Math.max(remaining, -Math.floor(point.y - bounds.bottom) - 1)
         }
       }
-      const before = window.scrollY
-      window.scrollBy({ top: remaining, behavior: 'instant' })
-      return consumed + window.scrollY - before
+      const before = getPageScrollTop()
+      scrollPageBy({ top: remaining, behavior: 'instant' })
+      return consumed + getPageScrollTop() - before
     }
 
     const advance = (time: number) => {
@@ -78,7 +78,7 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       point = { x: event.clientX, y: event.clientY }
       const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
         ? Number.parseFloat(getComputedStyle(article).lineHeight) || 16
-        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? getPageViewportHeight() : 1
       const distance = event.deltaY * unit
       if (pending * distance < 0) stop()
       pending += distance

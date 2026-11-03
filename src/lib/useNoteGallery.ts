@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { notifyNavigationScroll } from './pageScrollSource'
+import { notifyNavigationScroll, getPageScrollTop, scrollPageTo } from './pageScrollSource'
 
 const pinnedQuery = '(min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference)'
 const followTimeMs = 90
@@ -60,10 +60,10 @@ export function useNoteGallery(count: number) {
 
     const sync = (instant = false) => {
       const { pinned, distance, start } = metrics.current
-      targetOffset = Math.max(0, Math.min(distance, pinned ? window.scrollY - start : viewport.scrollLeft))
+      targetOffset = Math.max(0, Math.min(distance, pinned ? getPageScrollTop() - start : viewport.scrollLeft))
       const nativeTarget = nativeScrollTarget.current
       const nativeNavigation = nativeTarget !== null
-      if (nativeTarget !== null && Math.abs(window.scrollY - nativeTarget) < 1) nativeScrollTarget.current = null
+      if (nativeTarget !== null && Math.abs(getPageScrollTop() - nativeTarget) < 1) nativeScrollTarget.current = null
       // Keep easing across sticky boundaries so the remaining horizontal travel never snaps.
       // Already-smooth navigation and explicit positioning still update immediately.
       if (instant || !pinned || nativeNavigation || document.hidden) {
@@ -81,7 +81,7 @@ export function useNoteGallery(count: number) {
       const distance = Math.max(0, track.scrollWidth - viewport.clientWidth)
       setCanScroll(distance > 0)
       const top = Number.parseFloat(getComputedStyle(section).getPropertyValue('--notes-top')) || 80
-      const start = section.getBoundingClientRect().top + window.scrollY - top
+      const start = section.getBoundingClientRect().top + getPageScrollTop() - top
       const pinned = media.matches && distance > 0
       const layoutChanged = pinned !== metrics.current.pinned || distance !== metrics.current.distance
         || top !== metrics.current.top || Math.abs(start - metrics.current.start) > 1
@@ -101,8 +101,8 @@ export function useNoteGallery(count: number) {
     const observer = new ResizeObserver(scheduleMeasure)
     observer.observe(viewport)
     observer.observe(document.body)
-    window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('scrollend', cancelNavigation, { passive: true })
+    window.addEventListener('scroll', schedule, { passive: true, capture: true })
+    window.addEventListener('scrollend', cancelNavigation, { passive: true, capture: true })
     viewport.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', scheduleMeasure)
     for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown']) window.addEventListener(type, cancelNavigation, { passive: true })
@@ -115,8 +115,8 @@ export function useNoteGallery(count: number) {
       syncRef.current = () => {}
       nativeScrollTarget.current = null
       observer.disconnect()
-      window.removeEventListener('scroll', schedule)
-      window.removeEventListener('scrollend', cancelNavigation)
+      window.removeEventListener('scroll', schedule, true)
+      window.removeEventListener('scrollend', cancelNavigation, true)
       viewport.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', scheduleMeasure)
       for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown']) window.removeEventListener(type, cancelNavigation)
@@ -134,10 +134,10 @@ export function useNoteGallery(count: number) {
     const target = targetIndex / Math.max(1, count - 1) * distance
     const behavior = instant || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
     if (pinned) {
-      const targetTop = section.getBoundingClientRect().top + window.scrollY - top + target
+      const targetTop = section.getBoundingClientRect().top + getPageScrollTop() - top + target
       nativeScrollTarget.current = behavior === 'smooth' ? targetTop : null
-      notifyNavigationScroll(behavior === 'smooth' && Math.abs(targetTop - window.scrollY) > 1)
-      window.scrollTo({ top: targetTop, behavior })
+      notifyNavigationScroll(behavior === 'smooth' && Math.abs(targetTop - getPageScrollTop()) > 1)
+      scrollPageTo({ top: targetTop, behavior })
       syncRef.current(true)
     } else {
       viewport.scrollTo({ left: target, behavior })

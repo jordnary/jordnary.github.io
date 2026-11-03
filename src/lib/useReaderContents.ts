@@ -1,3 +1,4 @@
+import { getPageScrollTop, getPageScrollLeft, scrollPageTo, getPageViewportHeight } from './pageScrollSource'
 import { useEffect, useRef, useState } from 'react'
 
 type ContentsController = { open: () => void; close: (focusArticle?: boolean) => void; reset: () => void }
@@ -39,11 +40,13 @@ export function useReaderContents() {
       const leftEdge = viewport?.offsetLeft ?? 0
       const topEdge = viewport?.offsetTop ?? 0
       const width = viewport?.width ?? window.innerWidth
-      const height = viewport?.height ?? window.innerHeight
+      const height = Math.min(viewport?.height ?? window.innerHeight, getPageViewportHeight())
       const panelWidth = Math.min(520, width - 32)
       const left = Math.max(leftEdge + 16, Math.min(anchor.left - 24, leftEdge + width - panelWidth - 16))
       const bottom = Math.max(topEdge + Math.min(320, height - 16), Math.min(anchor.bottom + 12, topEdge + height - 16))
       dialog.style.left = `${left}px`
+      // Top-layer positioning is relative to the browser viewport, not the page scroller.
+      dialog.style.top = 'auto'
       dialog.style.bottom = `${window.innerHeight - bottom}px`
       dialog.style.width = `${panelWidth}px`
       dialog.style.maxHeight = `${bottom - topEdge - 16}px`
@@ -81,7 +84,7 @@ export function useReaderContents() {
       cancelAnimationFrame(focusFrame)
       if (open) {
         focusArticle = false
-        window.scrollTo({ left: window.scrollX, top: window.scrollY, behavior: 'instant' })
+        scrollPageTo({ left: getPageScrollLeft(), top: getPageScrollTop(), behavior: 'instant' })
         position()
         if (!dialog.open) dialog.showModal()
         setTocOpen(true)
@@ -131,7 +134,7 @@ export function useReaderContents() {
     controllerRef.current = { open: () => transition(true), close: article => transition(false, article), reset }
     motion.addEventListener('change', changeMotion)
     window.addEventListener('resize', reposition)
-    window.addEventListener('scroll', reposition, { passive: true })
+    window.addEventListener('scroll', reposition, { passive: true, capture: true })
     window.visualViewport?.addEventListener('resize', reposition)
     window.visualViewport?.addEventListener('scroll', reposition)
     // Keep the existing scrollbar and page geometry while the modal is open.
@@ -144,7 +147,7 @@ export function useReaderContents() {
       controllerRef.current = null
       motion.removeEventListener('change', changeMotion)
       window.removeEventListener('resize', reposition)
-      window.removeEventListener('scroll', reposition)
+      window.removeEventListener('scroll', reposition, true)
       window.visualViewport?.removeEventListener('resize', reposition)
       window.visualViewport?.removeEventListener('scroll', reposition)
       document.removeEventListener('wheel', preventPageScroll, true)

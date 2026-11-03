@@ -1,3 +1,4 @@
+import { scrollPageTo } from '../lib/pageScrollSource'
 import { useRef, useState, type CSSProperties } from 'react'
 import { HomePhotoGallery } from '../components/HomePhotoGallery'
 import { HomeNow } from '../components/HomeNow'
@@ -92,7 +93,7 @@ function HomeEditorial() {
               <BubbleCluster className="home-editorial-now-bubbles" />
               <button className="home-editorial-pill home-editorial-action-link home-editorial-back-to-top" type="button" onClick={() => {
                 rootRef.current?.querySelector<HTMLElement>('#home-editorial-title')?.focus({ preventScroll: true })
-                window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+                scrollPageTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
               }}>
                 <span>返回顶部</span><Arrow />
               </button>

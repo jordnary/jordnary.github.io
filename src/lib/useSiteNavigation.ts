@@ -1,6 +1,6 @@
 import { startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
-import { notifyNavigationScroll } from './pageScrollSource'
+import { notifyNavigationScroll, getPageScrollTop, getPageScrollLeft, scrollPageTo } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
 import type {} from './projectTransitionBoot'
@@ -68,7 +68,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     let active: { id: number; committed: boolean } | null = null
     let revision = 0
     const savePosition = () => {
-      if (!active || active.committed) positions.set(currentKey, { left: window.scrollX, top: window.scrollY })
+      if (!active || active.committed) positions.set(currentKey, { left: getPageScrollLeft(), top: getPageScrollTop() })
     }
     const persistPosition = () => {
       savePosition()
@@ -139,7 +139,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       // Chapter controls update the address and history without aligning the page
       // to their hash target. Direct URLs and ordinary contents links still do.
       const position = sameDocument && anchor.hasAttribute('data-preserve-scroll')
-        ? { left: window.scrollX, top: window.scrollY } : undefined
+        ? { left: getPageScrollLeft(), top: getPageScrollTop() } : undefined
       event.preventDefault()
       persistPosition()
       navigate({ page, href: url.href, focus: true, behavior, position }, () => {
@@ -165,7 +165,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     }
     document.addEventListener('click', click)
     window.addEventListener('popstate', pop)
-    window.addEventListener('scroll', savePosition, { passive: true })
+    window.addEventListener('scroll', savePosition, { passive: true, capture: true })
     // Reload snapshots history before pagehide; save the last position earlier.
     window.addEventListener('beforeunload', persistPosition)
     window.addEventListener('pagehide', persistPosition)
@@ -174,7 +174,7 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
       window.history.scrollRestoration = previousRestoration
       document.removeEventListener('click', click)
       window.removeEventListener('popstate', pop)
-      window.removeEventListener('scroll', savePosition)
+      window.removeEventListener('scroll', savePosition, true)
       window.removeEventListener('beforeunload', persistPosition)
       window.removeEventListener('pagehide', persistPosition)
     }
@@ -210,8 +210,8 @@ export function useSiteNavigation(initialPage: SitePage, prepare?: PrepareNaviga
     const scroll = () => {
       if (interacted) return
       notifyNavigationScroll()
-      if (navigation.position) window.scrollTo({ ...navigation.position, behavior: 'instant' })
-      else if (!scrollToHashTarget({ behavior: navigation.behavior ?? 'instant' }) && navigation.focus) window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      if (navigation.position) scrollPageTo({ ...navigation.position, behavior: 'instant' })
+      else if (!scrollToHashTarget({ behavior: navigation.behavior ?? 'instant' }) && navigation.focus) scrollPageTo({ top: 0, left: 0, behavior: 'instant' })
     }
     scroll()
     const frame = window.requestAnimationFrame(scroll)

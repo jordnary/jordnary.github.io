@@ -1,3 +1,4 @@
+import { getPageScrollTop, getPageScrollLeft, scrollPageTo } from '../lib/pageScrollSource'
 import { useCallback, useLayoutEffect, useRef, type RefObject } from 'react'
 
 export type ReadingVisit = {
@@ -52,8 +53,8 @@ export function useHomeNowReaderMotion(
     const root = document.documentElement
     const previousScrollBehavior = root.style.scrollBehavior
     const scroll = dialog.querySelector<HTMLElement>('.home-now-reader-scroll')!
-    let lockedX = window.scrollX
-    let lockedY = window.scrollY
+    let lockedX = getPageScrollLeft()
+    let lockedY = getPageScrollTop()
     const savedStyles = new Map<HTMLElement, Map<string, { value: string; priority: string }>>()
     let animations: Animation[] = []
     let returnImage: HTMLImageElement | null = null
@@ -97,7 +98,7 @@ export function useHomeNowReaderMotion(
     // with a stable gutter changes vw on classic-scrollbar browsers, resizing
     // the gallery and shifting the page when the modal is removed.
     root.style.scrollBehavior = 'auto'
-    window.scrollTo({ left: lockedX, top: lockedY, behavior: 'instant' })
+    scrollPageTo({ left: lockedX, top: lockedY, behavior: 'instant' })
     const withinReadingArea = (target: EventTarget | null) => target instanceof Node && scroll.contains(target)
     const blockOutsideWheel = (event: WheelEvent) => {
       if (!event.ctrlKey && !withinReadingArea(event.target)) event.preventDefault()
@@ -117,8 +118,8 @@ export function useHomeNowReaderMotion(
       scroll.scrollBy({ top: step, behavior: 'instant' })
     }
     const keepPagePosition = (event: Event) => {
-      if (window.scrollX !== lockedX || window.scrollY !== lockedY) {
-        window.scrollTo({ left: lockedX, top: lockedY, behavior: 'instant' })
+      if (getPageScrollLeft() !== lockedX || getPageScrollTop() !== lockedY) {
+        scrollPageTo({ left: lockedX, top: lockedY, behavior: 'instant' })
         // Existing parallax listeners must never observe the rejected position.
         event.stopImmediatePropagation()
       }
@@ -283,8 +284,8 @@ export function useHomeNowReaderMotion(
     }
 
     const settleMotion = () => {
-      lockedX = window.scrollX
-      lockedY = window.scrollY
+      lockedX = getPageScrollLeft()
+      lockedY = getPageScrollTop()
       if (closing) { generation++; onClose() }
       else if (opening) finishOpening()
     }
@@ -310,7 +311,7 @@ export function useHomeNowReaderMotion(
       }
       if (visit.trigger.isConnected) visit.trigger.focus({ preventScroll: true })
       delete visit.trigger.dataset.nowReturning
-      window.scrollTo({ left: lockedX, top: lockedY, behavior: 'instant' })
+      scrollPageTo({ left: lockedX, top: lockedY, behavior: 'instant' })
       root.style.scrollBehavior = previousScrollBehavior
     }
   }, [dialogRef, visit, onClose])

@@ -1,3 +1,4 @@
+import { getPageScrollTop, getPageViewportHeight } from '../lib/pageScrollSource'
 import { useLayoutEffect, type RefObject } from 'react'
 
 const followTimes = [65, 160]
@@ -52,8 +53,9 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
       lastTime = time
 
       if (layoutDirty) {
-        const { innerWidth: width, innerHeight: height } = window
-        const scrollTop = window.scrollY
+        const width = window.innerWidth
+        const height = getPageViewportHeight()
+        const scrollTop = getPageScrollTop()
         viewportHeight = height
         headingStart = width <= 600 ? -10 : -Math.min(width * .026, 80)
         headingEnd = width <= 600 ? 10 : Math.min(width * .036, 112)
@@ -72,7 +74,7 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
       }
 
       if (targetsDirty) {
-        const scrollTop = window.scrollY
+        const scrollTop = getPageScrollTop()
         // Keep most of the visible path evenly paced, then taper gently through
         // the upper edge. Photos use a separate, near-linear counter-motion.
         sections.forEach(state => {
@@ -141,7 +143,7 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
       if (heading) resizeObserver.observe(heading)
       if (cards) resizeObserver.observe(cards)
     })
-    window.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('scroll', schedule, { passive: true, capture: true })
     window.addEventListener('resize', refreshLayout, { passive: true })
     document.addEventListener('visibilitychange', syncMotion)
     reducedMotion.addEventListener('change', syncMotion)
@@ -152,7 +154,7 @@ export function useHomeSectionParallax(rootRef: RefObject<HTMLDivElement | null>
       disposed = true
       window.cancelAnimationFrame(frame)
       resizeObserver.disconnect()
-      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', refreshLayout)
       document.removeEventListener('visibilitychange', syncMotion)
       reducedMotion.removeEventListener('change', syncMotion)

@@ -11,7 +11,8 @@ async function openArchive(page, baseURL) {
 async function coveredPoint(page) {
   return page.locator('.archive-project-link').first().evaluate(element => {
     const bounds = element.getBoundingClientRect()
-    window.scrollTo({ top: scrollY + bounds.top + 35, behavior: 'instant' })
+    const scroller = matchMedia('(pointer: coarse)').matches ? document.getElementById('site-scroll') : document.documentElement
+    scroller.scrollTo({ top: scroller.scrollTop + bounds.top + 35, behavior: 'instant' })
     return { x: bounds.left + bounds.width * .8, y: 10 }
   })
 }
@@ -86,15 +87,15 @@ export async function runProjectViewportChecks(browser, baseURL, report = () => 
     }
     await phone.setViewportSize({ width: 390, height: 844 })
     await coveredPoint(phone)
-    const before = await phone.evaluate(() => scrollY)
+    const before = await phone.locator('#site-scroll').evaluate(element => element.scrollTop)
     const session = await mobile.newCDPSession(phone)
-    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 382, y: 40, id: 0 }] })
+    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 382, y: 300, id: 0 }] })
     for (let step = 1; step <= 12; step++) await session.send('Input.dispatchTouchEvent', {
-      type: 'touchMove', touchPoints: [{ x: 382, y: 40 + step * 20, id: 0 }],
+      type: 'touchMove', touchPoints: [{ x: 382, y: 300 + step * 20, id: 0 }],
     })
     await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-    await phone.waitForFunction(previous => scrollY < previous, before)
-    report('Tall phones, reduced viewport heights and landscape preserve background coverage; swiping on the mask still scrolls naturally')
+    await phone.waitForFunction(previous => document.getElementById('site-scroll').scrollTop < previous, before)
+    report('Tall phones and landscape preserve background coverage; touch scroll moves content inside the stationary frame')
     assert.deepEqual(errors, [])
   } finally { await mobile.close() }
 }

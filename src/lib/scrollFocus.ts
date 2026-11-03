@@ -1,4 +1,4 @@
-import { notifyNavigationScroll } from './pageScrollSource'
+import { notifyNavigationScroll, getPageScrollTop, scrollPageTo, getPageScroller, getPageViewportHeight } from './pageScrollSource'
 
 type ScrollFocusOptions = {
   /** Preferred viewport position; omitted for touch and keyboard activation. */
@@ -20,7 +20,7 @@ export function scrollAndFocus(target: HTMLElement, { viewportY }: ScrollFocusOp
   let cancelled = false
   const events = new AbortController()
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
-  const startY = window.scrollY
+  const startY = getPageScrollTop()
   const startTime = performance.now()
   notifyNavigationScroll()
 
@@ -30,15 +30,15 @@ export function scrollAndFocus(target: HTMLElement, { viewportY }: ScrollFocusOp
     const topInset = Math.max(24, Number.parseFloat(style.scrollMarginTop) || 0)
     const bottomInset = Math.max(24, Number.parseFloat(style.scrollMarginBottom) || 0)
     const minY = topInset + rect.height / 2
-    const maxY = Math.max(minY, window.innerHeight - bottomInset - rect.height / 2)
-    const availableHeight = Math.max(0, window.innerHeight - topInset - bottomInset)
+    const maxY = Math.max(minY, getPageViewportHeight() - bottomInset - rect.height / 2)
+    const availableHeight = Math.max(0, getPageViewportHeight() - topInset - bottomInset)
     // Keep some project context above the button even for clicks near the top.
     const readingTop = Math.max(minY, topInset + availableHeight * 0.35)
     const readingBottom = Math.max(readingTop, Math.min(maxY, topInset + availableHeight * 0.8))
-    const preferredY = viewportY ?? (topInset + window.innerHeight - bottomInset) / 2
+    const preferredY = viewportY ?? (topInset + getPageViewportHeight() - bottomInset) / 2
     const alignedY = Math.max(readingTop, Math.min(preferredY, readingBottom))
-    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight)
-    return Math.max(0, Math.min(window.scrollY + rect.top + rect.height / 2 - alignedY, maxScroll))
+    const maxScroll = Math.max(0, getPageScroller().scrollHeight - getPageViewportHeight())
+    return Math.max(0, Math.min(getPageScrollTop() + rect.top + rect.height / 2 - alignedY, maxScroll))
   }
 
   const cancel = () => {
@@ -75,7 +75,7 @@ export function scrollAndFocus(target: HTMLElement, { viewportY }: ScrollFocusOp
 
   const distance = Math.abs(destination() - startY)
   if (motionPreference.matches || distance < 1) {
-    window.scrollTo({ top: destination(), behavior: 'instant' })
+    scrollPageTo({ top: destination(), behavior: 'instant' })
     finish()
     return cancel
   }
@@ -88,7 +88,7 @@ export function scrollAndFocus(target: HTMLElement, { viewportY }: ScrollFocusOp
     // Quintic smoothstep has zero velocity and acceleration at both ends.
     const eased = progress ** 3 * (progress * (progress * 6 - 15) + 10)
     // Remeasure while the card's entrance animation settles.
-    window.scrollTo({ top: startY + (destination() - startY) * eased, behavior: 'instant' })
+    scrollPageTo({ top: startY + (destination() - startY) * eased, behavior: 'instant' })
     if (progress < 1) frame = window.requestAnimationFrame(tick)
     else finish()
   }

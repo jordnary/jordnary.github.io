@@ -1,11 +1,12 @@
+import { getPageScrollTop, getPageScrollLeft, scrollPageTo, getPageScroller } from '../../lib/pageScrollSource'
 import { useLayoutEffect, type PropsWithChildren } from 'react'
 
 export function GalleryScrollLock({ children }: PropsWithChildren) {
   useLayoutEffect(() => {
-    const root = document.documentElement
+    const root = getPageScroller()
     const scrollBehavior = root.style.scrollBehavior
-    const left = window.scrollX
-    const top = window.scrollY
+    const left = getPageScrollLeft()
+    const top = getPageScrollTop()
     const ancestors = new Map<HTMLElement, { left: number; top: number }>()
     // Focus restoration can also move an article's independent scroll container.
     for (let element = document.activeElement?.parentElement; element && element !== root; element = element.parentElement) {
@@ -19,8 +20,8 @@ export function GalleryScrollLock({ children }: PropsWithChildren) {
     root.style.scrollBehavior = 'auto'
     const restorePosition = () => {
       let moved = false
-      if (window.scrollX !== left || window.scrollY !== top) {
-        window.scrollTo({ left, top, behavior: 'instant' })
+      if (getPageScrollLeft() !== left || getPageScrollTop() !== top) {
+        scrollPageTo({ left, top, behavior: 'instant' })
         moved = true
       }
       for (const [element, position] of ancestors) {
@@ -32,7 +33,7 @@ export function GalleryScrollLock({ children }: PropsWithChildren) {
       return moved
     }
     // Stop any smooth scroll already in progress when the image is opened.
-    window.scrollTo({ left, top, behavior: 'instant' })
+    scrollPageTo({ left, top, behavior: 'instant' })
     const keepPosition = (event: Event) => {
       if (restorePosition()) event.stopImmediatePropagation()
     }

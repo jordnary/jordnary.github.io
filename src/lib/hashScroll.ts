@@ -1,4 +1,4 @@
-import { notifyNavigationScroll } from './pageScrollSource'
+import { notifyNavigationScroll, getPageScrollTop, scrollPageTo } from './pageScrollSource'
 
 export function getHashTargetId(hash = window.location.hash) {
   if (!hash || hash === '#') {
@@ -53,11 +53,11 @@ export function scrollToElementId(
 function scrollToElement(targetElement: HTMLElement, behavior: ScrollBehavior) {
   const scrollMarginTop =
     Number.parseFloat(window.getComputedStyle(targetElement).scrollMarginTop) || 0
-  const targetTop = targetElement.getBoundingClientRect().top + window.scrollY - scrollMarginTop
+  const targetTop = targetElement.getBoundingClientRect().top + getPageScrollTop() - scrollMarginTop
 
   const smooth = behavior === 'smooth' || (behavior === 'auto' && getComputedStyle(document.documentElement).scrollBehavior === 'smooth')
-  notifyNavigationScroll(smooth && Math.abs(targetTop - window.scrollY) > 1)
-  window.scrollTo({
+  notifyNavigationScroll(smooth && Math.abs(targetTop - getPageScrollTop()) > 1)
+  scrollPageTo({
     behavior,
     top: Math.max(targetTop, 0),
   })

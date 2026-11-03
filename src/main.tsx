@@ -10,7 +10,7 @@ import { preparePage } from './lib/page-loaders'
 const initialPage = preparePage(new URL(window.location.href))
 if (window.__projectTransitionBoot?.status === 'active') void initialPage?.catch(() => {})
 else await initialPage
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('site-scroll')!).render(
   <StrictMode>
     <App page={getPageFromDocument()} />
   </StrictMode>,

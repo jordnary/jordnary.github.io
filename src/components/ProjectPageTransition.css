@@ -23,6 +23,15 @@
   pointer-events: none;
 }
 
+/* This stylesheet is also inlined in the HTML. Bound the reload dialog before
+   the shared viewport stylesheet or the application module has downloaded. */
+@media (pointer: coarse) {
+  .project-page-transition {
+    max-height: 100svh;
+    clip-path: inset(0);
+  }
+}
+
 .project-page-transition-paper,
 .project-page-transition-lines,
 .project-page-transition-copy {

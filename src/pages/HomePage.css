@@ -39,7 +39,7 @@
 .home-editorial-content { position: relative; }
 
 /* A paper-white first paint gives way to three lines of type and rising liquid. */
-.home-editorial-hero { position: relative; height: calc(100svh - var(--nav-height) - 1px); min-height: 620px; background: var(--home-paper); }
+.home-editorial-hero { position: relative; height: calc(var(--site-viewport-height, 100svh) - var(--nav-height) - 1px); min-height: 620px; background: var(--home-paper); }
 /* Include the navigation area in the artwork's coordinates to preserve its first-screen composition. */
 .home-editorial-hero-surface { position: absolute; inset: calc(0px - var(--nav-height) - 1px) 0 0; overflow: hidden; }
 .home-editorial-liquid { position: absolute; inset: 0 0 -1px; }
@@ -252,7 +252,7 @@
 
 @media (max-width: 600px) {
   .home-editorial { --home-gutter: 22px; }
-  .home-editorial-hero { height: calc(100svh - var(--nav-height) - 1px); min-height: 570px; max-height: 1000px; }
+  .home-editorial-hero { height: calc(var(--site-viewport-height, 100svh) - var(--nav-height) - 1px); min-height: 570px; max-height: 1000px; }
   .home-editorial-headlines { top: 33%; }
   .home-editorial-line { font-size: clamp(58px, 14.2vw, 85px); line-height: .97; }
   .home-editorial-line--1 .home-editorial-line-enter { margin-left: -52vw; }

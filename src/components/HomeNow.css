@@ -23,7 +23,7 @@
   position: fixed;
   inset: 0;
   /* Fit both viewport axes without stretching the woodland artwork. */
-  width: min(1120px, calc(100% - var(--now-gutter-x)), calc((100dvh - var(--now-gutter-y)) * var(--now-ratio)));
+  width: min(1120px, calc(100% - var(--now-gutter-x)), calc((var(--site-viewport-height, 100dvh) - var(--now-gutter-y)) * var(--now-ratio)));
   height: auto;
   aspect-ratio: var(--now-ratio);
   container-type: inline-size;

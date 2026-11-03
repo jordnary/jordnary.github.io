@@ -136,7 +136,8 @@ async function assertReleased(page) {
   assert.equal(await page.locator('.app-shell').evaluate(shell => shell.inert), false)
   assert.equal(await page.evaluate(() => document.activeElement === document.querySelector('main')), true,
     'Navigation returns focus to the newly rendered main content')
-  assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).overflowY), 'hidden',
+  assert.notEqual(await page.evaluate(() => getComputedStyle(matchMedia('(pointer: coarse)').matches
+    ? document.getElementById('site-scroll') : document.body).overflowY), 'hidden',
     'Transition and menu cleanup release the scroll lock')
 }
 
@@ -383,7 +384,7 @@ export async function runProjectPageTransitionReloadChecks(browser, baseURL) {
         .filter(overlay => getComputedStyle(overlay).display !== 'none')
       const hit = document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('.project-page-transition')
       const overlay = visible.includes(hit) ? hit : visible.at(-1)
-      const root = document.getElementById('root')
+      const root = document.getElementById('site-scroll')
       const common = { at: performance.now(), frame, rootExists: Boolean(root), rootChildren: root?.childElementCount ?? 0 }
       if (!overlay) {
         probe.samples.push({ ...common, visible: false })
@@ -413,7 +414,7 @@ export async function runProjectPageTransitionReloadChecks(browser, baseURL) {
     }
     const tick = () => {
       const visible = sample(true)
-      const rendered = document.getElementById('root')?.childElementCount
+      const rendered = document.getElementById('site-scroll')?.childElementCount
       idleFrames = !visible && rendered ? idleFrames + 1 : 0
       if (idleFrames < 2) requestAnimationFrame(tick)
     }
@@ -528,12 +529,12 @@ export async function runProjectPageTransitionReloadChecks(browser, baseURL) {
       // examining the independent HTML bootstrap before React can execute.
       const reloaded = page.reload({ waitUntil: 'domcontentloaded' }).then(() => null, error => error)
       await requestedMain
-      await page.waitForFunction(elapsed => document.getElementById('root')
+      await page.waitForFunction(elapsed => document.getElementById('site-scroll')
         && window.__projectTransitionBoot
         && document.timeline.currentTime - window.__projectTransitionBoot.startedAt >= elapsed,
       releaseAt, { timeout: 10000 })
       const pending = await page.evaluate(() => ({
-        rootChildren: document.getElementById('root').childElementCount,
+        rootChildren: document.getElementById('site-scroll').childElementCount,
         samples: window.__projectReloadTransitions.samples.filter(sample => sample.frame && sample.rootExists),
       }))
       assert.equal(pending.rootChildren, 0, 'The main module remains blocked before React mounts')

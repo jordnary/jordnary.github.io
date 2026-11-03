@@ -362,7 +362,7 @@
 .learning-studio :is(button, a, select):focus-visible, .learning-note-reader :is(button, a, summary, pre):focus-visible { outline: 2px solid var(--study-accent); outline-offset: 4px; }
 
 /* Reveal the paper early so its expansion stays visible after the fade-in. */
-.learning-note-reader { --note-reader-max-height: calc(100dvh - 3rem); --note-reader-font-scale: 1; width: min(780px, calc(100vw - 2rem)); max-height: var(--note-reader-max-height); padding: 0; margin: auto; overflow: hidden; border: 1px solid var(--study-rule); border-radius: 4px; background: var(--study-paper); box-shadow: 0 24px 100px rgb(0 0 0 / 0.35); opacity: 1; transform: scale(1); transform-origin: center; transition: transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 180ms ease-out; }
+.learning-note-reader { --note-reader-max-height: calc(var(--site-viewport-height, 100dvh) - 3rem); --note-reader-font-scale: 1; width: min(780px, calc(100vw - 2rem)); max-height: var(--note-reader-max-height); padding: 0; margin: auto; overflow: hidden; border: 1px solid var(--study-rule); border-radius: 4px; background: var(--study-paper); box-shadow: 0 24px 100px rgb(0 0 0 / 0.35); opacity: 1; transform: scale(1); transform-origin: center; transition: transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 180ms ease-out; }
 .note-reader-scroll { max-height: calc(var(--note-reader-max-height) - 2px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; scrollbar-gutter: auto; }
 .note-reader-scroll::-webkit-scrollbar { display: none; }
 .learning-note-reader::backdrop { background: rgb(3 12 20 / 0.78); backdrop-filter: blur(8px); opacity: 1; transition: opacity 320ms ease; }
@@ -418,8 +418,8 @@ html:not([data-input-modality='pointer']) .note-reader-masthead button:focus-vis
 .note-reader-font-controls button:disabled { opacity: 0.35; cursor: default; }
 
 @media (min-width: 900px) and (min-height: 620px) and (prefers-reduced-motion: no-preference) {
-  .notes-gallery[data-pinned="true"] { height: calc(100svh - var(--notes-top) + var(--notes-travel)); padding-bottom: 0; }
-  .notes-gallery[data-pinned="true"] .notes-sticky { position: sticky; top: var(--notes-top); height: calc(100svh - var(--notes-top)); display: flex; flex-direction: column; justify-content: center; }
+  .notes-gallery[data-pinned="true"] { height: calc(var(--site-viewport-height, 100svh) - var(--notes-top) + var(--notes-travel)); padding-bottom: 0; }
+  .notes-gallery[data-pinned="true"] .notes-sticky { position: sticky; top: var(--notes-top); height: calc(var(--site-viewport-height, 100svh) - var(--notes-top)); display: flex; flex-direction: column; justify-content: center; }
   .notes-gallery[data-pinned="true"] .notes-viewport { flex: 1; min-height: 0; max-height: 556px; overflow: clip; }
   .notes-gallery[data-pinned="true"] .notes-track { height: 100%; will-change: transform; }
   .notes-gallery[data-pinned="true"] .note-exhibit, .notes-gallery[data-pinned="true"] .note-cover { height: 100%; }
@@ -511,7 +511,7 @@ html:not([data-input-modality='pointer']) .note-reader-masthead button:focus-vis
   .learning-studio .timeline-card-content { padding: 1.35rem 1.1rem 1.5rem; }
   .learning-loop-note { flex-wrap: wrap; font-size: 0.7rem; }
   .learning-loop-note a { width: 100%; margin-left: 2rem; }
-  .learning-note-reader { --note-reader-max-height: calc(100dvh - 1rem); width: calc(100vw - 1rem); }
+  .learning-note-reader { --note-reader-max-height: calc(var(--site-viewport-height, 100dvh) - 1rem); width: calc(100vw - 1rem); }
 }
 
 @media (max-width: 600px) {

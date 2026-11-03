@@ -1,0 +1,88 @@
+/* Loaded by every HTML entry before the application can paint. Safari owns its
+   toolbar; keep the document stationary and scroll only inside the small viewport.
+   viewport-fit=contain lets the browser reserve the notch and home-indicator area. */
+@media (pointer: coarse) {
+  :root {
+    --site-viewport-height: 100svh;
+  }
+
+  html,
+  html body {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html body {
+    position: fixed;
+    inset: 0;
+  }
+
+  #root {
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--site-viewport-height);
+    overflow: hidden;
+    /* Establish one fixed containing block for backgrounds, navigation and controls.
+       Clip the compositor layer too, including during momentum scroll and reload. */
+    transform: translateZ(0);
+    clip-path: inset(0);
+    isolation: isolate;
+  }
+
+  #site-scroll {
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    scroll-behavior: smooth;
+  }
+
+  body:has(dialog[open]) #site-scroll,
+  body:has(.image-gallery) #site-scroll,
+  body:has(.is-search-open) #site-scroll,
+  body.homepage-portal-active #site-scroll {
+    overflow: hidden;
+  }
+
+  #root :is(.app-shell, .app-shell-content, .projects-archive, .project-reader, .project-studio) {
+    min-height: var(--site-viewport-height);
+  }
+
+  #root :is(.archive-background, .archive-header-mask, .homepage-portal) {
+    height: var(--site-viewport-height);
+  }
+
+  /* Modal dialogs enter the browser's top layer and need the same boundary. */
+  html :is(dialog.archive-menu, dialog.mobile-nav-dialog, dialog.project-page-transition) {
+    inset: 0 0 auto;
+    width: 100%;
+    height: var(--site-viewport-height);
+    max-height: var(--site-viewport-height);
+    transform: translateZ(0);
+    clip-path: inset(0);
+  }
+
+  html body .archive-menu-content {
+    overscroll-behavior: contain;
+  }
+
+  html body :is(dialog.learning-note-reader, dialog.home-now-reader) {
+    top: calc(var(--site-viewport-height) / 2);
+    bottom: auto;
+    margin-block: 0;
+    translate: 0 -50%;
+  }
+
+  html body .archive-menu button.archive-menu-toggle {
+    position: absolute;
+  }
+
+  html body .image-gallery {
+    bottom: auto;
+    height: var(--site-viewport-height);
+  }
+}

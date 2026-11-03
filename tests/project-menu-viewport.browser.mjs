@@ -11,7 +11,7 @@ const startProbe = page => page.evaluate(() => {
   const sample = () => {
     const button = document.querySelector('button[aria-label="Open menu"]')
     const rect = button.getBoundingClientRect()
-    probe.samples.push({ y: rect.y, bottom: rect.bottom, height: innerHeight, scroll: scrollY,
+    probe.samples.push({ y: rect.y, bottom: rect.bottom, height: innerHeight, scroll: document.getElementById('site-scroll').scrollTop,
       body: document.querySelector('.project-reader-scroll')?.scrollTop ?? 0 })
     probe.frame = requestAnimationFrame(sample)
   }
@@ -41,7 +41,7 @@ export async function runProjectMenuViewportChecks(browser, baseURL, report = ()
     await page.evaluate(async () => {
       const article = document.querySelector('.project-reader-scroll')
       for (const top of [0, 80, 200, 120, 0]) {
-        window.scrollTo({ top, behavior: 'instant' })
+        document.getElementById('site-scroll').scrollTo({ top, behavior: 'instant' })
         article.scrollTop = top
         await new Promise(resolve => requestAnimationFrame(resolve))
       }

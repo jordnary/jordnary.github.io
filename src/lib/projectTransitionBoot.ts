@@ -58,7 +58,7 @@ export function bootstrapProjectTransition(motion: typeof projectTransitionMotio
   }
   const syncViewport = () => {
     overlay.style.width = `${window.innerWidth}px`
-    overlay.style.height = `${window.innerHeight}px`
+    overlay.style.height = `var(--site-viewport-height, ${window.innerHeight}px)`
     overlay.style.setProperty('--transition-viewport-width', `${window.innerWidth}px`)
   }
   const skip = () => boot.dispose('skipped')

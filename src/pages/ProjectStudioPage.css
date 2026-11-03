@@ -9,7 +9,7 @@
   --studio-gallery-height: 36.1svh;
   position: relative;
   isolation: isolate;
-  min-height: 100svh;
+  min-height: var(--site-viewport-height, 100svh);
   overflow: clip;
   color: var(--studio-ink);
   background: var(--studio-paper);

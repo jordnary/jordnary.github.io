@@ -7,6 +7,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       viewport: { width: mobile ? 390 : 1440, height: 844 }, isMobile: mobile, hasTouch: mobile,
     })
     await context.addInitScript(() => {
+      window.navPage = () => matchMedia('(pointer: coarse)').matches ? document.getElementById('site-scroll') : document.documentElement
       sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
       sessionStorage.setItem('site-live2d-collapsed-mobile', 'true')
       window.navTouchMoves = 0
@@ -19,7 +20,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
     const hidden = () => page.locator('.nav-shell').evaluate(el => el.classList.contains('is-hidden'))
     const settle = () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     const move = async amount => {
-      const before = await page.evaluate(() => scrollY)
+      const before = await page.evaluate(() => window.navPage().scrollTop)
       if (mobile) {
         const point = y => [{ x: 195, y, id: 1 }]
         await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: point(620) })
@@ -35,7 +36,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
         await page.mouse.move(20, 500)
         await page.mouse.wheel(0, amount)
       }
-      await page.waitForFunction(previous => Math.abs(scrollY - previous) >= 1, before)
+      await page.waitForFunction(previous => Math.abs(window.navPage().scrollTop - previous) >= 1, before)
       await settle()
     }
     const watch = () => page.evaluate(() => {
@@ -50,7 +51,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       assert.equal(await hidden(), false, reason)
       assert.ok(await page.evaluate(() => window.navHiddenFrames.every(value => !value)), `${reason}: no hidden frame during movement`)
     }
-    const waitAt = top => page.waitForFunction(value => Math.abs(scrollY - value) < 4, top)
+    const waitAt = top => page.waitForFunction(value => Math.abs(window.navPage().scrollTop - value) < 4, top)
     const clickRoute = href => page.locator(`.nav-link[href="${href}"]`).evaluate(el => el.click())
     try {
       await page.goto(new URL('about/', baseURL).href)
@@ -60,18 +61,18 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       await page.evaluate(() => {
         window.navFirstUpAt = null
         window.navRevealedAt = null
-        let previous = scrollY
+        let previous = window.navPage().scrollTop
         const onScroll = () => {
-          if (scrollY < previous && window.navFirstUpAt === null) window.navFirstUpAt = performance.now()
-          previous = scrollY
+          if (window.navPage().scrollTop < previous && window.navFirstUpAt === null) window.navFirstUpAt = performance.now()
+          previous = window.navPage().scrollTop
         }
-        window.addEventListener('scroll', onScroll, { passive: true })
+        window.addEventListener('scroll', onScroll, { passive: true, capture: true })
         const header = document.querySelector('.nav-shell')
         const observer = new MutationObserver(() => {
           if (!header.classList.contains('is-hidden') && window.navFirstUpAt !== null) {
             window.navRevealedAt = performance.now()
             observer.disconnect()
-            window.removeEventListener('scroll', onScroll)
+            window.removeEventListener('scroll', onScroll, true)
           }
         })
         observer.observe(header, { attributes: true, attributeFilter: ['class'] })
@@ -92,7 +93,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       pass(`${label}: real input stabilizes short reading gestures, promptly hides on sustained browsing and reveals on upward movement`)
 
       // Prime manual input immediately before each automatic navigation.
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+      await page.evaluate(() => window.navPage().scrollTo({ top: 0, behavior: 'instant' }))
       await settle()
       await move(40)
       await watch()
@@ -105,7 +106,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       await staysVisible(`${label}: same-page smooth anchor jump does not hide`)
       await move(250)
       assert.equal(await hidden(), true, `${label}: manual input resumes immediately after the anchor jump`)
-      const savedTop = await page.evaluate(() => scrollY)
+      const savedTop = await page.evaluate(() => window.navPage().scrollTop)
       await clickRoute('/learning/')
       await page.waitForFunction(() => document.body.dataset.page === 'learning')
       await waitAt(0)
@@ -142,11 +143,11 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
       await page.goto(new URL('about/', baseURL).href)
       await page.locator('.journey-scroll-link').waitFor()
       await page.locator('.journey-scroll-link').evaluate(el => el.click())
-      await page.waitForFunction(() => scrollY > 30)
+      await page.waitForFunction(() => window.navPage().scrollTop > 30)
       await move(mobile ? -70 : -40)
-      const interruptedTop = await page.evaluate(() => scrollY)
+      const interruptedTop = await page.evaluate(() => window.navPage().scrollTop)
       await page.waitForTimeout(350)
-      assert.ok(Math.abs(await page.evaluate(() => scrollY) - interruptedTop) < 4, `${label}: a manual gesture cancels the old smooth destination`)
+      assert.ok(Math.abs(await page.evaluate(() => window.navPage().scrollTop) - interruptedTop) < 4, `${label}: a manual gesture cancels the old smooth destination`)
       assert.equal(await hidden(), false)
       pass(`${label}: manual upward input interrupts an automatic jump without waiting`)
 
@@ -158,12 +159,12 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
         await page.keyboard.press('PageDown')
         await page.waitForFunction(() => document.querySelector('.nav-shell').classList.contains('is-hidden'))
         await page.evaluate(async () => {
-          let previous = scrollY
+          let previous = window.navPage().scrollTop
           let stable = 0
           while (stable < 4) {
             await new Promise(resolve => requestAnimationFrame(resolve))
-            stable = scrollY === previous ? stable + 1 : 0
-            previous = scrollY
+            stable = window.navPage().scrollTop === previous ? stable + 1 : 0
+            previous = window.navPage().scrollTop
           }
         })
         await page.keyboard.press('ArrowUp')
@@ -174,7 +175,7 @@ export async function runNavbarScrollChecks(browser, baseURL, pass, modes = [fal
           await clickRoute('/about/')
           await waitAt(0)
           await page.mouse.click(1440 - scrollbar / 2, 500)
-          await page.waitForFunction(() => scrollY > 120 && document.querySelector('.nav-shell').classList.contains('is-hidden'))
+          await page.waitForFunction(() => window.navPage().scrollTop > 120 && document.querySelector('.nav-shell').classList.contains('is-hidden'))
           pass('Desktop: native scrollbar input is recognized after automatic navigation')
         }
       }

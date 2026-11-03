@@ -1,3 +1,4 @@
+import { getPageScrollTop, getPageViewportHeight } from '../lib/pageScrollSource'
 import { useLayoutEffect, type RefObject } from 'react'
 
 export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>) {
@@ -55,7 +56,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
           headingReveals.get(entry.target as HTMLHeadingElement)?.classList.add('is-revealed')
           headingObserver?.unobserve(entry.target)
         })
-      }, { rootMargin: `0px 0px -${Math.round(browser.innerHeight * .16)}px 0px`, threshold: 0 })
+      }, { rootMargin: `0px 0px -${Math.round(getPageViewportHeight() * .16)}px 0px`, threshold: 0 })
       headingReveals.forEach((node, heading) => {
         if (!node.classList.contains('is-revealed')) headingObserver?.observe(heading)
       })
@@ -73,20 +74,20 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
         return
       }
       const { height } = hero.getBoundingClientRect()
-      const heroTravel = Math.min(height + browser.innerHeight, Math.max(0, browser.scrollY))
+      const heroTravel = Math.min(height + getPageViewportHeight(), Math.max(0, getPageScrollTop()))
       // The reference type starts drifting after the first 15% of a screen.
       // Ease out to a bounded offset while the caption stays in document coordinates.
-      const headlineProgress = Math.min(1, Math.max(0, (heroTravel / browser.innerHeight - .15) / .55))
-      const headlineTravel = browser.innerHeight * .112 * headlineProgress * (2 - headlineProgress)
+      const headlineProgress = Math.min(1, Math.max(0, (heroTravel / getPageViewportHeight() - .15) / .55))
+      const headlineTravel = getPageViewportHeight() * .112 * headlineProgress * (2 - headlineProgress)
       const introBounds = intro?.getBoundingClientRect()
       const introTravel = introBounds
-        ? Math.max(-browser.innerHeight, Math.min(browser.innerHeight, browser.innerHeight / 2 - introBounds.top - introBounds.height / 2))
+        ? Math.max(-getPageViewportHeight(), Math.min(getPageViewportHeight(), getPageViewportHeight() / 2 - introBounds.top - introBounds.height / 2))
         : 0
       // The stationary section row reproduces the measured reference path without
       // depending on an action link. Viewport position drives each bubble pair.
       const sectionTravel = sectionBubbleAnchors.map(({ node, property }) => {
         const bounds = node?.getBoundingClientRect()
-        return { property, travel: bounds ? browser.innerHeight / 2 - bounds.top - bounds.height / 2 : 0 }
+        return { property, travel: bounds ? getPageViewportHeight() / 2 - bounds.top - bounds.height / 2 : 0 }
       })
       root.style.setProperty('--home-headline-travel', `${headlineTravel.toFixed(2)}px`)
       root.style.setProperty('--home-hero-travel', `${heroTravel.toFixed(2)}px`)
@@ -140,7 +141,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
 
       if (hero) {
         const bounds = hero.getBoundingClientRect()
-        root.dataset.heroVisible = String(bounds.bottom > 120 && bounds.top < browser.innerHeight)
+        root.dataset.heroVisible = String(bounds.bottom > 120 && bounds.top < getPageViewportHeight())
         heroObserver = new browser.IntersectionObserver(entries => {
           if (disposed) return
           root.dataset.heroVisible = String(entries.some(entry => entry.isIntersecting))
@@ -156,7 +157,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
 
     // CSS only hides unrevealed content after its observer has been installed.
     root.dataset.revealReady = 'true'
-    browser.addEventListener('scroll', scheduleScroll, { passive: true })
+    browser.addEventListener('scroll', scheduleScroll, { passive: true, capture: true })
     browser.addEventListener('resize', scheduleScroll, { passive: true })
     browser.addEventListener('resize', observeHeadings, { passive: true })
     ownerDocument.addEventListener('visibilitychange', updateMotion)
@@ -169,7 +170,7 @@ export function useHomeEditorialMotion(rootRef: RefObject<HTMLDivElement | null>
       revealObserver?.disconnect()
       headingObserver?.disconnect()
       heroObserver?.disconnect()
-      browser.removeEventListener('scroll', scheduleScroll)
+      browser.removeEventListener('scroll', scheduleScroll, true)
       browser.removeEventListener('resize', scheduleScroll)
       browser.removeEventListener('resize', observeHeadings)
       ownerDocument.removeEventListener('visibilitychange', updateMotion)

@@ -11,7 +11,7 @@
   --archive-project-edge: 18px;
   position: relative;
   isolation: isolate;
-  min-height: 100svh;
+  min-height: var(--site-viewport-height, 100svh);
   padding: calc(max(175px, 23.7vh) + var(--archive-safe-top)) 0 calc(8vh + var(--archive-safe-bottom));
   color: var(--archive-ink);
   font-family: 'Projects Serif', 'Times New Roman', serif;
@@ -56,7 +56,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   outline-offset: 7px;
 }
 
-.archive-background, .archive-header-mask, .archive-footer-mask {
+.archive-background, .archive-header-mask {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -72,7 +72,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   z-index: -1;
 }
 
-.archive-header-mask, .archive-footer-mask {
+.archive-header-mask {
   z-index: 3;
   /* The covered list must be excluded from hit testing as well as painting. */
   pointer-events: auto;
@@ -82,11 +82,6 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 .archive-header-mask {
   clip-path: inset(0 0 calc(100% - var(--archive-header-bottom)) 0);
-}
-
-.archive-footer-mask {
-  /* Share the full-size artwork crop: the browser edge never reveals a solid strip. */
-  clip-path: inset(max(0px, calc(var(--archive-viewport-bottom, 100dvh) - var(--archive-safe-bottom))) 0 0);
 }
 
 .archive-wordmark {
@@ -326,8 +321,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
     transform: translate3d(0, 0, 0) rotate(180deg);
     backface-visibility: hidden;
     will-change: transform;
-    /* Native bottom anchoring follows browser chrome on the compositor. Do not
-       chase visualViewport events with a second, delayed transform animation. */
+    /* Anchor to the shared stationary frame, independent of document scrolling. */
     bottom: max(24px, var(--menu-safe-bottom));
   }
   .projects-archive button.archive-menu-toggle {
@@ -342,7 +336,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
   position: fixed;
   inset: 0;
   width: 100%;
-  height: 100dvh;
+  height: var(--site-viewport-height, 100dvh);
   max-width: none;
   max-height: none;
   margin: 0;
@@ -443,7 +437,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
     padding-top: calc(210px + var(--archive-safe-top));
     padding-bottom: calc(60px + var(--archive-safe-bottom));
   }
-  .archive-background, .archive-header-mask, .archive-footer-mask {
+  .archive-background, .archive-header-mask {
     object-position: 48% center;
     background-position: 48% center;
   }

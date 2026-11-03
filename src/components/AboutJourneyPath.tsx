@@ -1,3 +1,4 @@
+import { getPageScrollTop, getPageViewportHeight } from '../lib/pageScrollSource'
 import { useId, useLayoutEffect, useRef, type RefObject } from 'react'
 import { createChapterMotion } from './aboutJourneyMotion'
 
@@ -34,7 +35,7 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
     let frame = 0
     let needsMeasure = true
     let disposed = false
-    let previousScrollY = Math.max(0, window.scrollY)
+    let previousScrollY = Math.max(0, getPageScrollTop())
     let scrollDirection: 'up' | 'down' = 'down'
     let motionInitialized = false
 
@@ -114,8 +115,8 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
       if (needsMeasure) { measure(); needsMeasure = false }
       if (!length) return
       const containerTop = container.getBoundingClientRect().top
-      const viewportHeight = window.innerHeight
-      const scrollY = Math.max(0, window.scrollY)
+      const viewportHeight = getPageViewportHeight()
+      const scrollY = Math.max(0, getPageScrollTop())
       if (scrollY !== previousScrollY) scrollDirection = scrollY < previousScrollY ? 'up' : 'down'
       previousScrollY = scrollY
       const readingY = viewportHeight * 0.86 - containerTop
@@ -156,16 +157,16 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
       const nextAnimated = !compactLayout.matches && !reducedMotion.matches
       if (motionInitialized && animated === nextAnimated) { resize(); return }
       animated = nextAnimated
-      previousScrollY = Math.max(0, window.scrollY)
+      previousScrollY = Math.max(0, getPageScrollTop())
       container.dataset.motion = animated ? 'animated' : 'static'
       motion.forEach((controller, index) => {
         // Switching back from a static layout must not replay visible or earlier cards.
-        const alreadyInView = motionInitialized && nodes[index].getBoundingClientRect().top <= window.innerHeight
+        const alreadyInView = motionInitialized && nodes[index].getBoundingClientRect().top <= getPageViewportHeight()
         controller.reset(!animated || alreadyInView)
       })
       motionInitialized = true
-      window.removeEventListener('scroll', schedule)
-      if (animated) window.addEventListener('scroll', schedule, { passive: true })
+      window.removeEventListener('scroll', schedule, true)
+      if (animated) window.addEventListener('scroll', schedule, { passive: true, capture: true })
       resize()
     }
     const observer = new ResizeObserver(resize)
@@ -190,7 +191,7 @@ export function AboutJourneyPath({ containerRef }: { containerRef: RefObject<HTM
         chapter.style.removeProperty('--node-offset')
       })
       observer.disconnect()
-      window.removeEventListener('scroll', schedule)
+      window.removeEventListener('scroll', schedule, true)
       window.removeEventListener('resize', resize)
       reducedMotion.removeEventListener('change', syncMotionMode)
       compactLayout.removeEventListener('change', syncMotionMode)

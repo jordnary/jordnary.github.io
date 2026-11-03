@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from 'react'
+import { getMobilePageScroller } from '../lib/pageScrollSource'
 import { motion, useScroll, useTransform, type MotionStyle, type MotionValue } from 'motion/react'
 import { LearningCoverOutline } from './LearningCoverOutline'
 import { LearningToolkit } from './LearningToolkit'
@@ -180,10 +181,14 @@ export function LearningHeroScene() {
   const artRef = useRef<HTMLDivElement>(null)
   const narrativeRef = useRef<HTMLDivElement>(null)
   const staticScene = useSyncExternalStore(subscribeMotionPreference, () => window.matchMedia(reducedMotionQuery).matches, () => true)
+  const scrollContainer = useMemo(() => {
+    const current = getMobilePageScroller()
+    return current ? { current } : undefined
+  }, [])
   // Shift both ends equally so the tower starts alongside the third-to-last
   // text line while retaining its original scroll distance and reveal speed.
-  const { scrollYProgress } = useScroll({ target: artRef, offset: ['start 65%', 'end 55%'] })
-  const { scrollYProgress: textProgress } = useScroll({ target: narrativeRef, offset: ['start 82%', 'center 60%'] })
+  const { scrollYProgress } = useScroll({ container: scrollContainer, target: artRef, offset: ['start 65%', 'end 55%'] })
+  const { scrollYProgress: textProgress } = useScroll({ container: scrollContainer, target: narrativeRef, offset: ['start 82%', 'center 60%'] })
   // Opposing transforms keep the architecture still. The erosion phase follows
   // scroll position, so stopping freezes the edge and scrolling back retraces it.
   const revealY = useTransform(scrollYProgress, [0, 0.94], ['-90%', '0%'])
