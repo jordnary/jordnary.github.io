@@ -100,7 +100,6 @@ export function LaunchIntro({ active = true, onEnter }: { active?: boolean; onEn
       </div>
 
       <div className="launch-intro-footer">
-        <a aria-label="打开 GitHub" className="launch-intro-github" href="https://github.com/jordnary">⌁</a>
         <button
           aria-label="向下滚动，进入个人目录"
           className="launch-intro-scroll"

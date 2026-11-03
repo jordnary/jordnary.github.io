@@ -4369,13 +4369,11 @@ a {
   .launch-intro-topline,
   .launch-intro-footer { position: absolute; left: 1.25rem; right: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.62rem; letter-spacing: 0.2em; color: rgb(165 243 252 / 0.62); }
   .launch-intro-topline { top: 1.25rem; }
-  .launch-intro-footer { bottom: 1.25rem; }
+  .launch-intro-footer { bottom: 1.25rem; min-height: 1lh; justify-content: flex-end; }
   .launch-intro-status { display: inline-flex; align-items: center; gap: 0.5rem; }
   .launch-intro-status i,
   .launch-intro-scroll i { display: inline-block; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--color-primary-cyan); box-shadow: 0 0 12px var(--color-primary-cyan); }
   .launch-intro-scroll { display: inline-flex; align-items: center; gap: 0.5rem; }
-  .launch-intro-footer a { color: inherit; transition: color 180ms ease; }
-  .launch-intro-footer a:hover { color: #fff; }
   .launch-intro-kicker { margin: 0; color: rgb(165 243 252 / 0.6); font-size: clamp(0.58rem, 1.1vw, 0.72rem); font-weight: 600; letter-spacing: 0.38em; }
   .launch-intro h1 { margin: 1.4rem 0 1.1rem; color: #f5f7f8; font-size: clamp(3.5rem, 11vw, 8.5rem); font-weight: 300; letter-spacing: -0.075em; line-height: 0.9; text-shadow: 0 0 1px #fff, 0 0 3px #fff, 0 0 7px #333, 0 0 14px #333; animation: launch-title-glow 1.5s ease-in-out infinite alternate; }
   .launch-intro h1 span { color: var(--color-primary-cyan); padding-inline: 0.08em; text-shadow: 0 0 24px rgb(103 232 249 / 0.75); }
