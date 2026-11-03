@@ -6,6 +6,14 @@
     --site-viewport-height: 100svh;
   }
 
+  /* Paint an opaque browser-facing canvas before route styles or scripts load.
+     Route backgrounds belong inside the frame, including after in-place navigation. */
+  html,
+  html body,
+  #root {
+    background: #fff !important;
+  }
+
   html,
   html body {
     width: 100%;

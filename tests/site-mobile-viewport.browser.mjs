@@ -18,7 +18,68 @@ async function expectPaperOutsideFrame(page) {
   }
 }
 
+async function runMobileFooterScrollChecks(browser, baseURL, report) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  try {
+    for (const reducedMotion of ['no-preference', 'reduce']) {
+      await page.emulateMedia({ reducedMotion })
+      await page.goto(new URL('about/', baseURL).href)
+      await page.locator('.footer-shell').waitFor({ state: 'attached' })
+      await page.evaluate(() => document.fonts.ready)
+      await page.addStyleTag({ content: ':root { --site-viewport-height: 700px; }' })
+      const root = await page.locator('#root').elementHandle()
+
+      for (const [label, route] of [['Contact', 'contact/'], ['Learning', 'learning/'], ['Home', 'home/'], ['About', 'about/']]) {
+        await page.evaluate(() => document.fonts.ready)
+        await frames(page)
+        await scrollTo(page, 'end')
+        await frames(page)
+        const surface = page.locator('.footer-surface')
+        const bottom = await surface.boundingBox()
+        const end = await page.locator('#site-scroll').evaluate(element => element.scrollTop)
+        assert.ok(Math.abs(bottom.y + bottom.height - 700) < 1,
+          `${reducedMotion}, before ${route}: the complete footer remains reachable (bottom ${bottom.y + bottom.height}px)`)
+        await expectPaperOutsideFrame(page)
+
+        await scrollTo(page, end - 120)
+        await frames(page)
+        const reversed = await surface.boundingBox()
+        assert.ok(Math.abs(reversed.y - bottom.y - 120) < 1,
+          `${reducedMotion}, before ${route}: the blue mobile footer moves with the page when scrolling away from the bottom (moved ${reversed.y - bottom.y}px)`)
+        await expectPaperOutsideFrame(page)
+        await scrollTo(page, 0)
+        await frames(page)
+        assert.ok((await surface.boundingBox()).y >= 700, 'Returning to the top moves the blue footer outside the viewport')
+        assert.deepEqual(await page.evaluate(() => [document.documentElement, document.body, document.getElementById('root')]
+          .map(element => getComputedStyle(element).backgroundColor)), Array(3).fill('rgb(255, 255, 255)'),
+        'The browser-facing document surfaces remain opaque white')
+        await expectPaperOutsideFrame(page)
+
+        await scrollTo(page, 'end')
+        await page.locator('.footer-nav').getByRole('link', { name: label, exact: true }).tap()
+        await page.waitForURL(new URL(route, baseURL).href)
+        await page.waitForFunction(expected => document.body.dataset.page === expected, route.split('/')[0])
+        await page.locator('.footer-shell').waitFor({ state: 'attached' })
+        assert.ok(await root.evaluate(element => element.isConnected), 'The check uses in-place navigation without reloading')
+        await frames(page)
+        await expectPaperOutsideFrame(page)
+      }
+      await page.goBack()
+      await page.waitForURL(new URL('home/', baseURL).href)
+      await page.waitForFunction(() => document.body.dataset.page === 'home')
+      await frames(page)
+      await expectPaperOutsideFrame(page)
+      report(`${reducedMotion}: mobile footer scrolls out of view; white outer surfaces survive reversal, navigation and Back`)
+    }
+    assert.deepEqual(errors, [])
+  } finally { await context.close() }
+}
+
 export async function runSiteMobileViewportChecks(browser, baseURL, report = () => {}) {
+  await runMobileFooterScrollChecks(browser, baseURL, report)
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' })
   const page = await context.newPage()
   const errors = []
@@ -134,7 +195,8 @@ export async function runSiteMobileViewportChecks(browser, baseURL, report = () 
       const sample = () => {
         const root = document.getElementById('root')
         if (root) window.viewportSamples.push({ height: root.getBoundingClientRect().height,
-          clip: getComputedStyle(root).clipPath, scroll: scrollY })
+          clip: getComputedStyle(root).clipPath, scroll: scrollY,
+          backgrounds: [document.documentElement, document.body, root].map(element => getComputedStyle(element).backgroundColor) })
         requestAnimationFrame(sample)
       }
       requestAnimationFrame(sample)
@@ -150,6 +212,8 @@ export async function runSiteMobileViewportChecks(browser, baseURL, report = () 
     const samples = await page.evaluate(() => window.viewportSamples)
     assert.ok(samples.length > 4)
     assert.ok(samples.every(sample => sample.clip === 'inset(0px)' && sample.scroll === 0 && Math.abs(sample.height - 844) < 1))
+    assert.ok(samples.every(sample => sample.backgrounds.every(color => color === 'rgb(255, 255, 255)')),
+      'Browser-facing surfaces are white before the application loads and throughout reload')
     await page.unroute(entryScript)
     for (const [width, height] of [[844, 390], [320, 568], [430, 932]]) {
       await page.setViewportSize({ width, height })

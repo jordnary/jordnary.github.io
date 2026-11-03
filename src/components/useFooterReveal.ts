@@ -9,6 +9,7 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
 
     let frame = 0
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const coarsePointer = window.matchMedia('(pointer: coarse)')
 
     const update = () => {
       frame = 0
@@ -16,13 +17,16 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
       const viewport = document.documentElement.clientHeight
       // Reserve the natural height before fixing the surface beneath the page.
       footer.style.setProperty('--footer-height', `${height}px`)
-      // Tall footers retain normal scrolling so every link remains reachable.
-      footer.dataset.reveal = String(!reducedMotion.matches && height > 0 && height < viewport)
+      // Touch pages scroll inside a stationary frame. A fixed blue surface at its
+      // lower edge can leave Safari's toolbar tinted even after scrolling away.
+      // Tall footers also retain normal scrolling so every link remains reachable.
+      footer.dataset.reveal = String(!coarsePointer.matches && !reducedMotion.matches && height > 0 && height < viewport)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
     }
     const revealFocus = () => {
+      if (footer.dataset.reveal !== 'true') return
       const bounds = footer.getBoundingClientRect()
       const viewport = document.documentElement.clientHeight
       // Focus can land behind the reveal clip before native scrolling exposes it.
@@ -35,6 +39,7 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
     resize.observe(surface, { box: 'border-box' })
     window.addEventListener('resize', schedule)
     reducedMotion.addEventListener('change', update)
+    coarsePointer.addEventListener('change', update)
     footer.addEventListener('focusin', revealFocus)
     update()
 
@@ -43,6 +48,7 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
       resize.disconnect()
       window.removeEventListener('resize', schedule)
       reducedMotion.removeEventListener('change', update)
+      coarsePointer.removeEventListener('change', update)
       footer.removeEventListener('focusin', revealFocus)
       delete footer.dataset.reveal
       footer.style.removeProperty('--footer-height')
