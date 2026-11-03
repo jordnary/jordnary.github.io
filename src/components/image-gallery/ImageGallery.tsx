@@ -9,6 +9,7 @@ import { GalleryIcon } from './GalleryIcon'
 import { GalleryScrollLock } from './GalleryScrollLock'
 import { useThumbnailWheel } from './useThumbnailWheel'
 import { useGalleryNavigationFeedback } from './useGalleryNavigationFeedback'
+import { GALLERY_DOUBLE_TAP_DELAY, GalleryEdgeContext, useGalleryEdgeFeedback } from './useGalleryEdgeFeedback'
 import { GalleryTraversalContext, useThumbnailTraversal, type GalleryTraversal } from './useThumbnailTraversal'
 import type { GalleryImage, ImageGalleryProps } from './types'
 import 'yet-another-react-lightbox/styles.css'
@@ -17,16 +18,20 @@ import './ImageGallery.css'
 
 function GalleryStage({ children }: PropsWithChildren) {
   const { controller } = useLightboxProps()
+  const { slides } = useLightboxState()
   const stageRef = useRef<HTMLDivElement>(null)
   useThumbnailWheel(stageRef)
   useThumbnailTraversal(stageRef)
   useGalleryNavigationFeedback(stageRef)
+  useGalleryEdgeFeedback(stageRef)
   return <div className="gallery-stage" ref={stageRef} onWheel={event => {
     // The lightbox's swipe setting only covers pointers, not trackpad gestures.
     if (controller.disableSwipeNavigation && Math.abs(event.deltaX) > Math.abs(event.deltaY)) event.stopPropagation()
   }}>{children}
-    <span className="gallery-edge-glow" data-side="left" aria-hidden="true" />
-    <span className="gallery-edge-glow" data-side="right" aria-hidden="true" />
+    {!controller.disableSwipeNavigation && slides.length > 1 && <>
+      <span className="gallery-edge-glow" data-side="left" aria-hidden="true" />
+      <span className="gallery-edge-glow" data-side="right" aria-hidden="true" />
+    </>}
   </div>
 }
 
@@ -152,11 +157,12 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const touchButtons = useTouchButtons()
   const zoomRef = useRef<ZoomRef>(null)
   const [traversal, setTraversal] = useState<GalleryTraversal>(null)
+  const [edgePulling, setEdgePulling] = useState(false)
   const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail: thumbnail ?? imageThumbnail(src), width, height })), [images])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
   // The thumbnail plugin shares this window with the carousel.
   const preload = traversal ? Math.max(0, images.length - 1) : Math.min(6, Math.max(0, images.length - 1))
-  return <GalleryTraversalContext.Provider value={setTraversal}><Lightbox
+  return <GalleryEdgeContext.Provider value={setEdgePulling}><GalleryTraversalContext.Provider value={setTraversal}><Lightbox
     open={open}
     close={onClose}
     index={activeIndex ?? 0}
@@ -169,7 +175,8 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     carousel={{ finite: true, preload, padding: '16px', spacing: traversal ? '0%' : '20%' }}
     controller={{ closeOnBackdropClick: false, disableSwipeNavigation: !touchNavigation }}
     animation={{ fade: reducedMotion ? 0 : 180, swipe: reducedMotion ? 0 : 300, zoom: reducedMotion ? 0 : 220 }}
-    zoom={{ ref: zoomRef, maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, wheelZoomDistanceFactor: 1000, doubleClickMaxStops: 2 }}
+    // Catching a returning edge is a drag continuation, not a double-tap zoom.
+    zoom={{ ref: zoomRef, maxZoomPixelRatio: 4, zoomInMultiplier: 1.5, scrollToZoom: true, wheelZoomDistanceFactor: 1000, doubleClickMaxStops: 2, doubleTapDelay: edgePulling ? 0 : GALLERY_DOUBLE_TAP_DELAY }}
     thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: true }}
     toolbar={{ buttons: [<GalleryHeading key="heading" images={images} />, 'zoom', 'thumbnails', 'fullscreen', 'close'] }}
     render={{
@@ -191,5 +198,5 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
       iconError: () => <div className="gallery-error" role="status"><GalleryIcon name="error" /><p>图片暂时未能加载</p><small>可以切换其他图片，或关闭后重试</small></div>,
       controls: () => <GalleryCaption images={images} />,
     }}
-  /></GalleryTraversalContext.Provider>
+  /></GalleryTraversalContext.Provider></GalleryEdgeContext.Provider>
 }

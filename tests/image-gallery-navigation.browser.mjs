@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const galleryURL = baseURL => new URL('projects/vae-gan-digits/', baseURL).href
-const waitImage = async (page, file) => {
+const waitImage = async (page, file, aligned = true) => {
   await page.waitForFunction(value => {
     const image = document.querySelector('.yarl__slide_current img')
     return image?.src.endsWith(value) && image.complete && image.naturalWidth > 0
@@ -11,7 +11,7 @@ const waitImage = async (page, file) => {
   await page.locator('.yarl__carousel').evaluate(async element => {
     await Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => {})))
   })
-  await page.waitForFunction(() => Math.abs(document.querySelector('.yarl__slide_current').getBoundingClientRect().left
+  if (aligned) await page.waitForFunction(() => Math.abs(document.querySelector('.yarl__slide_current').getBoundingClientRect().left
     - document.querySelector('.yarl__container').getBoundingClientRect().left) < 1)
 }
 
@@ -132,7 +132,7 @@ export async function runGalleryNavigationChecks(browser, baseURL, report = () =
     await drag(session, [100, 400], [310, 400], false)
     await page.waitForFunction(selector => Number(getComputedStyle(document.querySelector(selector)).opacity) > 0.6, left)
     await opacity(page, right, 0)
-    await waitImage(page, '/vaegan-poster.webp')
+    await waitImage(page, '/vaegan-poster.webp', false)
     await capture('mobile-first-edge-theme')
     const fading = await probeOpacity(page, left, release, 0)
     assert.ok(fading.values.some(value => value > 0.05 && value < 0.6), 'The edge glow gently fades after release')
@@ -143,7 +143,7 @@ export async function runGalleryNavigationChecks(browser, baseURL, report = () =
     await drag(session, [300, 400], [80, 400], false)
     await page.waitForFunction(selector => Number(getComputedStyle(document.querySelector(selector)).opacity) > 0.6, right)
     await opacity(page, left, 0)
-    await waitImage(page, '/vaegan-samples.webp')
+    await waitImage(page, '/vaegan-samples.webp', false)
     await capture('mobile-last-edge-theme')
     await release()
     await opacity(page, right, 0)

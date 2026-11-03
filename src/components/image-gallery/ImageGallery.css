@@ -30,24 +30,22 @@
 /* Reserve real layout space so the gesture engine measures the visible stage. */
 .image-gallery .yarl__container { top: var(--gallery-toolbar-height); bottom: var(--gallery-caption-height); overflow: visible; background: transparent; }
 .gallery-stage { position: absolute; inset: 0; display: flex; align-items: stretch; justify-content: center; overflow: hidden; touch-action: none; overscroll-behavior: contain; }
+/* Keep the transform containing block stable when a boundary pull starts or ends. */
+.gallery-stage .yarl__slide_current { translate: 0; }
 .gallery-edge-glow {
-  --edge-strength: 0;
+  --edge-origin: 0%;
   position: absolute;
   z-index: 2;
-  --edge-direction: 90deg;
-  top: 6%;
-  bottom: 6%;
-  left: -1px;
-  width: clamp(22px, 6vw, 32px);
+  inset: 0 auto 0 0;
+  width: clamp(36px, 11vw, 64px);
   pointer-events: none;
-  opacity: var(--edge-strength);
-  background: linear-gradient(var(--edge-direction), color-mix(in srgb, var(--gallery-highlight) 34%, transparent), color-mix(in srgb, var(--gallery-highlight) 12%, transparent) 28%, transparent 85%);
-  mask-image: linear-gradient(transparent, #0003 12%, #0009 28%, #000 44%, #000 56%, #0009 72%, #0003 88%, transparent);
-  filter: blur(1.5px);
-  transition: opacity 440ms ease-out;
+  opacity: 0;
+  transform: scale(.4, .85);
+  transform-origin: var(--edge-origin) center;
+  background: radial-gradient(ellipse at var(--edge-origin) center, color-mix(in srgb, var(--gallery-highlight) 72%, transparent), color-mix(in srgb, var(--gallery-highlight) 28%, transparent) 28%, color-mix(in srgb, var(--gallery-highlight) 8%, transparent) 52%, transparent 74%);
+  will-change: transform, opacity;
 }
-.gallery-edge-glow[data-side='right'] { --edge-direction: -90deg; left: auto; right: -1px; }
-.gallery-edge-glow[data-active='true'] { transition-duration: 70ms; }
+.gallery-edge-glow[data-side='right'] { --edge-origin: 100%; left: auto; right: 0; }
 .image-gallery .yarl__toolbar {
   inset: calc(-1 * var(--gallery-toolbar-height)) 0 auto;
   height: var(--gallery-toolbar-height);
