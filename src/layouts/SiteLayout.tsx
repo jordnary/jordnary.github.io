@@ -12,9 +12,10 @@ type SiteLayoutProps = {
   isProjectDetail?: boolean
   href?: string
   transitioning?: boolean
+  pending?: boolean
 }
 
-export function SiteLayout({ children, page, isProjectDetail = false, href = window.location.href, transitioning = false }: SiteLayoutProps) {
+export function SiteLayout({ children, page, isProjectDetail = false, href = window.location.href, transitioning = false, pending = false }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   // Derive portal mode from the current route on every render. Keeping this as
   // state can leave the fixed homepage portal mode active for one render after
@@ -32,7 +33,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
 
         <main tabIndex={-1}>{children}</main>
 
-        {hasSharedChrome && <Footer paperSeam={page === 'about'} />}
+        {hasSharedChrome && !pending && <Footer paperSeam={page === 'about'} />}
       </div>
       {hasSharedChrome && <Live2DCompanion page={page} suspended={isSearchOpen} />}
       {hasSharedChrome && <SiteSearch

@@ -1,26 +1,21 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { createElement, Suspense, useEffect, useLayoutEffect } from 'react'
 import { SiteLayout } from './layouts/SiteLayout'
-import { getProjectFromUrl, getProjectStudioHref, isHomepagePortalUrl, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
-import { pageLoaders, preparePage } from './lib/page-loaders'
+import { getProjectFromUrl, getProjectStudioHref, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
 import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
 import { ProjectsCursor } from './components/ProjectsCursor'
 import { useInputModality } from './lib/useInputModality'
-
-const HomepagePortal = lazy(pageLoaders.portal)
-const HomePage = lazy(pageLoaders.home)
-const AboutPage = lazy(pageLoaders.about)
-const LearningPage = lazy(pageLoaders.learning)
-const ProjectsPage = lazy(pageLoaders.projects)
-const ContactPage = lazy(pageLoaders.contact)
-const ProjectStudioPage = lazy(pageLoaders.studio)
-const ProjectDetailPage = lazy(pageLoaders.detail)
+import { PageLoadFeedback } from './components/PageLoadFeedback'
+import { PageErrorBoundary } from './components/PageErrorBoundary'
+import type {} from './lib/pageStartup'
 
 function App({ page: initialPage }: { page: SitePage }) {
   useInputModality()
-  const { page, href, transition } = useSiteNavigation(initialPage, preparePage)
+  const { page, href, module, transition, loading, retry, cancel, renderFailed } = useSiteNavigation(initialPage)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
+
+  useLayoutEffect(() => { window.__siteStartup?.dispose() }, [])
 
   useEffect(() => {
     const preventMiddleButtonAutoscroll = (event: MouseEvent) => {
@@ -44,10 +39,17 @@ function App({ page: initialPage }: { page: SitePage }) {
 
   return (
     <>
-      <Suspense fallback={<div className="site-container" role="status" style={{ padding: '4rem 1rem', minHeight: '70vh' }}>正在打开页面…</div>}>
-        <SiteLayout page={page} href={href} transitioning={Boolean(transition)} isProjectDetail={Boolean(project)}>{isStudio ? <ProjectStudioPage /> : project ? <ProjectDetailPage key={project.id} project={project} href={href} /> : getPageContent(page, href)}</SiteLayout>
-        <PageReady href={href} />
-      </Suspense>
+      <SiteLayout page={page} href={href} transitioning={Boolean(transition)} pending={!module} isProjectDetail={Boolean(project)}>
+        <PageErrorBoundary href={href} onError={renderFailed}>
+          <Suspense fallback={<PageLoadFeedback state={{ href, status: 'loading' }} />}>
+            {module ? <>
+              {createElement(module.default, { href, key: project?.id })}
+              <PageReady href={href} />
+            </> : loading && <PageLoadFeedback state={loading} onRetry={retry} />}
+          </Suspense>
+        </PageErrorBoundary>
+      </SiteLayout>
+      {module && loading && <PageLoadFeedback state={loading} floating onRetry={retry} onCancel={cancel} />}
       {transition && <ProjectPageTransition key={transition.id} initiallyCovered={transition.initiallyCovered} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
       <ProjectsCursor />
     </>
@@ -60,21 +62,6 @@ function PageReady({ href }: { href: string }) {
     window.dispatchEvent(new Event('site-page-ready'))
   }, [href])
   return null
-}
-
-function getPageContent(page: SitePage, href: string) {
-  switch (page) {
-    case 'about':
-      return <AboutPage />
-    case 'learning':
-      return <LearningPage />
-    case 'projects':
-      return <ProjectsPage />
-    case 'contact':
-      return <ContactPage />
-    case 'home':
-      return isHomepagePortalUrl(new URL(href)) ? <HomepagePortal /> : <HomePage />
-  }
 }
 
 export default App

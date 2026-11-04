@@ -5,6 +5,27 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
 import { learningCampusSizes } from './src/data/image-sizes'
+import { bootstrapPageStartup } from './src/lib/pageStartup'
+
+function pageStartup(): Plugin {
+  let base = '/'
+  return {
+    name: 'page-startup-feedback',
+    configResolved(config) { base = config.base },
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        // Keep the encoding declaration within the first 1024 bytes, even with
+        // an inline startup guard ahead of all potentially failing entry assets.
+        return { html: html.replace(/<meta charset="UTF-8"\s*\/?>\s*/i, ''), tags: [
+          { tag: 'meta', attrs: { charset: 'UTF-8' }, injectTo: 'head-prepend' },
+          { tag: 'style', attrs: { 'data-site-startup': '' }, children: readFileSync(new URL('./src/page-startup.css', import.meta.url), 'utf8'), injectTo: 'head-prepend' },
+          { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${JSON.stringify(base)});`, injectTo: 'head-prepend' },
+        ] }
+      },
+    },
+  }
+}
 
 function criticalImages(): Plugin {
   let base = '/'
@@ -75,7 +96,7 @@ function projectPages(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectPages(), criticalImages()],
+  plugins: [react(), tailwindcss(), projectPages(), criticalImages(), pageStartup()],
   build: {
     rollupOptions: {
       input: {

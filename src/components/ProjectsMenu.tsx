@@ -102,8 +102,13 @@ export function ProjectsMenu({ onOpen, onOpenChange }: { onOpen?: () => void; on
     }
 
     controllerRef.current = { open: () => transition(true), close: () => transition(false), reset }
+    // A failed/slow destination leaves this page mounted. Release its old modal
+    // as well as the navigation paper so recovery controls remain reachable.
+    const interrupted = () => { if (dialog.open) settle(false) }
+    window.addEventListener('site-navigation-interrupted', interrupted)
     reducedMotion.addEventListener('change', changeMotion)
     return () => {
+      window.removeEventListener('site-navigation-interrupted', interrupted)
       cancelAnimations()
       reducedMotion.removeEventListener('change', changeMotion)
       controllerRef.current = null

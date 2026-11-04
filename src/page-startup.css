@@ -1,0 +1,19 @@
+.site-startup {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  box-sizing: border-box;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 2rem;
+  background: #fff;
+  color: #334155;
+  font: 400 1rem/1.6 ui-sans-serif, system-ui, sans-serif;
+  text-align: center;
+}
+.site-startup[data-kind='projects'] { background: #f2f2f2; color: #34342d; }
+.site-startup[data-kind='portal'] { background: #101316; color: #e2e8f0; }
+.site-startup p { margin: 0 0 1rem; }
+.site-startup a { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0.75rem; color: inherit; text-underline-offset: 0.2em; }
+.site-startup a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }

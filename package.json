@@ -16,6 +16,7 @@
     "test:homepage": "node tests/homepage-touch.browser.mjs && node tests/homepage-transition.browser.mjs && node tests/homepage-grid.browser.mjs",
     "test:homepage-performance": "node tests/homepage-performance.browser.mjs",
     "test:resources": "node tests/resource-loading.browser.mjs",
+    "test:page-loading": "node tests/page-loading.browser.mjs",
     "test:home-gallery": "node tests/home-photo-gallery.browser.mjs && node tests/home-gallery-motion.browser.mjs && node tests/home-gallery-scroll.browser.mjs",
     "test:home-now": "node tests/home-now.browser.mjs && node tests/home-now-scroll-lock.browser.mjs && node tests/home-now-focus-return.browser.mjs && node tests/home-now-ornament.browser.mjs",
     "test:about": "node --test tests/about-journey-motion.test.ts && node tests/about-cover.browser.mjs && node tests/about-decorations.browser.mjs",

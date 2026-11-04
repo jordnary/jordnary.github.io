@@ -22,7 +22,7 @@ const round = value => Number(value.toFixed(1))
 
 function installObservers() {
   performance.setResourceTimingBufferSize(2000)
-  const state = window.__uxBaseline = { readyMs: null, fcpMs: null, lcpMs: null, cls: 0, longTasks: [] }
+  const state = window.__uxBaseline = { readyMs: null, feedbackMs: null, fcpMs: null, lcpMs: null, cls: 0, longTasks: [] }
   let sessionValue = 0
   let sessionStart = -Infinity
   let lastShift = -Infinity
@@ -46,7 +46,9 @@ function installObservers() {
   })
   // A mount marker, not TTI: authored reveals and images can still be in flight.
   const ready = new MutationObserver(() => {
-    if (!document.querySelector('main > :first-child')) return
+    if (state.feedbackMs === null && document.querySelector('.site-startup, .page-load-feedback, [role="status"]')) state.feedbackMs = performance.now()
+    // P1 mounts a loading shell first; keep readyMs about actual route content.
+    if (!document.querySelector('main > :first-child') || document.querySelector('main .page-load-feedback')) return
     ready.disconnect()
     requestAnimationFrame(() => { state.readyMs = performance.now() })
   })
@@ -58,6 +60,7 @@ async function sample(page, session, url, warm) {
   const errors = []
   const error = () => errors.push(true)
   const requested = event => requests.set(event.requestId, {
+    path: new URL(event.request.url).pathname,
     type: event.type, finished: false, failed: false, bytes: 0, cached: false, status: null,
   })
   const response = event => {
@@ -88,7 +91,12 @@ async function sample(page, session, url, warm) {
         longTaskCount: longTasks.length, longTaskMs: longTasks.reduce((sum, duration) => sum + duration, 0),
         blockingMs: longTasks.reduce((sum, duration) => sum + Math.max(0, duration - 50), 0),
         resourceBodyBytes: performance.getEntriesByType('resource').reduce((sum, entry) => sum + entry.encodedBodySize, 0),
-        domNodes: document.getElementsByTagName('*').length }
+        domNodes: document.getElementsByTagName('*').length,
+        images: [...document.querySelectorAll('main img')].map(image => ({
+          path: image.currentSrc ? new URL(image.currentSrc).pathname : null,
+          top: Math.round(image.getBoundingClientRect().top),
+          complete: image.complete, loading: image.loading,
+        })) }
     })
     const byType = {}
     for (const request of requests.values()) {
@@ -103,7 +111,7 @@ async function sample(page, session, url, warm) {
     }
     return { ...Object.fromEntries(Object.entries(metrics).map(([key, value]) => [key, typeof value === 'number'
       ? key === 'cls' ? Number(value.toFixed(6)) : round(value) : value])),
-      pageErrors: errors.length, network: byType }
+      pageErrors: errors.length, network: byType, requests: [...requests.values()] }
   } finally {
     for (const [name, listener] of Object.entries(listeners)) session.off(`Network.${name}`, listener)
     page.off('pageerror', error)

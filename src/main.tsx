@@ -3,14 +3,15 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { getPageFromDocument } from './lib/routes.ts'
-import { preparePage } from './lib/page-loaders'
+import { trackPagePreloadErrors } from './lib/page-loaders'
+import type {} from './lib/pageStartup'
 
-// Keep reload input guards mounted while the boot overlay covers a cold route.
-// Ordinary first visits wait for the route stylesheet before displaying content.
-const initialPage = preparePage(new URL(window.location.href))
-if (window.__projectTransitionBoot?.status === 'active') void initialPage?.catch(() => {})
-else await initialPage
-createRoot(document.getElementById('site-scroll')!).render(
+const stopTracking = trackPagePreloadErrors()
+if (import.meta.hot) import.meta.hot.dispose(stopTracking)
+
+// Mount the shell immediately. Route imports still wait for Vite's stylesheets.
+// An entry stylesheet failure stays in the independent, styled HTML recovery UI.
+if (!window.__siteStartup?.failed) createRoot(document.getElementById('site-scroll')!).render(
   <StrictMode>
     <App page={getPageFromDocument()} />
   </StrictMode>,
