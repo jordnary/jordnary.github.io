@@ -15,6 +15,7 @@
     "sync:projects": "node --use-env-proxy scripts/sync-project-docs.mjs",
     "test:homepage": "node tests/homepage-touch.browser.mjs && node tests/homepage-transition.browser.mjs && node tests/homepage-grid.browser.mjs",
     "test:homepage-performance": "node tests/homepage-performance.browser.mjs",
+    "test:homepage-hub": "node tests/homepage-hub.browser.mjs",
     "test:resources": "node tests/resource-loading.browser.mjs",
     "test:page-loading": "node tests/page-loading.browser.mjs",
     "test:gallery-loading": "node tests/gallery-loading.browser.mjs",

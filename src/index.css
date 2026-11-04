@@ -4454,19 +4454,6 @@ a {
     scroll-margin-top: 0;
   }
 
-  .homepage-hub-grid {
-    position: absolute;
-    inset: -10%;
-    opacity: 0.62;
-    background-image:
-      linear-gradient(rgb(148 163 184 / 0.1) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(148 163 184 / 0.1) 1px, transparent 1px);
-    background-size: 3.1rem 3.1rem;
-    transform: perspective(700px) rotateX(52deg) scale(1.5) translateY(20%);
-    transform-origin: center bottom;
-    mask-image: linear-gradient(180deg, transparent 0, black 18%, black 78%, transparent 100%);
-  }
-
   .homepage-hub-canvas {
     position: absolute;
     inset: 0;
@@ -4575,8 +4562,14 @@ a {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .homepage-hub-link { transition: none; }
-    .homepage-hub-canvas { display: none; }
+    .homepage-hub-link,
+    .homepage-hub-github,
+    .homepage-hub[data-background-active] .homepage-hub-canvas,
+    .homepage-hub[data-background-active]::before,
+    .homepage-hub[data-background-active]::after { transition: none; }
+    .homepage-hub-link:hover,
+    .homepage-hub-github:hover { transform: none; }
+    .homepage-hub-canvas { will-change: auto; }
     .homepage-hub-reveal-item,
     .homepage-hub[data-revealed="true"] .homepage-hub-reveal-item {
       opacity: 1;

@@ -40,7 +40,7 @@ export function HomepageHub({ active = true, revealed = true }: { active?: boole
 
   return (
     <section aria-labelledby="hub-title" className="homepage-hub" data-background-active={backgroundActive} data-revealed={revealed} id="directory">
-      <GridCanvas active={active && backgroundActive} />
+      <GridCanvas active={backgroundActive} />
       <a aria-label="访问 GitHub 主页" className="homepage-hub-github homepage-hub-reveal-item" href={githubProfileUrl} rel="noreferrer" target="_blank">
         <ContactIcon title="GitHub" />
       </a>
@@ -80,7 +80,12 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
     const interactionSurface = canvas.parentElement ?? canvas
     // Match the compact hub layout, and keep touch devices simple in landscape too.
     const desktopMedia = window.matchMedia('(min-width: 641px) and (hover: hover) and (pointer: fine)')
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     let desktop = false
+    let reducedMotion = motionPreference.matches
+    let pageHidden = false
+    let disposed = false
+    let layoutDirty = true
 
     const cellSize = 40
     const trailDuration = 1500
@@ -89,7 +94,7 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
     const edgeMargin = 2
     // Keep the grid movement subtle so the background does not compete with the hub content.
     const speed = 0.01
-    let frame = 0
+    let frame: number | null = null
     let width = 0
     let height = 0
     let dpr = 1
@@ -104,7 +109,22 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
     let displayedBodyLength = 1
     const exclusionPadding = 1
 
+    const visible = () => !disposed && !document.hidden && !pageHidden
+    const requestDraw = () => {
+      if (visible() && frame === null) frame = requestAnimationFrame(draw)
+    }
+    const stop = () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      frame = null
+      lastTime = 0
+    }
+    const invalidateLayout = () => {
+      layoutDirty = true
+      requestDraw()
+    }
+
     const resize = () => {
+      layoutDirty = false
       const rect = canvas.getBoundingClientRect()
       dpr = Math.min(window.devicePixelRatio || 1, 2)
       width = rect.width
@@ -192,7 +212,6 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
       special = null
       shouldGrow = false
       displayedBodyLength = 1
-      context.clearRect(0, 0, width, height)
       if (desktop) {
         snakeBody.push({
           x: Math.max(1, Math.floor(Math.ceil(width / cellSize) * 0.22)),
@@ -228,7 +247,7 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
     }
 
     const handlePointer = (event: PointerEvent) => {
-      if (desktop && event.pointerType === 'touch') return
+      if (!visible() || (desktop && event.pointerType === 'touch')) return
       pointer = { x: event.clientX, y: event.clientY }
       if (desktop) {
         const rect = canvas.getBoundingClientRect()
@@ -237,24 +256,32 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
           y: Math.floor((pointer.y - rect.top + offset.y) / cellSize),
         })
       }
+      requestDraw()
     }
 
     const clearPointer = () => {
-      if (desktop && hoveredCell) trail.push({ ...hoveredCell, at: performance.now() })
+      if (desktop && hoveredCell && !reducedMotion && visible()) {
+        trail.push({ ...hoveredCell, at: performance.now() })
+      }
       hoveredCell = null
       pointer = null
+      requestDraw()
     }
 
     const handlePointerUp = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') clearPointer()
     }
 
-    const animate = (time: number) => {
+    const draw = (time: number) => {
+      frame = null
+      if (!visible()) return
+      if (layoutDirty) resize()
       const delta = lastTime ? Math.min(40, time - lastTime) : 16
       lastTime = time
-      if (document.hidden) { frame = requestAnimationFrame(animate); return }
-      offset.x = (offset.x + delta * speed) % cellSize
-      offset.y = (offset.y + delta * speed) % cellSize
+      if (!reducedMotion) {
+        offset.x = (offset.x + delta * speed) % cellSize
+        offset.y = (offset.y + delta * speed) % cellSize
+      }
 
       context.clearRect(0, 0, width, height)
       context.fillStyle = '#060606'
@@ -288,7 +315,8 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
           context.shadowBlur = 0
         }
         // Smooth growth and fade over the bounded body, as on the original desktop grid.
-        displayedBodyLength += (Math.max(1, snakeBody.length) - displayedBodyLength)
+        if (reducedMotion) displayedBodyLength = Math.max(1, snakeBody.length)
+        else displayedBodyLength += (Math.max(1, snakeBody.length) - displayedBodyLength)
           * Math.min(1, delta / gradientSmoothingMs)
         const bodyLength = Math.max(1, displayedBodyLength)
         snakeBody.forEach((cell, index) => {
@@ -311,17 +339,33 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
         drawCell(hoveredCell, 'rgba(255,255,255,0.82)')
         context.shadowBlur = 0
       }
-      if (desktop) {
+      if (desktop && !reducedMotion) {
         trail = trail.filter(point => time - point.at < trailDuration)
         trail.forEach(point => drawCell(point, 'rgb(218,231,255)', (1 - (time - point.at) / trailDuration) * 0.45))
       }
       context.globalAlpha = 1
-      frame = requestAnimationFrame(animate)
+      if (!reducedMotion) requestDraw()
     }
 
-    resize()
-    window.addEventListener('resize', resize)
-    desktopMedia.addEventListener('change', syncMode)
+    const syncPlayback = () => {
+      stop()
+      reducedMotion = motionPreference.matches
+      // Do not replay a stale pointer or fade after a pause or preference change.
+      pointer = null
+      hoveredCell = null
+      trail = []
+      requestDraw()
+    }
+    const hidePage = () => { pageHidden = true; syncPlayback() }
+    const showPage = () => { pageHidden = false; syncPlayback() }
+
+    window.addEventListener('resize', invalidateLayout)
+    desktopMedia.addEventListener('change', invalidateLayout)
+    document.fonts.addEventListener('loadingdone', invalidateLayout)
+    motionPreference.addEventListener('change', syncPlayback)
+    document.addEventListener('visibilitychange', syncPlayback)
+    window.addEventListener('pagehide', hidePage)
+    window.addEventListener('pageshow', showPage)
     window.addEventListener('blur', clearPointer)
     // The canvas sits behind the hub content, so pointer events over the avatar,
     // heading, and navigation land on those elements instead of the canvas.
@@ -331,11 +375,17 @@ export function GridCanvas({ className = 'homepage-hub-canvas', active = true }:
     interactionSurface.addEventListener('pointerup', handlePointerUp)
     interactionSurface.addEventListener('pointerleave', clearPointer)
     interactionSurface.addEventListener('pointercancel', clearPointer)
-    frame = requestAnimationFrame(animate)
+    requestDraw()
     return () => {
-      cancelAnimationFrame(frame)
-      window.removeEventListener('resize', resize)
-      desktopMedia.removeEventListener('change', syncMode)
+      disposed = true
+      stop()
+      window.removeEventListener('resize', invalidateLayout)
+      desktopMedia.removeEventListener('change', invalidateLayout)
+      document.fonts.removeEventListener('loadingdone', invalidateLayout)
+      motionPreference.removeEventListener('change', syncPlayback)
+      document.removeEventListener('visibilitychange', syncPlayback)
+      window.removeEventListener('pagehide', hidePage)
+      window.removeEventListener('pageshow', showPage)
       window.removeEventListener('blur', clearPointer)
       interactionSurface.removeEventListener('pointerdown', handlePointer)
       interactionSurface.removeEventListener('pointermove', handlePointer)
