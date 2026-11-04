@@ -1,10 +1,13 @@
-import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PropsWithChildren, type TouchEvent } from 'react'
 import Lightbox, { createModule, MODULE_NO_SCROLL, useLightboxProps, useLightboxState, useMotionPreference, type Plugin, type ZoomRef } from 'yet-another-react-lightbox'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
 import { SmartLink } from '../SmartLink'
-import { imageThumbnail } from '../../lib/responsive-images'
+import { imageDimensions, imageThumbnail } from '../../lib/responsive-images'
+import { GalleryImages } from './gallery-images'
+import { GallerySlide } from './GallerySlide'
+import { GalleryImagesContext, useGalleryImages } from './useGalleryImages'
 import { GalleryIcon } from './GalleryIcon'
 import { GalleryScrollLock } from './GalleryScrollLock'
 import { useThumbnailWheel } from './useThumbnailWheel'
@@ -16,10 +19,14 @@ import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/thumbnails.css'
 import './ImageGallery.css'
 
+const GalleryStageContext = createContext<{ traversal: GalleryTraversal; edgePulling: boolean }>({ traversal: null, edgePulling: false })
+
 function GalleryStage({ children }: PropsWithChildren) {
   const { controller } = useLightboxProps()
   const { slides } = useLightboxState()
   const stageRef = useRef<HTMLDivElement>(null)
+  const { traversal, edgePulling } = useContext(GalleryStageContext)
+  useGalleryImages(traversal, stageRef, edgePulling)
   useThumbnailWheel(stageRef)
   useThumbnailTraversal(stageRef)
   useGalleryNavigationFeedback(stageRef)
@@ -158,11 +165,18 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const zoomRef = useRef<ZoomRef>(null)
   const [traversal, setTraversal] = useState<GalleryTraversal>(null)
   const [edgePulling, setEdgePulling] = useState(false)
-  const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt, thumbnail: thumbnail ?? imageThumbnail(src), width, height })), [images])
+  const [resources] = useState(() => new GalleryImages())
+  useSyncExternalStore(resources.subscribe, resources.getSnapshot)
+  // Preserve slide identity while resources settle: the carousel resets on a new list.
+  const slides = useMemo(() => images.map(({ src, alt, thumbnail, width, height }) => ({ src, alt,
+    thumbnail: thumbnail ?? imageThumbnail(src),
+    get width() { return width ?? imageDimensions(src)?.width ?? resources.get(src)?.width },
+    get height() { return height ?? imageDimensions(src)?.height ?? resources.get(src)?.height },
+  })), [images, resources])
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
   // The thumbnail plugin shares this window with the carousel.
-  const preload = traversal ? Math.max(0, images.length - 1) : Math.min(6, Math.max(0, images.length - 1))
-  return <GalleryEdgeContext.Provider value={setEdgePulling}><GalleryTraversalContext.Provider value={setTraversal}><Lightbox
+  const preload = Math.min(Math.max(6, traversal ? traversal.last - traversal.first : 0), Math.max(0, images.length - 1))
+  return <GalleryImagesContext.Provider value={resources}><GalleryStageContext.Provider value={{ traversal, edgePulling }}><GalleryEdgeContext.Provider value={setEdgePulling}><GalleryTraversalContext.Provider value={setTraversal}><Lightbox
     open={open}
     close={onClose}
     index={activeIndex ?? 0}
@@ -180,11 +194,13 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
     thumbnails={{ width: 88, height: 58, border: 2, borderRadius: 8, padding: 3, gap: 12, imageFit: 'contain', vignette: false, showToggle: true }}
     toolbar={{ buttons: [<GalleryHeading key="heading" images={images} />, 'zoom', 'thumbnails', 'fullscreen', 'close'] }}
     render={{
-      // Keep the complete animated path rendered until the carousel settles.
-      slide: ({ slide, offset }) => {
+      // The path contains previews; only the selected working set owns originals.
+      slide: props => {
+        const { slide, offset } = props
         const index = slides.findIndex(image => image.src === ('src' in slide ? slide.src : undefined))
         const onPath = traversal && index >= traversal.first && index <= traversal.last
-        return Math.abs(offset) > 1 && !onPath ? <span aria-hidden="true" /> : undefined
+        return Math.abs(offset) > 1 && !onPath ? <span aria-hidden="true" />
+          : <GallerySlide {...props} fallback={traversal ? slides[traversal.origin]?.thumbnail : undefined} />
       },
       buttonZoom: props => <ZoomControls {...props} />,
       buttonPrev: images.length < 2 || touchNavigation ? () => null : undefined,
@@ -198,5 +214,5 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
       iconError: () => <div className="gallery-error" role="status"><GalleryIcon name="error" /><p>图片暂时未能加载</p><small>可以切换其他图片，或关闭后重试</small></div>,
       controls: () => <GalleryCaption images={images} />,
     }}
-  /></GalleryTraversalContext.Provider></GalleryEdgeContext.Provider>
+  /></GalleryTraversalContext.Provider></GalleryEdgeContext.Provider></GalleryStageContext.Provider></GalleryImagesContext.Provider>
 }

@@ -22,3 +22,8 @@ export function imageThumbnail(src: string) {
   const thumbnail = imageEntry(src)?.variants[0]
   return thumbnail ? `${base}${thumbnail.file}` : src
 }
+
+export function imageDimensions(src: string) {
+  const entry = imageEntry(src)
+  return entry ? { width: entry.width, height: entry.height } : undefined
+}

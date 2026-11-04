@@ -56,11 +56,11 @@ async function routeProbe({ name, navigate, fail }) {
 async function galleryProbe() {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
   const release = gate()
-  const requested = gate()
+  let intermediateRequested = false
   try {
     const page = await context.newPage()
     await page.route('**/images/projects/vaegan-reconstructions.webp', async route => {
-      requested.release()
+      intermediateRequested = true
       await release.promise
       await route.continue().catch(() => {})
     })
@@ -68,18 +68,17 @@ async function galleryProbe() {
     await page.locator('.project-reader-cover .project-reader-image-trigger').click()
     await page.locator('.yarl__slide_current img').evaluate(image => image.decode())
     await page.getByRole('button', { name: '第 7 张，共 7 张' }).click()
-    await waitForGate(requested.promise)
     await page.waitForTimeout(1000)
     const waiting = await page.evaluate(() => {
       const images = [...document.querySelectorAll('.yarl__slide img')]
       return {
-        mountedOriginals: images.length,
+        mountedOriginals: images.filter(image => new URL(image.src).pathname.startsWith('/images/projects/')).length,
         targetDecoded: images.some(image => image.src.endsWith('/vaegan-samples.webp') && image.complete && image.naturalWidth > 0),
         currentIsFirst: document.querySelector('.yarl__slide_current img')?.src.endsWith('/vaegan-poster.webp') ?? false,
         busyThumbnails: document.querySelectorAll('.yarl__thumbnails_thumbnail[aria-busy="true"]').length,
       }
     })
-    report({ name: 'gallery-intermediate-stalled', ...waiting,
+    report({ name: 'gallery-intermediate-stalled', intermediateRequested, ...waiting,
       closeEnabled: await page.getByRole('button', { name: '关闭图片预览' }).isEnabled() })
     release.release()
     await page.waitForFunction(() => document.querySelector('.yarl__slide_current img')?.src.endsWith('/vaegan-samples.webp'))

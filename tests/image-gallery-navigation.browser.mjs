@@ -118,6 +118,8 @@ export async function runGalleryNavigationChecks(browser, baseURL, report = () =
     await page.goto(galleryURL(baseURL))
     await page.locator('.project-reader-cover .project-reader-image-trigger').tap()
     await waitImage(page, '/vaegan-poster.webp')
+    // The following drag is independent of the opening tap and its double-tap window.
+    await page.waitForTimeout(350)
     const session = await mobile.newCDPSession(page)
     assert.equal(await page.getByRole('button', { name: /上一张图片|下一张图片/ }).count(), 0, 'Touch navigation renders no arrow buttons')
     const left = '.gallery-edge-glow[data-side="left"]'

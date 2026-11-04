@@ -6,7 +6,7 @@ const settle = page => page.waitForFunction(() => {
   const slide = document.querySelector('.yarl__slide_current')
   const stage = document.querySelector('.gallery-stage')
   const image = slide?.querySelector('img')
-  return image?.complete && image.naturalWidth > 0 && Number(getComputedStyle(image).opacity) > 0
+  return image?.complete && !image.classList.contains('gallery-preview') && image.naturalWidth > 0 && Number(getComputedStyle(image).opacity) > 0
     && Math.abs(slide.getBoundingClientRect().x - stage.getBoundingClientRect().x) < 0.1
     && !document.querySelector('.yarl__carousel').getAnimations().some(animation => animation.playState === 'running' || animation.pending)
     && stage.querySelectorAll('.yarl__slide img').length <= 3
@@ -148,6 +148,8 @@ export async function runGalleryBoundaryChecks(browser, baseURL, report = () => 
       await page.goto(new URL('projects/vae-gan-digits/', baseURL).href)
       await page.locator('.project-reader-cover .project-reader-image-trigger').tap()
       await settle(page)
+      // Keep the independent edge drag outside the opening tap's double-tap window.
+      await page.waitForTimeout(350)
       const session = await context.newCDPSession(page)
       const cpuRate = Number(process.env.PROJECTS_CPU_THROTTLE || 1)
       if (cpuRate > 1) await session.send('Emulation.setCPUThrottlingRate', { rate: cpuRate })

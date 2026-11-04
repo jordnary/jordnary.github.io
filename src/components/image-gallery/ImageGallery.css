@@ -136,6 +136,10 @@ html:not([data-input-modality='pointer']) .image-gallery :is(.yarl__navigation_p
 .gallery-error p { margin: 0; font-size: 14px; }
 .gallery-error small { color: var(--gallery-muted); font-size: 12px; }
 .gallery-error svg { width: 36px; height: 36px; }
+.gallery-image-status { position: absolute; inset: auto 12px 12px; display: flex; justify-content: center; pointer-events: none; color: var(--gallery-secondary); font-size: 12px; }
+.gallery-image-status > * { padding: 8px 14px; border-radius: 10px; background: var(--gallery-backdrop); }
+.gallery-image-status .gallery-error { gap: 4px; pointer-events: auto; }
+.gallery-image-status .gallery-error svg { width: 20px; height: 20px; }
 @media (max-width: 640px) {
   .image-gallery { --gallery-toolbar-height: calc(122px + env(safe-area-inset-top, 0px)); }
   .image-gallery .yarl__toolbar { flex-wrap: wrap; justify-content: center; align-content: center; gap: 6px; padding: calc(10px + env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-left, 0px)) 10px; }

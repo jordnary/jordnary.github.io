@@ -32,7 +32,15 @@ async function startProbe(page) {
           * Math.max(0, Math.min(box.bottom, bounds.bottom) - Math.max(box.top, bounds.top))
       }
       visible.sort((a, b) => area(b) - area(a))
-      probe.frames.push({ visible: visible.length, dominant: visible[0]?.src.split('/').at(-1), originals: stage.querySelectorAll('.yarl__slide img').length })
+      probe.frames.push({ visible: visible.length, dominant: visible[0]?.src.split('/').at(-1)?.replace(/-[a-f0-9]{12}-\d+(?=\.webp$)/, ''),
+        originals: stage.querySelectorAll('.gallery-original').length,
+        ...(!visible.length ? { geometry: { stage: bounds.toJSON(), carousel: stage.querySelector('.yarl__carousel')?.getBoundingClientRect().toJSON(),
+          slides: [...stage.querySelectorAll('.yarl__slide')].map(slide => ({ label: slide.getAttribute('aria-label'), x: slide.getBoundingClientRect().x })) }, blankSlides: [...stage.querySelectorAll('.yarl__slide')].filter(slide => {
+          const box = slide.getBoundingClientRect(); return box.right > bounds.left && box.left < bounds.right
+        }).map(slide => ({ label: slide.getAttribute('aria-label'), images: [...slide.querySelectorAll('img')].map(image => ({
+          file: image.src.split('/').at(-1), complete: image.complete, width: image.naturalWidth,
+          opacity: getComputedStyle(image).opacity, visibility: getComputedStyle(image).visibility,
+        })) })) } : {}) })
       probe.frame = requestAnimationFrame(sample)
     }
     sample()
@@ -45,10 +53,10 @@ async function assertNoBlank(page, label, expected) {
     return window.galleryJumpProbe.frames
   })
   assert.ok(frames.length > 5, `${label} samples multiple rendered frames`)
-  assert.ok(frames.every(frame => frame.visible > 0), `${label}: ${frames.filter(frame => !frame.visible).length} blank frames`)
+  assert.ok(frames.every(frame => frame.visible > 0), `${label}: ${frames.filter(frame => !frame.visible).length} blank frames; ${JSON.stringify(frames.find(frame => !frame.visible))}`)
   const sequence = frames.map(frame => frame.dominant).filter((file, index, all) => file && file !== all[index - 1])
   if (expected) assert.deepEqual(sequence, expected, `${label} visibly travels through every intermediate image in order`)
-  assert.ok(frames.at(-1).originals <= 3, `${label} releases the extra originals after travel`)
+  assert.ok(frames.every(frame => frame.originals <= 3), `${label} stays within the original-image budget throughout travel`)
   assert.equal(await page.locator('[aria-busy="true"]').count(), 0, 'Loading feedback clears after selection settles')
   return sequence
 }
@@ -101,18 +109,19 @@ export async function runGalleryTraversalChecks(browser, baseURL, report = () =>
     const page = await open(slow)
     await startProbe(page)
     await thumbnail(page, 6).click()
-    await page.waitForFunction(() => document.querySelector('.yarl__thumbnails_thumbnail[aria-busy="true"]'))
+    await page.waitForFunction(() => document.querySelector('.yarl__slide_current .gallery-preview')?.complete)
     await page.waitForTimeout(500)
-    assert.equal(await thumbnail(page, 6).getAttribute('aria-busy'), 'true')
-    assert.ok(await page.locator('.yarl__slide_current img').evaluate(image => image.src.endsWith('/vaegan-poster.webp') && image.complete && image.naturalWidth > 0),
-      'The current image remains visible until the entire requested path is ready')
+    assert.equal(await thumbnail(page, 6).getAttribute('aria-current'), 'true')
+    assert.ok(await page.locator('.yarl__slide_current .gallery-preview').evaluate(image => image.src.includes('vaegan-samples-') && image.complete && image.naturalWidth > 0),
+      'The target preview is available without waiting for its original')
     await thumbnail(page, 3).click()
     await ready(page, '/vaegan-reconstructions.webp')
     release()
     await page.waitForTimeout(150)
     await ready(page, '/vaegan-reconstructions.webp')
-    await assertNoBlank(page, 'Slow original and rapid reselection', imageFiles.slice(0, 4))
-    report('Slow paths keep the current image visible; reselection plays the latest path without waiting for an abandoned target')
+    const sequence = await assertNoBlank(page, 'Slow original and rapid reselection')
+    assert.equal(sequence.at(-1), imageFiles[3])
+    report('A slow target uses its preview; reselection plays the latest path and ignores the abandoned original')
   } finally { release(); await slow.close() }
 
   const failed = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'reduce' })
