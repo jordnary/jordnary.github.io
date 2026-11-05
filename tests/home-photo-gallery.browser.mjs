@@ -35,6 +35,7 @@ export async function runHomePhotoGalleryChecks(browser, baseURL, report = () =>
   const open = async page => {
     await page.goto(homeURL)
     await page.locator('#selected .home-gallery').scrollIntoViewIfNeeded()
+    await page.waitForFunction(() => [...document.querySelectorAll('#selected .home-gallery img')].every(image => image.hasAttribute('src')))
     await page.locator('#selected .home-gallery img').evaluateAll(images => Promise.all(images.map(image => { image.loading = 'eager'; return image.decode() })))
     await center(page, 0)
   }

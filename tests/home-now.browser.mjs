@@ -103,6 +103,7 @@ export async function runHomeNowChecks(browser, baseURL, report = () => {}) {
       assert.equal(await section.locator('img').count(), 2, 'Both Now & notes covers are present')
       assert.deepEqual(await section.locator('.home-gallery-caption').allTextContents(), ['What I’m building我最近在维护', 'What I’m following我最近在关注'])
       await rail.scrollIntoViewIfNeeded()
+      await page.waitForFunction(() => [...document.querySelectorAll('#now .home-gallery img')].every(image => image.hasAttribute('src')))
       await section.locator('img').evaluateAll(images => Promise.all(images.map(image => { image.loading = 'eager'; return image.decode() })))
       assert.ok(await section.locator('img').evaluateAll(images => images.every(image =>
         image.complete && image.naturalWidth > 0 && image.getAttribute('width') === '1536' && image.getAttribute('height') === '1024' && image.alt.trim().length > 0)),
@@ -167,7 +168,7 @@ export async function runHomeNowChecks(browser, baseURL, report = () => {}) {
       assert.equal(await scene.count(), 1, 'The woodland artwork is present')
       await scene.evaluate(element => Promise.all(Array.from(element.matches('img') ? [element] : element.querySelectorAll('img'))
         .map(image => image.decode())))
-      assert.ok(await scene.locator('img').evaluate(image => image.naturalWidth / image.naturalHeight === 1.5),
+      assert.ok(await scene.locator('img').evaluate(image => Math.abs(image.naturalWidth / image.naturalHeight - 1.5) < .01),
         'Every screen uses the complete landscape artwork')
       await page.screenshot({ path: `${output}/reading-${width}.png` })
       for (const mode of ['error', 'invalid', 'empty', 'ready']) {

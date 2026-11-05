@@ -8,7 +8,8 @@ await mkdir(output, { recursive: true })
 await mkdir('src/generated', { recursive: true })
 const manifest = {}
 const groups = {
-  home: { widths: [480, 768, 1024], files: /^(about|learning|projects|contact|now-building|now-following)\.webp$/ },
+  home: { widths: [480, 640, 768, 1024], files: /^(about|learning|projects|contact|now-building|now-following|now-woodland-frame|repository-flourish)\.webp$/ },
+  navigation: { widths: [240, 480, 960, 1280], files: /-1920\.webp$/ },
   learning: { widths: [480, 768, 1024, 1440], files: /\.webp$/ },
   'project-studio': { widths: [480, 768, 1024], files: /\.webp$/ },
   projects: { widths: [240], files: /\.webp$/ },
@@ -31,6 +32,10 @@ for (const [group, { widths, files }] of Object.entries(groups)) {
         generated++
       }
       variants.push({ width: size, file: `images/responsive/${name}` })
+    }
+    if (group === 'navigation') {
+      variants.push({ width: 640, file: `images/navigation/${file.replace('-1920.webp', '-640.webp')}` })
+      variants.sort((a, b) => a.width - b.width)
     }
     manifest[`images/${group}/${file}`] = { width, height, variants }
   }

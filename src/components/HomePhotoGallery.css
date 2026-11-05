@@ -83,13 +83,15 @@
   height: 1px;
   margin: clamp(18px, 1.8vw, 44px) 2% 0;
   background: #222;
-  scale: 1 .5;
+  /* Keep the independent stroke scale through production transform folding. */
+  --gallery-stroke-scale: .5;
+  scale: 1 var(--gallery-stroke-scale);
   transform: scaleX(1);
   transform-origin: left center;
   transition: transform 500ms cubic-bezier(.65, 0, .35, 1);
 }
 /* Stroke weight switches at transition boundaries; only length interpolates. */
-.home-gallery-line[data-stretching] { scale: 1 1; }
+.home-gallery-line[data-stretching] { --gallery-stroke-scale: 1; }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   /* The stationary card is the hit area, so shrinking cannot retrigger hover. */

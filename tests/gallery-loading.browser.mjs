@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { connectionState } from './page-resources.browser.mjs'
 
 const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
 const browser = await chromium.launch(process.env.PROJECTS_BROWSER_EXECUTABLE
@@ -71,6 +72,7 @@ async function checkColdOpen() {
 async function checkIntermediate() {
   for (const failure of ['stall', 'abort']) {
     const context = await browser.newContext(contextOptions)
+    await context.addInitScript(connectionState)
     const pending = gate()
     let intercepted = 0
     try {
@@ -215,20 +217,28 @@ async function checkRecovery() {
 }
 
 async function checkSpeculation() {
-  const context = await browser.newContext(contextOptions)
-  try {
-    await context.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }))
-    const page = await open(context)
-    await settled(page, 0)
-    await page.waitForTimeout(300)
-    assert.equal(await page.locator('.gallery-original').count(), 1)
-    await thumb(page, 6).click()
-    await settled(page, 6)
-    await page.waitForTimeout(300)
-    const originals = await page.evaluate(() => performance.getEntriesByType('resource').filter(entry => /\/images\/projects\/vaegan-/.test(entry.name)).map(entry => new URL(entry.name).pathname))
-    assert.deepEqual([...new Set(originals)], [original(0), original(6)])
-    pass('Save-data mode retains target originals and preview navigation without speculative originals')
-  } finally { await context.close() }
+  for (const [label, policy] of [
+    ['Save-data', { saveData: true }],
+    ['3G', { effectiveType: '3g', downlink: 1.6, rtt: 150 }],
+    ['Constrained 4G', { effectiveType: '4g', downlink: 1.6, rtt: 150 }],
+    ['Unknown connection', null],
+  ]) {
+    const context = await browser.newContext(contextOptions)
+    try {
+      if (policy) await context.addInitScript(connectionState, policy)
+      else await context.addInitScript(() => Object.defineProperty(navigator, 'connection', { configurable: true, value: undefined }))
+      const page = await open(context)
+      await settled(page, 0)
+      await page.waitForTimeout(300)
+      assert.equal(await page.locator('.gallery-original').count(), 1)
+      await thumb(page, 6).click()
+      await settled(page, 6)
+      await page.waitForTimeout(300)
+      const originals = await page.evaluate(() => performance.getEntriesByType('resource').filter(entry => /\/images\/projects\/vaegan-/.test(entry.name)).map(entry => new URL(entry.name).pathname))
+      assert.deepEqual([...new Set(originals)], [original(0), original(6)])
+      pass(`${label} retains target originals and preview navigation without speculative originals`)
+    } finally { await context.close() }
+  }
 }
 
 async function checkMobileRecovery() {
@@ -277,6 +287,7 @@ async function checkFallbackAndPromotion() {
   const requested = gate()
   let count = 0
   try {
+    await context.addInitScript(connectionState)
     await context.route(`**${original(1)}`, async route => {
       count++; requested.release(); await pending.promise; await route.continue().catch(() => {})
     })
@@ -293,6 +304,7 @@ async function checkFallbackAndPromotion() {
 
   const hidden = await browser.newContext({ ...contextOptions, reducedMotion: 'reduce' })
   try {
+    await hidden.addInitScript(connectionState)
     await hidden.addInitScript(() => {
       Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.galleryHidden ?? false })
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.galleryHidden ? 'hidden' : 'visible' })

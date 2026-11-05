@@ -4,6 +4,10 @@ import { homeNow } from '../data/home-editorial'
 import { HomePhotoGallery } from './HomePhotoGallery'
 import { LiveUpdates } from './LiveUpdates'
 import { useHomeNowReaderMotion, type ReadingVisit } from './useHomeNowReaderMotion'
+import { homeGalleryImage, nowFrameImage } from '../lib/inpage-images'
+import { prepareImages } from '../lib/page-images'
+import { pageConnection } from '../lib/page-network'
+import { getMobilePageScroller } from '../lib/pageScrollSource'
 import './HomeNow.css'
 
 export function HomeNow() {
@@ -11,20 +15,34 @@ export function HomeNow() {
   const containerRef = useRef<HTMLDivElement>(null)
   const dismiss = useCallback(() => setVisit(null), [])
   useEffect(() => {
-    // Prepare the reading assets as the gallery approaches, before the click.
+    let preparation: ReturnType<typeof prepareImages> | undefined
+    let prepared = false
+    const connection = pageConnection()
+    // Keep the measured reader lead-in; fonts remain a separate P3 work item.
     const observer = new IntersectionObserver(entries => {
-      if (!entries.some(entry => entry.isIntersecting)) return
-      const image = new Image()
-      image.src = `${import.meta.env.BASE_URL}images/home/now-woodland-frame.webp`
-      void image.decode().catch(() => {})
+      if (document.hidden || connection?.saveData || !entries.some(entry => entry.isIntersecting)) return
+      prepared = true
+      preparation = prepareImages([nowFrameImage()], 'low')
       void document.fonts.load('18px "Woodland WenKai"').catch(() => {})
       void document.fonts.load('48px "Woodland Display"').catch(() => {})
       observer.disconnect()
-    }, { rootMargin: '600px' })
-    if (containerRef.current) observer.observe(containerRef.current)
-    return () => observer.disconnect()
+    }, { root: getMobilePageScroller(), rootMargin: '600px' })
+    const observe = () => {
+      observer.disconnect()
+      if (!prepared && !document.hidden && !connection?.saveData && containerRef.current) observer.observe(containerRef.current)
+    }
+    observe()
+    document.addEventListener('visibilitychange', observe)
+    connection?.addEventListener('change', observe)
+    return () => {
+      observer.disconnect()
+      preparation?.release()
+      document.removeEventListener('visibilitychange', observe)
+      connection?.removeEventListener('change', observe)
+    }
   }, [])
   const explore = (index: number, trigger: HTMLButtonElement) => {
+    void prepareImages([nowFrameImage()], 'high')
     const cover = trigger.querySelector<HTMLElement>('.home-gallery-window')!
     const style = getComputedStyle(cover.querySelector('img')!)
     setVisit({ index, trigger, coverSrc: cover.querySelector<HTMLImageElement>('img')!.currentSrc, origin: cover.getBoundingClientRect(), radius: getComputedStyle(cover).borderTopLeftRadius, imageTransform: style.transform, imageFilter: style.filter, imageOpacity: style.opacity })
@@ -74,10 +92,10 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
       const box = event.currentTarget.getBoundingClientRect()
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close()
     }}>
-    <div className="home-now-reader-cover" aria-hidden="true"><img src={visit.coverSrc || entry.src} alt="" /></div>
+    <div className="home-now-reader-cover" aria-hidden="true"><img {...(visit.coverSrc ? { src: visit.coverSrc } : homeGalleryImage(entry.src))} fetchPriority="high" alt="" /></div>
     <div className="home-now-reader-shell">
       <picture className="home-now-reader-scene" aria-hidden="true">
-        <img src={`${import.meta.env.BASE_URL}images/home/now-woodland-frame.webp`} alt="" width="1536" height="1024" />
+        <img {...nowFrameImage()} fetchPriority="high" decoding="async" alt="" width="1536" height="1024" />
       </picture>
       <div className="home-now-reader-paper">
         <header className="home-now-reader-bar">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { githubProfileUrl, getGitHubSnapshot, type GitHubSnapshot } from '../lib/github'
+import { nowOrnamentImage } from '../lib/inpage-images'
 
 type LoadState<T> = { data: T | null; status: 'error' | 'loading' | 'ready' }
 type RssItem = { description: string; id: string; publishedAt: string | null; source: string; sourceUrl: string; title: string; url: string }
@@ -187,7 +188,7 @@ function GitHubRepository({ repository }: { repository: GitHubSnapshot['repos'][
       </span>
     </span>
     <span className="github-repository-ornament" ref={ornamentRef} aria-hidden="true">
-      <img src={`${import.meta.env.BASE_URL}images/home/repository-flourish.webp`} alt="" width="2172" height="724" />
+      <img {...nowOrnamentImage()} fetchPriority="low" decoding="async" alt="" width="2172" height="724" />
     </span>
     <span className="github-repository-arrow" aria-hidden="true">↗</span>
   </a>

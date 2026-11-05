@@ -30,6 +30,7 @@ export async function runHomeGalleryMotionChecks(browser, baseURL, report = () =
   try {
     await page.goto(homeURL)
     await rail.scrollIntoViewIfNeeded()
+    await page.waitForFunction(() => [...document.querySelectorAll('#selected .home-gallery img')].every(image => image.hasAttribute('src')))
     await rail.locator('img').evaluateAll(images => Promise.all(images.map(image => {
       image.loading = 'eager'
       return image.decode()

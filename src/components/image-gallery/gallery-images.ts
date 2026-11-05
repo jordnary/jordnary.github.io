@@ -1,3 +1,5 @@
+import { prepareImage } from '../../lib/page-images'
+
 export type GalleryImageState = {
   status: 'loading' | 'ready' | 'error'
   width?: number
@@ -5,8 +7,6 @@ export type GalleryImageState = {
   cancel?: () => void
   promote?: () => void
 }
-
-export const GALLERY_IMAGE_TIMEOUT = 8000
 
 /** Only the viewer's current working set is owned here; bytes stay in HTTP cache. */
 export class GalleryImages {
@@ -52,16 +52,12 @@ export class GalleryImages {
       if (required) existing.promote?.()
       return
     }
-    const image = new Image()
-    image.decoding = 'async'
-    image.fetchPriority = required ? 'high' : 'low'
+    const task = prepareImage({ src }, required ? 'high' : 'low')
     const entry: GalleryImageState = { status: 'loading' }
     this.entries.set(src, entry)
     const current = () => this.entries.get(src) === entry && entry.status === 'loading'
     const detach = () => {
-      clearTimeout(timer)
-      image.onload = null
-      image.onerror = null
+      task.release()
       delete entry.cancel
       delete entry.promote
     }
@@ -69,23 +65,18 @@ export class GalleryImages {
       if (!current()) return
       entry.status = 'error'
       detach()
-      image.removeAttribute('src')
       this.emit()
     }
-    const timer = window.setTimeout(fail, GALLERY_IMAGE_TIMEOUT)
-    entry.cancel = () => { detach(); image.removeAttribute('src') }
-    entry.promote = () => { image.fetchPriority = 'high' }
-    image.onerror = fail
-    image.onload = async () => {
-      try { await image.decode() } catch { fail(); return }
+    entry.cancel = detach
+    entry.promote = task.promote
+    void task.promise.then(result => {
       if (!current()) return
       entry.status = 'ready'
-      entry.width = image.naturalWidth
-      entry.height = image.naturalHeight
+      entry.width = result.width
+      entry.height = result.height
       detach()
       this.emit()
-    }
-    image.src = src
+    }, fail)
     this.emit()
   }
 }

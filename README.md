@@ -59,6 +59,8 @@ npm run dev
 
 图片与字体使用 `public` 内的正式素材。各素材目录的 README 和许可证保留来源、授权及维护说明；字体子集变更见 [字体说明](public/fonts/README.md)。图片浏览模块的接口见 [Image gallery](src/components/image-gallery/README.md)。
 
+页内菜单、Home 画廊与近况图片的候选描述在 `src/lib/inpage-images.ts`，准备任务复用 `src/lib/page-images.ts`；显式选择立即加载，接近范围按网络策略收紧。修改图片规格或时机后运行 `npm run test:inpage-images`，并按 [页内图片交接](docs/ux-refactor.md#69-p3-页内图片准备与体验对照) 对照可见等待与未消费下载。
+
 保留的手动维护工具：
 
 - `npm run posters:render`：重建项目海报。

@@ -5,6 +5,8 @@ import { useNavScrollVisibility } from '../lib/useNavScrollVisibility'
 import { getHomepagePortalHref, getRouteHref, sitePages, siteRoutes, type SitePage } from '../lib/routes'
 import { navigationSections, type NavigationIcon } from '../data/navigation'
 import { navigationPhotos, type NavigationPhoto } from '../data/navigation-photos'
+import { navigationImage } from '../lib/inpage-images'
+import { prepareImages } from '../lib/page-images'
 import './Navbar.css'
 
 type NavbarProps = { activePage: SitePage; onSearchOpen: () => void }
@@ -20,6 +22,17 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const mobilePanelRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useLayoutEffect(() => {
+    const mobile = isOpen && mobileSubmenuOpen
+    const page = mobile ? mobilePage : expandedPage
+    const section = page ? navigationSections[page] : undefined
+    if (!section) return
+    const photos = [...section.links.flatMap(link => link.photo ? [link.photo] : []),
+      ...(section.feature ? [section.feature.photo] : [])]
+    const preparation = prepareImages(photos.map(photo => navigationImage(photo, mobile)), 'high')
+    return preparation.release
+  }, [expandedPage, isOpen, mobilePage, mobileSubmenuOpen])
 
   useLayoutEffect(() => {
     const header = headerRef.current
@@ -192,7 +205,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                         <span className="nav-column-label">{page === 'projects' ? '精选项目' : page === 'about' ? '关于我' : '探索内容'}</span>
                         <div className="nav-feature-list">
                           {section.links.map((link, index) => <a className={`nav-feature-link ${link.photo ? 'nav-feature-link--photo' : ''}`} href={link.href} key={link.href} onClick={closeMenu}>
-                            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+                            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} active={expanded} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
                             <span className="nav-feature-copy">
                               {link.category && <span className="nav-photo-category">{link.category}</span>}
                               <strong>{link.label}</strong><small>{link.description}</small>
@@ -203,7 +216,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                       </div>
                       <div className="nav-related-links">
                         {section.feature ? <a className="nav-story-link" href={section.feature.href} onClick={closeMenu}>
-                          <span className="nav-photo-frame"><NavigationImage photo={section.feature.photo} /></span>
+                          <span className="nav-photo-frame"><NavigationImage photo={section.feature.photo} active={expanded} /></span>
                           <span className="nav-story-copy"><strong>{section.feature.label}</strong><small>{section.feature.caption}</small></span>
                           <ArrowIcon />
                         </a> : <span className="nav-column-label">继续发现</span>}
@@ -312,7 +325,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                 </div>
                 {mobileSection.feature && <div className="mobile-nav-section">
                   <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
-                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} sizes="112px" /></span>
+                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} mobile active={mobileSubmenuOpen} /></span>
                     <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
                   </a>
                 </div>}
@@ -320,7 +333,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                   <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
                   <div className="mobile-nav-features">
                     {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
-                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} sizes="88px" /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} mobile active={mobileSubmenuOpen} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
                       <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
                     </a>)}
                   </div>
@@ -338,17 +351,15 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   )
 }
 
-function NavigationImage({ photo, sizes }: { photo: NavigationPhoto; sizes?: string }) {
+function NavigationImage({ photo, mobile = false, active }: { photo: NavigationPhoto; mobile?: boolean; active: boolean }) {
   const image = navigationPhotos[photo]
-  const base = `${import.meta.env.BASE_URL}images/navigation/${image.file}`
   return <img
     alt={image.alt}
-    src={`${base}-640.webp`}
-    srcSet={`${base}-640.webp 640w, ${base}-1920.webp 1920w`}
-    sizes={sizes ?? (photo === 'landscape' ? '(min-width: 1200px) 320px, 28vw' : '(min-width: 1200px) 260px, 22vw')}
+    {...(active ? navigationImage(photo, mobile) : {})}
     width={1920}
     height={1200}
-    loading="lazy"
+    loading="eager"
+    fetchPriority="high"
     decoding="async"
   />
 }

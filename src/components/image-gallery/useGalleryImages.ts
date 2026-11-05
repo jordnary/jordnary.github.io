@@ -2,18 +2,24 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore, t
 import { useLightboxState, type SlideImage } from 'yet-another-react-lightbox'
 import { GalleryImages } from './gallery-images'
 import type { GalleryTraversal } from './useThumbnailTraversal'
+import { pageConnection, pageNetworkPolicy } from '../../lib/page-network'
 
 export const GalleryImagesContext = createContext<GalleryImages | null>(null)
 
 function subscribeVisibility(listener: () => void) {
+  const connection = pageConnection()
   document.addEventListener('visibilitychange', listener)
-  return () => document.removeEventListener('visibilitychange', listener)
+  connection?.addEventListener?.('change', listener)
+  return () => {
+    document.removeEventListener('visibilitychange', listener)
+    connection?.removeEventListener?.('change', listener)
+  }
 }
 
 export function useGalleryImages(traversal: GalleryTraversal, stageRef: RefObject<HTMLDivElement | null>, edgePulling: boolean) {
   const images = useContext(GalleryImagesContext)!
   const revision = useSyncExternalStore(images.subscribe, images.getSnapshot)
-  const visibility = useSyncExternalStore(subscribeVisibility, () => document.visibilityState)
+  const canPrepare = useSyncExternalStore(subscribeVisibility, () => !document.hidden && pageNetworkPolicy().images)
   const [interacting, setInteracting] = useState(false)
   const { currentIndex, slides } = useLightboxState()
   const target = traversal?.target ?? currentIndex
@@ -50,9 +56,7 @@ export function useGalleryImages(traversal: GalleryTraversal, stageRef: RefObjec
     images.retain(sources.filter((src): src is string => Boolean(src)))
     // The selected original always bypasses speculative work, including promotion.
     images.request(targetSource, true)
-    const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection
-    if (traversal || interacting || edgePulling || images.get(targetSource)?.status !== 'ready' || visibility !== 'visible'
-      || connection?.saveData || /(^|-)2g$/.test(connection?.effectiveType ?? '')) return
+    if (traversal || interacting || edgePulling || images.get(targetSource)?.status !== 'ready' || !canPrepare) return
     const neighbors = [after, before].filter((src): src is string => Boolean(src))
     if (neighbors.some(src => images.get(src)?.status === 'loading')) return
     const next = neighbors.find(src => !images.get(src))
@@ -60,14 +64,14 @@ export function useGalleryImages(traversal: GalleryTraversal, stageRef: RefObjec
     // One speculative original at a time, only after the selection is stable.
     let timer: number
     const prepare = () => {
-      if (document.hidden) return
+      if (document.hidden || !pageNetworkPolicy().images) return
       const moving = stageRef.current?.getAnimations({ subtree: true }).some(animation => animation.playState === 'running' || animation.pending)
       if (moving) timer = window.setTimeout(prepare, 120)
       else images.request(next)
     }
     timer = window.setTimeout(prepare, 120)
     return () => clearTimeout(timer)
-  }, [images, targetSource, originSource, before, after, traversal, revision, visibility, interacting, edgePulling, stageRef])
+  }, [images, targetSource, originSource, before, after, traversal, revision, canPrepare, interacting, edgePulling, stageRef])
 
   useEffect(() => () => images.clear(), [images])
 }

@@ -56,7 +56,7 @@ export function installPagePrefetch() {
     idle = timer = 0
     if (!queue.size || running || !allowed()) return
     if (!visibleReady()) { later(); return }
-    const pending = [...document.querySelectorAll<HTMLImageElement>('main img')].filter(image => !image.complete)
+    const pending = [...document.querySelectorAll<HTMLImageElement>('main img, .nav-mega-panel:not([hidden]) img, dialog[open] img')].filter(image => !image.complete)
     if (!pending.length) { start(); return }
     // Native intersection accounts for clipped scrollers, masks and transformed artwork.
     // Observe only while an intent is waiting, and disconnect before starting any work.
