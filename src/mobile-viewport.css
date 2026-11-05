@@ -50,8 +50,9 @@
     scroll-behavior: smooth;
   }
 
-  body:has(dialog[open]) #site-scroll,
-  body:has(.image-gallery) #site-scroll,
+  /* These two viewers already lock input and restore scroll positions. Keeping
+     their scroll container intact avoids a second full-page layout on open. */
+  body:has(dialog[open]:not(.home-now-reader)) #site-scroll,
   body:has(.is-search-open) #site-scroll,
   body.homepage-portal-active #site-scroll {
     overflow: hidden;

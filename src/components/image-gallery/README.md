@@ -59,6 +59,8 @@ export function GalleryExample() {
 
 `GalleryScrollLock` 在预览挂载期间保持原有滚动条和页面尺寸，锁定外层页面及入口所在滚动容器的位置，直到关闭动画与焦点恢复完成。不要恢复默认的隐藏滚动条与补偿边距逻辑，它会与页面的 `scrollbar-gutter: stable` 重复补偿，造成正文和固定菜单跳动。
 
+首次打开先让既有 portal、工具栏与关闭按钮呈现，再在原有淡入期间构造轮播和插件；不增加点击后下载模块的瀑布。准备阶段支持 `Esc`、关闭和焦点归还，取消后不继续挂载重内容；工具栏复用原有排版。移动端同样由 `GalleryScrollLock` 保持滚动位置，不再叠加 CSS 隐藏滚动容器的第二层锁。
+
 启动本地服务后运行 `npm run test:gallery`。浏览器检查覆盖缩放、拖动、缩略图、全屏、键盘焦点、加载失败、横竖屏与触摸手势；沿用 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL`、`PROJECTS_BROWSER_EXECUTABLE` 环境变量。
 
 生产预览另运行 `npm run test:gallery-loading`，覆盖冷打开、路径阻塞、快速改选、失败/超时恢复、邻图请求复用、节流偏好和 20 次开关循环。`node tests/gallery-loading.browser.mjs --measure` 在桌面和受限移动配置下各测 3 次冷/热打开及往返跳转；可通过 `GALLERY_BASELINE_URL` 提供旧提交的独立生产预览进行同口径对照。结果及截图只写入已忽略的 `node_modules/.cache/gallery-loading/`。具体口径、局限与阶段交接见 `docs/ux-refactor.md`。

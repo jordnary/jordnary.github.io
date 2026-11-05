@@ -27,6 +27,8 @@
   touch-action: none;
 }
 .image-gallery .yarl__thumbnails_wrapper { background: var(--gallery-backdrop); }
+.gallery-opening { position: absolute; inset: 0; }
+.image-gallery .gallery-opening > .yarl__toolbar { inset: 0 0 auto; }
 /* Reserve real layout space so the gesture engine measures the visible stage. */
 .image-gallery .yarl__container { top: var(--gallery-toolbar-height); bottom: var(--gallery-caption-height); overflow: visible; background: transparent; }
 .gallery-stage { position: absolute; inset: 0; display: flex; align-items: stretch; justify-content: center; overflow: hidden; touch-action: none; overscroll-behavior: contain; }

@@ -8,23 +8,25 @@ import { homeGalleryImage, nowFrameImage } from '../lib/inpage-images'
 import { prepareImages } from '../lib/page-images'
 import { pageConnection } from '../lib/page-network'
 import { getMobilePageScroller } from '../lib/pageScrollSource'
+import { usePaintedContent } from '../lib/usePaintedContent'
+import { prepareReaderFonts, rememberReaderFonts } from '../lib/reader-fonts'
 import './HomeNow.css'
 
 export function HomeNow() {
   const [visit, setVisit] = useState<ReadingVisit | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const dismiss = useCallback(() => setVisit(null), [])
+  useEffect(rememberReaderFonts, [])
   useEffect(() => {
     let preparation: ReturnType<typeof prepareImages> | undefined
     let prepared = false
     const connection = pageConnection()
-    // Keep the measured reader lead-in; fonts remain a separate P3 work item.
+    // Keep the measured lead-in with a small core and bounded recent slices.
     const observer = new IntersectionObserver(entries => {
       if (document.hidden || connection?.saveData || !entries.some(entry => entry.isIntersecting)) return
       prepared = true
       preparation = prepareImages([nowFrameImage()], 'low')
-      void document.fonts.load('18px "Woodland WenKai"').catch(() => {})
-      void document.fonts.load('48px "Woodland Display"').catch(() => {})
+      prepareReaderFonts()
       observer.disconnect()
     }, { root: getMobilePageScroller(), rootMargin: '600px' })
     const observe = () => {
@@ -57,7 +59,10 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
   const entry = homeNow[visit.index]
   const dialogRef = useRef<HTMLDialogElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const close = useHomeNowReaderMotion(dialogRef, visit, onClose)
+  const finishClose = useHomeNowReaderMotion(dialogRef, visit, onClose)
+  const [closing, setClosing] = useState(false)
+  const close = () => { setClosing(true); finishClose() }
+  const contentReady = usePaintedContent(!closing)
 
   useLayoutEffect(() => {
     const scroll = scrollRef.current!
@@ -76,7 +81,7 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
     return () => { resize.disconnect(); scroll.removeEventListener('scroll', update) }
   }, [])
 
-  return createPortal(<dialog className="home-now-reader" ref={dialogRef} aria-labelledby="home-now-reader-title"
+  return createPortal(<dialog className="home-now-reader" ref={dialogRef} aria-labelledby="home-now-reader-title" aria-label={entry.chinese}
     onCancel={event => { event.preventDefault(); close() }}
     onKeyDown={event => {
       if (event.key !== 'Tab') return
@@ -99,7 +104,7 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
       </picture>
       <div className="home-now-reader-paper">
         <header className="home-now-reader-bar">
-          <button type="button" className="home-now-close" aria-label="关闭近况 / Close" onClick={close} autoFocus>
+          <button type="button" className="home-now-close" aria-label="关闭近况 / Close" onClick={close}>
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
               <path d="m4 4 12 12M16 4 4 16" />
             </svg>
@@ -107,6 +112,7 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
         </header>
         <div className="home-now-reader-scroll" ref={scrollRef} tabIndex={0} role="region" aria-label="近况正文，可滚动阅读">
           <div className="home-now-reader-column">
+            {contentReady && <>
             <article>
               <div className="home-now-reader-heading">
                 <p className="home-now-reader-eyebrow" lang="en">NOW & NOTES <span aria-hidden="true">·</span> {entry.key === 'code' ? 'THE WORKBENCH' : 'THE READING TRAIL'}</p>
@@ -118,9 +124,10 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
               <LiveUpdates kind={entry.key} />
             </article>
             <footer className="home-now-reader-end"><span aria-hidden="true">✳</span><p lang="en">Leave a little room for wonder.</p><span>日常，还在继续。</span></footer>
+            </>}
           </div>
         </div>
-        <div className="home-now-reader-trail" aria-hidden="true"><span lang="en">TAKE YOUR TIME</span><span className="home-now-trail-label"><span className="home-now-trail-more">沿着文字，慢慢走</span><span className="home-now-trail-end">暂读至此，下次再来。</span><i><b /></i></span></div>
+        {contentReady && <div className="home-now-reader-trail" aria-hidden="true"><span lang="en">TAKE YOUR TIME</span><span className="home-now-trail-label"><span className="home-now-trail-more">沿着文字，慢慢走</span><span className="home-now-trail-end">暂读至此，下次再来。</span><i><b /></i></span></div>}
       </div>
     </div>
   </dialog>, document.body)

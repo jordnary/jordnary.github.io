@@ -93,6 +93,12 @@ export function useHomeNowReaderMotion(
     }
     const flat: Surface = { x: 0, y: 0, sx: 1, sy: 1, opacity: 1 }
     const ratio = visit.origin.width / visit.origin.height
+    let paperColor = ''
+    // Read the source before changing scroll, modal, or animation styles.
+    for (let ancestor: HTMLElement | null = source; ancestor; ancestor = ancestor.parentElement) {
+      const color = getComputedStyle(ancestor).backgroundColor
+      if (color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') { paperColor = color; break }
+    }
 
     // Keep the original scrollbar and viewport-unit geometry. Hiding overflow
     // with a stable gutter changes vw on classic-scrollbar browsers, resizing
@@ -141,8 +147,6 @@ export function useHomeNowReaderMotion(
     document.addEventListener('keydown', routeReadingKeys, true)
     document.addEventListener('pointermove', trackPointer, { passive: true, capture: true })
     window.addEventListener('scroll', keepPagePosition, { passive: true, capture: true })
-    dialog.showModal()
-    source.toggleAttribute('data-now-origin', atCard(visit.origin, frame()).opacity === 1)
     setStyles(dialog, { 'transform-origin': '0 0' })
     setStyles(shell, { 'transform-origin': '50% 50%' })
     setStyles(image, {
@@ -152,10 +156,7 @@ export function useHomeNowReaderMotion(
     })
 
     // Translucent side cards should dissolve over the same paper they came from.
-    for (let ancestor: HTMLElement | null = source; ancestor; ancestor = ancestor.parentElement) {
-      const color = getComputedStyle(ancestor).backgroundColor
-      if (color !== 'transparent' && color !== 'rgba(0, 0, 0, 0)') { setStyles(cover, { 'background-color': color }); break }
-    }
+    if (paperColor) setStyles(cover, { 'background-color': paperColor })
 
     const setPromoted = (active: boolean) => {
       setStyles(shell, { 'will-change': active ? 'transform, opacity' : 'auto' })
@@ -201,10 +202,15 @@ export function useHomeNowReaderMotion(
     }
 
     dialog.dataset.phase = 'opening'
+    if (!motion.matches) setPromoted(true)
+    // Native dialog focus selects the close button. React autoFocus on the
+    // still-closed element would force an extra style/layout pass before this.
+    dialog.showModal()
+    const openingBox = frame()
+    source.toggleAttribute('data-now-origin', atCard(visit.origin, openingBox).opacity === 1)
     if (motion.matches) finishOpening()
     else {
-      setPromoted(true)
-      const box = frame()
+      const box = openingBox
       const startTime = Number(document.timeline.currentTime)
       const originalImage = matrix(visit.imageTransform)
       const surface = morph(atCard(visit.origin, box), flat, originalImage, originalImage,

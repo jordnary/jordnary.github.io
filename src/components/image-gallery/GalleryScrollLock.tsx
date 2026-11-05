@@ -1,7 +1,15 @@
 import { getPageScrollTop, getPageScrollLeft, scrollPageTo, getPageScroller } from '../../lib/pageScrollSource'
-import { useLayoutEffect, type PropsWithChildren } from 'react'
+import { useLayoutEffect, useState, type PropsWithChildren } from 'react'
+import { ACTION_CLOSE, useEvents, useLightboxProps } from 'yet-another-react-lightbox'
+import { usePaintedContent } from '../../lib/usePaintedContent'
+import { GalleryIcon } from './GalleryIcon'
 
 export function GalleryScrollLock({ children }: PropsWithChildren) {
+  const [closing, setClosing] = useState(false)
+  const ready = usePaintedContent(!closing)
+  const { publish } = useEvents()
+  const { toolbar, render } = useLightboxProps()
+  const close = () => { setClosing(true); publish(ACTION_CLOSE) }
   useLayoutEffect(() => {
     const root = getPageScroller()
     const scrollBehavior = root.style.scrollBehavior
@@ -66,5 +74,20 @@ export function GalleryScrollLock({ children }: PropsWithChildren) {
     }
   }, [])
 
-  return children
+  // The original portal owns its fade, inert siblings and focus restoration.
+  // Paint that cancellable surface before measuring the carousel and plugins.
+  return ready ? children : <div className="gallery-opening" aria-busy="true" onKeyDown={event => {
+    if (event.key === 'Escape') { event.stopPropagation(); close() }
+  }}>
+    <div className="yarl__toolbar">
+      {toolbar.buttons[0]}
+      {render.buttonZoom?.({ zoom: 1, minZoom: 1, maxZoom: 1, offsetX: 0, offsetY: 0, disabled: true,
+        zoomIn: () => {}, zoomOut: () => {}, changeZoom: () => {} })}
+      <button type="button" className="yarl__button" aria-label="隐藏缩略图" disabled><GalleryIcon name="thumbnails" /></button>
+      {document.fullscreenEnabled && <button type="button" className="yarl__button" aria-label="进入全屏" disabled><GalleryIcon name="expand" /></button>}
+      <button type="button" className="yarl__button" aria-label="关闭图片预览" title="关闭图片预览" autoFocus onClick={close}>
+        <GalleryIcon name="close" />
+      </button>
+    </div>
+  </div>
 }

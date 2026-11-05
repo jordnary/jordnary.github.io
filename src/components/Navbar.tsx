@@ -6,7 +6,7 @@ import { getHomepagePortalHref, getRouteHref, sitePages, siteRoutes, type SitePa
 import { navigationSections, type NavigationIcon } from '../data/navigation'
 import { navigationPhotos, type NavigationPhoto } from '../data/navigation-photos'
 import { navigationImage } from '../lib/inpage-images'
-import { prepareImages } from '../lib/page-images'
+import { usePaintedContent } from '../lib/usePaintedContent'
 import './Navbar.css'
 
 type NavbarProps = { activePage: SitePage; onSearchOpen: () => void }
@@ -22,17 +22,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const mobilePanelRef = useRef<HTMLElement>(null)
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useLayoutEffect(() => {
-    const mobile = isOpen && mobileSubmenuOpen
-    const page = mobile ? mobilePage : expandedPage
-    const section = page ? navigationSections[page] : undefined
-    if (!section) return
-    const photos = [...section.links.flatMap(link => link.photo ? [link.photo] : []),
-      ...(section.feature ? [section.feature.photo] : [])]
-    const preparation = prepareImages(photos.map(photo => navigationImage(photo, mobile)), 'high')
-    return preparation.release
-  }, [expandedPage, isOpen, mobilePage, mobileSubmenuOpen])
+  const mobileContentReady = usePaintedContent(isOpen)
 
   useLayoutEffect(() => {
     const header = headerRef.current
@@ -281,6 +271,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
             <button aria-label="关闭导航菜单" className="mobile-nav-close" onClick={closeMenu} ref={closeButtonRef} type="button"><MenuIcon /></button>
           </div>
           <div className="mobile-nav-body">
+            {mobileContentReady && <>
             <div className="mobile-nav-primary" inert={mobileSubmenuOpen} aria-hidden={mobileSubmenuOpen}>
               <nav aria-label="移动端主导航" className="mobile-nav-list">
                 {sitePages.map((page) => navigationSections[page] ? <button
@@ -312,43 +303,59 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
               inert={!mobileSubmenuOpen}
               ref={mobilePanelRef}
             >
-              {mobilePage && mobileSection && <>
-                <button className="mobile-nav-back" onClick={() => setMobileSubmenuOpen(false)} type="button"><ArrowIcon /><span>返回</span></button>
-                <div className="mobile-nav-section mobile-nav-intro">
-                  <span className="nav-eyebrow">{mobileSection.eyebrow}</span>
-                  <h2>{mobileSection.title}</h2>
-                  <p>{mobileSection.description}</p>
-                  <a className="mobile-nav-overview" href={getRouteHref(mobilePage)} onClick={closeMenu}>
-                    <span className="mobile-nav-bullet"><ArrowIcon /></span>
-                    <span>{mobilePage === 'projects' ? '探索全部项目' : mobilePage === 'learning' ? '浏览学习内容' : '更多关于我'}</span>
-                  </a>
-                </div>
-                {mobileSection.feature && <div className="mobile-nav-section">
-                  <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
-                    <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} mobile active={mobileSubmenuOpen} /></span>
-                    <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
-                  </a>
-                </div>}
-                <div className="mobile-nav-section">
-                  <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
-                  <div className="mobile-nav-features">
-                    {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
-                      {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} mobile active={mobileSubmenuOpen} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
-                      <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
-                    </a>)}
-                  </div>
-                </div>
-                <div className="mobile-nav-section mobile-nav-related">
-                  <h3>继续发现</h3>
-                  {mobileSection.related.map((link) => <a href={link.href} key={link.href} onClick={closeMenu}><span className="mobile-nav-bullet"><ArrowIcon /></span><span>{link.label}</span></a>)}
-                </div>
-              </>}
+              {mobilePage && mobileSection && <MobilePanel key={mobilePage}
+                mobilePage={mobilePage} mobileSection={mobileSection} mobileSubmenuOpen={mobileSubmenuOpen}
+                closeMenu={closeMenu} onBack={() => setMobileSubmenuOpen(false)} />}
             </nav>
+            </>}
           </div>
         </div>
       </dialog>, document.body)}
     </>
   )
+}
+
+function MobilePanel({ mobilePage, mobileSection, mobileSubmenuOpen, closeMenu, onBack }: {
+  mobilePage: SitePage
+  mobileSection: NonNullable<(typeof navigationSections)[SitePage]>
+  mobileSubmenuOpen: boolean
+  closeMenu: () => void
+  onBack: () => void
+}) {
+  const ready = usePaintedContent(mobileSubmenuOpen)
+  return <>
+    <button className="mobile-nav-back" onClick={onBack} type="button"><ArrowIcon /><span>返回</span></button>
+    {ready && <>
+      <div className="mobile-nav-section mobile-nav-intro">
+        <span className="nav-eyebrow">{mobileSection.eyebrow}</span>
+        <h2>{mobileSection.title}</h2>
+        <p>{mobileSection.description}</p>
+        <a className="mobile-nav-overview" href={getRouteHref(mobilePage)} onClick={closeMenu}>
+          <span className="mobile-nav-bullet"><ArrowIcon /></span>
+          <span>{mobilePage === 'projects' ? '探索全部项目' : mobilePage === 'learning' ? '浏览学习内容' : '更多关于我'}</span>
+        </a>
+      </div>
+      {mobileSection.feature && <div className="mobile-nav-section">
+        <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
+          <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} mobile active={mobileSubmenuOpen} /></span>
+          <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
+        </a>
+      </div>}
+      <div className="mobile-nav-section">
+        <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
+        <div className="mobile-nav-features">
+          {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
+            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} mobile active={mobileSubmenuOpen} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+            <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
+          </a>)}
+        </div>
+      </div>
+      <div className="mobile-nav-section mobile-nav-related">
+        <h3>继续发现</h3>
+        {mobileSection.related.map((link) => <a href={link.href} key={link.href} onClick={closeMenu}><span className="mobile-nav-bullet"><ArrowIcon /></span><span>{link.label}</span></a>)}
+      </div>
+    </>}
+  </>
 }
 
 function NavigationImage({ photo, mobile = false, active }: { photo: NavigationPhoto; mobile?: boolean; active: boolean }) {

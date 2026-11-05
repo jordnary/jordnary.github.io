@@ -3,16 +3,353 @@
   "source_sha256": "f799a538a3355877e597a0ae04050e897932c9ae7689eb9227c2953c5dd549ea",
   "unicode_codepoints": 25694,
   "copy_sha256": {
-    "src/components/HomeNow.tsx": "e845cf764b8e470100a30c06e9780ad1f660e9a3ed421ee51101b568734ac866",
-    "src/components/LiveUpdates.tsx": "a4c57853f79b33500ee7077251b368710b76df4f25b4b26a3a04d4218e27b2ce",
-    "src/data/home-editorial.ts": "ba1d15a36e69007f96f2e4e4cfd2136f8d6a0047c7659cb99996b9be77ba2ade"
+    "src/components/HomeNow.tsx": "fb88a57b031239bf277937c38130a8a4791b7881b3b065cd940b5e8892167286",
+    "src/components/LiveUpdates.tsx": "88e32f7ae148b7d481506c4269129c1ae4be240c5021a6dc28a1d133cc327e6d",
+    "src/data/home-editorial.ts": "e032c3e3cb5de511b356873bb7153287f90eab68f50f3691220ecc4634708847",
+    "src/lib/reader-fonts.ts": "f304e232cd8f0be4ec8582a5ffb2f53f6779885a176865fd599ece849dc7f5ab"
   },
   "slices": [
     {
-      "output": "public/fonts/woodland-wenkai.woff2",
-      "unicode_codepoints": 7778,
-      "bytes": 1658704,
-      "sha256": "e667600ef55b898ef27f176592449058eec16a5fd45b336f80729dd4a584b30e"
+      "output": "public/fonts/woodland-wenkai/reader.woff2",
+      "unicode_codepoints": 680,
+      "bytes": 93372,
+      "sha256": "b919de32f6aba9c61cd4851b9a7a15387df2ecea3f5235ae252047c3b57c95bb"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-001.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 10844,
+      "sha256": "e9b9d2f4983b51a312a04d1c30b89439dd2f4c8ebebaaf111dc54d6c3b3dc3d7"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-002.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 11124,
+      "sha256": "56315a82aaf0f396028cff9a87e32251781a72c59ea65c02a8df7404ea89984e"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-003.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 11916,
+      "sha256": "069e644955bbbf88f58e6e836a57e26502a95c225490a1e5c199469403b56ae9"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-004.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31532,
+      "sha256": "2b4be6f92eb533124aa2f2779a798de6b10369aa5507430c1dc0c320ddd13de6"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-005.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 20892,
+      "sha256": "0dd1df1235b131dffa743b619dcd5253fb4b7b9e3fa79d901d5c9d5c2b6a8b77"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-006.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 26672,
+      "sha256": "c12a7d674982becec14272f2e702d6563eb3d1f05b8c5ffe3886c0cc47eebe7a"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-007.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 33884,
+      "sha256": "9974416bca4df6bfdbf80b864688d8dfa283b50c8bc68ade015d85a98e278fce"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-008.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31468,
+      "sha256": "322bc263ab16bf2ab06acb875f92da804058619a932ce0ffed2bb8f93f44a624"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-009.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 25196,
+      "sha256": "4ba88eaa00c61b69329c4844d5c71253e441f75541bf3253c06406ecf7901b6e"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-010.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 25984,
+      "sha256": "890f9f6593578b3bc2eb201b9819c546a2a313a8390f4bdb6ff25526794e376b"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-011.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36052,
+      "sha256": "93c845c314f065d10b8c7ab97967fb2dcb6fca671f315140745e044c2d533ad5"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-012.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 34132,
+      "sha256": "0c1c03a6a2b32cf01d3194febf753fc022d9b315898db6ecd659dbb3ecc6d0ce"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-013.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 35392,
+      "sha256": "d4f01588c3cc0975614729321492610dc78b1fc9bf240b04c4fe01a0c5ad0308"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-014.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 40180,
+      "sha256": "75c854d9dacb57a24451c46bec4110b9355b4c512aa7b8c0fa59c28775286b4b"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-015.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 32328,
+      "sha256": "84e299702bd5dc5c3c928f0d0c72fc02ad3889f4a6c635e4c6ae4c9be4d500d9"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-016.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31208,
+      "sha256": "3f8c0bf6efa057d86835cfc1d2ea760829ca0e58db965b9bf944fdf823f87762"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-017.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 33160,
+      "sha256": "c8fcba7ea2dd31beaf48d009e0e7f4ea578ec107afbada6579f131706c1058a6"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-018.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31400,
+      "sha256": "cff0e6170449555323320f1d464e33ade19db3ad1050a8e7a14a6f450038fb14"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-019.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 40440,
+      "sha256": "95eb146047a45c1695842fad83843f84160420b08d4a3fd72d5584346ddcb8f8"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-020.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31800,
+      "sha256": "d58673c8c661ccbb4d9629ddd47c8dfae3a7e3a08860832d61831388a3204497"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-021.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 44444,
+      "sha256": "492e386d260587a608f8c2d7af2d23975528bcc8f11d951afb7732c5c2afedee"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-022.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36084,
+      "sha256": "76ae357ac6bc04fb4b59bf106383a083798f9023959c4539a6983fbc3623c4b7"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-023.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 31140,
+      "sha256": "20cb7852563b2880c108a28b85911d58cf93ae0911e0cf848356e7cb57c7e8f6"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-024.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 37004,
+      "sha256": "7d001423e7d01a412b3317e010091faafbe944923ea7cded61ceaaf74cf37894"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-025.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 42740,
+      "sha256": "9357123f3955a19d5933d36e708f3bd051ae9b2c30c89ce8c6c203b2e0e5d2cf"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-026.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 29484,
+      "sha256": "40eceeeb25a14d780cf1f060819a160ef92f3bb8727c0a2fe20a48a7eb566a9c"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-027.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 34048,
+      "sha256": "6fd4fdbbc92ad5b4992c9cb053a52a4939f449a0a78aff3ada71ef24faea9fe7"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-028.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 43720,
+      "sha256": "d40ec66be880738468723d7ce20ec9001cb83191cd1d94c74925090681488f1f"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-029.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 38172,
+      "sha256": "222fc0d7764e996041e6218cf94856daf5b6d5cb73e0fe14b2ec2ac444919630"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-030.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 32884,
+      "sha256": "8f6740a12a9ca57a3f40cc3dc01881390da28bb720412cff15fdc041b340a7c9"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-031.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 38392,
+      "sha256": "3c84f02f41ad433aebf86707d91d35fe593f233f36711977e4751475ede1a3f2"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-032.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36216,
+      "sha256": "c5763a467479f9af8979d3644f828ec5b3ba7c37ba14a928e06f85e96fdeaa51"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-033.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 32920,
+      "sha256": "97b7f4294ca6761ec624d6f36dcccd86196c768a2684ac7979d946ab63570c8a"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-034.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36492,
+      "sha256": "f9f7203ba5e994f9be06788d5f652037fa59a534422183d03f358bd91b8a1ff2"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-035.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 37324,
+      "sha256": "833365ce47f4617a04f66395dd1c7a4a544088b133bbad099d3fa68544767906"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-036.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 41416,
+      "sha256": "b99991901955e191e71e75830c18d0c8e7b8ab2c90da87fb40e0d0c4e7e4e654"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-037.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36384,
+      "sha256": "9af978b9a95ce7db4ab0bfd71506a1f61e125df7760486cb4c0b7220dabc0ee9"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-038.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36400,
+      "sha256": "a794c9b863fa630e722c5a30169bba14818a2cc2946a0a9f686c249a2a00c8c1"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-039.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36484,
+      "sha256": "089f847808a23b0f152bba47510dacaa692b440e46d06b254072c9bd862a46db"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-040.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 29736,
+      "sha256": "c08937cc725ae1d92aa6ea4cb68515219c4a22a784ff55d97ffa6e5def7bab09"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-041.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 34876,
+      "sha256": "93e4545a2346f0a789f12dc0e4e62758860fa31dedcaafb4e6bb3c63184f06c8"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-042.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 46064,
+      "sha256": "4c1e2d69b31f942e638e9f4605eba5b3f5a78c2faf5f5255661355d27f1ee37f"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-043.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 37816,
+      "sha256": "04c1dd46b92f70f46339857e63d3d728320aa758750ef72a8b3f50a5cc39560a"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-044.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 42492,
+      "sha256": "a82aed59dda686863e4f68666f30d9569615089c05f7f3094a6e8ab2ec4eb3a6"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-045.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 29984,
+      "sha256": "f6b9cd54dc79d8876b159ce0595274495175c21c7c80a0082d7ad4a8de43de65"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-046.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 38152,
+      "sha256": "e984cb30ef49bbd007bed8428add79aae897a7c043bbf249ebbfb23d6f1d15c1"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-047.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 38236,
+      "sha256": "4fb54586a836872adc1922ca3232ccfeefa45eddf8bf01a1b9e55a20153761c0"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-048.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 37160,
+      "sha256": "2ae2146fa5f55ae3f824c8df0922487c56b62f855a77d3038ef6a3540be74996"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-049.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 36456,
+      "sha256": "ee4856669c219ac67c7aa304b2503d2d4f2362a88fb32ea601181c4fa5192681"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-050.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 30904,
+      "sha256": "5824b40bf09d2732e29e93d23c1f0e06b0c11b6d57d2e2b53c4a3f729e14c431"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-051.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 37956,
+      "sha256": "d8465024c4020e46586497f5d56518e8d689088ab3046ac60eadc70fb284e53b"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-052.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 38100,
+      "sha256": "99a3c40ff3574f2be12467b5b353e6c8eca6d2aadcd656bf5545d884280a180c"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-053.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 41100,
+      "sha256": "3d59197ded7666b92daec4db5b32381795885ac1d4ac28794d0d922292b2f2c6"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-054.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 42748,
+      "sha256": "5a1c2f753246233922a50f2d2b62991e836689e8926f384f2f0be27ddb59b091"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-055.woff2",
+      "unicode_codepoints": 128,
+      "bytes": 44632,
+      "sha256": "8906d9b334d1033d223cb86d7783bed2cc6e7b6212d1e8cd469368b13adbaf7d"
+    },
+    {
+      "output": "public/fonts/woodland-wenkai/common-056.woff2",
+      "unicode_codepoints": 58,
+      "bytes": 21972,
+      "sha256": "0157928f0328ac08d0b35a52ebc3f4680600d1369ee4e6c9b0458135fc15abac"
     },
     {
       "output": "public/fonts/woodland-wenkai/extra-001.woff2",

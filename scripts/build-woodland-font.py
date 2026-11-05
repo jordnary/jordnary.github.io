@@ -1,8 +1,8 @@
 """Build disjoint WOFF2 slices covering the entire upstream Regular font.
 
 Requires fonttools[woff]. Run from the project root with relative paths. Common
-characters and reader copy use a base file; every remaining Unicode code point
-is retained in an on-demand slice selected by the generated unicode-range CSS.
+reader copy uses a small base file; common characters and every remaining
+Unicode code point stay in on-demand slices selected by unicode-range CSS.
 """
 
 import argparse
@@ -36,8 +36,10 @@ STATIC_COPY = (
     Path("src/components/HomeNow.tsx"),
     Path("src/components/LiveUpdates.tsx"),
     Path("src/data/home-editorial.ts"),
+    Path("src/lib/reader-fonts.ts"),
 )
 EXTRA_CHUNK_SIZE = 1024
+COMMON_CHUNK_SIZE = 128
 
 
 def relative_path(value):
@@ -58,12 +60,6 @@ def protected_names(font):
 
 def base_codepoints(available, copy_data):
     common = set()
-    for point in available:
-        try:
-            chr(point).encode("gb2312")
-            common.add(point)
-        except UnicodeEncodeError:
-            pass
     common.update(range(0x100))
     common.update(range(0x2000, 0x2070))
     common.update(range(0x3000, 0x3040))
@@ -145,11 +141,23 @@ def build(source, output, css_output):
     with TTFont(BytesIO(source_data), recalcTimestamp=False) as original:
         available = set(original.getBestCmap())
         original_notices = protected_names(original)
-    copy_data = {path: path.read_bytes() for path in STATIC_COPY}
+    copy_data = {path: path.read_bytes().replace(b"\r\n", b"\n") for path in STATIC_COPY}
     base = base_codepoints(available, copy_data)
-    remaining = sorted(available - base)
-    extras_dir = output.parent / output.stem
+    common = set()
+    for point in available - base:
+        try:
+            chr(point).encode("gb2312")
+            common.add(point)
+        except UnicodeEncodeError:
+            pass
+    remaining = sorted(available - base - common)
+    extras_dir = output.parent
     slices = [(output, base)]
+    ordered_common = sorted(common)
+    for start in range(0, len(ordered_common), COMMON_CHUNK_SIZE):
+        number = start // COMMON_CHUNK_SIZE + 1
+        slices.append((extras_dir / f"common-{number:03d}.woff2",
+                       set(ordered_common[start:start + COMMON_CHUNK_SIZE])))
     for start in range(0, len(remaining), EXTRA_CHUNK_SIZE):
         number = start // EXTRA_CHUNK_SIZE + 1
         slices.append((extras_dir / f"extra-{number:03d}.woff2",
@@ -193,7 +201,8 @@ def build(source, output, css_output):
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
     used = {path for path, _ in slices}
-    for path in extras_dir.glob("extra-*.woff2"):
+    for path in [*extras_dir.glob("common-*.woff2"),
+                 *extras_dir.glob("extra-*.woff2")]:
         if path not in used:
             path.unlink()
     print(json.dumps({
@@ -208,7 +217,7 @@ def main():
     parser.add_argument("source", type=relative_path)
     parser.add_argument(
         "--output", type=relative_path,
-        default=Path("public/fonts/woodland-wenkai.woff2"),
+        default=Path("public/fonts/woodland-wenkai/reader.woff2"),
     )
     parser.add_argument(
         "--css", type=relative_path,

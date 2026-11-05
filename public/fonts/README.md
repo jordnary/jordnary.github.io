@@ -53,7 +53,7 @@ type in the Home Now & notes reader.
 
 ## Woodland reader
 
-`woodland-wenkai.woff2` and `woodland-wenkai/extra-*.woff2` are disjoint slices of
+`woodland-wenkai/reader.woff2`, `common-*.woff2`, and `extra-*.woff2` are disjoint slices of
 the complete Regular font from
 [LXGW WenKai Lite](https://github.com/lxgw/LxgwWenKai-Lite), renamed to
 `Woodland WenKai` and converted to WOFF2 for the Home Now & notes reader.
@@ -67,27 +67,38 @@ The source is `fonts/TTF/LXGWWenKaiLite-Regular.ttf`, version 1.530, pinned to
 upstream commit `251ab63642d1c1c5db80497d78911b7aae6917d7`.
 Its SHA-256 is
 `f799a538a3355877e597a0ae04050e897932c9ae7689eb9227c2953c5dd549ea`.
-All 25,694 mapped Unicode code points are preserved across the slices. The base
-file contains every source character encodable as GB2312, ASCII and Latin-1,
+All 25,694 mapped Unicode code points are preserved across the slices. The reader
+core contains ASCII and Latin-1,
 General Punctuation (`U+2000-206F`), CJK Symbols and Punctuation (`U+3000-303F`),
 Halfwidth and Fullwidth Forms (`U+FF00-FFEF`), and every available character in
-`HomeNow.tsx`, `LiveUpdates.tsx`, and `home-editorial.ts`. The remaining source
-code points are sorted and divided into sequential groups of 1,024 characters
-(the final group may be smaller).
+`HomeNow.tsx`, `LiveUpdates.tsx`, `home-editorial.ts`, and `reader-fonts.ts`.
+Remaining GB2312 characters are sorted into 56 common slices of at most 128
+characters. Other source code points retain their 18 extended slices of at most
+1,024 characters. Final groups can be smaller.
 
-`src/components/HomeNow.fonts.css` declares the base and each extra slice with
+`src/components/HomeNow.fonts.css` declares the core and every other slice with
 exact, non-overlapping `unicode-range` values, regular weight, and
-`font-display: swap`. Ordinary reader text loads only the base file; unfamiliar
-characters in dynamic RSS content fetch their corresponding small extra slice
+`font-display: swap`. Static reader copy loads the core; additional characters
+in dynamic content fetch their corresponding common or extended slice
 as needed. This preserves the complete source character coverage instead of
 discarding characters absent from static copy. Characters outside the upstream
 Lite edition still use the browser's fallback font. Relevant OpenType layout
 features and their supporting glyphs are retained within each slice.
-The current base file is 1,658,704 bytes (about 1.58 MiB) for 7,778 code points.
-The 18 extra files cover the remaining 17,916 code points and are each about
-50–356 KiB. Downloading every slice would total 6,501,832 bytes; the purpose of
-the split is to keep ordinary reading loads small while retaining rare-character
-coverage on demand.
+The reader core is 93,372 bytes for 680 code points, replacing the former
+1,658,704-byte base. Common slices cover 7,098 code points and range from
+10,844 to 46,064 bytes. The 18 extended files still cover 17,916 code points
+and are unchanged. All 75 slices total 6,842,236 bytes: 340,404 bytes more than
+the previous deployment, in exchange for substantially smaller individual
+reading downloads. This is a transfer optimization, not a smaller full font.
+
+The existing 600px reader lead-in prepares the core and Instrument Serif unless
+the document is hidden or Save-Data is enabled. Removing all weak-network font
+preparation delayed warm reading, so the small core keeps that lead-in. At most
+three previously used common slices can also be prepared on a later visit in
+the same browser session. Only their bounded Unicode range identifiers are
+stored; article text and font binaries are not stored by application code.
+Extended slices remain demand-only. Font failures never block opening, reading,
+or closing; the existing KaiTi/serif fallback and `font-display: swap` remain.
 
 To reproduce from the project root with Python and PowerShell:
 
@@ -97,6 +108,7 @@ New-Item -ItemType Directory -Force downloads/woodland-font | Out-Null
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lxgw/LxgwWenKai-Lite/251ab63642d1c1c5db80497d78911b7aae6917d7/fonts/TTF/LXGWWenKaiLite-Regular.ttf' -OutFile downloads/woodland-font/LXGWWenKaiLite-Regular.ttf
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lxgw/LxgwWenKai-Lite/251ab63642d1c1c5db80497d78911b7aae6917d7/OFL.txt' -OutFile public/fonts/LICENSE.woodland-wenkai.txt
 python scripts/build-woodland-font.py downloads/woodland-font/LXGWWenKaiLite-Regular.ttf
+python tests/woodland-font.test.py downloads/woodland-font/LXGWWenKaiLite-Regular.ttf
 ```
 
 The build script accepts only project-relative paths and preserves the source
@@ -105,7 +117,14 @@ assignment is reproducible. It verifies every slice's exact character set,
 checks that no ranges overlap and their union equals the full source cmap, and
 preserves the original copyright/license records in every file. Subsetting
 changes glyph counts and ordering within each individual file. The generated
-`woodland-wenkai/manifest.json` records the source/copy checksums, slice sizes,
+`woodland-wenkai/manifest.json` records the source/copy checksums (copy line endings
+are normalized to LF), slice sizes,
 and output checksums. Regenerate the font files and CSS together whenever the
 reader's static copy changes. Downloaded TTF sources remain in the ignored
 `downloads/` directory.
+
+The verification additionally compares all 25,694 decomposed glyph outlines,
+advance widths, side bearings, and line metrics against the pinned upstream
+source. Runtime preparation, per-character slice selection, failed-font fallback,
+and cancellation are covered by `npm run test:first-open` against a production
+preview. See `docs/ux-refactor.md` section 6.10 for the measured acceptance matrix.
