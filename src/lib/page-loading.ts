@@ -1,6 +1,24 @@
 export const pageLoadTimeoutMs = 8000
 export const projectCoverBudgetMs = 2500
 
+/** A cached module can otherwise batch away pending feedback before a heavy first render. */
+export function paintPageFeedback(signal: AbortSignal): Promise<void> {
+  return new Promise(resolve => {
+    let frame = 0
+    const finish = () => {
+      window.cancelAnimationFrame(frame)
+      signal.removeEventListener('abort', finish)
+      document.removeEventListener('visibilitychange', visibility)
+      resolve()
+    }
+    const visibility = () => { if (document.hidden) finish() }
+    signal.addEventListener('abort', finish, { once: true })
+    document.addEventListener('visibilitychange', visibility)
+    if (signal.aborted || document.hidden) finish()
+    else frame = window.requestAnimationFrame(() => { frame = window.requestAnimationFrame(finish) })
+  })
+}
+
 export function reopenPage(href: string) {
   const target = new URL(href)
   if (target.pathname === window.location.pathname && target.search === window.location.search) {

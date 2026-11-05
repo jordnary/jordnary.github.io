@@ -5,6 +5,7 @@ import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
 import { ProjectsMenu, ProjectsWordmark } from './ProjectsMenu'
 import { ProjectsPreview } from './ProjectsPreview'
+import { projectArchiveImage } from '../lib/page-resources'
 import './Projects.css'
 
 const filterLabels: Record<ProjectFilter, string> = {
@@ -13,10 +14,7 @@ const filterLabels: Record<ProjectFilter, string> = {
 const categoryLabels = {
   'Web 应用': 'Web development', '机器学习': 'Machine learning', '视觉实验': 'Visual experiment',
 }
-const background = `${import.meta.env.BASE_URL}images/project-archive/linework-background-1920.webp`
-const backgroundSrcSet = `${background} 1920w, ${import.meta.env.BASE_URL}images/project-archive/linework-background-3840.webp 3840w`
-// Match object-fit: cover, including the wider image crop on portrait screens.
-const backgroundSizes = '(min-aspect-ratio: 1672/941) 100vw, 177.7lvh'
+const background = projectArchiveImage(import.meta.env.BASE_URL)
 
 function isVisibleProject(element: Element | null) {
   if (!element) return false
@@ -122,8 +120,8 @@ export function Projects() {
 
   return (
     <div className="projects-archive" id="projects" lang="en">
-      <img className="archive-background" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
-      <img className="archive-header-mask" src={background} srcSet={backgroundSrcSet} sizes={backgroundSizes} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
+      <img className="archive-background" {...background} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
+      <img className="archive-header-mask" {...background} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
       <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />
       <header className="archive-header">
         <div className="archive-title"><h1>PROJECTS</h1></div>

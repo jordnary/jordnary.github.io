@@ -4,7 +4,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
-import { learningCampusSizes } from './src/data/image-sizes'
+import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
 
 function pageStartup(): Plugin {
@@ -27,25 +27,61 @@ function pageStartup(): Plugin {
   }
 }
 
-function criticalImages(): Plugin {
+function pageResources(): Plugin {
   let base = '/'
+  const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+  const imageTags = (url: URL) => (getPageResources(url, base)?.htmlImages ?? []).map(image => ({
+    tag: 'link',
+    attrs: { rel: 'preload', as: 'image', href: image.src,
+      fetchpriority: getPageResources(url, base)?.key === 'learning' ? 'high' : 'low', 'data-page-image': '',
+      ...(image.srcSet ? { imagesrcset: image.srcSet, imagesizes: image.sizes! } : {}) },
+    injectTo: 'head' as const,
+  }))
   return {
-    name: 'critical-responsive-images',
+    name: 'page-critical-resources',
     configResolved(config) { base = config.base },
     transformIndexHtml(_html, context) {
-      if (!context.filename.replace(/\\/g, '/').endsWith('/learning/index.html')) return []
-      const images = JSON.parse(readFileSync(new URL('./src/generated/responsive-images.json', import.meta.url), 'utf8'))
-      return ['hero-campus-sketch.webp', 'hero-campus-trees.webp'].map(file => {
-        const path = `images/learning/${file}`
-        const entry = images[path] as { width: number; variants: { file: string; width: number }[] }
-        return {
-          tag: 'link',
-          attrs: { rel: 'preload', as: 'image', href: `${base}${path}`, fetchpriority: 'high',
-            imagesrcset: [...entry.variants.map(image => `${base}${image.file} ${image.width}w`), `${base}${path} ${entry.width}w`].join(', '),
-            imagesizes: learningCampusSizes },
-          injectTo: 'head' as const,
+      // Production runs after project HTML generation, so details never inherit list hints.
+      return context.server ? imageTags(new URL(context.originalUrl ?? context.path, 'https://example.com')) : []
+    },
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        for (const asset of Object.values(bundle)) {
+          if (asset.type !== 'asset' || !asset.fileName.endsWith('.html')) continue
+          const url = new URL(`${base}${asset.fileName}`, 'https://example.com')
+          const resources = getPageResources(url, base)
+          if (!resources) continue
+          const route = Object.values(bundle).find(chunk => chunk.type === 'chunk'
+            && Object.keys(chunk.modules).some(id => id.replace(/\\/g, '/').endsWith(`/${pageModuleFiles[resources.key]}`)))
+          if (!route || route.type !== 'chunk') throw new Error(`Missing page module: ${resources.key}`)
+          const tags: { attrs: Record<string, string> }[] = []
+          const seen = new Set<string>()
+          const visit = (file: string) => {
+            if (seen.has(file)) return
+            seen.add(file)
+            const chunk = bundle[file]
+            if (!chunk || chunk.type !== 'chunk') return
+            const href = `${base}${file}`
+            if (!String(asset.source).includes(`href="${href}"`)) tags.push({ attrs: {
+              rel: 'modulepreload', crossorigin: '', href, 'data-page-module': '',
+            } })
+            // Warm CSS bytes without applying the stylesheet ahead of Vite's import gate.
+            for (const css of chunk.viteMetadata?.importedCss ?? []) {
+              const cssHref = `${base}${css}`
+              if (!seen.has(css) && !String(asset.source).includes(`href="${cssHref}"`)) tags.push({ attrs: {
+                rel: 'preload', as: 'style', crossorigin: '', href: cssHref, 'data-page-style': '',
+              } })
+              seen.add(css)
+            }
+            chunk.imports.forEach(visit)
+          }
+          visit(route.fileName)
+          tags.push(...imageTags(url))
+          const html = tags.map(({ attrs }) => `<link ${Object.entries(attrs).map(([key, value]) => `${key}="${escape(value)}"`).join(' ')}>`).join('\n')
+          asset.source = String(asset.source).replace('</head>', `${html}\n</head>`)
         }
-      })
+      },
     },
   }
 }
@@ -96,7 +132,7 @@ function projectPages(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectPages(), criticalImages(), pageStartup()],
+  plugins: [react(), tailwindcss(), projectPages(), pageResources(), pageStartup()],
   build: {
     rollupOptions: {
       input: {

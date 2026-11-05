@@ -24,7 +24,7 @@
   inset: 0 calc(50% - 50vw);
   pointer-events: none;
   user-select: none;
-  background-image: url('/images/contact/street-graffiti.webp');
+  background-image: var(--contact-cover-image);
   background-position: center top;
   background-size: 100% var(--graffiti-tile-height);
   background-repeat: repeat-y;

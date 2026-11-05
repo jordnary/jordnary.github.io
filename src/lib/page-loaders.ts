@@ -1,5 +1,8 @@
 import { createElement, type ComponentType } from 'react'
-import { getPageFromUrl, getProjectFromUrl, isHomepagePortalUrl, isProjectStudioUrl } from './routes'
+import { getProjectFromUrl } from './routes'
+import { getPageResources, type PageModuleKey } from './page-resources'
+import { preparePageImages } from './page-images'
+import { pageNetworkPolicy } from './page-network'
 
 export type PageModule = { default: ComponentType<{ href: string }> }
 
@@ -14,11 +17,11 @@ const imports = {
   detail: () => import('../pages/ProjectDetailPage').then(module => ({
     default: ({ href }: { href: string }) => createElement(module.default, { href, project: getProjectFromUrl(new URL(href))! }),
   })),
-} satisfies Record<string, () => Promise<PageModule>>
+} satisfies Record<PageModuleKey, () => Promise<PageModule>>
 
 // One entry per route module, including a pending import after its consumer times out.
 // Clearing a Promise cannot clear the browser module map or Vite's CSS bookkeeping.
-const pages = new Map<keyof typeof imports, Promise<PageModule>>()
+const pages = new Map<PageModuleKey, { promise: Promise<PageModule>; ready: boolean; rendered: boolean }>()
 const preloadErrors = new WeakSet<object>()
 
 export function trackPagePreloadErrors() {
@@ -36,14 +39,30 @@ export function isPagePreloadError(error: unknown) {
   return Boolean(error && typeof error === 'object' && preloadErrors.has(error))
 }
 
-export function loadPage(url: URL): Promise<PageModule> {
-  const key = isHomepagePortalUrl(url) ? 'portal' : isProjectStudioUrl(url) ? 'studio'
-    : getProjectFromUrl(url) ? 'detail' : getPageFromUrl(url)
+export function hasUnrenderedPage(url: URL) {
+  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
+  const task = key ? pages.get(key) : undefined
+  return Boolean(task?.ready && !task.rendered)
+}
+
+export function markPageRendered(url: URL) {
+  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
+  const task = key ? pages.get(key) : undefined
+  if (task) task.rendered = true
+}
+
+export function loadPage(url: URL, intent = false): Promise<PageModule> {
+  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
   if (!key) return Promise.reject(new Error('Unknown site route'))
-  let promise = pages.get(key)
-  if (!promise) {
-    promise = imports[key]()
-    pages.set(key, promise)
+  // Discover images alongside code without letting a large bitmap delay the shell.
+  if (!intent && pageNetworkPolicy().images) void preparePageImages(url, 'low')
+  let task = pages.get(key)
+  if (!task) {
+    const entry = { promise: imports[key](), ready: false, rendered: false }
+    task = entry
+    pages.set(key, entry)
+    void entry.promise.then(() => { entry.ready = true }, () => {})
   }
-  return promise
+  if (!intent) void task.promise.then(() => preparePageImages(url, 'high'), () => {})
+  return task.promise
 }

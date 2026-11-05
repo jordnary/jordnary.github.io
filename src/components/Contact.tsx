@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type CSSProperties } from 'react'
+import { contactCoverImage } from '../lib/page-resources'
 import { Toast } from './Toast'
 import { ContactAirmail } from './ContactAirmail'
 import { CopyIcon } from './icons'
@@ -25,7 +26,8 @@ export function Contact() {
 
   return (
     <section className="correspondence site-container section-surface" id="contact" aria-labelledby="contact-title">
-      <div className="correspondence-graffiti" aria-hidden="true" />
+      <div className="correspondence-graffiti" aria-hidden="true"
+        style={{ '--contact-cover-image': `url("${contactCoverImage(import.meta.env.BASE_URL).src}")` } as CSSProperties} />
 
       <div className="correspondence-hero section-surface">
         <header className="correspondence-intro">

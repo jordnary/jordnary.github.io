@@ -34,7 +34,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('/images/about/fiber-paper.webp') 0 0 / 540px 606px repeat;
+  background: var(--about-cover-image) 0 0 / 540px 606px repeat;
   mix-blend-mode: multiply;
   opacity: 0.3;
 }

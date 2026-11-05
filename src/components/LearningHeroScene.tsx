@@ -8,10 +8,11 @@ import { LearningPixelArrow } from './LearningPixelArrow'
 import { LearningPixelLabel } from './LearningPixelLabel'
 import { LearningNotesTicker } from './LearningNotesTicker'
 import { responsiveImage } from '../lib/responsive-images'
-import { learningCampusSizes } from '../data/image-sizes'
+import { learningCoverImages } from '../lib/page-resources'
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 const imageRoot = `${import.meta.env.BASE_URL}images/learning/`
+const [campusImage, treesImage] = learningCoverImages(import.meta.env.BASE_URL)
 const learningStatement = '从一个问题出发，拆开复杂的概念，用代码验证猜想。在阅读与实践之间，连接零散的线索。把每一次尝试写进笔记，让新的发现慢慢长成自己的理解。'
 const learningCharacters = Array.from(learningStatement)
 
@@ -159,9 +160,9 @@ function LearningCover({ staticScene }: { staticScene: boolean }) {
         <LearningCoverOutline />
         <div className="learning-cover-photo-reveal">
           <div className="learning-cover-render">
-            <img className="learning-cover-panorama" src={`${imageRoot}hero-campus-sketch.webp`} {...responsiveImage(`${imageRoot}hero-campus-sketch.webp`, learningCampusSizes)} alt="" width={1440} height={800} fetchPriority="high" onLoad={() => markLoaded('photo')} onError={() => markLoaded('photo')} />
+            <img className="learning-cover-panorama" {...campusImage} alt="" width={1440} height={800} fetchPriority="high" onLoad={() => markLoaded('photo')} onError={() => markLoaded('photo')} />
             <div className="learning-cover-trees">
-              <img src={`${imageRoot}hero-campus-trees.webp`} {...responsiveImage(`${imageRoot}hero-campus-trees.webp`, learningCampusSizes)} className="learning-cover-tree-art" alt="" width={1440} height={800} fetchPriority="high" onLoad={() => markLoaded('trees')} onError={() => markLoaded('trees')} />
+              <img {...treesImage} className="learning-cover-tree-art" alt="" width={1440} height={800} fetchPriority="high" onLoad={() => markLoaded('trees')} onError={() => markLoaded('trees')} />
             </div>
           </div>
         </div>

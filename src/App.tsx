@@ -8,6 +8,7 @@ import { useInputModality } from './lib/useInputModality'
 import { PageLoadFeedback } from './components/PageLoadFeedback'
 import { PageErrorBoundary } from './components/PageErrorBoundary'
 import type {} from './lib/pageStartup'
+import { markPageRendered } from './lib/page-loaders'
 
 function App({ page: initialPage }: { page: SitePage }) {
   useInputModality()
@@ -59,7 +60,8 @@ function App({ page: initialPage }: { page: SitePage }) {
 function PageReady({ href }: { href: string }) {
   useEffect(() => {
     // A deferred route can commit after the navigation hook's first scroll restore.
-    window.dispatchEvent(new Event('site-page-ready'))
+    markPageRendered(new URL(href))
+    window.dispatchEvent(new CustomEvent('site-page-ready', { detail: { href } }))
   }, [href])
   return null
 }

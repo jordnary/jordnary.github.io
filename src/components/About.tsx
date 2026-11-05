@@ -1,4 +1,5 @@
-import { useRef } from 'react'
+import { useRef, type CSSProperties } from 'react'
+import { aboutCoverImage } from '../lib/page-resources'
 import { SectionBackdrop } from './SectionBackdrop'
 import { AboutNextLinks } from './AboutNextLinks'
 import { AboutClosingNote } from './AboutClosingNote'
@@ -53,7 +54,8 @@ export function About() {
   return (
     <section className="about-journey site-container section-surface" id="about" aria-labelledby="about-title">
       <SectionBackdrop edge="none" />
-      <header className="journey-cover section-surface" ref={coverRef}>
+      <header className="journey-cover section-surface" ref={coverRef}
+        style={{ '--about-cover-image': `url("${aboutCoverImage(import.meta.env.BASE_URL).src}")` } as CSSProperties}>
         <SectionBackdrop tone="sky" edge="none" />
         <div className="journey-intro">
           <div className="journey-intro-heading" data-cover-reveal>

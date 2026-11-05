@@ -3,10 +3,12 @@ import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll, getPageScrollTop, getPageScrollLeft, scrollPageTo } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
-import { loadPage, type PageModule } from './page-loaders'
-import { PageLoadTimeoutError, projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
+import { hasUnrenderedPage, loadPage, type PageModule } from './page-loaders'
+import { PageLoadTimeoutError, paintPageFeedback, projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
 import type { PageLoadState } from '../components/PageLoadFeedback'
 import type {} from './projectTransitionBoot'
+import { installPagePrefetch } from './page-prefetch'
+import { siteLink } from './site-link'
 
 type Position = { left: number; top: number }
 type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior; module?: PageModule }
@@ -30,6 +32,7 @@ export function useSiteNavigation(initialPage: SitePage) {
   const actions = useRef<Actions | null>(null)
 
   useEffect(() => {
+    const prefetch = installPagePrefetch()
     const previousRestoration = window.history.scrollRestoration
     window.history.scrollRestoration = 'manual'
     const positions = new Map<string, Position>()
@@ -69,6 +72,7 @@ export function useSiteNavigation(initialPage: SitePage) {
 
     const navigate = (next: Navigation, commitHistory: () => void, initiallyCovered = false, initial = false) => {
       cancelActive()
+      prefetch.current(new URL(next.href))
       const id = ++revision
       const controller = new AbortController()
       const attempt = { id, controller, committed: false, retry: () => navigate({ ...next, focus: true }, commitHistory, false, initial) }
@@ -78,6 +82,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       let module: PageModule | undefined
       let animate = initiallyCovered || (!initial && shouldTransitionProjects(new URL(renderedHref), new URL(next.href))
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && !document.hidden)
+      const feedback = !initial && !animate && hasUnrenderedPage(new URL(next.href)) ? paintPageFeedback(controller.signal) : null
       const commit = () => {
         if (active !== attempt || controller.signal.aborted || attempt.committed || !module) return
         attempt.committed = true
@@ -88,14 +93,16 @@ export function useSiteNavigation(initialPage: SitePage) {
         setLoading(null)
       }
       // Import rejection and timeouts are handled here, before any history/page commit.
-      const ready = waitForPage(loadPage(new URL(next.href)), controller.signal).then(value => {
+      const ready = waitForPage(loadPage(new URL(next.href)), controller.signal).then(async value => {
         module = value
+        if (feedback) await feedback
         // Reload paper is opaque from its first HTML frame. Prepare content
         // behind it immediately, without delaying the existing reveal timeline.
         if (!animate || covered || initiallyCovered) commit()
       }, error => {
         if (active !== attempt || controller.signal.aborted) return
         setLoading({ href: next.href, status: 'error', reason: error instanceof PageLoadTimeoutError ? 'timeout' : 'load' })
+        prefetch.current(new URL(renderedHref), !initial)
         if (!(error instanceof PageLoadTimeoutError)) attempt.retry = () => reopenPage(next.href)
         releaseCover()
       })
@@ -134,11 +141,9 @@ export function useSiteNavigation(initialPage: SitePage) {
 
     const click = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
-      const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null
-      if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute('download')
-        || (anchor.target && anchor.target.toLowerCase() !== '_self') || anchor.relList.contains('external')) return
-      const url = new URL(anchor.href)
-      if (url.origin !== window.location.origin) return
+      const link = siteLink(event.target)
+      if (!link) return
+      const { anchor, url } = link
       const page = getPageFromUrl(url)
       if (!page) return
       if (anchor.hasAttribute('data-site-reload')) { event.preventDefault(); reopenPage(url.href); return }
@@ -180,6 +185,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       retry: () => active?.retry(),
       cancel: () => {
         cancelActive()
+        prefetch.current(new URL(renderedHref), true)
         setLoading(null)
         releaseCover()
         const delta = currentIndex - window.history.state[indexKey]
@@ -201,6 +207,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       && (!window.__projectTransitionBoot || window.__projectTransitionBoot.status === 'active')
     navigate({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false }, () => {}, reload, true)
     return () => {
+      prefetch.dispose()
       cancelActive()
       actions.current = null
       window.history.scrollRestoration = previousRestoration
