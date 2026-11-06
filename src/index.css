@@ -4754,22 +4754,6 @@ a {
     letter-spacing: 0.04em;
   }
 
-  .site-search-loading {
-    display: grid;
-    min-height: 10rem;
-    place-content: center;
-    gap: 1rem;
-    text-align: center;
-    color: var(--color-text-muted);
-    font-size: 0.85rem;
-  }
-
-  .site-search-loading button {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-  }
-
   .site-search-footer {
     display: flex;
     align-items: center;

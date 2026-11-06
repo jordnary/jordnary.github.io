@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { createServer } from 'vite'
 import sharp from 'sharp'
-import { launch, home, output, baseURL } from './search-support.mjs'
+import { launch, home, output, versions } from './search-support.mjs'
 
 // The build projection and the baseline UI are independent parity oracles.
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'silent' })
@@ -15,7 +15,6 @@ try {
 } finally { await server.close() }
 const queries = [...new Set(['', 'AI', 'React', ' REACT  ai ', '数据库', 'GitHub', '???', ...entries.flatMap(e => [e.title, ...e.keywords])])]
 const browser = await launch()
-const versions = [['baseline', process.env.RESOURCE_BASELINE_URL || 'http://127.0.0.1:4185/'], ['candidate', baseURL]]
 const report = {}
 try {
   await mkdir(output, { recursive: true })
@@ -44,11 +43,13 @@ try {
     }
     await context.close()
   }
-  assert.deepEqual(report.candidate.queries, report.baseline.queries)
-  assert.deepEqual(report.candidate.geometry, report.baseline.geometry)
+  for (const version of ['split', 'candidate']) {
+    assert.deepEqual(report[version].queries, report.baseline.queries)
+    assert.deepEqual(report[version].geometry, report.baseline.geometry)
+  }
   report.visual = []
   for (const width of [1440, 390, 844]) {
-    const [a, b] = await Promise.all(versions.map(async ([version]) => sharp(`${output}/${version}-${width}.png`).ensureAlpha().raw().toBuffer({ resolveWithObject: true })))
+    const [a, b] = await Promise.all(['baseline', 'candidate'].map(async version => sharp(`${output}/${version}-${width}.png`).ensureAlpha().raw().toBuffer({ resolveWithObject: true })))
     assert.deepEqual(a.info, b.info)
     let changed = 0, maxDifference = 0
     for (let i = 0; i < a.data.length; i += 4) {

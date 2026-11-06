@@ -6,7 +6,7 @@ import ts from 'typescript'
 import { output } from './search-support.mjs'
 
 const report = {}
-for (const [version, directory] of [['baseline', `${output}/baseline`], ['candidate', 'dist']]) {
+for (const [version, directory] of [['baseline', `${output}/baseline`], ['split', `${output}/split`], ['candidate', 'dist']]) {
   const files = await readdir(`${directory}/assets`)
   const main = files.find(file => /^main-.*\.js$/.test(file))
   const mainCss = files.find(file => /^main-.*\.css$/.test(file))
@@ -29,7 +29,7 @@ for (const [version, directory] of [['baseline', `${output}/baseline`], ['candid
   const list = await Promise.all([...shared].map(sizes))
   report[version] = { main: await sizes(main), mainCss: await sizes(mainCss), shared: list,
     sharedBytes: list.reduce((sum, file) => sum + file.bytes, 0), sharedGzipBytes: list.reduce((sum, file) => sum + file.gzipBytes, 0) }
-  if (version === 'candidate') {
+  if (version === 'split') {
     const feature = files.find(file => /^SiteSearchResults-.*\.js$/.test(file))
     const css = files.find(file => /^SiteSearchResults-.*\.css$/.test(file))
     const featureGraph = await graph(feature)
@@ -39,7 +39,8 @@ for (const [version, directory] of [['baseline', `${output}/baseline`], ['candid
     report[version].featureCss = await sizes(css)
     report[version].reused = [...featureGraph].filter(file => shared.has(file))
     assert.ok(report[version].feature.bytes < 18000, 'The lazy feature must not import whole note bodies or duplicate project data')
-  }
+  } else if (version === 'candidate') assert.equal(files.some(file => /^SiteSearchResults-/.test(file)), false, 'Search has no request boundary after startup')
 }
+assert.ok(report.candidate.sharedGzipBytes < report.baseline.sharedGzipBytes, 'Keep compact projection savings')
 await writeFile(`${output}/build-sizes.json`, JSON.stringify(report, null, 2))
 console.log(JSON.stringify(report, null, 2))

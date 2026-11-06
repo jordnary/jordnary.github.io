@@ -41,6 +41,8 @@ export async function runResourceLoadingChecks(browser, baseURL, report = () => 
     await page.locator('.project-reader-cover .project-reader-image-trigger').click()
     const dialog = page.getByRole('dialog', { name: '图片浏览器' })
     await dialog.waitFor()
+    // The opening surface precedes gallery construction; inspect the real controls.
+    await dialog.getByRole('navigation', { name: '图片缩略图' }).waitFor()
     assert.equal(await dialog.getByRole('navigation', { name: '图片缩略图' }).getByRole('button').count(), 7)
     assert.ok(await page.locator('.yarl__slide img').count() <= 3, 'Only the current and adjacent originals should be mounted')
     assert.ok(await page.locator('.yarl__thumbnails_thumbnail img').evaluateAll(images =>

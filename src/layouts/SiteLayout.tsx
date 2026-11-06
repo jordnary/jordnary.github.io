@@ -5,7 +5,7 @@ import { Navbar } from '../components/Navbar'
 import { ScrollProgress } from '../components/ScrollProgress'
 import { SiteSearch } from '../components/SiteSearch'
 import { isHomepagePortalUrl, type SitePage } from '../lib/routes'
-import { prepareSearch, searchRecovery } from '../lib/search-loader'
+import { searchRecovery } from '../lib/search-recovery'
 
 type SiteLayoutProps = {
   children: ReactNode
@@ -20,8 +20,6 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
   const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(searchRecovery()))
   const openSearch = () => {
     if (isSearchOpen) return
-    // Required code/CSS starts in the input event, alongside the immediate shell.
-    void prepareSearch().catch(() => {})
     setIsSearchOpen(true)
   }
   // Derive portal mode from the current route on every render. Keeping this as

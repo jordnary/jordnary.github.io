@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { clearSearchRecovery, preparedSearch, prepareSearch, reloadSearch, searchRecovery } from '../lib/search-loader'
-import { waitForPage } from '../lib/page-loading'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { clearSearchRecovery, searchRecovery } from '../lib/search-recovery'
+import entries from 'virtual:site-search-entries'
+import { searchSite } from '../lib/search'
+import { SearchResults } from './SiteSearchResults'
+import './SiteSearchResults.css'
 
 type SiteSearchProps = { isOpen: boolean; onClose: () => void; onOpen: () => void }
 type SearchNavigationMode = 'pointer' | 'keyboard'
@@ -24,23 +27,11 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState(() => searchRecovery()?.query ?? '')
   const [activeIndex, setActiveIndex] = useState(-1)
   const [navigationMode, setNavigationMode] = useState<SearchNavigationMode>('pointer')
-  const [module, setModule] = useState(preparedSearch)
-  const [failed, setFailed] = useState(false)
-  const [reloadBlocked, setReloadBlocked] = useState(false)
-  const controller = useRef<AbortController | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLElement>(null)
-  const results = useMemo(() => module?.searchSite(query) ?? [], [module, query])
-  const load = useCallback(() => {
-    controller.current?.abort()
-    const consumer = new AbortController()
-    controller.current = consumer
-    void waitForPage(prepareSearch(), consumer.signal).then(value => {
-      if (!consumer.signal.aborted) setModule(value)
-    }, () => { if (!consumer.signal.aborted) setFailed(true) })
-  }, [])
+  const results = useMemo(() => searchSite(entries, query).slice(0, 8), [query])
 
-  useEffect(() => { clearSearchRecovery(); load(); return () => controller.current?.abort() }, [load])
+  useEffect(clearSearchRecovery, [])
   useLayoutEffect(() => {
     const previous = document.activeElement
     const dialog = dialogRef.current
@@ -70,7 +61,6 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
       event.preventDefault(); document.getElementById(`site-search-result-${activeIndex}`)?.click()
     }
   }
-  const Results = module?.SearchResults
   return <div aria-label="站内搜索" aria-modal="true" className="site-search-backdrop" onMouseDown={onClose} role="dialog">
     <section aria-label="站内搜索" className={`site-search-dialog${navigationMode === 'keyboard' ? ' is-keyboard-navigating' : ''}`}
       ref={dialogRef} onMouseDown={event => event.stopPropagation()} onKeyDown={event => {
@@ -83,23 +73,15 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
       <div className="site-search-input-row">
         <SearchIcon />
         <input aria-activedescendant={activeIndex >= 0 ? `site-search-result-${activeIndex}` : undefined}
-          aria-label="搜索站内内容" aria-controls={Results ? 'site-search-results' : undefined} aria-busy={!Results && !failed} aria-expanded="true" aria-haspopup="listbox"
+          aria-label="搜索站内内容" aria-controls={results.length ? 'site-search-results' : undefined} aria-expanded="true" aria-haspopup="listbox"
           className="site-search-input" onChange={event => updateQuery(event.target.value)} onKeyDown={inputKeyDown}
           placeholder="搜索项目、学习内容或页面…" ref={inputRef} role="combobox" type="search" value={query} />
         {query && <button aria-label="清空搜索内容" className="site-search-clear" type="button"
           onClick={() => { updateQuery(''); inputRef.current?.focus() }}><ClearIcon /></button>}
       </div>
       <div aria-live="polite" className="site-search-results">
-        {Results ? <Results results={results} query={query} activeIndex={activeIndex} onClose={onClose}
+        <SearchResults results={results} query={query} activeIndex={activeIndex} onClose={onClose}
           onActivate={index => { setNavigationMode('pointer'); setActiveIndex(index) }} />
-          : <div className="site-search-loading" role={failed ? 'alert' : 'status'}>
-            <p>{failed ? '搜索暂时未能加载，请重试。' : '正在准备搜索…可以先输入关键词。'}</p>
-            {failed && <button type="button" onClick={() => { setFailed(false); load(); inputRef.current?.focus() }}>重试</button>}
-            {failed && <button type="button" onClick={() => {
-              try { reloadSearch(query) } catch { setReloadBlocked(true) }
-            }}>重新载入页面</button>}
-            {reloadBlocked && <p>暂时无法保留输入，请先复制关键词再刷新页面。</p>}
-          </div>}
       </div>
       <div className="site-search-footer">
         <div aria-label="搜索快捷键" className="site-search-shortcuts">

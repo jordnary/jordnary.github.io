@@ -1,10 +1,4 @@
-import entries from 'virtual:site-search-entries'
-import { searchSite as search } from '../lib/search'
 import type { SearchEntry } from '../data/searchIndex'
-
-// A module export lets the permanent input use the loaded index without a second wait.
-// eslint-disable-next-line react-refresh/only-export-components
-export const searchSite = (query: string) => search(entries, query).slice(0, 8)
 
 export function SearchResults({ results, query, activeIndex, onClose, onActivate }: {
   results: SearchEntry[]

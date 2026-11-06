@@ -1,7 +1,12 @@
 import { connectionState, contentReady } from './page-resources.browser.mjs'
 export { connectionState }
-export const baseURL = process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4184/'
-export const output = 'node_modules/.cache/search-split'
+export const baseURL = process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4194/'
+export const output = 'node_modules/.cache/search-boundary'
+export const versions = [
+  ['baseline', process.env.RESOURCE_BASELINE_URL || 'http://127.0.0.1:4195/'],
+  ['split', process.env.SEARCH_SPLIT_URL || 'http://127.0.0.1:4196/'],
+  ['candidate', baseURL],
+]
 export const featurePattern = /\/assets\/SiteSearchResults-[^/]+\.(js|css)(\?.*)?$/
 export const profiles = [
   { name: 'desktop-network', viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, cpu: 1, mbps: 10, latency: 50 },
@@ -33,9 +38,10 @@ export function sampler() {
   const tasks = []
   new PerformanceObserver(list => tasks.push(...list.getEntries().map(e => ({ start: e.startTime, duration: e.duration }))))
     .observe({ type: 'longtask', buffered: true })
-  window.__measureSearch = (method = 'shortcut') => {
-    const result = { start: performance.now(), feedback: null, results: null, settled: null }
+  window.__measureSearch = ({ method = 'shortcut', query = '', expected, freeze = false }) => {
+    const result = { start: performance.now(), feedback: null, typed: null, inputEcho: null, results: null, actionable: null, entranceEnded: null, settled: null }
     window.__searchSample = result
+    let inputNode, selected = false
     const visible = el => {
       if (!el || !el.getClientRects().length) return false
       const r = el.getBoundingClientRect()
@@ -50,13 +56,58 @@ export function sampler() {
     else document.querySelector('[data-search-trigger],.nav-search-button').click()
     const tick = () => {
       const surface = document.querySelector('.site-search-dialog')
+      const backdrop = document.querySelector('.site-search-backdrop')
+      const input = surface?.querySelector('input')
       const elapsed = performance.now() - result.start
-      if (visible(surface) && visible(surface.querySelector('input')) && visible(surface.querySelector('.site-search-footer button'))) result.feedback ??= elapsed
-      if (visible(document.querySelector('.site-search-result'))) {
-        result.results ??= elapsed
-        if (!surface.getAnimations({ subtree: true }).some(a => a.playState === 'running' && a.effect?.getTiming().iterations !== Infinity)) result.settled ??= elapsed
+      if (visible(input) && visible(surface.querySelector('.site-search-footer button')) && document.activeElement === input) {
+        result.feedback ??= elapsed
+        inputNode ??= input
+        if (query && result.typed === null) {
+          result.typed = elapsed
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, query)
+          input.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: query }))
+          requestAnimationFrame(tick)
+          return
+        }
+        if (input.value === query) result.inputEcho ??= elapsed
       }
-      if (elapsed < 10000 && result.settled === null) requestAnimationFrame(tick)
+      const animations = [...(backdrop?.getAnimations() ?? []), ...(surface?.getAnimations() ?? [])]
+      if (surface && !animations.some(a => a.playState === 'running')) result.entranceEnded ??= elapsed
+      const items = [...document.querySelectorAll('.site-search-result')]
+      const correct = items.length === expected.length && items.every((a, i) =>
+        a.querySelector('strong').textContent === expected[i].title && new URL(a.href).pathname + new URL(a.href).hash === expected[i].href)
+      const first = items[0]
+      if (input?.value === query && correct && visible(first)) {
+        result.results ??= elapsed
+        if (!result.firstFrame) {
+          const bounds = first.getBoundingClientRect()
+          result.firstFrame = { display: getComputedStyle(first).display, opacity: getComputedStyle(surface).opacity,
+            entranceRunning: animations.some(a => a.playState === 'running'), width: bounds.width, height: bounds.height }
+          if (freeze) { animations.forEach(a => a.pause()); result.frozen = true; return }
+        }
+        if (result.entranceEnded !== null) result.settled ??= elapsed
+        const r = first.getBoundingClientRect()
+        const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)
+        if (first.contains(hit) && !first.closest('[inert]') && document.activeElement === input) {
+          if (!selected) {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }))
+            selected = true
+          } else if (input.getAttribute('aria-activedescendant') === first.id) {
+            // Prove Enter reaches the selected link without navigating or closing the measured surface.
+            const intercept = event => {
+              if (event.target.closest('.site-search-result') === first) {
+                event.preventDefault(); event.stopImmediatePropagation()
+                result.actionable ??= performance.now() - result.start
+              }
+            }
+            document.addEventListener('click', intercept, true)
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }))
+            document.removeEventListener('click', intercept, true)
+          }
+        }
+      }
+      result.sameInput = !inputNode || inputNode === input
+      if (elapsed < 10000 && (result.settled === null || result.actionable === null)) requestAnimationFrame(tick)
     }
     requestAnimationFrame(tick)
   }

@@ -100,6 +100,7 @@ export async function runFocusFeedbackChecks(browser, baseURL, report = () => {}
     await page.goto(new URL('projects/vae-gan-digits/', baseURL).href)
     await page.locator('.project-reader-cover .project-reader-image-trigger').tap()
     await page.locator('.image-gallery').waitFor()
+    await page.getByRole('navigation', { name: '图片缩略图' }).waitFor()
     await checkControl('.image-gallery button[aria-label="关闭图片预览"]', { x: 195, y: 160 })
     await page.getByRole('button', { name: '关闭图片预览', exact: true }).tap()
     await page.locator('.image-gallery').waitFor({ state: 'detached' })

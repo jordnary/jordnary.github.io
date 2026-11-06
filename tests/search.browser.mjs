@@ -18,195 +18,150 @@ async function run(fn, device = {}, connection) {
 }
 const open = page => page.keyboard.press('Control+k')
 const ready = page => page.locator('.site-search-result').first().waitFor()
-async function hold(page, pattern) {
-  let release
-  const gate = new Promise(resolve => { release = resolve })
-  await page.route(pattern, async route => { await gate; await route.continue().catch(() => {}) })
-  return release
-}
 try {
   await mkdir(output, { recursive: true })
   await run(async (page, requests) => {
     for (const path of ['/', '/home/', '/about/', '/learning/', '/projects/', '/contact/']) {
       await page.goto(new URL(path, baseURL).href)
       await page.locator('main > *').first().waitFor()
-      await page.waitForTimeout(200)
-      assert.equal(requests.some(url => featurePattern.test(url)), false, `${path}: no implicit search download`)
+      assert.equal(requests.some(url => featurePattern.test(url)), false)
     }
+    await home(page)
+    await page.locator('.nav-search-button').focus()
+    await page.waitForTimeout(400)
+    requests.length = 0
+    await open(page); await ready(page)
+    assert.equal(requests.filter(url => /\.(js|css)(\?|$)/.test(url)).length, 0)
+    assert.equal(await page.locator('.site-search-result').first().evaluate(el => getComputedStyle(el).display), 'grid')
   })
-  pass('All entry routes leave search code, index and results CSS unloaded')
+  pass('Code and styles are ready with the page; focus and first open add no code requests')
 
-  for (const extension of ['js', 'css']) await run(async (page, requests) => {
-    const release = await hold(page, new RegExp(`/assets/SiteSearchResults-[^/]+\\.${extension}$`))
+  await run(async page => {
     await home(page)
     await page.locator('.nav-search-button').focus()
     await open(page)
-    await page.locator('.site-search-loading').waitFor()
+    await page.keyboard.insertText('React AI')
     const input = page.locator('.site-search-input')
-    await input.fill('React AI')
     await input.evaluate(el => { window.__searchInput = el })
+    await ready(page)
+    assert.equal(await input.inputValue(), 'React AI')
+    assert.equal(await input.evaluate(el => el === window.__searchInput && el === document.activeElement), true)
     await page.keyboard.press('Meta+k')
     assert.equal(await input.inputValue(), 'React AI')
-    await page.keyboard.press('Tab')
-    await page.keyboard.press('Tab')
+    await page.keyboard.press('Shift+Tab')
+    assert.equal(await page.locator('.site-search-footer button').evaluate(el => el === document.activeElement), true)
     await page.keyboard.press('Tab')
     assert.equal(await input.evaluate(el => el === document.activeElement), true)
-    release()
-    await ready(page)
-    assert.equal(await input.inputValue(), 'React AI')
-    assert.equal(await input.evaluate(el => el === window.__searchInput), true, 'Loading does not replace the input DOM node')
     await page.keyboard.press('Escape')
     assert.equal(await page.locator('.nav-search-button').evaluate(el => el === document.activeElement), true)
-    assert.equal(requests.filter(url => featurePattern.test(url) && url.endsWith(`.${extension}`)).length, 1)
-  })
-  pass('Delayed JS and CSS retain input, focus, shortcut and Tab behavior without unstyled results')
-
-  await run(async (page, requests) => {
-    const release = await hold(page, featurePattern)
-    await home(page)
-    await page.locator('.nav-search-button').focus()
-    await open(page); await page.locator('.site-search-input').fill('cancel')
-    await page.locator('.site-search-footer button').click()
-    await page.locator('.site-search-backdrop').waitFor({ state: 'detached' })
-    assert.equal(await page.locator('.nav-search-button').evaluate(el => el === document.activeElement), true)
-    await open(page)
-    assert.equal(await page.locator('.site-search-input').inputValue(), '', 'Closing retains the original query reset behavior')
-    await page.locator('.site-search-input').fill('GitHub')
-    release(); await ready(page)
-    assert.equal(await page.locator('.site-search-input').inputValue(), 'GitHub')
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, 2)
-    await page.keyboard.press('Escape')
-    await page.waitForTimeout(150)
-    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
-  })
-  pass('Closing cancels the consumer; reopening shares pending work and ignores stale completion')
-
-  await run(async page => {
-    const release = await hold(page, featurePattern)
-    await home(page)
-    await page.locator('.nav-search-button').tap()
-    await page.locator('.site-search-input').fill('touch query')
-    await page.locator('.site-search-footer button').tap()
-    await page.locator('.site-search-backdrop').waitFor({ state: 'detached' })
-    release()
-    await page.waitForTimeout(250)
-    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
-  }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })
-  pass('Real touch opens and closes pending search without a late modal appearing')
-
-  for (const extension of ['js', 'css']) for (const failure of ['abort', '404']) await run(async (page, requests) => {
-    let failures = 1
-    await page.route(new RegExp(`/assets/SiteSearchResults-[^/]+\\.${extension}(\\?.*)?$`), async route => {
-      if (failures-- > 0) {
-        if (failure === 'abort') await route.abort('failed')
-        else await route.fulfill({ status: 404, body: 'Missing feature' })
-      } else await route.continue()
-    })
-    await home(page); await open(page)
-    await page.locator('.site-search-input').fill('数据库')
-    await page.getByRole('alert').waitFor()
-    assert.equal(await page.locator('.site-search-result').count(), 0)
-    const attempts = requests.filter(url => featurePattern.test(url)).length
-    await open(page); await open(page)
-    await page.waitForTimeout(60)
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, attempts, 'An already-open shortcut must not start retries behind the error surface')
-    await page.getByRole('button', { name: '重试', exact: true }).click()
-    await ready(page)
-    assert.equal(await page.locator('.site-search-input').inputValue(), '数据库')
-    assert.equal(await page.locator('.site-search-input').evaluate(el => el === document.activeElement), true)
-    assert.equal(requests.filter(url => featurePattern.test(url) && url.includes(`.${extension}`)).length, 2)
-  })
-  pass('JS/CSS interruption and 404 recover on explicit retry with the same query and focus')
-
-  await run(async page => {
-    let missing = true
-    await page.route(/\/assets\/SiteSearchResults-[^/]+\.js(\?.*)?$/, route => missing
-      ? route.fulfill({ status: 404, body: 'Expired deployment' }) : route.continue())
-    await home(page); await open(page)
-    await page.locator('.site-search-input').fill('React 数据库')
-    await page.getByRole('alert').waitFor()
-    await page.getByRole('button', { name: '重试', exact: true }).click()
-    await page.getByRole('alert').waitFor()
-    missing = false
-    await page.getByRole('button', { name: '重新载入页面', exact: true }).click()
-    await ready(page)
-    assert.equal(await page.locator('.site-search-input').inputValue(), 'React 数据库')
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('site-search-recovery')), null)
-  })
-  pass('An expired deployment can reopen from a fresh document with the pending query restored once')
-
-  await run(async page => {
-    await page.route(/\/assets\/SiteSearchResults-[^/]+\.js(\?.*)?$/, route => route.abort('failed'))
-    await home(page); await open(page)
-    await page.locator('.site-search-input').fill('keep this query')
-    await page.getByRole('alert').waitFor()
-    await page.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('Storage disabled') } })
-    await page.getByRole('button', { name: '重新载入页面', exact: true }).click()
-    assert.equal(await page.locator('.site-search-input').inputValue(), 'keep this query')
-    await page.getByText('暂时无法保留输入，请先复制关键词再刷新页面。').waitFor()
-    await page.keyboard.press('Escape')
-    await page.locator('.site-search-backdrop').waitFor({ state: 'detached' })
-  })
-  pass('Blocked storage does not discard input or disable closing the failure surface')
-
-  await run(async (page, requests) => {
-    const release = await hold(page, /\/assets\/SiteSearchResults-[^/]+\.css$/)
-    await home(page); await open(page)
-    await page.locator('.site-search-input').fill('React')
-    await page.getByRole('alert').waitFor({ timeout: 10000 })
-    release()
-    await page.waitForTimeout(300)
-    assert.equal(await page.locator('.site-search-result').count(), 0, 'A late load cannot replace the timeout state')
-    await page.getByRole('button', { name: '重试', exact: true }).click()
-    await ready(page)
-    assert.equal(await page.locator('.site-search-input').inputValue(), 'React')
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, 2)
-  })
-  pass('Eight-second consumer timeout stays recoverable and retry reuses late resources')
-
-  await run(async (page, requests) => {
-    await home(page)
-    const button = page.locator('.nav-search-button')
-    await button.dispatchEvent('pointerover', { pointerType: 'mouse', buttons: 0 })
-    await page.waitForTimeout(45)
-    await button.dispatchEvent('pointerout', { relatedTarget: null })
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(url => featurePattern.test(url)), false)
-    await button.focus()
-    await page.waitForFunction(() => [...document.styleSheets].some(s => /SiteSearchResults-/.test(s.href || '')))
-    await page.waitForTimeout(150)
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, 2)
     await open(page); await ready(page)
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, 2)
+    assert.equal(await input.inputValue(), '')
+    await page.locator('.site-search-backdrop').click({ position: { x: 4, y: 4 } })
+    await page.locator('.site-search-backdrop').waitFor({ state: 'detached' })
   })
-  pass('Short intent cancels; stable focus prepares once and the required open consumes it')
+  pass('Immediate trusted text, input identity, shortcuts, Tab trap, backdrop close and focus return are preserved')
+
+  await run(async (page, requests, context) => {
+    await home(page)
+    await context.setOffline(true)
+    requests.length = 0
+    await open(page); await page.keyboard.insertText('数据库'); await ready(page)
+    assert.equal(await page.locator('.site-search-input').inputValue(), '数据库')
+    await page.locator('.site-search-footer button').click()
+    await open(page); await ready(page)
+    assert.equal(await page.locator('.site-search-input').inputValue(), '')
+    assert.equal(requests.filter(url => /\.(js|css)(\?|$)/.test(url)).length, 0)
+  })
+  pass('After page startup, offline first open and reopen require no search download or retry')
 
   for (const connection of [
     { effectiveType: '4g', downlink: 10, rtt: 20, saveData: true },
     { effectiveType: '3g', downlink: 1.6, rtt: 150, saveData: false },
   ]) await run(async (page, requests) => {
-    await home(page); await page.locator('.nav-search-button').focus(); await page.waitForTimeout(500)
+    await home(page)
+    await page.locator('.nav-search-button').tap()
+    await page.keyboard.insertText('GitHub')
+    await ready(page)
+    await page.locator('.site-search-footer button').tap()
+    await page.waitForTimeout(300)
+    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
     assert.equal(requests.some(url => featurePattern.test(url)), false)
-    await open(page); await ready(page)
-  }, {}, connection)
-  pass('Weak connections and Save-Data suppress intent but keep explicit search available')
+  }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 }, connection)
+  pass('Touch, weak connections and Save-Data retain first-open results and closing')
 
-  await run(async (page, requests) => {
-    const release = await hold(page, /\/assets\/SiteSearchResults-[^/]+\.css$/)
-    await home(page); await page.locator('.nav-search-button').focus()
-    await page.waitForFunction(() => document.querySelector('link[data-search-style]'))
-    await page.evaluate(() => {
-      const anchor = document.createElement('a'); anchor.id = 'queued-route'; anchor.href = '/contact/'; anchor.textContent = 'Contact'; document.body.append(anchor); anchor.focus()
+  for (const resource of ['js', 'css']) await run(async page => {
+    let failed = true
+    await page.route(new RegExp(`/assets/main-[^/]+\\.${resource}$`), route => failed ? route.abort() : route.continue())
+    await page.goto(new URL('home/', baseURL).href, { waitUntil: 'domcontentloaded' })
+    await page.locator('.site-startup[data-state="error"]').waitFor()
+    failed = false
+    await page.locator('.site-startup').getByRole('link', { name: '重试', exact: true }).click()
+    await page.locator('.home-editorial').waitFor()
+    await open(page); await ready(page)
+  })
+  pass('Entry JS/CSS failures retain independent startup feedback, explicit recovery and usable search')
+
+  await run(async (page, requests, context) => {
+    await context.addInitScript(() => {
+      if (sessionStorage.getItem('search-test-seeded')) return
+      sessionStorage.setItem('search-test-seeded', '1')
+      sessionStorage.setItem('site-search-recovery', JSON.stringify({ href: location.href, query: 'React 数据库', time: Date.now() }))
     })
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(url => /\/assets\/ContactPage-/.test(url)), false, 'The page intent shares the single running slot')
-    await page.locator('#queued-route').evaluate(el => el.click())
-    await page.locator('.correspondence').waitFor()
-    release()
-    await page.waitForTimeout(200)
+    await home(page); await ready(page)
+    assert.equal(await page.locator('.site-search-input').inputValue(), 'React 数据库')
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('site-search-recovery')), null)
+    await page.keyboard.press('Escape')
+    await open(page); await ready(page)
+    assert.equal(await page.locator('.site-search-input').inputValue(), '')
+    await page.reload(); await page.locator('.home-editorial').waitFor()
     assert.equal(await page.locator('.site-search-backdrop').count(), 0)
   })
-  pass('Search and route intents share one running slot; required navigation bypasses the slot')
+  pass('A same-page reload recovery from the previous release restores the query exactly once')
+
+  for (const kind of ['expired', 'other-page', 'future', 'malformed', 'blocked']) await run(async (page, requests, context) => {
+    await context.addInitScript(kind => {
+      if (kind === 'blocked') {
+        Storage.prototype.getItem = Storage.prototype.removeItem = () => { throw new Error('Storage disabled') }
+      } else sessionStorage.setItem('site-search-recovery', kind === 'malformed' ? '{' : JSON.stringify({
+        href: kind === 'other-page' ? location.href + '?other' : location.href, query: 'stale',
+        time: Date.now() + (kind === 'future' ? 60000 : kind === 'expired' ? -60001 : 0),
+      }))
+    }, kind)
+    await home(page)
+    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
+    await open(page); await ready(page)
+    assert.equal(await page.locator('.site-search-input').inputValue(), '')
+    await page.keyboard.press('Escape')
+  })
+  pass('Invalid, stale, foreign or blocked recovery storage never prevents ordinary search')
+
+  await run(async page => {
+    await home(page)
+    await page.locator('.nav-search-button').focus()
+    await page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))
+      requestAnimationFrame(() => document.querySelector('.site-search-footer button')?.click())
+    })
+    await page.waitForTimeout(350)
+    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
+    assert.equal(await page.locator('.nav-search-button').evaluate(el => el === document.activeElement), true)
+    await open(page); await ready(page)
+  })
+  pass('Closing in the first frame never reopens the dialog or loses focus')
+
+  await run(async page => {
+    await home(page)
+    await page.evaluate(() => document.querySelector('#site-scroll').scrollTo({ top: 500, behavior: 'instant' }))
+    const before = await page.locator('#site-scroll').evaluate(el => el.scrollTop)
+    assert.ok(before > 0)
+    await open(page); await ready(page)
+    await page.locator('.site-search-input').fill('React')
+    assert.equal(await page.locator('#site-scroll').evaluate(el => getComputedStyle(el).overflowY), 'hidden')
+    await page.keyboard.press('Escape')
+    assert.equal(await page.locator('#site-scroll').evaluate(el => el.scrollTop), before)
+    assert.equal(await page.locator('#site-scroll').evaluate(el => getComputedStyle(el).overflowY), 'auto')
+  }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })
+  pass('Mobile search locks the background and restores the existing scroll position on close')
 
   await run(async page => {
     await home(page); await open(page); await ready(page)
@@ -270,7 +225,7 @@ try {
           dom: await page.evaluate(() => document.querySelectorAll('*').length) })
       }
     }
-    assert.equal(requests.filter(url => featurePattern.test(url)).length, 2)
+    assert.equal(requests.filter(url => featurePattern.test(url)).length, 0)
     assert.ok(cycles.at(-1).nodes <= cycles[0].nodes + 10)
     assert.ok(cycles.at(-1).jsEventListeners <= cycles[0].jsEventListeners + 5)
     await writeFile(`${output}/cycles.json`, JSON.stringify(cycles, null, 2))
