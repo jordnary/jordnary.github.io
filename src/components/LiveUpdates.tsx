@@ -1,56 +1,33 @@
-import { useEffect, useRef, useState } from 'react'
-import { githubProfileUrl, getGitHubSnapshot, type GitHubSnapshot } from '../lib/github'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { githubProfileUrl, githubSnapshotStore, type GitHubSnapshot } from '../lib/github'
+import { rssSnapshotStore, type RssFeed } from '../lib/rss'
+import type { SnapshotStore } from '../lib/snapshot-store'
+import { useSnapshot } from '../lib/useSnapshot'
 import { nowOrnamentImage } from '../lib/inpage-images'
 
-type LoadState<T> = { data: T | null; status: 'error' | 'loading' | 'ready' }
-type RssItem = { description: string; id: string; publishedAt: string | null; source: string; sourceUrl: string; title: string; url: string }
-type RssFeed = { generatedAt: string; items: RssItem[] }
-
 export function LiveUpdates({ kind }: { kind: 'code' | 'reading' }) {
-  const [githubState, setGitHubState] = useState<LoadState<GitHubSnapshot>>({ data: null, status: 'loading' })
-  const [feedState, setFeedState] = useState<LoadState<RssFeed>>({ data: null, status: 'loading' })
-  const [refreshIndex, setRefreshIndex] = useState(0)
+  return kind === 'code'
+    ? <LiveSnapshot key={kind} kind={kind} store={githubSnapshotStore}>{data => <GitHubContent snapshot={data} />}</LiveSnapshot>
+    : <LiveSnapshot key={kind} kind={kind} store={rssSnapshotStore}>{data => <RssContent feed={data} />}</LiveSnapshot>
+}
+
+function LiveSnapshot<T>({ kind, store, children }: { kind: 'code' | 'reading'; store: SnapshotStore<T>; children: (data: T) => ReactNode }) {
+  const state = useSnapshot(store)
   const [feedback, setFeedback] = useState<'error' | 'idle' | 'success'>('idle')
   const feedbackTimer = useRef<number | undefined>(undefined)
-
+  const mounted = useRef(false)
   useEffect(() => {
-    let current = true
-    const load = async () => {
-      let success = false
-      try {
-        if (kind === 'code') {
-          const result = await getGitHubSnapshot()
-          if (!current) return
-          success = !result.fromCache
-          setGitHubState({ data: result.snapshot, status: success ? 'ready' : 'error' })
-        } else {
-          const feed = await loadRssFeed()
-          if (!current) return
-          success = true
-          setFeedState({ data: feed, status: 'ready' })
-        }
-      } catch {
-        if (!current) return
-        if (kind === 'code') setGitHubState(previous => ({ ...previous, status: 'error' }))
-        else setFeedState(previous => ({ ...previous, status: 'error' }))
-      }
-      if (refreshIndex > 0) {
-        setFeedback(success ? 'success' : 'error')
-        feedbackTimer.current = window.setTimeout(() => setFeedback('idle'), 3600)
-      }
-    }
-    void load()
-    return () => { current = false; window.clearTimeout(feedbackTimer.current) }
-  }, [kind, refreshIndex])
-
-  const state = kind === 'code' ? githubState : feedState
-  const refreshing = state.status === 'loading'
-  const refresh = () => {
+    mounted.current = true
+    return () => { mounted.current = false; window.clearTimeout(feedbackTimer.current) }
+  }, [])
+  const refreshing = state.status === 'loading' || state.status === 'idle'
+  const refresh = async () => {
     window.clearTimeout(feedbackTimer.current)
     setFeedback('idle')
-    if (kind === 'code') setGitHubState(previous => ({ ...previous, status: 'loading' }))
-    else setFeedState(previous => ({ ...previous, status: 'loading' }))
-    setRefreshIndex(index => index + 1)
+    const success = await store.refresh(true)
+    if (!mounted.current) return
+    setFeedback(success ? 'success' : 'error')
+    feedbackTimer.current = window.setTimeout(() => setFeedback('idle'), 3600)
   }
 
   return <div className="home-now-live">
@@ -59,14 +36,13 @@ export function LiveUpdates({ kind }: { kind: 'code' | 'reading' }) {
       <button className="live-refresh-button" type="button" disabled={refreshing} onClick={refresh}>
         <RefreshIcon /><span>{refreshing ? '更新中…' : '刷新动态'} <span lang="en">/ {refreshing ? 'Loading' : 'Refresh'}</span></span>
       </button>
-      {feedback !== 'idle' && <p className={`live-refresh-feedback is-${feedback}`} role="status">
+      {!refreshing && ((feedback === 'success' && state.status === 'ready') || (feedback === 'error' && state.status === 'error')) && <p className={`live-refresh-feedback is-${feedback}`} role="status">
         {feedback === 'success' ? <><CheckIcon />已更新 / Updated</> : <><AlertIcon />更新失败，请重试 / Please try again</>}
       </p>}
     </div>
     <div className="home-now-live-content" aria-busy={refreshing}>
-      {kind === 'code'
-        ? githubState.data ? <GitHubContent snapshot={githubState.data} /> : <LiveState kind={githubState.status === 'error' ? 'error' : 'loading'} source="GitHub" />
-        : feedState.data ? <RssContent feed={feedState.data} /> : <LiveState kind={feedState.status === 'error' ? 'error' : 'loading'} source="RSS 阅读流" />}
+      {state.data ? children(state.data) : <LiveState kind={state.status === 'error' ? 'error' : 'loading'} source={kind === 'code' ? 'GitHub' : 'RSS 阅读流'} />}
+      {state.data && state.stale && refreshing && <p className="live-inline-note" role="status">显示上次成功的数据，正在检查更新。<span lang="en"> Checking for updates.</span></p>}
       {state.data && state.status === 'error' && <p className="live-inline-note" role="status">暂时无法更新，显示上次成功的数据。<span lang="en"> Showing the last available update.</span></p>}
     </div>
     {kind === 'code' && <a className="home-now-source" href={githubProfileUrl} target="_blank" rel="noreferrer">前往 GitHub <span lang="en">/ View on GitHub ↗</span></a>}
@@ -198,7 +174,8 @@ function RssContent({ feed }: { feed: RssFeed }) {
   const items = feed.items.slice(0, 4)
 
   if (items.length === 0) {
-    return <p className="live-inline-note" role="status">还没有收录的文章。<span lang="en"> No articles yet.</span></p>
+    return <><p className="live-inline-note" role="status">还没有收录的文章。<span lang="en"> No articles yet.</span></p>
+      <p className="live-sync-note">整理于：{formatTime(feed.generatedAt)}</p></>
   }
 
   return (
@@ -256,29 +233,6 @@ function LiveState({ kind, source }: { kind: 'error' | 'loading'; source: string
       <span>请使用上方的刷新按钮重试。 / Please refresh to try again.</span>
     </div>
   )
-}
-
-async function loadRssFeed(): Promise<RssFeed> {
-  const response = await fetch(`${import.meta.env.BASE_URL}data/rss.json`, {
-    cache: 'no-cache',
-    signal: AbortSignal.timeout(10000),
-  })
-
-  if (!response.ok) {
-    throw new Error(`RSS feed request failed with ${response.status}`)
-  }
-
-  const feed: unknown = await response.json()
-  if (!feed || typeof feed !== 'object') throw new Error('Invalid RSS feed')
-  const value = feed as RssFeed
-  if (typeof value.generatedAt !== 'string' || !Array.isArray(value.items) || !value.items.every(item =>
-    item && typeof item.id === 'string' && typeof item.title === 'string' &&
-    typeof item.description === 'string' && typeof item.source === 'string' &&
-    typeof item.url === 'string' && /^https?:\/\//.test(item.url) &&
-    typeof item.sourceUrl === 'string' && /^https?:\/\//.test(item.sourceUrl) &&
-    (item.publishedAt === null || typeof item.publishedAt === 'string'),
-  )) throw new Error('Invalid RSS feed')
-  return value
 }
 
 function formatNumber(value: number) {

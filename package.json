@@ -48,7 +48,8 @@
     "test:project-docs": "node --test tests/project-docs.test.mjs tests/routes.test.ts",
     "test:project-visuals": "node --test tests/project-visuals.test.mjs",
     "posters:render": "node scripts/render-project-posters.mjs",
-    "test:snapshots": "node --test tests/github-snapshot.test.mjs tests/github-avatar.test.mjs tests/cleanup-history.test.mjs",
+    "test:snapshots": "node --test tests/github-snapshot.test.mjs tests/rss-snapshot.test.mjs tests/snapshot-store.test.mjs tests/github-avatar.test.mjs tests/cleanup-history.test.mjs",
+    "test:snapshots-browser": "node tests/snapshots.browser.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

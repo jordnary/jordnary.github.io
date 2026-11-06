@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
 const baseURL = process.env.HOME_EDITORIAL_TEST_URL || 'http://localhost:5173/'
 const snapshot = {
-  fetchedAt: '2026-10-22T01:00:00Z', profile: { followers: 0, publicRepos: 12 },
+  fetchedAt: new Date().toISOString(), profile: { followers: 0, publicRepos: 12 },
   repos: Array.from({ length: 12 }, (_, index) => ({ name: `example-${index}`, description: 'A quiet project in progress.',
     language: 'TypeScript', stars: 0, updatedAt: '2026-10-21T01:00:00Z', url: `https://example.com/${index}` })),
 }

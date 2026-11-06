@@ -1,9 +1,10 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { isRssFeed } from '../src/lib/rss-snapshot.ts'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(rootDirectory, 'public/data/rss.json')
+const defaultOutput = resolve(rootDirectory, 'public/data/rss.json')
 const maxItems = 12
 const maxItemsPerSource = maxItems
 
@@ -23,47 +24,60 @@ const feedSources = [
   },
 ]
 
-const results = await Promise.allSettled(feedSources.map(syncSource))
-const sourceQueues = results
-  .filter((result) => result.status === 'fulfilled')
-  .map((result) =>
-    [...result.value]
-      .sort((first, second) => getTimestamp(second.publishedAt) - getTimestamp(first.publishedAt))
-      .slice(0, maxItemsPerSource),
-  )
-
-let items = roundRobin(sourceQueues).slice(0, maxItems)
-
-if (items.length === 0) {
-  const previousFeed = await readPreviousFeed()
-  items = previousFeed?.items ?? []
-}
-
-const payload = {
-  generatedAt: new Date().toISOString(),
-  items,
-}
-
-await mkdir(dirname(outputPath), { recursive: true })
-await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
-
-const failedSources = results.filter((result) => result.status === 'rejected').length
-console.log(`RSS sync complete: ${items.length} articles from ${feedSources.length - failedSources}/${feedSources.length} sources.`)
-
-async function syncSource(source) {
-  const response = await fetch(source.feedUrl, {
-    headers: {
-      Accept: 'application/atom+xml, application/rss+xml, application/xml, text/xml',
-      'User-Agent': 'jordnary.github.io RSS reader',
-    },
-    signal: AbortSignal.timeout(12000),
-  })
-
-  if (!response.ok) {
-    throw new Error(`${source.name} returned ${response.status}`)
+export async function syncRssSnapshot({
+  outputPath = defaultOutput,
+  siteUrl = process.env.SITE_URL || 'https://jordnary.github.io/',
+  fetchImpl = fetch,
+} = {}) {
+  const results = await Promise.allSettled(feedSources.map(async source => {
+    const response = await fetchImpl(source.feedUrl, {
+      headers: {
+        Accept: 'application/atom+xml, application/rss+xml, application/xml, text/xml',
+        'User-Agent': 'jordnary.github.io RSS reader',
+      },
+      signal: AbortSignal.timeout(12000),
+    })
+    if (!response.ok) throw new Error('RSS source unavailable')
+    return parseFeed(await response.text(), source)
+  }))
+  const queues = results.filter(result => result.status === 'fulfilled')
+    .map(result => [...result.value].sort((a, b) => getTimestamp(b.publishedAt) - getTimestamp(a.publishedAt)).slice(0, maxItemsPerSource))
+  const items = roundRobin(queues).slice(0, maxItems)
+  let snapshot = { generatedAt: new Date().toISOString(), items }
+  let reused = false
+  if (!items.length || !isRssFeed(snapshot)) {
+    const previous = await Promise.allSettled([
+      readFile(outputPath, 'utf8').then(JSON.parse),
+      (async () => {
+        const response = await fetchImpl(new URL('data/rss.json', `${siteUrl.replace(/\/$/, '')}/`), {
+          signal: AbortSignal.timeout(12000),
+        })
+        if (!response.ok) throw new Error('Published RSS snapshot unavailable')
+        return response.json()
+      })(),
+    ])
+    snapshot = previous.filter(result => result.status === 'fulfilled' && isRssFeed(result.value))
+      .map(result => result.value).sort((a, b) => Date.parse(b.generatedAt) - Date.parse(a.generatedAt))[0]
+    if (!snapshot) throw new Error('RSS sync failed and no valid previous snapshot is available; deployment stopped.')
+    reused = true
   }
+  const target = outputPath instanceof URL ? outputPath : pathToFileURL(resolve(outputPath))
+  const temporary = new URL(`${target.href}.tmp`)
+  await mkdir(dirname(fileURLToPath(target)), { recursive: true })
+  await writeFile(temporary, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8')
+  await rename(temporary, target)
+  return { snapshot, reused }
+}
 
-  return parseFeed(await response.text(), source)
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  try {
+    const { snapshot, reused } = await syncRssSnapshot()
+    console.log(reused ? `RSS sync unavailable; retained snapshot from ${snapshot.generatedAt}.` : `RSS sync complete: ${snapshot.items.length} articles.`)
+    if (reused && process.env.GITHUB_ACTIONS) console.log('::warning::RSS sync unavailable; retained the last successful snapshot.')
+  } catch {
+    console.error('RSS sync failed and no valid previous snapshot is available; deployment stopped.')
+    process.exitCode = 1
+  }
 }
 
 function parseFeed(xml, source) {
@@ -204,12 +218,4 @@ function slugify(value) {
 
 function escapeRegex(value) {
   return value.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
-}
-
-async function readPreviousFeed() {
-  try {
-    return JSON.parse(await readFile(outputPath, 'utf8'))
-  } catch {
-    return null
-  }
 }

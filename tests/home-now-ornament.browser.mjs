@@ -6,7 +6,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
   await page.addInitScript(() => sessionStorage.setItem('site-live2d-collapsed-desktop', 'true'))
   await page.route('**/data/github.json', route => route.fulfill({ json: {
-    fetchedAt: '2026-10-22T01:00:00Z', profile: { followers: 0, publicRepos: 2 },
+    fetchedAt: new Date().toISOString(), profile: { followers: 0, publicRepos: 2 },
     repos: ['garden-notes', 'small-discoveries'].map(name => ({ name, description: 'Small ideas, growing slowly.', language: 'TypeScript', stars: 0, updatedAt: '2026-10-22T01:00:00Z', url: `https://github.com/example/${name}` })),
   } }))
   await page.goto(new URL('home/', process.env.HOME_EDITORIAL_TEST_URL || 'http://localhost:5173/').href)

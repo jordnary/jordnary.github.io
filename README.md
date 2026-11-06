@@ -31,7 +31,8 @@ npm run dev
 | `npm run build` | TypeScript 检查和生产构建，输出到 `dist`。 |
 | `npm run preview` | 预览生产构建。 |
 | `npm run lint` | ESLint 检查。 |
-| `npm run test:snapshots` | GitHub 快照、离线兜底及部署历史保留规则。 |
+| `npm run test:snapshots` | GitHub/RSS 同步、缓存时效、离线恢复及部署历史保留规则。 |
+| `npm run test:snapshots-browser` | 生产预览中的快照缓存、刷新、超时、存储禁用与恢复。 |
 | `npm run test:project-docs` | 手动资料同步、隐私清理和路由检查。 |
 | `npm run test:project-visuals` | 项目配图与元数据检查。 |
 | `npm run test:home-now` | 首页阅读窗口、滚动锁、焦点归还和花纹动效。 |
@@ -77,7 +78,8 @@ npm run dev
 开发和构建前会同步项目转场模板、GitHub 动态与 RSS。站内搜索使用本地内容索引；浏览器读取同源 JSON 快照，不直接调用 GitHub 或 RSS 服务。
 
 - `public/data/github.json` 最多保留 3 个项目，`public/data/rss.json` 最多保留 12 条内容；生成文件被 Git 忽略。
-- GitHub 同步失败时使用最新有效快照，并保留原同步时间；没有可用快照时停止构建。RSS 同步失败时保留上次成功数据。
+- GitHub/RSS 同步失败时从本地或已发布站点选择最新有效快照，保留原同步时间；没有可用快照时停止构建，不把旧内容标为刚更新。
+- 浏览器共用 `snapshot-store.ts`：有效旧值立即显示，会话内 5 分钟复用，按源时间最多接受 7 天旧值；必要时在可见消费、恢复联网或手动刷新时校验。请求共享、失败保留有效数据，存储禁用时仍可使用内存结果；没有轮询。细节、回归和限制见 [快照交接](docs/ux-refactor.md#616-p4-统一快照缓存校验与恢复)。
 - 导航栏和首页目录直接加载随网站发布的 `src/assets/github-avatar.webp`，不等待 GitHub 数据或远端头像。`npm run sync:github` 会检查头像内容，变化时才更新本地图片；下载失败时保留默认头像。生产构建为图片生成内容哈希地址，头像更新后不会继续使用旧缓存。
 - 本地可通过进程环境变量 `GH_TOKEN` 或 `GITHUB_TOKEN` 认证；Actions 使用内置令牌。令牌不写入前端文件。站点地址由 `SITE_URL` 指定。
 - 推送到 `main`、手动触发或每 6 小时的定时任务都会运行部署工作流；北京时间为 08:17、14:17、20:17 和次日 02:17。

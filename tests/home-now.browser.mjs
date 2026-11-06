@@ -3,11 +3,11 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
 const snapshot = {
-  fetchedAt: '2026-10-20T01:00:00Z', profile: { followers: 2, publicRepos: 3 },
+  fetchedAt: new Date().toISOString(), profile: { followers: 2, publicRepos: 3 },
   repos: Array.from({ length: 3 }, (_, i) => ({ name: `small-project-${i + 1}`, description: '持续维护的小项目。 Small improvements, one step at a time.', language: 'TypeScript', stars: i, updatedAt: '2026-10-19T02:00:00Z', url: `https://github.com/example/project-${i + 1}` })),
 }
 const feed = {
-  generatedAt: '2026-10-20T01:00:00Z',
+  generatedAt: new Date().toISOString(),
   items: Array.from({ length: 4 }, (_, i) => ({ id: String(i), title: `好奇心与日常探索 ${i + 1} / A longer English reading title that wraps naturally`, description: '记录新的视角与思考。 Notes on small discoveries and thoughtful experiments.', source: 'Example Journal', sourceUrl: 'https://example.com', publishedAt: '2026-10-19T02:00:00Z', url: `https://example.com/article-${i + 1}` })),
 }
 

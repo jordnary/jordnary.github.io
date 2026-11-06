@@ -12,8 +12,10 @@ const checks = [
   ['lint', ['node_modules/eslint/bin/eslint.js', '.']],
   ['project-visuals', ['--test', 'tests/project-visuals.test.mjs']],
   ['transition-template', ['scripts/inline-project-transition.mjs', '--check']],
-  ...['projects', 'project-details', 'project-media-density', 'gallery-loading', 'page-resources', 'resource-loading', 'first-open']
+  ...['projects', 'project-details', 'project-media-density', 'gallery-loading', 'page-resources', 'resource-loading', 'first-open',
+    'home-now', 'home-now-scroll-lock', 'home-now-focus-return', 'home-now-ornament', 'snapshots']
     .map(name => [name, [`tests/${name}.browser.mjs`]]),
+  ['snapshot-units', ['--test', 'tests/github-snapshot.test.mjs', 'tests/snapshot-store.test.mjs', 'tests/rss-snapshot.test.mjs', 'tests/github-avatar.test.mjs', 'tests/cleanup-history.test.mjs']],
 ]
 const server = await preview({ configFile: false, build: { outDir: 'dist' }, preview: { host: '127.0.0.1', port: 4196, strictPort: true } })
 const baseURL = 'http://127.0.0.1:4196/'

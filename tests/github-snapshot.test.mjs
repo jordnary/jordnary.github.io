@@ -4,7 +4,7 @@ import { mkdtemp, readFile, rm, writeFile, readdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { syncGitHubSnapshot } from '../scripts/sync-github.mjs'
-import { getGitHubSnapshot } from '../src/lib/github.ts'
+import { githubSnapshotStore } from '../src/lib/github.ts'
 
 const previous = {
   profile: { followers: 2, publicRepos: 5 }, repos: [], fetchedAt: '2025-01-01T00:00:00.000Z',
@@ -74,23 +74,23 @@ test('missing or corrupt fallback stops deployment without writing empty data', 
   await assert.rejects(readFile(outputPath), { code: 'ENOENT' })
 })
 
-test('browser requests only the site snapshot and uses persistent cache on a failed refresh', async (t) => {
+test('browser GitHub adapter requests only its same-origin snapshot and retains data on failure', async (t) => {
   const storage = new Map()
+  const recent = { ...previous, fetchedAt: new Date().toISOString() }
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     assert.equal(url, '/data/github.json')
     assert.equal(options.cache, 'no-cache')
-    return json(previous)
+    return json(recent)
   })
   const original = Object.getOwnPropertyDescriptor(globalThis, 'window')
   Object.defineProperty(globalThis, 'window', { configurable: true, value: { localStorage: {
-    setItem: (key, value) => storage.set(key, value), getItem: (key) => storage.get(key),
+    setItem: (key, value) => storage.set(key, value), getItem: (key) => storage.get(key), removeItem: key => storage.delete(key),
   } } })
   t.after(() => { if (original) Object.defineProperty(globalThis, 'window', original); else delete globalThis.window })
-  assert.deepEqual(await getGitHubSnapshot(), { snapshot: previous, fromCache: false })
+  assert.equal(await githubSnapshotStore.refresh(), true)
+  assert.deepEqual(githubSnapshotStore.getSnapshot().data, recent)
   globalThis.fetch.mock.mockImplementation(async () => json({}, 503))
-  assert.deepEqual(await getGitHubSnapshot(), { snapshot: previous, fromCache: true })
-  storage.clear()
-  await assert.rejects(getGitHubSnapshot(), /503/)
-  storage.set('github-site-snapshot:v1', '{broken')
-  await assert.rejects(getGitHubSnapshot(), /503/)
+  assert.equal(await githubSnapshotStore.refresh(true), false)
+  assert.deepEqual(githubSnapshotStore.getSnapshot(), { data: recent, status: 'error', stale: true })
+  assert.equal(JSON.parse(storage.get('site-snapshot:github:v1')).sourceUpdatedAt, recent.fetchedAt)
 })
