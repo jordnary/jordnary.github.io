@@ -10,7 +10,7 @@ const stopTracking = trackPagePreloadErrors()
 if (import.meta.hot) import.meta.hot.dispose(stopTracking)
 
 // Mount the shell immediately. Route imports still wait for Vite's stylesheets.
-// An entry stylesheet failure stays in the independent, styled HTML recovery UI.
+// An entry failure is reported by the independent HTML guard; refresh retries it.
 if (!window.__siteStartup?.failed) createRoot(document.getElementById('site-scroll')!).render(
   <StrictMode>
     <App page={getPageFromDocument()} />

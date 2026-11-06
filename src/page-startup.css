@@ -1,19 +1,64 @@
-.site-startup {
+@font-face {
+  font-family: 'Page Notice Round';
+  src: url('__SITE_BASE__fonts/page-notice-rounded.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.page-load-feedback {
   position: fixed;
   z-index: 200;
-  inset: 0;
+  right: max(1rem, env(safe-area-inset-right));
+  bottom: max(1rem, env(safe-area-inset-bottom));
   box-sizing: border-box;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  padding: 2rem;
-  background: #fff;
-  color: #334155;
-  font: 400 1rem/1.6 ui-sans-serif, system-ui, sans-serif;
+  display: block;
+  width: max-content;
+  max-width: calc(100vw - max(1rem, env(safe-area-inset-left)) - max(1rem, env(safe-area-inset-right)));
+  min-height: 48px;
+  margin: 0;
+  padding: 0.85rem 1.25rem 1rem;
+  overflow: hidden;
+  border: 1px solid #efb0ad;
+  border-radius: 0.85rem;
+  background: #fff1ef;
+  color: #a32d32;
+  box-shadow: 0 5px 20px rgb(105 31 38 / 0.12);
+  font: 400 15px/1.5 'Page Notice Round', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  letter-spacing: 0.04em;
   text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: page-load-enter 220ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
-.site-startup[data-kind='projects'] { background: #f2f2f2; color: #34342d; }
-.site-startup[data-kind='portal'] { background: #101316; color: #e2e8f0; }
-.site-startup p { margin: 0 0 1rem; }
-.site-startup a { display: inline-flex; align-items: center; min-height: 44px; margin: 0 0.75rem; color: inherit; text-underline-offset: 0.2em; }
-.site-startup a:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.page-load-feedback:focus-visible { outline: 2px solid #a32d32; outline-offset: 3px; }
+.page-load-feedback[data-state='pressing'] { pointer-events: none; animation: page-load-press 240ms ease-out both; }
+.page-load-feedback[data-state='closing'] { pointer-events: none; animation: page-load-leave 180ms ease-in both; }
+.page-load-feedback-countdown {
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: #d65c61;
+  transform-origin: left;
+  animation: page-load-countdown 5s linear forwards;
+}
+.page-load-feedback:not([data-state='error']) .page-load-feedback-countdown { animation-play-state: paused; }
+@keyframes page-load-enter {
+  from { transform: translateX(calc(100% + max(1rem, env(safe-area-inset-right)))); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes page-load-leave {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(calc(100% + max(1rem, env(safe-area-inset-right)))); opacity: 0; }
+}
+@keyframes page-load-press {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(0.93); }
+  65% { transform: scale(1.035); }
+  85% { transform: scale(0.99); }
+}
+@keyframes page-load-countdown { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .page-load-feedback, .page-load-feedback[data-state='pressing'], .page-load-feedback[data-state='closing'] { animation: none; }
+  .page-load-feedback-countdown { animation-timing-function: steps(5, end); }
+}

@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
 import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
+import { showPageLoadFailure } from './src/lib/page-load-notice'
 import { searchIndex } from './scripts/search-index'
 
 function pageStartup(): Plugin {
@@ -20,8 +21,8 @@ function pageStartup(): Plugin {
         // an inline startup guard ahead of all potentially failing entry assets.
         return { html: html.replace(/<meta charset="UTF-8"\s*\/?>\s*/i, ''), tags: [
           { tag: 'meta', attrs: { charset: 'UTF-8' }, injectTo: 'head-prepend' },
-          { tag: 'style', attrs: { 'data-site-startup': '' }, children: readFileSync(new URL('./src/page-startup.css', import.meta.url), 'utf8'), injectTo: 'head-prepend' },
-          { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${JSON.stringify(base)});`, injectTo: 'head-prepend' },
+          { tag: 'style', attrs: { 'data-site-startup': '' }, children: readFileSync(new URL('./src/page-startup.css', import.meta.url), 'utf8').replaceAll('__SITE_BASE__', base), injectTo: 'head-prepend' },
+          { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${showPageLoadFailure.toString()});`, injectTo: 'head-prepend' },
         ] }
       },
     },

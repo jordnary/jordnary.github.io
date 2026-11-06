@@ -116,9 +116,9 @@ try {
     let failed = true
     await page.route(new RegExp(`/assets/main-[^/]+\\.${resource}$`), route => failed ? route.abort() : route.continue())
     await page.goto(new URL('home/', baseURL).href, { waitUntil: 'domcontentloaded' })
-    await page.locator('.site-startup[data-state="error"]').waitFor()
+    await page.locator('.page-load-feedback[data-state="error"]').waitFor()
     failed = false
-    await page.locator('.site-startup').getByRole('link', { name: '重试', exact: true }).click()
+    await page.reload()
     await page.locator('.home-editorial').waitFor()
     await open(page); await ready(page)
   })

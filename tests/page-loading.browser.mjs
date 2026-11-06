@@ -6,13 +6,24 @@ const feedback = '.page-load-feedback'
 const modulePattern = name => new RegExp(`/assets/${name}-[^/]+\\.js(?:\\?.*)?$`)
 const cssPattern = name => new RegExp(`/assets/${name}-[^/]+\\.css(?:\\?.*)?$`)
 const frame = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
-const clickLink = (page, href) => page.evaluate(href => {
+const clickLink = (page, href, preserveScroll = false) => page.evaluate(({ href, preserveScroll }) => {
   const link = document.createElement('a')
   link.href = href
+  if (preserveScroll) link.dataset.preserveScroll = ''
   document.body.append(link)
   link.click()
   link.remove()
-}, href)
+}, { href, preserveScroll })
+const observeFeedback = () => {
+  window.__feedbackCount = 0
+  window.__feedbackMax = 0
+  new MutationObserver(records => {
+    for (const record of records) for (const node of record.addedNodes) {
+      if (node instanceof Element && (node.matches('.page-load-feedback, .site-startup') || node.querySelector('.page-load-feedback, .site-startup'))) window.__feedbackCount++
+    }
+    window.__feedbackMax = Math.max(window.__feedbackMax, document.querySelectorAll('.page-load-feedback').length)
+  }).observe(document, { childList: true, subtree: true })
+}
 const scrollTop = page => page.evaluate(() => matchMedia('(pointer: coarse)').matches
   ? document.querySelector('#site-scroll').scrollTop : scrollY)
 const scrollTo = (page, top) => page.evaluate(top => {
@@ -54,10 +65,10 @@ export async function runStartupLayoutChecks(browser, baseURL) {
       const gate = await hold(page, cssPattern(name))
       await page.goto(new URL(path, baseURL).href, { waitUntil: 'domcontentloaded' })
       await gate.requested
-      await page.locator(`${feedback}[data-state="loading"]`).waitFor()
+      assert.equal(await page.locator(feedback).count(), 0)
       await page.waitForTimeout(700)
       await gate.release()
-      await page.locator(feedback).waitFor({ state: 'detached' })
+      await page.waitForFunction(() => document.querySelector('main')?.children.length > 0)
       await page.waitForTimeout(250)
       assert.ok(await page.evaluate(() => window.__startupLayoutShift < 0.05), `${path} must not move visible footer content out of the startup viewport`)
     } finally { await context.close() }
@@ -71,6 +82,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
   const withPage = async (run, options = {}) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', ...options })
     const page = await context.newPage()
+    await context.addInitScript(observeFeedback)
     await context.addInitScript(() => {
       window.__preloadFailures = 0
       window.addEventListener('vite:preloadError', () => window.__preloadFailures++)
@@ -93,6 +105,115 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     assert.notEqual(await page.evaluate(() => getComputedStyle(document.body).overflowY), 'hidden')
   }
 
+  await withPage(async page => {
+    const noticeFonts = []
+    page.on('request', request => { if (request.url().includes('page-notice-rounded')) noticeFonts.push(true) })
+    await openHome(page)
+    for (const [path, selector] of [['/about/', '.about-journey'], ['/learning/', '.learning-studio'], ['/contact/', '#contact'], ['/home/', '.home-editorial']]) {
+      await clickLink(page, url(path))
+      await page.locator(selector).waitFor()
+      await frame(page)
+    }
+    assert.equal(await page.evaluate(() => window.__feedbackCount), 0, 'Fast successful startup and navigation never insert a notice')
+    assert.deepEqual(noticeFonts, [], 'Normal routes do not download the error-only font')
+  })
+  pass('Fast startup and normal navigation never flash notices or fetch their font')
+
+  for (const startup of [false, true]) for (const reducedMotion of ['reduce', 'no-preference']) {
+    await withPage(async page => {
+      if (!startup) await openHome(page)
+      await page.route(startup ? modulePattern('main') : modulePattern('ContactPage'), route => route.abort())
+      if (startup) await page.goto(url('/contact/'), { waitUntil: 'domcontentloaded' })
+      else await clickLink(page, url('/contact/'))
+      const panel = page.locator(`${feedback}[data-state="error"]`)
+      await panel.waitFor()
+      const started = await page.evaluate(() => performance.now())
+      assert.equal(await panel.innerText(), '页面加载失败')
+      assert.equal(await page.locator(`${feedback} a, ${feedback} button`).count(), 0, 'The small notice has no extra actions')
+      assert.equal(await panel.getAttribute('aria-label'), '关闭页面加载失败提示')
+      await page.waitForTimeout(260)
+      const settled = await panel.boundingBox()
+      assert.equal(await panel.evaluate(node => getComputedStyle(node).animationName), reducedMotion === 'reduce' ? 'none' : 'page-load-enter')
+      const width = () => page.locator('.page-load-feedback-countdown').evaluate(node => node.getBoundingClientRect().width)
+      const initialWidth = await width()
+      await page.waitForTimeout(1200)
+      assert.ok(await width() < initialWidth * 0.9, 'The bottom countdown visibly shrinks')
+      assert.equal(await page.evaluate(() => window.__feedbackMax), 1)
+      // Capture the actual press and rebound frames before the outward slide.
+      await page.evaluate(() => {
+        window.__pressScales = []
+        const panel = document.querySelector('.page-load-feedback')
+        const sample = () => {
+          if (!panel.isConnected) return
+          if (panel.dataset.state === 'pressing') window.__pressScales.push(new DOMMatrix(getComputedStyle(panel).transform).a)
+          requestAnimationFrame(sample)
+        }
+        requestAnimationFrame(sample)
+      })
+      await panel.focus()
+      if (startup) await page.keyboard.press('Enter')
+      else await panel.tap()
+      if (reducedMotion === 'no-preference') {
+        assert.equal(await page.locator(feedback).getAttribute('data-state'), 'pressing')
+        await page.locator(`${feedback}[data-state="closing"]`).waitFor()
+        await page.waitForTimeout(65)
+        const leaving = await page.locator(feedback).boundingBox()
+        assert.ok(leaving && leaving.x > settled.x, 'Dismissal slides back toward the right edge')
+        const scales = await page.evaluate(() => window.__pressScales)
+        assert.ok(Math.min(...scales) < 0.97, 'Manual dismissal compresses the button')
+        assert.ok(Math.max(...scales) > 1.01, 'The button rebounds before sliding out')
+      }
+      await page.locator(feedback).waitFor({ state: 'detached' })
+      assert.ok(await page.evaluate(() => performance.now()) - started < 5000)
+      assert.equal(await page.evaluate(() => Boolean(window.__sitePageFailure)), false)
+    }, { reducedMotion, viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+    pass(`${startup ? 'Entry keyboard' : 'Navigation touch'} notice: shrinking bar and press/rebound dismissal with ${reducedMotion} motion`)
+  }
+
+  for (const startup of [false, true]) for (const reducedMotion of ['reduce', 'no-preference']) {
+    await withPage(async page => {
+      if (!startup) await openHome(page)
+      let fail = true
+      await page.route(startup ? modulePattern('main') : modulePattern('ContactPage'), route => fail ? route.abort() : route.continue())
+      if (startup) await page.goto(url('/contact/'), { waitUntil: 'domcontentloaded' })
+      else await clickLink(page, url('/contact/'))
+      await page.locator(feedback).waitFor()
+      await page.evaluate(() => {
+        window.__noticeStart = performance.now()
+        const panel = document.querySelector('.page-load-feedback')
+        window.__originalNotice = panel
+        new MutationObserver(() => {
+          if (panel.dataset.state === 'closing' && !window.__noticeClosing) window.__noticeClosing = performance.now()
+        }).observe(panel, { attributes: true })
+      })
+      // Concurrent entry resource failures must keep one notice and one deadline.
+      if (startup) for (let i = 0; i < 4; i++) {
+        await page.evaluate(() => {
+          const script = document.createElement('script')
+          script.type = 'module'
+          document.head.append(script)
+          script.dispatchEvent(new Event('error'))
+          script.remove()
+        })
+      }
+      await page.waitForTimeout(4200)
+      assert.equal(await page.locator(feedback).count(), 1, 'The notice stays until its five-second deadline')
+      assert.equal(await page.evaluate(() => document.querySelector('.page-load-feedback') === window.__originalNotice), true)
+      await page.locator(feedback).waitFor({ state: 'detached', timeout: 2000 })
+      const timing = await page.evaluate(() => ({ close: window.__noticeClosing - window.__noticeStart, total: performance.now() - window.__noticeStart, max: window.__feedbackMax }))
+      assert.ok(timing.close >= 4700 && timing.close < 5300, 'Auto-dismiss starts at five seconds')
+      assert.ok(timing.total < 5600, 'Dismissal finishes promptly with either motion preference')
+      assert.equal(timing.max, 1, 'Repeated errors never stack notices')
+      assert.equal(await page.evaluate(() => Boolean(window.__sitePageFailure)), false)
+      fail = false
+      if (startup) await page.reload()
+      else await clickLink(page, url('/contact/'))
+      await page.locator('#contact').waitFor()
+      assert.equal(await page.locator(feedback).count(), 0, 'Automatic dismissal does not discard the recovery path')
+    }, { reducedMotion })
+    pass(`${startup ? 'Entry' : 'Navigation'} notice auto-dismisses and still recovers with ${reducedMotion} motion`)
+  }
+
   // Real production JS and CSS faults, including retry in a fresh document.
   for (const navigate of [false, true]) {
     for (const resource of ['js', 'css']) {
@@ -105,27 +226,21 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
           if (failure === 'delay') gate = await hold(page, pattern)
           else await page.route(pattern, route => !fail ? route.continue()
             : failure === 'abort' ? route.abort() : route.fulfill({ status: 404, body: 'Asset no longer available' }))
-          if (navigate) {
-            await page.evaluate(() => {
-              window.__feedbackStarted = performance.now()
-              const observer = new MutationObserver(() => {
-                if (document.querySelector('.page-load-feedback')) {
-                  window.__feedbackMs = performance.now() - window.__feedbackStarted
-                  observer.disconnect()
-                }
-              })
-              observer.observe(document, { subtree: true, childList: true })
-            })
-            await clickLink(page, url('/contact/?source=recovery#contact'))
-          } else await page.goto(url('/contact/?source=recovery#contact'), { waitUntil: 'domcontentloaded' })
+          if (navigate) await clickLink(page, url('/contact/?source=recovery#contact'))
+          else await page.goto(url('/contact/?source=recovery#contact'), { waitUntil: 'domcontentloaded' })
           if (gate) await gate.requested
-          await page.locator(`${feedback}[data-state="${gate ? 'loading' : 'error'}"]`).waitFor()
+          if (gate) {
+            await page.waitForTimeout(200)
+            assert.equal(await page.evaluate(() => window.__feedbackCount), 0, 'Pending routes never mount a loading notice, even briefly')
+          } else {
+            await page.locator(`${feedback}[data-state="error"]`).waitFor()
+            assert.equal(await page.locator(feedback).innerText(), '页面加载失败')
+          }
           assert.equal(await page.locator('#contact').count(), 0, 'Never expose a route before its stylesheet succeeds')
           if (!navigate) assert.equal(await page.locator('footer').count(), 0, 'Startup must not reveal a footer that shifts away when route content arrives')
           if (navigate) {
             assert.equal(await page.locator('.home-editorial').count(), 1)
             assert.equal(new URL(page.url()).pathname, '/home/', 'Failed/pending clicks do not commit history')
-            assert.ok(await page.evaluate(() => window.__feedbackMs <= 100), 'Navigation feedback appears within 100 ms')
             await scrollTo(page, 400)
             await frame(page)
             assert.ok(await scrollTop(page) > 100, 'The retained page remains scrollable')
@@ -134,15 +249,16 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
           else {
             assert.ok(await page.evaluate(() => window.__preloadFailures > 0), 'Vite preload errors follow the same recovery path')
             fail = false
-            await page.getByRole('button', { name: '重试', exact: true }).click()
+            await clickLink(page, url('/contact/?source=recovery#contact'))
           }
           await page.locator('#contact').waitFor()
           assert.equal(await page.locator('footer').count(), 1)
           assert.equal(new URL(page.url()).search, '?source=recovery')
           assert.equal(new URL(page.url()).hash, '#contact')
           assert.equal(await page.locator(feedback).count(), 0)
+          if (gate) assert.equal(await page.evaluate(() => window.__feedbackCount), 0, 'Successful navigation never flashes a notice')
         })
-        pass(`${navigate ? 'Navigation' : 'Cold start'} ${resource} ${failure}: feedback, CSS readiness, retained content and recovery`)
+        pass(`${navigate ? 'Navigation' : 'Cold start'} ${resource} ${failure}: silent pending, error notice, CSS readiness and recovery`)
       }
     }
   }
@@ -154,10 +270,11 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       const gate = await hold(page, modulePattern(name))
       await page.goto(url(path), { waitUntil: 'domcontentloaded' })
       await gate.requested
-      await page.locator(`${feedback}[data-state="loading"]`).waitFor()
+      assert.equal(await page.locator(feedback).count(), 0)
       assert.equal(await page.locator('.nav-link').count(), 0, 'Portal and Projects never flash ordinary page navigation')
       await gate.release()
-      await page.locator(feedback).waitFor({ state: 'detached' })
+      await page.waitForFunction(() => document.querySelector('main')?.children.length > 0)
+      assert.equal(await page.evaluate(() => window.__feedbackCount), 0)
     })
   }
   pass('Portal, archive, Studio and detail startup retain their own page shell')
@@ -171,11 +288,11 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       let fail = true
       await page.route(resource === 'js' ? modulePattern('main') : cssPattern('main'), route => fail ? route.abort() : route.continue())
       await page.goto(url('/projects/'), { waitUntil: 'domcontentloaded' })
-      await page.locator('.site-startup[data-state="error"]').waitFor()
-      assert.equal(await page.locator('.site-startup').getAttribute('data-kind'), 'projects')
+      await page.locator(`${feedback}[data-state="error"]`).waitFor()
+      assert.equal(await page.locator(feedback).innerText(), '页面加载失败')
       assert.equal(await page.locator('.nav-link').count(), 0)
       fail = false
-      await page.locator('.site-startup').getByRole('link', { name: '重试', exact: true }).click()
+      await page.reload()
       await page.locator('.projects-archive').waitFor()
       assert.equal(await page.locator('.site-startup').count(), 0)
     })
@@ -186,16 +303,19 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     const gate = await hold(page, modulePattern('main'))
     const loaded = page.goto(url('/'), { waitUntil: 'domcontentloaded' })
     await gate.requested
-    await page.locator('.site-startup [role="status"]').waitFor()
-    await page.locator('.site-startup[data-state="error"]').waitFor({ timeout: 11000 })
+    assert.equal(await page.locator(feedback).count(), 0)
+    await page.locator(`${feedback}[data-state="error"]`).waitFor({ timeout: 11000 })
     await gate.release()
     await loaded
     await frame(page)
     assert.equal(await page.locator('.launch-intro-enter').count(), 0, 'A timed-out entry waits for explicit recovery')
-    await page.locator('.site-startup').getByRole('link', { name: '重试', exact: true }).click()
+    await page.locator(feedback).click()
+    await page.locator(feedback).waitFor({ state: 'detached' })
+    assert.equal(await page.evaluate(() => window.__siteStartup.failed), true)
+    await page.reload()
     await page.locator('.launch-intro-enter').waitFor()
   })
-  pass('Entry timeout keeps recovery visible even when the old entry script arrives late')
+  pass('Entry timeout ignores late scripts after dismissal; explicit refresh recovers')
 
   for (const navigate of [false, true]) {
     await withPage(async page => {
@@ -207,11 +327,11 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       else await page.goto(url('/contact/'), { waitUntil: 'domcontentloaded' })
       await gate.requested
       await page.locator(`${feedback}[data-state="error"]`).waitFor({ timeout: 11000 })
-      assert.match(await page.locator(feedback).innerText(), /加载时间较长/)
+      assert.equal(await page.locator(feedback).innerText(), '页面加载失败')
       await gate.release()
       await page.waitForTimeout(200)
       assert.equal(await page.locator('#contact').count(), 0, 'Late results cannot silently replace a timed-out view')
-      await page.getByRole('button', { name: '重试', exact: true }).click()
+      await clickLink(page, url('/contact/'))
       await page.locator('#contact').waitFor()
       assert.equal(requests, 1, 'Timeout retries reuse the same module task')
     })
@@ -250,8 +370,8 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     await clickLink(page, url('/contact/'))
     await gate.requested
     await page.locator(`${feedback}[data-state="error"]`).waitFor({ timeout: 11000 })
-    await page.getByRole('button', { name: '重试', exact: true }).click()
-    await page.locator(`${feedback}[data-state="loading"]`).waitFor()
+    await clickLink(page, url('/contact/'))
+    assert.equal(await page.locator(feedback).count(), 0)
     assert.equal(await page.locator('.home-editorial').count(), 1)
     await gate.release()
     await page.locator('#contact').waitFor()
@@ -265,7 +385,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     const failed = new Promise(resolve => { release = resolve })
     await page.route(modulePattern('ContactPage'), async route => { await failed; await route.abort() })
     await clickLink(page, url('/contact/'))
-    await page.locator(`${feedback}[data-state="loading"]`).waitFor()
+    assert.equal(await page.locator(feedback).count(), 0)
     await clickLink(page, url('/about/'))
     await page.waitForFunction(() => document.body.dataset.page === 'about')
     release()
@@ -297,7 +417,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     await clickLink(page, url('/contact/?source=deployment#contact'))
     await page.locator(`${feedback}[data-state="error"]`).waitFor()
     assert.equal(await page.locator('.home-editorial').count(), 1)
-    await page.getByRole('link', { name: '重新打开页面', exact: true }).click()
+    await clickLink(page, url('/contact/?source=deployment#contact'))
     await page.locator('#contact').waitFor()
     assert.equal(recoveredRequests, 1)
     assert.equal(new URL(page.url()).search, '?source=deployment')
@@ -314,7 +434,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       const gate = await hold(page, modulePattern('ContactPage'))
       await clickLink(page, url('/contact/'))
       await gate.requested
-      await page.getByRole('button', { name: '取消加载' }).click()
+      await clickLink(page, url('/home/'), true)
       await gate.release()
       await page.waitForTimeout(150)
       assert.equal(await page.locator('.home-editorial').count(), 1)
@@ -337,7 +457,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       assert.equal(new URL(page.url()).hash, '#explore')
     }, options)
   }
-  pass('Desktop and mobile cancellation, Back/Forward, hash navigation, focus and scroll restoration')
+  pass('Desktop and mobile reselection cancels pending work; Back/Forward, hash, focus and scroll restoration survive')
 
   // A cold Back can fail after a document reload, while the address has already moved.
   await withPage(async page => {
@@ -354,13 +474,11 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     await page.goBack()
     await page.locator(`${feedback}[data-state="error"]`).waitFor()
     assert.equal(await page.locator('#contact').count(), 1)
-    await page.getByRole('button', { name: '留在当前页面' }).click()
+    await page.locator(feedback).click()
     await page.waitForURL(url('/contact/'))
     assert.equal(await page.locator('#contact').count(), 1)
     fail = false
     await page.goBack()
-    await page.locator(`${feedback}[data-state="error"]`).waitFor()
-    await page.getByRole('button', { name: '重试', exact: true }).click()
     await page.locator('.home-editorial').waitFor()
     await frame(page)
     assert.ok(Math.abs(await scrollTop(page) - homeTop) < 8)
@@ -378,20 +496,21 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       if (fail) await page.route(modulePattern('ContactPage'), route => route.abort())
       else gate = await hold(page, modulePattern('ContactPage'))
       await page.locator('.archive-menu').getByRole('link', { name: 'Contact', exact: true }).click()
-      await page.locator(`${feedback}[data-state="${fail ? 'error' : 'loading'}"]`).waitFor()
+      if (fail) await page.locator(`${feedback}[data-state="error"]`).waitFor()
+      else await gate.requested
       await page.locator('.project-page-transition').waitFor({ state: 'detached', timeout: 4500 })
       await frame(page)
       await assertUnlocked(page)
       assert.equal(await page.locator('.projects-archive').count(), 1)
-      const action = page.getByRole('button', { name: fail ? '留在当前页面' : '取消加载', exact: true })
-      await action.click()
+      if (fail) await page.locator(feedback).click()
+      else await clickLink(page, url('/projects/'), true)
       if (gate) await gate.release()
       await page.waitForTimeout(120)
       assert.equal(await page.locator('.projects-archive').count(), 1)
       await page.getByRole('button', { name: 'Open menu', exact: true }).click()
       await page.getByRole('button', { name: 'Close menu', exact: true }).click()
     }, { reducedMotion: 'no-preference' })
-    pass(`Project menu ${fail ? 'failure' : 'cover budget'} releases all modals and exposes working recovery controls`)
+    pass(`Project menu ${fail ? 'failure' : 'cover budget'} releases all modals and retains working navigation`)
   }
 
   await withPage(async page => {
@@ -404,7 +523,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     await page.locator(`${feedback}[data-state="error"]`).waitFor({ timeout: 11000 })
     await assertUnlocked(page)
     await gate.release()
-    await page.getByRole('button', { name: '重试', exact: true }).click()
+    await clickLink(page, url('/projects/vae-digits/#project-implementation'))
     await page.locator('.project-reader-layout[data-chapter="implementation"]').waitFor()
     assert.equal(new URL(page.url()).hash, '#project-implementation')
   }, { reducedMotion: 'no-preference' })
@@ -423,7 +542,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
     await page.locator(`${feedback}[data-state="error"]`).waitFor()
     assert.ok(await page.locator('.nav-link').count() > 0, 'The shared shell survives a render failure')
     await page.evaluate(() => { window.__renderRecovery = true })
-    await page.getByRole('button', { name: '重试', exact: true }).click()
+    await clickLink(page, url('/contact/'))
     await page.locator('#contact').waitFor()
   })
   pass('React render boundary retains the shell and remounts successfully on retry')
@@ -460,6 +579,7 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       await page.route(modulePattern('ContactPage'), route => route.abort())
       await clickLink(page, url('/contact/'))
       await page.locator(`${feedback}[data-state="error"]`).waitFor()
+      await page.evaluate(() => document.fonts.load('15px "Page Notice Round"', '页面加载失败'))
       const box = await page.locator(feedback).boundingBox()
       assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width + 1 && box.y + box.height <= viewport.height + 1)
       await page.screenshot({ path: `node_modules/.cache/page-loading/${name}-failure.png` })

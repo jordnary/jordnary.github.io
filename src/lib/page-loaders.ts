@@ -21,7 +21,7 @@ const imports = {
 
 // One entry per route module, including a pending import after its consumer times out.
 // Clearing a Promise cannot clear the browser module map or Vite's CSS bookkeeping.
-const pages = new Map<PageModuleKey, { promise: Promise<PageModule>; ready: boolean; rendered: boolean }>()
+const pages = new Map<PageModuleKey, { promise: Promise<PageModule>; failed: boolean }>()
 const preloadErrors = new WeakSet<object>()
 
 export function trackPagePreloadErrors() {
@@ -39,16 +39,10 @@ export function isPagePreloadError(error: unknown) {
   return Boolean(error && typeof error === 'object' && preloadErrors.has(error))
 }
 
-export function hasUnrenderedPage(url: URL) {
+export function hasFailedPage(url: URL) {
   const key = getPageResources(url, import.meta.env.BASE_URL)?.key
   const task = key ? pages.get(key) : undefined
-  return Boolean(task?.ready && !task.rendered)
-}
-
-export function markPageRendered(url: URL) {
-  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
-  const task = key ? pages.get(key) : undefined
-  if (task) task.rendered = true
+  return Boolean(task?.failed)
 }
 
 export function loadPage(url: URL, intent = false): Promise<PageModule> {
@@ -58,10 +52,10 @@ export function loadPage(url: URL, intent = false): Promise<PageModule> {
   if (!intent && pageNetworkPolicy().images) void preparePageImages(url, 'low')
   let task = pages.get(key)
   if (!task) {
-    const entry = { promise: imports[key](), ready: false, rendered: false }
+    const entry = { promise: imports[key](), failed: false }
     task = entry
     pages.set(key, entry)
-    void entry.promise.then(() => { entry.ready = true }, () => {})
+    void entry.promise.catch(() => { entry.failed = true })
   }
   if (!intent) void task.promise.then(() => preparePageImages(url, 'high'), () => {})
   return task.promise

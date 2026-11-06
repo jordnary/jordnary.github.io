@@ -228,20 +228,20 @@ export async function runChecks(browser) {
       await target.focus()
       await page.waitForResponse(response => modulePattern(name).test(response.url()))
       await page.waitForTimeout(400)
-      const feedbackMs = await page.evaluate(path => new Promise(resolve => {
-        const start = performance.now()
-        const observe = () => {
-          if (document.querySelector('.page-load-feedback[data-state="loading"]')) resolve(performance.now() - start)
-          else requestAnimationFrame(observe)
-        }
-        requestAnimationFrame(observe)
+      await page.evaluate(() => {
+        window.__loadingNotices = 0
+        new MutationObserver(records => {
+          for (const record of records) for (const node of record.addedNodes) {
+            if (node instanceof Element && (node.matches('.page-load-feedback') || node.querySelector('.page-load-feedback'))) window.__loadingNotices++
+          }
+        }).observe(document, { childList: true, subtree: true })
         document.getElementById('intent').click()
-      }), path)
-      assert.ok(feedbackMs < 100, `${name}: prepared first render gives feedback within 100 ms`)
+      })
       await contentReady(page, selector)
+      assert.equal(await page.evaluate(() => window.__loadingNotices), 0, `${name}: prepared first render never flashes a loading notice`)
     })
   }
-  pass('Prepared About/Learning imports paint feedback within 100 ms before their first heavy render at CPU 4x')
+  pass('Prepared About/Learning imports render directly without a loading notice at CPU 4x')
 
   await run(async (page, requests) => {
     await home(page)
@@ -353,12 +353,7 @@ export async function runChecks(browser) {
       assert.equal(await page.locator('.page-load-feedback').count(), 0)
       assert.equal(await page.locator('.home-editorial').count(), 1)
       await click(page, '/contact/')
-      if (resource !== 'image') {
-        await page.waitForFunction(() => document.querySelector('.correspondence,.page-load-feedback[data-state="error"]'))
-        if (await page.locator('.page-load-feedback[data-state="error"]').count()) {
-          await page.getByRole('button', { name: '重试', exact: true }).click()
-        }
-      }
+      // Explicit navigation recovers a known rejected module in a fresh document.
       await contentReady(page, '.correspondence')
     })
   }

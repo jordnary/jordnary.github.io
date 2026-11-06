@@ -46,9 +46,10 @@ function installObservers() {
   })
   // A mount marker, not TTI: authored reveals and images can still be in flight.
   const ready = new MutationObserver(() => {
-    if (state.feedbackMs === null && document.querySelector('.site-startup, .page-load-feedback, [role="status"]')) state.feedbackMs = performance.now()
-    // P1 mounts a loading shell first; keep readyMs about actual route content.
-    if (!document.querySelector('main > :first-child') || document.querySelector('main .page-load-feedback')) return
+    if (state.feedbackMs === null && document.querySelector('.page-load-feedback')) state.feedbackMs = performance.now()
+    // Normal startup has no notice. Keep readyMs about actual route content;
+    // feedbackMs is null for success and measures only a failure notification.
+    if (!document.querySelector('main > :first-child')) return
     ready.disconnect()
     requestAnimationFrame(() => { state.readyMs = performance.now() })
   })

@@ -45,8 +45,9 @@ function installSampler(cases) {
     const poll = async () => {
       if (window.__resourceSample !== sample) return
       const mounted = location.pathname === path && document.querySelector(`main ${selector}`)
-      if (sample.feedbackMs === null && (mounted || document.querySelector('.page-load-feedback,.site-startup'))) sample.feedbackMs = performance.now() - sample.start
-      if (!mounted || document.querySelector('.page-load-feedback')) { requestAnimationFrame(poll); return }
+      // Successful navigation reports real content; only failures show a notice.
+      if (sample.feedbackMs === null && (mounted || document.querySelector('.page-load-feedback'))) sample.feedbackMs = performance.now() - sample.start
+      if (!mounted) { requestAnimationFrame(poll); return }
       sample.mountedMs = performance.now() - sample.start
       // This measures usable first-screen content, including selected images and fonts.
       // It is not TTI or an assertion that every decorative animation has ended.

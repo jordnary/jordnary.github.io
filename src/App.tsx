@@ -5,14 +5,12 @@ import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
 import { ProjectsCursor } from './components/ProjectsCursor'
 import { useInputModality } from './lib/useInputModality'
-import { PageLoadFeedback } from './components/PageLoadFeedback'
 import { PageErrorBoundary } from './components/PageErrorBoundary'
 import type {} from './lib/pageStartup'
-import { markPageRendered } from './lib/page-loaders'
 
 function App({ page: initialPage }: { page: SitePage }) {
   useInputModality()
-  const { page, href, module, transition, loading, retry, cancel, renderFailed } = useSiteNavigation(initialPage)
+  const { page, href, module, renderId, transition, renderFailed } = useSiteNavigation(initialPage)
   const project = getProjectFromUrl(new URL(href))
   const isStudio = isProjectStudioUrl(new URL(href))
 
@@ -41,16 +39,15 @@ function App({ page: initialPage }: { page: SitePage }) {
   return (
     <>
       <SiteLayout page={page} href={href} transitioning={Boolean(transition)} pending={!module} isProjectDetail={Boolean(project)}>
-        <PageErrorBoundary href={href} onError={renderFailed}>
-          <Suspense fallback={<PageLoadFeedback state={{ href, status: 'loading' }} />}>
+        <PageErrorBoundary key={renderId} onError={renderFailed}>
+          <Suspense fallback={null}>
             {module ? <>
               {createElement(module.default, { href, key: project?.id })}
               <PageReady href={href} />
-            </> : loading && <PageLoadFeedback state={loading} onRetry={retry} />}
+            </> : null}
           </Suspense>
         </PageErrorBoundary>
       </SiteLayout>
-      {module && loading && <PageLoadFeedback state={loading} floating onRetry={retry} onCancel={cancel} />}
       {transition && <ProjectPageTransition key={transition.id} initiallyCovered={transition.initiallyCovered} onCovered={transition.onCovered} onComplete={transition.onComplete} />}
       <ProjectsCursor />
     </>
@@ -60,7 +57,6 @@ function App({ page: initialPage }: { page: SitePage }) {
 function PageReady({ href }: { href: string }) {
   useEffect(() => {
     // A deferred route can commit after the navigation hook's first scroll restore.
-    markPageRendered(new URL(href))
     window.dispatchEvent(new CustomEvent('site-page-ready', { detail: { href } }))
   }, [href])
   return null

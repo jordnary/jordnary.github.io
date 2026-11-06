@@ -33,7 +33,7 @@ try {
       assert.deepEqual(errors, [])
       console.log(`PASS: ${kind} search uses the prefixed index and loaded result styles`)
     } catch (error) {
-      console.log(JSON.stringify({ kind, errors, failures, feedback: await page.locator('.site-startup,.page-load-feedback').allTextContents() }))
+      console.log(JSON.stringify({ kind, errors, failures, feedback: await page.locator('.page-load-feedback').allTextContents() }))
       throw error
     } finally {
       await context.close()

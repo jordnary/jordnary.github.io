@@ -43,6 +43,18 @@ To regenerate, install `fonttools` and `brotli`, then run:
 python scripts/subset-home-gallery-font.py "ChillRoundF v3.0.ttf"
 ```
 
+## Page failure notice
+
+`page-notice-rounded.woff2` uses the same ChillRoundF v3.0 source as navigation,
+renamed to `Page Notice Round`. It contains only `页面加载失败` and retains the
+copyright and SIL OFL 1.1 metadata; see `LICENSE.navigation-rounded.txt`.
+The inline startup styles load this small subset only when an error is shown.
+If the font request fails, the notice remains readable with the system fallback.
+
+```sh
+python scripts/subset-page-notice-font.py "ChillRoundF v3.0.ttf"
+```
+
 ## Projects archive
 
 `projects-instrument-serif.ttf` is the regular weight of Instrument Serif,

@@ -3,17 +3,17 @@ import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll, getPageScrollTop, getPageScrollLeft, scrollPageTo } from './pageScrollSource'
 import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
-import { hasUnrenderedPage, loadPage, type PageModule } from './page-loaders'
-import { PageLoadTimeoutError, paintPageFeedback, projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
-import type { PageLoadState } from '../components/PageLoadFeedback'
+import { hasFailedPage, isPagePreloadError, loadPage, type PageModule } from './page-loaders'
+import { projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
+import { showPageLoadFailure } from './page-load-notice'
 import type {} from './projectTransitionBoot'
 import { installPagePrefetch } from './page-prefetch'
 import { siteLink } from './site-link'
 
 type Position = { left: number; top: number }
-type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior; module?: PageModule }
+type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior; module?: PageModule; renderId?: number }
 type PageTransition = { id: number; initiallyCovered?: boolean; onCovered: () => Promise<void>; onComplete: () => void }
-type Actions = { retry: () => void; cancel: () => void; renderFailed: () => void }
+type Actions = { renderFailed: (error: unknown) => void }
 const historyKey = 'siteNavigationKey'
 const positionKey = 'siteNavigationPosition'
 const indexKey = 'siteNavigationIndex'
@@ -26,7 +26,6 @@ function savedPosition(): Position | undefined {
 /** Load before committing; only the latest navigation owns history, focus and scroll. */
 export function useSiteNavigation(initialPage: SitePage) {
   const [navigation, setNavigation] = useState<Navigation>(() => ({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false }))
-  const [loading, setLoading] = useState<PageLoadState | null>(() => ({ href: window.location.href, status: 'loading' }))
   const [transition, setTransition] = useState<PageTransition | null>(null)
   const transitioning = useRef(false)
   const actions = useRef<Actions | null>(null)
@@ -46,7 +45,10 @@ export function useSiteNavigation(initialPage: SitePage) {
     let currentIndex = window.history.state[indexKey] as number
     let renderedHref = window.location.href
     let revision = 0
-    let active: { id: number; controller: AbortController; retry: () => void; committed: boolean } | null = null
+    let active: { id: number; controller: AbortController; committed: boolean } | null = null
+    let clearNotice: (() => void) | undefined
+    let reloadHref: string | undefined
+    let renderFailure = false
     let coverTimer = 0
     const savePosition = () => {
       // The retained page remains scrollable during ordinary pending/error states.
@@ -68,43 +70,57 @@ export function useSiteNavigation(initialPage: SitePage) {
       active = null
       window.clearTimeout(coverTimer)
     }
+    const dismissFailure = () => {
+      cancelActive()
+      prefetch.current(new URL(renderedHref), true)
+      releaseCover()
+      const delta = currentIndex - window.history.state[indexKey]
+      // Back/Forward already moved the cursor. Closing the notice returns to
+      // the retained entry without overwriting either history destination.
+      if (delta) window.history.go(delta)
+    }
+    const reopen = (href: string) => {
+      // A slow document retry must not inherit the old notice's history rollback.
+      cancelActive()
+      clearNotice?.()
+      releaseCover()
+      reopenPage(href)
+    }
     savePosition()
 
     const navigate = (next: Navigation, commitHistory: () => void, initiallyCovered = false, initial = false) => {
       cancelActive()
+      clearNotice?.()
       prefetch.current(new URL(next.href))
       const id = ++revision
       const controller = new AbortController()
-      const attempt = { id, controller, committed: false, retry: () => navigate({ ...next, focus: true }, commitHistory, false, initial) }
+      const attempt = { id, controller, committed: false }
       active = attempt
-      setLoading({ href: next.href, status: 'loading' })
       let covered = false
       let module: PageModule | undefined
       let animate = initiallyCovered || (!initial && shouldTransitionProjects(new URL(renderedHref), new URL(next.href))
         && !window.matchMedia('(prefers-reduced-motion: reduce)').matches && !document.hidden)
-      const feedback = !initial && !animate && hasUnrenderedPage(new URL(next.href)) ? paintPageFeedback(controller.signal) : null
       const commit = () => {
         if (active !== attempt || controller.signal.aborted || attempt.committed || !module) return
         attempt.committed = true
         commitHistory()
         currentIndex = window.history.state[indexKey]
         renderedHref = next.href
-        setNavigation({ ...next, module })
-        setLoading(null)
+        const resetBoundary = renderFailure
+        renderFailure = false
+        setNavigation(previous => ({ ...next, module, renderId: (previous.renderId ?? 0) + (resetBoundary ? 1 : 0) }))
       }
       // Import rejection and timeouts are handled here, before any history/page commit.
-      const ready = waitForPage(loadPage(new URL(next.href)), controller.signal).then(async value => {
+      const ready = waitForPage(loadPage(new URL(next.href)), controller.signal).then(value => {
         module = value
-        if (feedback) await feedback
         // Reload paper is opaque from its first HTML frame. Prepare content
         // behind it immediately, without delaying the existing reveal timeline.
         if (!animate || covered || initiallyCovered) commit()
-      }, error => {
+      }, () => {
         if (active !== attempt || controller.signal.aborted) return
-        setLoading({ href: next.href, status: 'error', reason: error instanceof PageLoadTimeoutError ? 'timeout' : 'load' })
         prefetch.current(new URL(renderedHref), !initial)
-        if (!(error instanceof PageLoadTimeoutError)) attempt.retry = () => reopenPage(next.href)
         releaseCover()
+        clearNotice = showPageLoadFailure(dismissFailure)
       })
       if (!animate) {
         setTransition(null)
@@ -146,7 +162,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       const { anchor, url } = link
       const page = getPageFromUrl(url)
       if (!page) return
-      if (anchor.hasAttribute('data-site-reload')) { event.preventDefault(); reopenPage(url.href); return }
+      if (anchor.hasAttribute('data-site-reload')) { event.preventDefault(); reopen(url.href); return }
       // Only the visible project transition blocks repeat clicks, not a pending import.
       if (transitioning.current) { event.preventDefault(); return }
       if (anchor.hasAttribute('data-project-return') && Number.isInteger(window.history.state?.projectReturnDepth) && window.history.state.projectReturnDepth > 0) {
@@ -162,6 +178,9 @@ export function useSiteNavigation(initialPage: SitePage) {
         ? { left: getPageScrollLeft(), top: getPageScrollTop() } : undefined
       event.preventDefault()
       persistPosition()
+      // A new user activation can recover a rejected browser module/CSS cache.
+      // Timeouts keep sharing the original pending import instead.
+      if (hasFailedPage(url) || reloadHref === url.href) { reopen(url.href); return }
       navigate({ page, href: url.href, focus: true, behavior, position }, () => {
         if (url.href !== window.location.href) {
           const fromList = getPageFromUrl(currentUrl) === 'projects'
@@ -177,24 +196,19 @@ export function useSiteNavigation(initialPage: SitePage) {
       const page = getPageFromUrl(new URL(window.location.href))
       if (!page) return
       const targetKey = ensureKey()
+      const url = new URL(window.location.href)
+      if (hasFailedPage(url) || reloadHref === url.href) { reopen(url.href); return }
       navigate({ page, href: window.location.href, position: positions.get(targetKey) ?? savedPosition(), focus: true }, () => {
         currentKey = targetKey
       })
     }
     actions.current = {
-      retry: () => active?.retry(),
-      cancel: () => {
-        cancelActive()
-        prefetch.current(new URL(renderedHref), true)
-        setLoading(null)
+      renderFailed: error => {
+        renderFailure = true
+        if (isPagePreloadError(error)) reloadHref = renderedHref
         releaseCover()
-        const delta = currentIndex - window.history.state[indexKey]
-        // A failed Back/Forward already moved the history cursor. Return to the
-        // retained entry without overwriting either it or the failed destination.
-        if (delta) window.history.go(delta)
-        else document.querySelector<HTMLElement>('main')?.focus({ preventScroll: true })
+        clearNotice = showPageLoadFailure(dismissFailure)
       },
-      renderFailed: releaseCover,
     }
     document.addEventListener('click', click)
     window.addEventListener('popstate', pop)
@@ -209,6 +223,7 @@ export function useSiteNavigation(initialPage: SitePage) {
     return () => {
       prefetch.dispose()
       cancelActive()
+      clearNotice?.()
       actions.current = null
       window.history.scrollRestoration = previousRestoration
       document.removeEventListener('click', click)
@@ -275,6 +290,5 @@ export function useSiteNavigation(initialPage: SitePage) {
     }
   }, [navigation])
 
-  return { ...navigation, transition, loading,
-    retry: () => actions.current?.retry(), cancel: () => actions.current?.cancel(), renderFailed: () => actions.current?.renderFailed() }
+  return { ...navigation, transition, renderFailed: (error: unknown) => actions.current?.renderFailed(error) }
 }
