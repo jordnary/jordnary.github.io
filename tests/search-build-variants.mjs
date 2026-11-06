@@ -6,7 +6,7 @@ import os from 'node:os'
 
 // Isolated tracked sources, with exactly the current generated assets/snapshots.
 const root = process.cwd()
-const output = 'node_modules/.cache/search-boundary'
+const output = 'node_modules/.cache/search-main-thread'
 const clean = value => value.replaceAll(root, '<workspace>').replaceAll(root.replaceAll('\\', '/'), '<workspace>')
   .replaceAll(os.homedir(), '<user>').replaceAll(os.homedir().replaceAll('\\', '/'), '<user>')
 async function run(command, args, cwd, label) {
@@ -15,7 +15,7 @@ async function run(command, args, cwd, label) {
   assert.equal(result.status, 0, `${label} failed; see the sanitized build log`)
 }
 await mkdir(output, { recursive: true })
-for (const [name, revision] of [['baseline', '465d2a7'], ['split', 'd6a24a8']]) {
+for (const [name, revision] of [['baseline', 'cf280b7']]) {
   const source = path.resolve(output, `source-${name}`)
   const archive = path.resolve(output, `${name}.tar`)
   await mkdir(source, { recursive: true })

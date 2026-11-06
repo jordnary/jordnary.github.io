@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { memo, useCallback, useState, type ReactNode } from 'react'
 import { Footer } from '../components/Footer'
 import { Live2DCompanion } from '../components/Live2DCompanion'
 import { Navbar } from '../components/Navbar'
@@ -18,10 +18,8 @@ type SiteLayoutProps = {
 
 export function SiteLayout({ children, page, isProjectDetail = false, href = window.location.href, transitioning = false, pending = false }: SiteLayoutProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(searchRecovery()))
-  const openSearch = () => {
-    if (isSearchOpen) return
-    setIsSearchOpen(true)
-  }
+  const openSearch = useCallback(() => setIsSearchOpen(true), [])
+  const closeSearch = useCallback(() => setIsSearchOpen(false), [])
   // Derive portal mode from the current route on every render. Keeping this as
   // state can leave the fixed homepage portal mode active for one render after
   // in-place navigation to a static page, hiding its shared chrome.
@@ -31,21 +29,26 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
 
   return (
     <div inert={transitioning} className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${hasSharedChrome && isSearchOpen ? ' is-search-open' : ''}`}>
-      <div className="app-shell-content">
-        {hasSharedChrome && <ScrollProgress />}
-
-        {hasSharedChrome && <Navbar activePage={page} onSearchOpen={openSearch} />}
-
-        <main tabIndex={-1}>{children}</main>
-
-        {hasSharedChrome && !pending && <Footer paperSeam={page === 'about'} />}
-      </div>
+      <ShellContent page={page} shared={hasSharedChrome} pending={pending} onSearchOpen={openSearch}>{children}</ShellContent>
       {hasSharedChrome && <Live2DCompanion page={page} suspended={isSearchOpen} />}
       {hasSharedChrome && <SiteSearch
           isOpen={isSearchOpen}
-          onClose={() => setIsSearchOpen(false)}
+          onClose={closeSearch}
           onOpen={openSearch}
         />}
     </div>
   )
 }
+
+// Opening search only changes its surface, background blur and companion pause.
+// Preserve the page/navigation/footer subtree through that local state update.
+const ShellContent = memo(function ShellContent({ children, page, shared, pending, onSearchOpen }: {
+  children: ReactNode; page: SitePage; shared: boolean; pending: boolean; onSearchOpen: () => void
+}) {
+  return <div className="app-shell-content">
+    {shared && <ScrollProgress />}
+    {shared && <Navbar activePage={page} onSearchOpen={onSearchOpen} />}
+    <main tabIndex={-1}>{children}</main>
+    {shared && !pending && <Footer paperSeam={page === 'about'} />}
+  </div>
+})

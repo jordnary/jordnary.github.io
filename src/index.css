@@ -4645,6 +4645,7 @@ a {
     display: grid;
     padding: max(1rem, env(safe-area-inset-top)) var(--page-gutter);
     overflow-y: auto;
+    overscroll-behavior: contain;
     animation: site-search-fade-in 150ms ease-out both;
   }
 
@@ -4743,6 +4744,7 @@ a {
     max-height: min(28rem, calc(var(--site-viewport-height, 100dvh) - 11rem));
     min-height: 12rem;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0.85rem;
   }
 

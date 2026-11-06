@@ -5,7 +5,9 @@ import { launch, home, connectionState, profiles, recorder, sampler, output, ver
 
 const options = new Map(process.argv.slice(2).map(arg => arg.replace(/^--/, '').split('=')))
 const selectedVersions = versions.filter(([v]) => !options.has('version') || options.get('version') === v)
+if (options.has('reverse')) selectedVersions.reverse()
 const selected = profiles.filter(p => !options.has('profile') || p.name === options.get('profile'))
+assert.ok(selectedVersions.length && selected.length, 'Select a known version and profile')
 const scenarios = (options.get('scenario') || 'direct,input').split(',')
 const runs = Number(options.get('runs') || 3)
 const label = options.get('output') || 'acceptance'
@@ -33,6 +35,7 @@ try {
     page.on('pageerror', e => errors.push(e.message))
     const cdp = await context.newCDPSession(page)
     await cdp.send('Network.enable')
+    await cdp.send('Performance.enable')
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu })
     await cdp.send('Network.emulateNetworkConditionsByRule', { offline: false, matchedNetworkConditions: [{ urlPattern: '', latency,
       downloadThroughput: mbps * 1e6 / 8, uploadThroughput: 750000 / 8 }] })
@@ -44,6 +47,10 @@ try {
         await home(page, base)
         await page.waitForTimeout(500)
         const startupReady = await page.evaluate(() => performance.now())
+        const metricNames = ['TaskDuration', 'ScriptDuration', 'LayoutDuration', 'RecalcStyleDuration', 'LayoutCount', 'RecalcStyleCount']
+        const metrics = async () => Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics
+          .filter(m => metricNames.includes(m.name)).map(m => [m.name, m.value * (m.name.endsWith('Duration') ? 1000 : 1)]))
+        const startup = { ...await page.evaluate(() => window.__searchStartup()), ...await metrics() }
         assert.equal(network.read().some(r => featurePattern.test(r.path)), false, 'No search intent before the measured action')
         if (scenario === 'intent') {
           network.phase('intent')
@@ -52,11 +59,13 @@ try {
         }
         const open = async phase => {
           network.phase(phase)
+          const before = await metrics()
           const query = scenario === 'input' ? 'React' : ''
           await page.evaluate(args => window.__measureSearch(args), { method: scenario === 'intent' ? 'click' : 'shortcut', query, expected: expected[query] })
           await page.waitForFunction(() => window.__searchSample.settled !== null && window.__searchSample.actionable !== null)
           await page.waitForTimeout(100)
           const result = await page.evaluate(() => window.__readSearch())
+          result.mainThread = Object.fromEntries(Object.entries(await metrics()).map(([key, value]) => [key, value - before[key]]))
           assert.equal(result.sameInput, true)
           assert.equal(result.firstFrame.display, 'grid', 'The first result frame must already be styled')
           assert.equal(await page.locator('.site-search-input').inputValue(), query)
@@ -68,12 +77,13 @@ try {
         await page.keyboard.press('Escape'); await page.locator('.site-search-backdrop').waitFor({ state: 'detached' })
         await page.waitForTimeout(300)
         const reopened = await open('reopen')
-        const sample = { version, profile: name, scenario, run, cache, startupReady, first, reopened, network: network.read() }
+        const sample = { version, profile: name, scenario, run, cache, startupReady, startup, first, reopened, network: network.read() }
         samples.push(sample)
         assert.deepEqual(errors, [])
         console.log(JSON.stringify({ version, profile: name, scenario, run, cache,
           feedback: first.feedback, inputEcho: first.inputEcho, results: first.results, actionable: first.actionable, settled: first.settled }))
-        await writeFile(`${output}/${label}.json`, JSON.stringify({ methodVersion: 2, browser: browser.version(), runs, samples }, null, 2))
+        await writeFile(`${output}/${label}.json`, JSON.stringify({ methodVersion: 3, browser: browser.version(), runs,
+          order: selectedVersions.map(([name]) => name), samples }, null, 2))
       }
     } finally { await context.close() }
   }

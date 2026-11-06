@@ -5,11 +5,11 @@ import { output, versions } from './search-support.mjs'
 const label = process.argv[2] || 'acceptance'
 assert.match(label, /^[a-z0-9-]+$/i)
 const data = JSON.parse(await readFile(`${output}/${label}.json`, 'utf8'))
-assert.equal(data.methodVersion, 2)
+assert.equal(data.methodVersion, 3)
 assert.ok(Number.isInteger(data.runs) && data.runs >= 3, 'Acceptance needs at least three runs')
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]
 const round = n => Math.round(n * 10) / 10
-const rows = [], violations = []
+const rows = [], violations = [], startupRegressions = []
 for (const scenario of [...new Set(data.samples.map(s => s.scenario))]) {
   for (const profile of [...new Set(data.samples.map(s => s.profile))]) for (const cache of ['cold', 'warm']) {
     const row = { scenario, profile, cache }
@@ -20,13 +20,20 @@ for (const scenario of [...new Set(data.samples.map(s => s.scenario))]) {
         assert.equal(sample[phase].results, scenario === 'input' ? sample[phase].inputEcho : sample[phase].feedback,
           'Matching results must appear with feedback/query echo, without a separate construction or download wait')
       }
-      const metric = (phase, key) => round(median(samples.map(s => s[phase][key])))
+      const metric = (phase, key) => {
+        const values = samples.map(s => s[phase][key])
+        return values.every(value => value === null) ? null : round(median(values))
+      }
       const bytes = (phase, type) => round(median(samples.map(s => s.network
         .filter(r => (!phase || r.phase === phase) && (!type || r.type === type)).reduce((sum, r) => sum + r.bytes, 0))) / 1024)
       row[version] = { startupReady: round(median(samples.map(s => s.startupReady))),
         navigationActionable: round(median(samples.map(s => s.first.start + s.first.actionable))) }
+      row[version].startup = Object.fromEntries(Object.keys(samples[0].startup).map(key => [key, round(median(samples.map(s => s.startup[key])))]))
+      row[version].startup.maxTaskMs = Math.max(...samples.map(s => s.startup.maxTaskMs))
       for (const phase of ['first', 'reopened']) row[version][phase] = Object.fromEntries(
-        ['feedback', 'inputEcho', 'results', 'actionable', 'entranceEnded', 'settled', 'longTaskMs', 'blockingMs'].map(key => [key, metric(phase, key)]))
+        ['feedback', 'inputEcho', 'results', 'actionable', 'entranceEnded', 'settled', 'longTaskMs', 'blockingMs', 'echoAfterInput'].map(key => [key, metric(phase, key)]))
+      for (const phase of ['first', 'reopened']) row[version][phase].mainThread = Object.fromEntries(
+        Object.keys(samples[0][phase].mainThread).map(key => [key, round(median(samples.map(s => s[phase].mainThread[key])))]))
       Object.assign(row[version], {
         maxFeedback: round(Math.max(...samples.flatMap(s => [s.first.feedback, s.reopened.feedback]))),
         maxTaskMs: Math.max(...samples.map(s => s.first.maxTaskMs)),
@@ -50,13 +57,19 @@ for (const scenario of [...new Set(data.samples.map(s => s.scenario))]) {
       if (row.candidate[phase][metric] > budget) violations.push({ scenario, profile, cache, phase, metric, observed: row.candidate[phase][metric], budget })
     }
     assert.equal(row.candidate.firstJS + row.candidate.firstCSS, 0)
+    for (const metric of ['fcp', 'TaskDuration', 'ScriptDuration', 'LayoutDuration', 'RecalcStyleDuration']) {
+      const baseline = row.baseline.startup[metric]
+      const budget = baseline + Math.max(baseline * .1, 100)
+      if (row.candidate.startup[metric] > budget) startupRegressions.push({ scenario, profile, cache, metric,
+        observed: row.candidate.startup[metric], budget })
+    }
     rows.push(row)
   }
 }
 // Keep the previous absolute feedback goal visible, including every exceeded sample.
-// Boundary selection prioritizes real result usability; do not label this goal as passed when it is not.
+// Keep absolute and startup misses visible even when relative interaction checks pass.
 const feedbackGoalExceeded = data.samples.flatMap(s => ['first', 'reopened'].filter(phase => s[phase].feedback > 100)
   .map(phase => ({ version: s.version, profile: s.profile, scenario: s.scenario, cache: s.cache, run: s.run, phase, feedback: round(s[phase].feedback) })))
-await writeFile(`${output}/${label}-summary.json`, JSON.stringify({ rows, violations, feedbackGoalExceeded }, null, 2))
-console.log(JSON.stringify({ rows, violations, feedbackGoalExceeded }, null, 2))
+await writeFile(`${output}/${label}-summary.json`, JSON.stringify({ rows, violations, feedbackGoalExceeded, startupRegressions }, null, 2))
+console.log(JSON.stringify({ rows, violations, feedbackGoalExceeded, startupRegressions }, null, 2))
 assert.deepEqual(violations, [], 'Feedback, result first frame, activation and entrance must each meet their own budget')

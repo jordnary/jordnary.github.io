@@ -11,6 +11,8 @@ type SearchNavigationMode = 'pointer' | 'keyboard'
 export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
+      // Escape/Enter and shortcuts can belong to the IME candidate window.
+      if (event.isComposing || event.keyCode === 229) return
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         onOpen()
@@ -45,14 +47,16 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
     }
   }, [])
   useEffect(() => {
-    if (activeIndex >= 0) document.getElementById(`site-search-result-${activeIndex}`)?.scrollIntoView({ block: 'nearest' })
-  }, [activeIndex])
+    if (navigationMode === 'keyboard' && activeIndex >= 0) {
+      document.getElementById(`site-search-result-${activeIndex}`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [activeIndex, navigationMode])
 
   const updateQuery = (value: string) => {
     setQuery(value); setActiveIndex(-1); setNavigationMode('pointer')
   }
   const inputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.nativeEvent.isComposing || !results.length) return
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || !results.length) return
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault(); setNavigationMode('keyboard')
       setActiveIndex(index => event.key === 'ArrowDown' ? (index + 1) % results.length

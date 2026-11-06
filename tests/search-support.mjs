@@ -1,16 +1,17 @@
 import { connectionState, contentReady } from './page-resources.browser.mjs'
 export { connectionState }
 export const baseURL = process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4194/'
-export const output = 'node_modules/.cache/search-boundary'
+export const output = 'node_modules/.cache/search-main-thread'
 export const versions = [
   ['baseline', process.env.RESOURCE_BASELINE_URL || 'http://127.0.0.1:4195/'],
-  ['split', process.env.SEARCH_SPLIT_URL || 'http://127.0.0.1:4196/'],
   ['candidate', baseURL],
 ]
 export const featurePattern = /\/assets\/SiteSearchResults-[^/]+\.(js|css)(\?.*)?$/
 export const profiles = [
   { name: 'desktop-network', viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, cpu: 1, mbps: 10, latency: 50 },
   { name: 'desktop-weak', viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1, cpu: 1, mbps: 1.6, latency: 150 },
+  { name: 'mobile-network', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, cpu: 4, mbps: 10, latency: 50 },
+  { name: 'mobile-weak-cpu1', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, cpu: 1, mbps: 1.6, latency: 150 },
   { name: 'mobile-weak', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, cpu: 4, mbps: 1.6, latency: 150 },
 ]
 export async function launch() {
@@ -38,6 +39,13 @@ export function sampler() {
   const tasks = []
   new PerformanceObserver(list => tasks.push(...list.getEntries().map(e => ({ start: e.startTime, duration: e.duration }))))
     .observe({ type: 'longtask', buffered: true })
+  window.__searchStartup = () => ({
+    longTaskMs: tasks.reduce((s, t) => s + t.duration, 0),
+    blockingMs: tasks.reduce((s, t) => s + Math.max(0, t.duration - 50), 0),
+    maxTaskMs: Math.max(0, ...tasks.map(t => t.duration)),
+    fcp: performance.getEntriesByName('first-contentful-paint')[0]?.startTime ?? null,
+    domNodes: document.querySelectorAll('*').length,
+  })
   window.__measureSearch = ({ method = 'shortcut', query = '', expected, freeze = false }) => {
     const result = { start: performance.now(), feedback: null, typed: null, inputEcho: null, results: null, actionable: null, entranceEnded: null, settled: null }
     window.__searchSample = result
@@ -114,7 +122,8 @@ export function sampler() {
   window.__readSearch = () => {
     const result = window.__searchSample
     const selected = tasks.filter(t => t.start + t.duration > result.start)
-    return { ...result, longTaskMs: selected.reduce((s, t) => s + t.duration, 0),
+    return { ...result, echoAfterInput: result.typed === null ? null : result.inputEcho - result.typed,
+      observedFor: performance.now() - result.start, longTaskMs: selected.reduce((s, t) => s + t.duration, 0),
       blockingMs: selected.reduce((s, t) => s + Math.max(0, t.duration - 50), 0),
       maxTaskMs: Math.max(0, ...selected.map(t => t.duration)), domNodes: document.querySelectorAll('*').length }
   }

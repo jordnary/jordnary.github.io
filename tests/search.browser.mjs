@@ -61,6 +61,29 @@ try {
   })
   pass('Immediate trusted text, input identity, shortcuts, Tab trap, backdrop close and focus return are preserved')
 
+  await run(async (page, _, context) => {
+    await home(page); await open(page); await ready(page)
+    const input = page.locator('.site-search-input')
+    const cdp = await context.newCDPSession(page)
+    await input.evaluate(el => { window.__searchInput = el })
+    await cdp.send('Input.imeSetComposition', { text: '学', selectionStart: 1, selectionEnd: 1 })
+    assert.equal(await input.inputValue(), '学')
+    for (const key of ['ArrowDown', 'Enter', 'Escape', 'k']) {
+      await input.dispatchEvent('keydown', { key, isComposing: true, ctrlKey: key === 'k' })
+      assert.equal(await page.locator('.site-search-backdrop').count(), 1)
+      assert.equal(await input.getAttribute('aria-activedescendant'), null)
+    }
+    await input.dispatchEvent('keydown', { key: 'Escape', keyCode: 229 })
+    await cdp.send('Input.insertText', { text: '学习' })
+    assert.equal(await input.inputValue(), '学习')
+    assert.equal(await input.evaluate(el => el === window.__searchInput && el === document.activeElement), true)
+    await ready(page); await input.press('ArrowDown')
+    assert.equal(await input.getAttribute('aria-activedescendant'), 'site-search-result-0')
+    await page.keyboard.press('Escape')
+    assert.equal(await page.locator('.site-search-backdrop').count(), 0)
+  }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
+  pass('Native composition keeps the input and results; composing keys never select, navigate or close')
+
   await run(async (page, requests, context) => {
     await home(page)
     await context.setOffline(true)
@@ -162,6 +185,47 @@ try {
     assert.equal(await page.locator('#site-scroll').evaluate(el => getComputedStyle(el).overflowY), 'auto')
   }, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })
   pass('Mobile search locks the background and restores the existing scroll position on close')
+
+  for (const mobile of [false, true]) await run(async (page, _, context) => {
+    await home(page)
+    const read = () => page.evaluate(() => matchMedia('(pointer: coarse)').matches
+      ? document.getElementById('site-scroll').scrollTop : scrollY)
+    await page.evaluate(() => (matchMedia('(pointer: coarse)').matches
+      ? document.getElementById('site-scroll') : document.documentElement).scrollTo({ top: 500, behavior: 'instant' }))
+    const before = await read()
+    await open(page); await ready(page); await page.waitForTimeout(220)
+    await page.mouse.move(4, 300); await page.mouse.wheel(0, 400)
+    await page.locator('.site-search-footer button').focus(); await page.keyboard.press('PageDown')
+    if (mobile) {
+      const cdp = await context.newCDPSession(page)
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 4, y: 600 }] })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 4, y: 200 }] })
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    }
+    await page.waitForTimeout(160)
+    assert.equal(await read(), before, 'Backdrop wheel, touch and PageDown must not scroll the background')
+    const input = page.locator('.site-search-input')
+    await input.fill('AI'); await input.press('ArrowUp')
+    await page.waitForTimeout(180)
+    assert.equal(await read(), before, 'Keyboard selection scrolls only the results')
+    assert.equal(await page.evaluate(() => {
+      const input = document.querySelector('.site-search-input')
+      const row = document.getElementById(input.getAttribute('aria-activedescendant')).getBoundingClientRect()
+      const list = document.querySelector('.site-search-results').getBoundingClientRect()
+      return row.top >= list.top - 1 && row.bottom <= list.bottom + 1
+    }), true)
+    const resultsTop = await page.locator('.site-search-results').evaluate(el => el.scrollTop)
+    await page.locator('.site-search-result').first().dispatchEvent('mousemove')
+    await page.waitForTimeout(80)
+    assert.equal(await page.locator('.site-search-results').evaluate(el => el.scrollTop), resultsTop,
+      'Pointer selection must not start a scroll into view')
+    assert.equal(await read(), before, 'Pointer selection never scrolls the background')
+    await page.keyboard.press('Escape')
+    assert.equal(await read(), before)
+    await page.mouse.move(20, 300); await page.mouse.wheel(0, 200); await page.waitForTimeout(200)
+    assert.ok(await read() > before, 'Closing releases normal page scrolling')
+  }, mobile ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 } : {})
+  pass('Desktop/mobile boundaries contain scroll chaining; selection, close and normal scrolling stay correct')
 
   await run(async page => {
     await home(page); await open(page); await ready(page)

@@ -14,7 +14,7 @@ const browser = await launch()
 const report = []
 try {
   await mkdir(output, { recursive: true })
-  for (const profile of profiles.filter(p => p.name !== 'desktop-network')) for (const motion of ['no-preference', 'reduce']) for (const [version, base] of versions) {
+  for (const profile of profiles.filter(p => ['desktop-weak', 'mobile-weak'].includes(p.name))) for (const motion of ['no-preference', 'reduce']) for (const [version, base] of versions) {
     const { name, cpu, mbps, latency, ...device } = profile
     const context = await browser.newContext({ ...device, reducedMotion: motion })
     await context.addInitScript(connectionState, { effectiveType: '3g', downlink: mbps, rtt: latency, saveData: false })

@@ -43,7 +43,7 @@ try {
     }
     await context.close()
   }
-  for (const version of ['split', 'candidate']) {
+  for (const version of ['candidate']) {
     assert.deepEqual(report[version].queries, report.baseline.queries)
     assert.deepEqual(report[version].geometry, report.baseline.geometry)
   }
