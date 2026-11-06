@@ -10,6 +10,7 @@ import { getRouteHref } from '../lib/routes'
 import { getHashTargetId } from '../lib/hashScroll'
 import { useReaderContents } from '../lib/useReaderContents'
 import { useProjectReaderWheel } from '../lib/useProjectReaderWheel'
+import { projectDisplayImage } from '../lib/project-images'
 import './ProjectDetailPage.css'
 
 const categoryLabels = {
@@ -208,7 +209,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
         </div>
         {project.image && <figure className="project-reader-cover">
           <div className="project-reader-cover-image">
-            <img src={images[0].src} alt={images[0].alt} width={images[0].width} height={images[0].height} fetchPriority="high" />
+            <img {...projectDisplayImage(images[0].src, 'cover')} alt={images[0].alt} width={images[0].width} height={images[0].height} fetchPriority="high" />
             <ReaderImageButton onClick={() => setPreviewIndex(0)} label={`放大查看 ${project.title} 项目图片`} />
           </div>
         </figure>}
@@ -269,7 +270,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
                     const resultIndex = images.findIndex(image => image.src === `${base}images/projects/${figure.file}`)
                     return <figure className="project-introduction-figure" key={figure.file}>
                       <div className="project-introduction-image">
-                        <img src={images[resultIndex].src} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
+                        <img {...projectDisplayImage(images[resultIndex].src, 'figure')} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
                         <ReaderImageButton onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
                       </div>
                       <figcaption>{figure.caption}</figcaption>

@@ -61,6 +61,8 @@ npm run dev
 
 页内菜单、Home 画廊与近况图片的候选描述在 `src/lib/inpage-images.ts`，准备任务复用 `src/lib/page-images.ts`；显式选择立即加载，接近范围按网络策略收紧。修改图片规格或时机后运行 `npm run test:inpage-images`，并按 [页内图片交接](docs/ux-refactor.md#69-p3-页内图片准备与体验对照) 对照可见等待与未消费下载。
 
+项目封面、正文和列表预览的展示尺寸由 `src/lib/project-images.ts` 描述，首屏预加载复用同一候选；图集继续使用原图。定向对照与 DPR 检查见 [项目展示图交接](docs/ux-refactor.md#614-p3-项目展示图)。
+
 菜单、阅读器和图集的首次构造按原有开场动效分帧；字体核心、常用字和扩展字的生成与校验见 [字体说明](public/fonts/README.md#woodland-reader)。调整构造或字体时机后运行 `npm run test:first-open`，并按 [首次构造与字体交接](docs/ux-refactor.md#610-p3-首次构造与字体优化) 对照冷/热缓存下的反馈、内容就绪与传输。
 
 保留的手动维护工具：

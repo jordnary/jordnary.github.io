@@ -117,13 +117,14 @@ export async function runProjectPreviewChecks(page, { url, waitForProjects, repo
   await page.mouse.move(1, 1)
   await page.evaluate(() => document.activeElement?.blur())
   await waitForHidden(page)
-  await page.evaluate(async sources => {
-    await Promise.all(sources.map(async src => {
-      const image = new Image()
-      image.src = src
-      await image.decode()
-    }))
-  }, [first, second, third].map(project => url(`images/projects/${(project.image.cover ?? project.image).file}`)))
+  const displayedSources = new Map()
+  for (const project of [first, second, third]) {
+    await moveToProject(page, project)
+    await waitForPreview(page, project)
+    displayedSources.set(project.id, await page.locator(imageSelector).evaluate(image => image.currentSrc))
+  }
+  await page.mouse.move(1, 1)
+  await waitForHidden(page)
 
   let stopRecording = await recordPreview(page)
   await moveToProject(page, first)
@@ -228,8 +229,8 @@ export async function runProjectPreviewChecks(page, { url, waitForProjects, repo
   } finally { await page.emulateMedia({ reducedMotion: 'no-preference' }) }
   report('Reduced motion shows the current poster immediately and removes it without running preview animations')
 
-  const delayedFile = (second.image.cover ?? second.image).file
-  const delayedPattern = `**/images/projects/${delayedFile}`
+  const delayedSource = displayedSources.get(second.id)
+  const delayedPattern = delayedSource
   let release
   let requested
   const held = new Promise(resolve => { release = resolve })
@@ -250,14 +251,14 @@ export async function runProjectPreviewChecks(page, { url, waitForProjects, repo
     await moveToProject(page, third)
     await waitForPreview(page, third)
     stopRecording = await recordPreview(page)
-    const response = page.waitForResponse(response => new URL(response.url()).pathname.endsWith(`/images/projects/${delayedFile}`))
+    const response = page.waitForResponse(response => response.url() === delayedSource)
     release()
     await (await response).finished()
     await page.evaluate(async src => {
       const image = new Image()
       image.src = src
       await image.decode()
-    }, url(`images/projects/${delayedFile}`))
+    }, delayedSource)
     await nextFrames(page)
     samples = await stopRecording()
     assert.ok(samples.every(sample => sample.layers.every(layer => layer.id === third.id)), 'A late image response never replaces the latest hovered project')

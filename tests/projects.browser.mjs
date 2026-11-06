@@ -41,9 +41,9 @@ async function expectPreview(page, project) {
       && image.complete && image.naturalWidth > 0
   }, cover.file)
   assert.ok(await preview.evaluate(image => {
-    const source = new URL(image.src)
-    return source.origin === location.origin && image.naturalWidth === 1600
-      && image.naturalHeight === 1000
+    const source = new URL(image.currentSrc)
+    return source.origin === location.origin && image.naturalWidth > 0
+      && Math.abs(image.naturalWidth / image.naturalHeight - 1.6) < .01
   }), `${project.id}: the local poster loads at its original aspect ratio`)
   assert.equal(await page.locator('.archive-preview.is-visible')
     .evaluate(element => getComputedStyle(element).pointerEvents), 'none')

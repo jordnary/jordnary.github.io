@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { ProjectCase } from '../data/projects'
+import { projectDisplayImage } from '../lib/project-images'
 
 type PreviewController = { request: (project: ProjectCase | null) => void }
 type Clip = [number, number, number, number]
@@ -150,7 +151,10 @@ export function ProjectsPreview({ project }: { project: ProjectCase | null }) {
       const cover = next.image?.cover ?? next.image
       if (!cover) { request(null); return }
       const image = new Image()
-      image.src = `${import.meta.env.BASE_URL}images/projects/${cover.file}`
+      const display = projectDisplayImage(`${import.meta.env.BASE_URL}images/projects/${cover.file}`, 'preview')
+      if (display.sizes) image.sizes = display.sizes
+      if (display.srcSet) image.srcset = display.srcSet
+      image.src = display.src
       // Only decoded images can replace the current picture; stale requests never win.
       void image.decode().then(() => {
         if (!disposed && token === revision) reveal(image, next)

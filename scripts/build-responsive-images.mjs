@@ -12,7 +12,7 @@ const groups = {
   navigation: { widths: [240, 480, 960, 1280], files: /-1920\.webp$/ },
   learning: { widths: [480, 768, 1024, 1440], files: /\.webp$/ },
   'project-studio': { widths: [480, 768, 1024], files: /\.webp$/ },
-  projects: { widths: [240], files: /\.webp$/ },
+  projects: { widths: [240, 480, 768, 1024, 1440], files: /\.webp$/ },
 }
 let generated = 0
 const existing = new Set(await readdir(output))

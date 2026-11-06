@@ -1,6 +1,7 @@
 import { studioArtworks } from '../data/project-studio'
 import { getPageFromUrl, getProjectFromUrl, isHomepagePortalUrl, isProjectStudioUrl } from './routes'
 import { responsiveImage } from './responsive-images'
+import { projectDisplayImage } from './project-images'
 
 /** Shared by HTML generation, navigation and the displayed image elements. */
 export type PageImage = { src: string; srcSet?: string; sizes?: string }
@@ -47,7 +48,7 @@ export function getPageResources(url: URL, base: string) {
   const images: PageImage[] = key === 'learning' ? learningCoverImages(base)
     : key === 'projects' ? [projectArchiveImage(base)]
     : key === 'studio' ? [studioImage(studioArtworks[0], base)]
-    : key === 'detail' && cover ? [{ src: `${base}images/projects/${cover.file}` }]
+    : key === 'detail' && cover ? [projectDisplayImage(`${base}images/projects/${cover.file}`, 'cover', base)]
     : key === 'about' ? [aboutCoverImage(base)]
     : key === 'contact' ? [contactCoverImage(base)] : []
   // Large archive/studio artwork starts at entry execution: parser-time requests
