@@ -3,15 +3,17 @@ import { preparePageImages } from './page-images'
 import { getPageResources } from './page-resources'
 import { siteLink } from './site-link'
 import { pageConnection, pageNetworkPolicy } from './page-network'
+import { prepareSearch } from './search-loader'
 
-type Intent = { anchor: HTMLAnchorElement; url: URL; id: string; timer: number }
+type Target = { anchor: HTMLElement; id: string; prepare: () => Promise<unknown> }
+type Intent = Target & { timer: number }
 type Kind = 'pointer' | 'focus' | 'touch'
 
 /** One running target, at most two waiting targets; required loads bypass this queue. */
 export function installPagePrefetch() {
   const connection = pageConnection()
   const intents = new Map<Kind, Intent>()
-  const queue = new Map<string, URL>()
+  const queue = new Map<string, Target>()
   const completed = new Set<string>()
   let current = ''
   let currentUrl: URL | null = null
@@ -38,15 +40,13 @@ export function installPagePrefetch() {
   const start = () => {
     if (!queue.size || running || !allowed()) return
     if (!visibleReady()) { later(); return }
-    const [id, url] = [...queue].at(-1)!
+    const [id, target] = [...queue].at(-1)!
     queue.delete(id)
     running = id
     completed.add(id)
-    // Imports keep Vite's dependency/CSS gate and its single Promise owner.
+    // Each target retains its dependency/CSS gate and single Promise owner.
     // They cannot be aborted or reprioritized after issue. Images are explicitly low.
-    const tasks: Promise<unknown>[] = [loadPage(url, true)]
-    if (pageNetworkPolicy().images) tasks.push(preparePageImages(url, 'low'))
-    void Promise.allSettled(tasks).then(() => {
+    void target.prepare().catch(() => {}).then(() => {
       running = null
       schedule()
     })
@@ -90,18 +90,23 @@ export function installPagePrefetch() {
     touchPoint = null
   }
   const enter = (kind: Kind, event: Event) => {
-    const link = siteLink(event.target)
-    if (!link || link.anchor.hasAttribute('data-site-reload')) return
-    const id = idOf(link.url)
+    const trigger = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-search-trigger]') : null
+    const link = trigger ? null : siteLink(event.target)
+    if (!trigger && (!link || link.anchor.hasAttribute('data-site-reload'))) return
+    const target: Target = trigger ? { anchor: trigger, id: 'feature:search', prepare: prepareSearch }
+      : { anchor: link!.anchor, id: idOf(link!.url), prepare: () => Promise.allSettled([
+        loadPage(link!.url, true), ...(pageNetworkPolicy().images ? [preparePageImages(link!.url, 'low')] : []),
+      ]) }
+    const { id } = target
     if (!id || id === current || completed.has(id) || !allowed()) return
-    if (intents.get(kind)?.anchor === link.anchor) return
+    if (intents.get(kind)?.anchor === target.anchor) return
     clearIntent(kind)
-    const intent = { ...link, id, timer: 0 }
+    const intent = { ...target, timer: 0 }
     intents.set(kind, intent)
     intent.timer = window.setTimeout(() => {
       if (!allowed() || completed.has(id) || id === current || !intent.anchor.isConnected || intents.get(kind) !== intent) return
       queue.delete(id)
-      queue.set(id, link.url)
+      queue.set(id, target)
       while (queue.size > 2) queue.delete(queue.keys().next().value!)
       schedule()
     }, 100)

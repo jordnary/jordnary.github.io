@@ -5,6 +5,7 @@ import { Navbar } from '../components/Navbar'
 import { ScrollProgress } from '../components/ScrollProgress'
 import { SiteSearch } from '../components/SiteSearch'
 import { isHomepagePortalUrl, type SitePage } from '../lib/routes'
+import { prepareSearch, searchRecovery } from '../lib/search-loader'
 
 type SiteLayoutProps = {
   children: ReactNode
@@ -16,7 +17,13 @@ type SiteLayoutProps = {
 }
 
 export function SiteLayout({ children, page, isProjectDetail = false, href = window.location.href, transitioning = false, pending = false }: SiteLayoutProps) {
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isSearchOpen, setIsSearchOpen] = useState(() => Boolean(searchRecovery()))
+  const openSearch = () => {
+    if (isSearchOpen) return
+    // Required code/CSS starts in the input event, alongside the immediate shell.
+    void prepareSearch().catch(() => {})
+    setIsSearchOpen(true)
+  }
   // Derive portal mode from the current route on every render. Keeping this as
   // state can leave the fixed homepage portal mode active for one render after
   // in-place navigation to a static page, hiding its shared chrome.
@@ -29,7 +36,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
       <div className="app-shell-content">
         {hasSharedChrome && <ScrollProgress />}
 
-        {hasSharedChrome && <Navbar activePage={page} onSearchOpen={() => setIsSearchOpen(true)} />}
+        {hasSharedChrome && <Navbar activePage={page} onSearchOpen={openSearch} />}
 
         <main tabIndex={-1}>{children}</main>
 
@@ -39,7 +46,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
       {hasSharedChrome && <SiteSearch
           isOpen={isSearchOpen}
           onClose={() => setIsSearchOpen(false)}
-          onOpen={() => setIsSearchOpen(true)}
+          onOpen={openSearch}
         />}
     </div>
   )

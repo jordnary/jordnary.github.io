@@ -221,7 +221,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
             })}
           </ul>
           <div className="nav-actions">
-            <button aria-haspopup="dialog" aria-label="搜索站内内容" className="nav-search-button" onClick={openSearch} type="button">
+            <button aria-haspopup="dialog" aria-label="搜索站内内容" data-search-trigger="" className="nav-search-button" onClick={openSearch} type="button">
               <SearchIcon /><span className="nav-search-label">搜索</span><kbd className="nav-search-shortcut">Ctrl K</kbd>
             </button>
             <button
@@ -292,7 +292,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                 ><span>{siteRoutes[page].label}</span><ChevronIcon /></a>)}
               </nav>
               <div className="mobile-nav-footer">
-                <button className="mobile-nav-search" onClick={openSearch} type="button"><SearchIcon /><span>搜索站内内容</span><ArrowIcon /></button>
+                <button data-search-trigger="" className="mobile-nav-search" onClick={openSearch} type="button"><SearchIcon /><span>搜索站内内容</span><ArrowIcon /></button>
               </div>
             </div>
             <nav

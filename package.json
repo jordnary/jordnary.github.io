@@ -20,6 +20,7 @@
     "test:page-resources": "node tests/page-resources.browser.mjs",
     "test:inpage-images": "node tests/inpage-images.browser.mjs",
     "test:first-open": "node tests/first-open.browser.mjs",
+    "test:search": "node tests/search.browser.mjs",
     "test:page-loading": "node tests/page-loading.browser.mjs",
     "test:gallery-loading": "node tests/gallery-loading.browser.mjs",
     "test:home-gallery": "node tests/home-photo-gallery.browser.mjs && node tests/home-gallery-motion.browser.mjs && node tests/home-gallery-scroll.browser.mjs",

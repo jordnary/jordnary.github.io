@@ -44,9 +44,7 @@ export const projectStudioRoute: SiteRoute = {
   description: 'A creative development practice exploring computer science, artificial intelligence and the web.',
 }
 
-export function getRouteHref(page: SitePage) {
-  const base = import.meta.env.BASE_URL
-
+export function getRouteHref(page: SitePage, base = import.meta.env?.BASE_URL ?? '/') {
   if (page === 'home') {
     return `${base.replace(/\/$/, '')}/home/`
   }

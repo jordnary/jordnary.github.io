@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
 import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
+import { searchFeature } from './scripts/search-feature'
 
 function pageStartup(): Plugin {
   let base = '/'
@@ -132,7 +133,7 @@ function projectPages(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), projectPages(), pageResources(), pageStartup()],
+  plugins: [react(), tailwindcss(), searchFeature(), projectPages(), pageResources(), pageStartup()],
   build: {
     rollupOptions: {
       input: {

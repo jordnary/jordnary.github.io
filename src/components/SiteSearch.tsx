@@ -1,217 +1,116 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { searchSite } from '../data/searchIndex'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { clearSearchRecovery, preparedSearch, prepareSearch, reloadSearch, searchRecovery } from '../lib/search-loader'
+import { waitForPage } from '../lib/page-loading'
 
-type SiteSearchProps = {
-  isOpen: boolean
-  onClose: () => void
-  onOpen: () => void
-}
-
+type SiteSearchProps = { isOpen: boolean; onClose: () => void; onOpen: () => void }
 type SearchNavigationMode = 'pointer' | 'keyboard'
 
 export function SiteSearch({ isOpen, onClose, onOpen }: SiteSearchProps) {
-  const [query, setQuery] = useState('')
-  const [activeIndex, setActiveIndex] = useState(-1)
-  const [navigationMode, setNavigationMode] = useState<SearchNavigationMode>('pointer')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const resultRefs = useRef<Array<HTMLAnchorElement | null>>([])
-  const results = useMemo(() => searchSite(query).slice(0, 8), [query])
-
-  const closeSearch = useCallback(() => {
-    setQuery('')
-    setActiveIndex(-1)
-    setNavigationMode('pointer')
-    onClose()
-  }, [onClose])
-
   useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
+    const shortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
         onOpen()
       }
-
-      if (event.key === 'Escape' && isOpen) {
-        closeSearch()
-      }
+      if (event.key === 'Escape' && isOpen) { event.preventDefault(); onClose() }
     }
+    window.addEventListener('keydown', shortcut)
+    return () => window.removeEventListener('keydown', shortcut)
+  }, [isOpen, onClose, onOpen])
+  return isOpen ? <SearchDialog onClose={onClose} /> : null
+}
 
-    window.addEventListener('keydown', handleShortcut)
+function SearchDialog({ onClose }: { onClose: () => void }) {
+  const [query, setQuery] = useState(() => searchRecovery()?.query ?? '')
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [navigationMode, setNavigationMode] = useState<SearchNavigationMode>('pointer')
+  const [module, setModule] = useState(preparedSearch)
+  const [failed, setFailed] = useState(false)
+  const [reloadBlocked, setReloadBlocked] = useState(false)
+  const controller = useRef<AbortController | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const dialogRef = useRef<HTMLElement>(null)
+  const results = useMemo(() => module?.searchSite(query) ?? [], [module, query])
+  const load = useCallback(() => {
+    controller.current?.abort()
+    const consumer = new AbortController()
+    controller.current = consumer
+    void waitForPage(prepareSearch(), consumer.signal).then(value => {
+      if (!consumer.signal.aborted) setModule(value)
+    }, () => { if (!consumer.signal.aborted) setFailed(true) })
+  }, [])
 
+  useEffect(() => { clearSearchRecovery(); load(); return () => controller.current?.abort() }, [load])
+  useLayoutEffect(() => {
+    const previous = document.activeElement
+    const dialog = dialogRef.current
+    inputRef.current?.focus({ preventScroll: true })
     return () => {
-      window.removeEventListener('keydown', handleShortcut)
+      // A result navigation may already have moved focus to the next page.
+      if (document.activeElement !== document.body && !dialog?.contains(document.activeElement)) return
+      const fallback = document.querySelector<HTMLElement>('.nav-search-button')
+      if (previous instanceof HTMLElement && previous.isConnected && previous.getClientRects().length && !previous.closest('[inert],dialog:not([open])')) previous.focus({ preventScroll: true })
+      else fallback?.focus({ preventScroll: true })
     }
-  }, [closeSearch, isOpen, onOpen])
-
+  }, [])
   useEffect(() => {
-    if (!isOpen) return
-
-    const frameId = window.requestAnimationFrame(() => {
-      inputRef.current?.focus()
-    })
-
-    return () => {
-      window.cancelAnimationFrame(frameId)
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (activeIndex >= 0) {
-      resultRefs.current[activeIndex]?.scrollIntoView({ block: 'nearest' })
-    }
+    if (activeIndex >= 0) document.getElementById(`site-search-result-${activeIndex}`)?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
 
-  const clearQuery = () => {
-    setQuery('')
-    setActiveIndex(-1)
-    inputRef.current?.focus()
-  }
-
   const updateQuery = (value: string) => {
-    setQuery(value)
-    setActiveIndex(-1)
-    setNavigationMode('pointer')
+    setQuery(value); setActiveIndex(-1); setNavigationMode('pointer')
   }
-
-  const activateResultFromPointer = (index: number) => {
-    if (navigationMode !== 'pointer') {
-      setNavigationMode('pointer')
-    }
-
-    if (activeIndex !== index) {
-      setActiveIndex(index)
+  const inputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.nativeEvent.isComposing || !results.length) return
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault(); setNavigationMode('keyboard')
+      setActiveIndex(index => event.key === 'ArrowDown' ? (index + 1) % results.length
+        : index < 0 ? results.length - 1 : (index - 1 + results.length) % results.length)
+    } else if (event.key === 'Enter' && activeIndex >= 0) {
+      event.preventDefault(); document.getElementById(`site-search-result-${activeIndex}`)?.click()
     }
   }
-
-  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (results.length === 0) return
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setNavigationMode('keyboard')
-      setActiveIndex((index) => (index + 1) % results.length)
-      return
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setNavigationMode('keyboard')
-      setActiveIndex((index) => (
-        index < 0 ? results.length - 1 : (index - 1 + results.length) % results.length
-      ))
-      return
-    }
-
-    if (event.key === 'Enter' && activeIndex >= 0) {
-      event.preventDefault()
-      resultRefs.current[activeIndex]?.click()
-    }
-  }
-
-  if (!isOpen) {
-    return null
-  }
-
-  return (
-    <div
-      aria-modal="true"
-      className="site-search-backdrop"
-      onMouseDown={closeSearch}
-      role="dialog"
-    >
-      <section
-        aria-label="站内搜索"
-        className={`site-search-dialog${navigationMode === 'keyboard' ? ' is-keyboard-navigating' : ''}`}
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="site-search-input-row">
-          <SearchIcon />
-          <input
-            aria-activedescendant={activeIndex >= 0 ? `site-search-result-${activeIndex}` : undefined}
-            aria-label="搜索站内内容"
-            aria-controls="site-search-results"
-            aria-expanded="true"
-            aria-haspopup="listbox"
-            className="site-search-input"
-            onChange={(event) => updateQuery(event.target.value)}
-            onKeyDown={handleInputKeyDown}
-            placeholder="搜索项目、学习内容或页面…"
-            ref={inputRef}
-            role="combobox"
-            type="search"
-            value={query}
-          />
-          {query && (
-            <button
-              aria-label="清空搜索内容"
-              className="site-search-clear"
-              onClick={clearQuery}
-              type="button"
-            >
-              <ClearIcon />
-            </button>
-          )}
+  const Results = module?.SearchResults
+  return <div aria-label="站内搜索" aria-modal="true" className="site-search-backdrop" onMouseDown={onClose} role="dialog">
+    <section aria-label="站内搜索" className={`site-search-dialog${navigationMode === 'keyboard' ? ' is-keyboard-navigating' : ''}`}
+      ref={dialogRef} onMouseDown={event => event.stopPropagation()} onKeyDown={event => {
+        if (event.key !== 'Tab') return
+        const controls = [...event.currentTarget.querySelectorAll<HTMLElement>('input,button,a[href]')]
+        const first = controls[0], last = controls.at(-1)
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+      }}>
+      <div className="site-search-input-row">
+        <SearchIcon />
+        <input aria-activedescendant={activeIndex >= 0 ? `site-search-result-${activeIndex}` : undefined}
+          aria-label="搜索站内内容" aria-controls={Results ? 'site-search-results' : undefined} aria-busy={!Results && !failed} aria-expanded="true" aria-haspopup="listbox"
+          className="site-search-input" onChange={event => updateQuery(event.target.value)} onKeyDown={inputKeyDown}
+          placeholder="搜索项目、学习内容或页面…" ref={inputRef} role="combobox" type="search" value={query} />
+        {query && <button aria-label="清空搜索内容" className="site-search-clear" type="button"
+          onClick={() => { updateQuery(''); inputRef.current?.focus() }}><ClearIcon /></button>}
+      </div>
+      <div aria-live="polite" className="site-search-results">
+        {Results ? <Results results={results} query={query} activeIndex={activeIndex} onClose={onClose}
+          onActivate={index => { setNavigationMode('pointer'); setActiveIndex(index) }} />
+          : <div className="site-search-loading" role={failed ? 'alert' : 'status'}>
+            <p>{failed ? '搜索暂时未能加载，请重试。' : '正在准备搜索…可以先输入关键词。'}</p>
+            {failed && <button type="button" onClick={() => { setFailed(false); load(); inputRef.current?.focus() }}>重试</button>}
+            {failed && <button type="button" onClick={() => {
+              try { reloadSearch(query) } catch { setReloadBlocked(true) }
+            }}>重新载入页面</button>}
+            {reloadBlocked && <p>暂时无法保留输入，请先复制关键词再刷新页面。</p>}
+          </div>}
+      </div>
+      <div className="site-search-footer">
+        <div aria-label="搜索快捷键" className="site-search-shortcuts">
+          <span className="site-search-shortcut"><kbd>↑</kbd><kbd>↓</kbd><span>选择</span></span>
+          <span className="site-search-shortcut"><kbd>↵</kbd><span>打开</span></span>
+          <span className="site-search-shortcut"><kbd>Esc</kbd><span>关闭</span></span>
         </div>
-
-        <div aria-live="polite" className="site-search-results">
-          <p className="site-search-hint">
-            {query.trim() ? `找到 ${results.length} 个相关结果` : '试试：AI、React、项目、GitHub'}
-          </p>
-          {results.length > 0 ? (
-            <ul className="site-search-list" id="site-search-results" role="listbox">
-              {results.map((result, index) => (
-                <li key={`${result.kind}-${result.title}`}>
-                  <a
-                    aria-selected={index === activeIndex}
-                    className={`site-search-result${index === activeIndex ? ' is-active' : ''}`}
-                    href={result.href}
-                    id={`site-search-result-${index}`}
-                    onClick={closeSearch}
-                    onMouseMove={() => activateResultFromPointer(index)}
-                    ref={(node) => {
-                      resultRefs.current[index] = node
-                    }}
-                    role="option"
-                  >
-                    <span className="site-search-result-type">{result.kind}</span>
-                    <span className="site-search-result-copy">
-                      <strong>{result.title}</strong>
-                      <span>{result.description}</span>
-                    </span>
-                    <span aria-hidden="true" className="site-search-result-arrow">→</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="site-search-empty">
-              <p>暂时没有匹配内容。</p>
-              <span>换一个关键词，或从首页继续探索。</span>
-            </div>
-          )}
-        </div>
-
-        <div className="site-search-footer">
-          <div aria-label="搜索快捷键" className="site-search-shortcuts">
-            <span className="site-search-shortcut">
-              <kbd>↑</kbd>
-              <kbd>↓</kbd>
-              <span>选择</span>
-            </span>
-            <span className="site-search-shortcut">
-              <kbd>↵</kbd>
-              <span>打开</span>
-            </span>
-            <span className="site-search-shortcut">
-              <kbd>Esc</kbd>
-              <span>关闭</span>
-            </span>
-          </div>
-          <button onClick={closeSearch} type="button">关闭</button>
-        </div>
-      </section>
-    </div>
-  )
+        <button onClick={onClose} type="button">关闭</button>
+      </div>
+    </section>
+  </div>
 }
 
 function SearchIcon() {
