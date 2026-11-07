@@ -66,6 +66,12 @@ export async function runChecks(browser) {
   const run = async (fn, options = {}, connection = undefined) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', ...options })
     await context.addInitScript(connectionState, connection)
+    // An idle opportunity is an input to these policy checks. A headless
+    // browser can withhold it indefinitely, including with no active network.
+    await context.addInitScript(() => {
+      const nativeIdle = window.requestIdleCallback?.bind(window)
+      if (nativeIdle) window.requestIdleCallback = (fn, options) => nativeIdle(fn, options ?? { timeout: 32 })
+    })
     const page = await context.newPage()
     page.setDefaultTimeout(15000)
     const errors = []
@@ -213,8 +219,22 @@ export async function runChecks(browser) {
   pass('Speculative image requests start at low priority and a required consumer reuses the pending request')
 
   await run(async (page, requests) => {
-    await page.addInitScript(() => { window.requestIdleCallback = undefined; window.cancelIdleCallback = undefined })
     await home(page)
+    await page.evaluate(() => {
+      window.requestIdleCallback = () => 1
+      window.cancelIdleCallback = () => {}
+    })
+    await (await link(page, '/contact/')).focus()
+    await page.waitForTimeout(400)
+    assert.equal(requests.some(path => modulePattern('ContactPage').test(path)), false)
+    await click(page, '/contact/')
+    await contentReady(page, '.correspondence')
+  })
+  pass('Without an idle opportunity speculation waits, and a click still works')
+
+  await run(async (page, requests) => {
+    await home(page)
+    await page.evaluate(() => { window.requestIdleCallback = undefined; window.cancelIdleCallback = undefined })
     const target = await link(page, '/contact/')
     await target.hover()
     await page.waitForTimeout(140)

@@ -11,7 +11,7 @@
     "build": "tsc -b && vite build",
     "build:test-preview": "npm run images:build && node scripts/inline-project-transition.mjs --check && tsc -b && node tests/build-preview.mjs",
     "preview:test": "vite preview --outDir node_modules/.cache/production-preview",
-    "test:production": "node tests/resource-phase-checks.mjs --fixture resource-loading page-loading search gallery-loading snapshots navbar project-page-transition first-open homepage-hub background-visibility",
+    "test:production": "node tests/resource-phase-checks.mjs --fixture resource-loading page-resources page-loading search gallery-loading snapshots navbar projects project-details project-page-transition first-open homepage-hub hub-real-tabs background-visibility",
     "test:units": "node --test \"tests/*.test.ts\" \"tests/*.test.mjs\"",
     "sync:project-transition": "node scripts/inline-project-transition.mjs",
     "sync:feeds": "node scripts/sync-rss.mjs",

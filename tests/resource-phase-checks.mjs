@@ -13,6 +13,7 @@ const checks = [
   ['lint', ['node_modules/eslint/bin/eslint.js', '.']],
   ['project-visuals', ['--test', 'tests/project-visuals.test.mjs']],
   ['transition-template', ['scripts/inline-project-transition.mjs', '--check']],
+  ['hub-real-tabs', ['tests/homepage-hub.browser.mjs', '--real-tabs']],
   ['navigation-units', ['--test', 'tests/project-page-transition.test.ts', 'tests/routes.test.ts', 'tests/nav-scroll-visibility.test.ts']],
   ...['projects', 'project-details', 'project-media-density', 'gallery-loading', 'page-resources', 'resource-loading', 'first-open',
     'home-now', 'home-now-scroll-lock', 'home-now-focus-return', 'home-now-ornament', 'snapshots',

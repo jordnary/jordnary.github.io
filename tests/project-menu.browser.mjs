@@ -165,7 +165,12 @@ export async function runProjectMenuChecks(page, { url, waitForProjects, report 
 
   stopRecording = await recordMenu(page)
   await openMenu(page).click()
-  await waitForMenuState(page, 'opening')
+  // Interrupt a painted opening frame; a fast driver can send Escape before
+  // the recorder ever samples the transition if we wait for the DOM flag only.
+  await page.waitForFunction(() => {
+    const menu = document.querySelector('.archive-menu')
+    return menu?.dataset.state === 'opening' && Number(getComputedStyle(menu).opacity) > .1
+  }, undefined, { timeout: 1500 })
   await page.keyboard.press('Escape')
   await assertMenuReleased(page, previousOverflow)
   const interrupted = await stopRecording()

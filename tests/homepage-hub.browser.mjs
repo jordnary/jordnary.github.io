@@ -327,7 +327,12 @@ async function realTabs(context, baseURL) {
     await page.waitForFunction(() => !document.hidden)
     await idle(page, 'Real foreground reduced')
     await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await moving(page, 'Real foreground normal')
+    // A restored native window need not produce its first frames in 160 ms.
+    const { draws } = await read(page)
+    await page.waitForFunction(count => window.__hubProbe.read().draws >= count + 2, draws, { timeout: 3000 })
+    const resumed = await read(page)
+    assert.equal(resumed.pending, 1, 'Restored tab queues one Hub frame')
+    assert.equal(resumed.maxPending, 1, 'Restored tab does not duplicate the loop')
     const events = await page.evaluate(() => window.__visibilityEvents)
     assert.ok(events.some(event => event.hidden && event.trusted))
     assert.ok(events.some(event => !event.hidden && event.trusted))

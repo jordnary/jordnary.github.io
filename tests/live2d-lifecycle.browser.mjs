@@ -83,7 +83,9 @@ const checks = []
 let browser, tabs, server
 try {
   await mkdir(output, { recursive: true })
-  server = await preview({ configFile: false, build: { outDir: process.argv.includes('--integrated') ? 'dist' : `${output}/${version}` }, preview: { host: '127.0.0.1', port: 4197, strictPort: true } })
+  const outDir = process.argv.includes('--fixture') ? 'node_modules/.cache/production-preview'
+    : process.argv.includes('--integrated') ? 'dist' : `${output}/${version}`
+  server = await preview({ configFile: false, build: { outDir }, preview: { host: '127.0.0.1', port: 4197, strictPort: true } })
   const baseURL = 'http://127.0.0.1:4197'
   const channel = process.env.COMPANION_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL
   if (realTabs) tabs = await launchRealTabs(chromium, channel)

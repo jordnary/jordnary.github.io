@@ -122,13 +122,27 @@ try {
         .slice(0, 6).map(match => String.fromCodePoint(parseInt(match[1], 16)))
       for (const character of points) await page.evaluate(text => document.fonts.load('18px "Woodland WenKai"', text).then(() => undefined), character)
       await page.waitForTimeout(100)
-      assert.equal(await page.evaluate(() => JSON.parse(sessionStorage.getItem('home-now-font-ranges:v1') || '[]').length), 3)
+      const expected = await page.evaluate(() => JSON.parse(sessionStorage.getItem('home-now-font-ranges:v1') || '[]'))
+      assert.equal(expected.length, 3)
+      // Chromium may probe every previously used font from its local HTTP
+      // cache on reload. Measure which faces the page actually prepares, and
+      // separately keep the original bound on network transfers.
+      await page.addInitScript(() => {
+        window.__preparedRanges = []
+        const load = FontFace.prototype.load
+        FontFace.prototype.load = function () {
+          if (this.family === 'Woodland WenKai') window.__preparedRanges.push(this.unicodeRange)
+          return load.call(this)
+        }
+      })
       await page.reload()
-      const before = requests.length
       await page.locator('#now').evaluate(el => el.scrollIntoView({ behavior: 'instant', block: 'center' }))
-      await page.waitForTimeout(650)
-      const warmed = requests.slice(before).filter(url => url.includes('/woodland-wenkai/'))
-      assert.equal(warmed.filter(url => url.includes('/common-')).length, 3)
+      await page.waitForFunction(() => window.__preparedRanges.length >= 3)
+      await page.evaluate(() => document.fonts.ready)
+      assert.deepEqual(await page.evaluate(() => window.__preparedRanges.sort()), expected.sort())
+      const warmed = await page.evaluate(() => performance.getEntriesByType('resource')
+        .filter(r => r.transferSize > 0 && r.name.includes('/woodland-wenkai/')).map(r => new URL(r.name).pathname))
+      assert.ok(warmed.filter(url => url.includes('/common-')).length <= 3)
       assert.ok(!warmed.some(url => url.includes('/extra-')))
       assert.ok(warmed.length <= 4)
       assert.deepEqual(errors, [])

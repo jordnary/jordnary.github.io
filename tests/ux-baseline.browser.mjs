@@ -121,9 +121,10 @@ async function sample(page, session, url, warm) {
 
 async function buildInventory() {
   const assets = []
-  for (const file of await readdir('dist/assets')) {
+  const directory = (args.get('dist') || 'dist') + '/assets'
+  for (const file of await readdir(directory)) {
     if (!/\.(css|js)$/.test(file)) continue
-    const data = await readFile(`dist/assets/${file}`)
+    const data = await readFile(`${directory}/${file}`)
     assets.push({ file: `assets/${file}`, bytes: data.length, gzipBytes: gzipSync(data).length })
   }
   return assets.sort((a, b) => b.bytes - a.bytes)
