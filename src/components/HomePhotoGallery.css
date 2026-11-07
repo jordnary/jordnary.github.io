@@ -57,7 +57,8 @@
   display: block;
   position: relative;
   aspect-ratio: 3 / 2;
-  overflow: hidden;
+  /* Clip the photo without making it a scroll container between the finger and the rail. */
+  overflow: clip;
   border-radius: clamp(22px, 2.5vw, 64px);
   /* Keep the rounded mask fixed while the card and photograph scale separately. */
   isolation: isolate;

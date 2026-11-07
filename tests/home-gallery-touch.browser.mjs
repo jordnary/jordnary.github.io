@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url'
 // Native touch input exercises browser scrolling, pointer capture, and click synthesis.
 export async function runHomeGalleryTouchChecks(browser, baseURL, report = () => {}) {
   const homeURL = new URL('home/', baseURL).href
-  for (const [width, reducedMotion] of [[320, 'no-preference'], [390, 'no-preference'], [768, 'no-preference'], [390, 'reduce']]) {
+  for (const [width, reducedMotion] of [[390, 'no-preference'], [320, 'no-preference'], [768, 'no-preference'], [390, 'reduce']]) {
     const context = await browser.newContext({ viewport: { width, height: 844 }, isMobile: true, hasTouch: true, reducedMotion })
     await context.addInitScript(() => sessionStorage.setItem('site-live2d-collapsed-mobile', 'true'))
     const page = await context.newPage()
@@ -45,6 +45,7 @@ export async function runHomeGalleryTouchChecks(browser, baseURL, report = () =>
         await rail.scrollIntoViewIfNeeded()
         await page.waitForFunction(selector => {
           const content = document.querySelector(`${selector} .home-gallery-card-content`)
+          if (!content) return false
           const style = getComputedStyle(content)
           return style.opacity === '1' && (style.transform === 'none' || new DOMMatrixReadOnly(style.transform).m41 < .1)
         }, `#${section}`)
@@ -61,6 +62,24 @@ export async function runHomeGalleryTouchChecks(browser, baseURL, report = () =>
         const right = width * .8
         const initialTop = await pageTop()
         await center(0)
+
+        if (width === 390 && reducedMotion === 'no-preference') {
+          phase = `${label}: touch swipe without a continuous pointer stream`
+          // Some mobile browsers hand the pointer stream to their pan recognizer.
+          // Deliver real touch input, but do not rely on pointermove to drag the card.
+          await rail.evaluate(element => {
+            const stopTouchPointer = event => {
+              if (event.pointerType === 'touch') event.stopImmediatePropagation()
+            }
+            element.addEventListener('pointermove', stopTouchPointer, true)
+            element.addEventListener('touchend', () => element.removeEventListener('pointermove', stopTouchPointer, true), { once: true })
+          })
+          await swipe([right, y], [left, y])
+          await center(1)
+          await swipe([left, y], [right, y])
+          await center(0)
+          report(`PASS: ${label}: touch swipe survives a missing pointer stream`)
+        }
 
         phase = `${label}: left swipe after initial finger jitter`
         await swipe([right, y], [left, y - 7], { jitter: true })

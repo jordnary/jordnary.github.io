@@ -24,7 +24,7 @@ const directoryPhotos: HomeGalleryItem[] = homeDirectory.map(photo => ({
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 type Drag = {
-  id: number
+  pointerId: number | null
   touch: boolean
   x: number
   y: number
@@ -222,7 +222,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       drag = null
       suppressClick = previous.moved
       delete rail.dataset.dragging
-      if (rail.hasPointerCapture(previous.id)) rail.releasePointerCapture(previous.id)
+      if (previous.pointerId !== null && rail.hasPointerCapture(previous.pointerId)) rail.releasePointerCapture(previous.pointerId)
       const first = previous.samples[0]
       const last = previous.samples.at(-1)!
       const speed = performance.now() - last.time > 100 || last.time === first.time
@@ -230,19 +230,13 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       goTo(!previous.moved ? previous.resume : cancelled ? nearest(position) : chooseDestination(previous.origin, target, speed, previous.touch))
     }
 
-    const onDown = (event: PointerEvent) => {
-      if (!event.isPrimary) {
-        if (event.pointerType === 'touch') release(true)
-        return
-      }
-      if (event.button !== 0) return
-      const touch = event.pointerType === 'touch'
+    const startDrag = (pointerId: number | null, touch: boolean, x: number, y: number) => {
       // Touch can start anywhere on the rail, including its side gutters.
       // Mouse dragging starts within the visible photo edges, then may leave.
       if (!touch) {
         const first = cards[0].querySelector('.home-gallery-window')!.getBoundingClientRect()
         const last = cards.at(-1)!.querySelector('.home-gallery-window')!.getBoundingClientRect()
-        if (event.clientX < first.left || event.clientX > last.right) return
+        if (x < first.left || x > last.right) return
       }
       clearWheel()
       stop()
@@ -251,18 +245,17 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       target = position
       velocity = 0
       drag = {
-        id: event.pointerId, touch, x: event.clientX, y: event.clientY, scroll: position,
+        pointerId, touch, x, y, scroll: position,
         origin: nearest(position), resume: destination, moved: false,
-        samples: [{ x: event.clientX, time: performance.now() }],
+        samples: [{ x, time: performance.now() }],
       }
     }
 
-    const onMove = (event: PointerEvent) => {
-      if (!drag || event.pointerId !== drag.id) return
-      if (!(event.buttons & 1)) { release(true); return }
-      const distance = event.clientX - drag.x
+    const moveDrag = (x: number, y: number, event: Event) => {
+      if (!drag) return
+      const distance = x - drag.x
       if (!drag.moved) {
-        const vertical = Math.abs(event.clientY - drag.y)
+        const vertical = Math.abs(y - drag.y)
         const threshold = drag.touch ? 12 : 6
         // Wait past finger jitter before choosing an axis. Ambiguous diagonal
         // movement stays native until horizontal or vertical intent is clear.
@@ -275,20 +268,56 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
           if (Math.abs(distance) <= vertical * 1.2) return
         }
         if (Math.abs(distance) < threshold) return
-        rail.setPointerCapture(event.pointerId)
-        rail.focus({ preventScroll: true })
+        if (!drag.touch && drag.pointerId !== null) {
+          rail.setPointerCapture(drag.pointerId)
+          rail.focus({ preventScroll: true })
+        }
         rail.dataset.dragging = 'true'
         drag.moved = true
       }
-      event.preventDefault()
+      if (event.cancelable) event.preventDefault()
       const now = performance.now()
-      drag.samples.push({ x: event.clientX, time: now })
+      drag.samples.push({ x, time: now })
       while (drag.samples.length > 2 && drag.samples[1].time < now - 80) drag.samples.shift()
       target = withinRail(drag.scroll - distance)
       animate()
     }
 
-    const onUp = (event: PointerEvent) => { if (event.pointerId === drag?.id) release() }
+    // A finger stays bound to its touchstart target even if the browser cancels
+    // its companion pointer stream while deciding which scroller owns the pan.
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) { release(true); return }
+      const finger = event.touches[0]
+      startDrag(null, true, finger.clientX, finger.clientY)
+    }
+    const onTouchMove = (event: TouchEvent) => {
+      if (drag?.pointerId !== null) return
+      if (event.touches.length !== 1) { release(true); return }
+      const finger = event.touches[0]
+      moveDrag(finger.clientX, finger.clientY, event)
+    }
+    const onTouchEnd = (event: TouchEvent) => {
+      if (drag?.pointerId !== null) return
+      const finger = event.changedTouches[0]
+      if (!event.touches.length && finger && finger.clientX !== drag.samples.at(-1)!.x) {
+        moveDrag(finger.clientX, finger.clientY, event)
+      }
+      release(event.touches.length > 0)
+    }
+    const onTouchCancel = () => { if (drag?.pointerId === null) release(true) }
+    const onDown = (event: PointerEvent) => {
+      const touch = event.pointerType === 'touch'
+      if (touch && 'ontouchstart' in window) return
+      if (!event.isPrimary) { if (touch) release(true); return }
+      if (event.button === 0) startDrag(event.pointerId, touch, event.clientX, event.clientY)
+    }
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerId !== drag?.pointerId) return
+      if (!drag.touch && !(event.buttons & 1)) { release(true); return }
+      moveDrag(event.clientX, event.clientY, event)
+    }
+    const onUp = (event: PointerEvent) => { if (event.pointerId === drag?.pointerId) release() }
+    const onPointerCancel = () => { if (drag && drag.pointerId !== null) release(true) }
     const onCancel = () => {
       release(true)
       if (wheel) {
@@ -298,9 +327,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       }
     }
     const onLostCapture = (event: PointerEvent) => {
-      // Touch starts with implicit capture on the image/link. Its bubbling
-      // lostcapture event is expected when the rail takes over the gesture.
-      if (event.target === rail && event.pointerId === drag?.id && !rail.hasPointerCapture(event.pointerId)) release(true)
+      if (event.target === rail && event.pointerId === drag?.pointerId && !rail.hasPointerCapture(event.pointerId)) release(true)
     }
     const onWheel = (event: WheelEvent) => {
       // Keep vertical scrolling and browser zoom native. Group horizontal
@@ -374,10 +401,14 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
     rail.addEventListener('transitionrun', onLineTransition)
     rail.addEventListener('transitionend', onLineTransition)
     rail.addEventListener('transitioncancel', onLineTransition)
+    rail.addEventListener('touchstart', onTouchStart, { passive: true })
+    rail.addEventListener('touchmove', onTouchMove, { passive: false })
+    rail.addEventListener('touchend', onTouchEnd)
+    rail.addEventListener('touchcancel', onTouchCancel)
     rail.addEventListener('pointerdown', onDown)
     rail.addEventListener('pointermove', onMove)
     rail.addEventListener('pointerup', onUp)
-    rail.addEventListener('pointercancel', onCancel)
+    rail.addEventListener('pointercancel', onPointerCancel)
     rail.addEventListener('lostpointercapture', onLostCapture)
     rail.addEventListener('wheel', onWheel, { passive: false })
     rail.addEventListener('keydown', onKey)
@@ -395,10 +426,14 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       rail.removeEventListener('transitionrun', onLineTransition)
       rail.removeEventListener('transitionend', onLineTransition)
       rail.removeEventListener('transitioncancel', onLineTransition)
+      rail.removeEventListener('touchstart', onTouchStart)
+      rail.removeEventListener('touchmove', onTouchMove)
+      rail.removeEventListener('touchend', onTouchEnd)
+      rail.removeEventListener('touchcancel', onTouchCancel)
       rail.removeEventListener('pointerdown', onDown)
       rail.removeEventListener('pointermove', onMove)
       rail.removeEventListener('pointerup', onUp)
-      rail.removeEventListener('pointercancel', onCancel)
+      rail.removeEventListener('pointercancel', onPointerCancel)
       rail.removeEventListener('lostpointercapture', onLostCapture)
       rail.removeEventListener('wheel', onWheel)
       rail.removeEventListener('keydown', onKey)
@@ -407,7 +442,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
       window.removeEventListener('blur', onCancel)
       document.removeEventListener('visibilitychange', onVisibility)
       reducedMotion.removeEventListener('change', onMotionPreference)
-      if (drag && rail.hasPointerCapture(drag.id)) rail.releasePointerCapture(drag.id)
+      if (drag && drag.pointerId !== null && rail.hasPointerCapture(drag.pointerId)) rail.releasePointerCapture(drag.pointerId)
       delete rail.dataset.dragging
       delete rail.dataset.moving
     }
