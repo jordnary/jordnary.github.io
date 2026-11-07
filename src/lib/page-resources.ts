@@ -37,7 +37,14 @@ export function studioImage(artwork: typeof studioArtworks[number], base: string
 }
 
 export const aboutCoverImage = (base: string): PageImage => ({ src: `${base}images/about/fiber-paper.webp` })
-export const contactCoverImage = (base: string): PageImage => ({ src: `${base}images/contact/street-graffiti.webp` })
+export function contactCoverImage(base: string): PageImage {
+  const artwork = `${base}images/contact/street-graffiti-cycle`
+  return {
+    src: `${artwork}.webp`,
+    srcSet: `${artwork}-768.webp 768w, ${artwork}-1536.webp 1536w, ${artwork}.webp 3072w`,
+    sizes: '100vw',
+  }
+}
 
 export function getPageResources(url: URL, base: string) {
   const project = getProjectFromUrl(url, base)

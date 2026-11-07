@@ -10,10 +10,12 @@ import './Contact.css'
 
 const otherContactLinks = contactLinks.filter((link) => !link.href.startsWith('mailto:'))
 const airmailStamp = `${import.meta.env.BASE_URL}images/contact/airmail-insignia.webp`
+const coverImage = contactCoverImage(import.meta.env.BASE_URL)
 
 export function Contact() {
   const [copyToastId, setCopyToastId] = useState(0)
   const [copySucceeded, setCopySucceeded] = useState(false)
+  const [backgroundSource, setBackgroundSource] = useState('')
 
   const handleToastClose = useCallback(() => {
     setCopyToastId(0)
@@ -27,7 +29,11 @@ export function Contact() {
   return (
     <section className="correspondence site-container section-surface" id="contact" aria-labelledby="contact-title">
       <div className="correspondence-graffiti" aria-hidden="true"
-        style={{ '--contact-cover-image': `url("${contactCoverImage(import.meta.env.BASE_URL).src}")` } as CSSProperties} />
+        style={backgroundSource ? { '--contact-background-image': `url("${backgroundSource}")` } as CSSProperties : undefined}>
+        <img className="correspondence-graffiti-cover" {...coverImage} alt=""
+          width="3072" height="3840" decoding="async"
+          onLoad={event => setBackgroundSource(event.currentTarget.currentSrc)} />
+      </div>
 
       <div className="correspondence-hero section-surface">
         <header className="correspondence-intro">

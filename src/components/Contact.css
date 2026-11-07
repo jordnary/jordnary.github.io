@@ -17,32 +17,28 @@
 }
 
 .correspondence-graffiti {
-  /* Keep image repeats and reflection masks on the same pixel boundaries. */
-  --graffiti-tile-height: round(nearest, calc(100vw * 2 / 3), 1px);
+  /* One upright opening + connector pair; repeat on whole CSS pixels. */
+  --graffiti-cycle-height: round(nearest, calc(100vw * 5 / 4), 1px);
   position: absolute;
   z-index: -1;
   inset: 0 calc(50% - 50vw);
+  overflow: hidden;
   pointer-events: none;
   user-select: none;
-  background-image: var(--contact-cover-image);
+  /* Reuse the exact candidate selected by srcset and the route preload. */
+  background-image: var(--contact-background-image, none);
   background-position: center top;
-  background-size: 100% var(--graffiti-tile-height);
+  background-size: 100% var(--graffiti-cycle-height);
   background-repeat: repeat-y;
 }
 
-.correspondence-graffiti::after {
-  content: '';
+.correspondence-graffiti-cover {
   position: absolute;
-  inset: 0;
-  background-image: inherit;
-  background-position: center bottom;
-  background-size: inherit;
-  background-repeat: inherit;
-  transform: scaleY(-1);
-  /* Alternate reflected tiles so each join meets the same source edge. */
-  mask-image: repeating-linear-gradient(to top,
-    transparent 0 var(--graffiti-tile-height),
-    #000 var(--graffiti-tile-height) calc(var(--graffiti-tile-height) * 2));
+  inset: 0 0 auto;
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: var(--graffiti-cycle-height);
 }
 
 .correspondence-availability,

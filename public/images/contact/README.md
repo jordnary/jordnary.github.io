@@ -1,5 +1,9 @@
 # Contact artwork
 
+## Street graffiti background
+
+See [the background asset notes](street-graffiti.md) for the high-resolution opening artwork, separate connector, responsive variants, generation prompts, and upright alternating sequence.
+
 ## Airmail insignia
 
 - Asset: `airmail-insignia.webp`
