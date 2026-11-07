@@ -105,8 +105,13 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
     if (event.key !== 'ArrowDown') return
     event.preventDefault()
     cancelClose()
+    const trigger = event.currentTarget
     setExpandedPage(page)
-    window.requestAnimationFrame(() => headerRef.current?.querySelector<HTMLAnchorElement>(`#nav-panel-${page} a`)?.focus())
+    window.requestAnimationFrame(() => {
+      if (document.activeElement === trigger) {
+        headerRef.current?.querySelector<HTMLAnchorElement>(`#nav-panel-${page}:not([hidden]) a`)?.focus()
+      }
+    })
   }
   const mobileSection = mobilePage ? navigationSections[mobilePage] : undefined
   const brand = (

@@ -86,6 +86,14 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     pass('Hover opens a disclosure immediately; clicking toggles it; Escape closes it and restores trigger focus')
 
     const headerPaint = await page.locator('.nav-shell').evaluate(el => ({ image: getComputedStyle(el).backgroundImage, color: getComputedStyle(el).backgroundColor }))
+    await page.locator('#nav-toggle-learning').evaluate(async trigger => {
+      trigger.focus()
+      trigger.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }))
+      document.querySelector('#nav-toggle-about').focus()
+      await new Promise(resolve => requestAnimationFrame(resolve))
+    })
+    assert.equal(await page.locator('#nav-toggle-about').evaluate(el => el === document.activeElement), true,
+      'Opening a panel must not reclaim focus after the user moves away')
     await page.locator('#nav-toggle-learning').focus()
     await page.keyboard.press('ArrowDown')
     await page.waitForFunction(() => getComputedStyle(document.querySelector('.nav-shell'), '::after').opacity === '1')
@@ -133,7 +141,9 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     await page.locator('#nav-toggle-learning').focus()
     await page.keyboard.press('ArrowDown')
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
-    assert.equal(await page.locator('#nav-panel-learning').evaluate(el => el.contains(document.activeElement)), true)
+    // The panel becomes visible before the next-frame keyboard focus handoff.
+    await page.waitForFunction(() => document.querySelector('#nav-panel-learning')?.contains(document.activeElement),
+      undefined, { timeout: 1500 })
     await shot('desktop-learning')
     await page.locator('#nav-panel-learning a[href="/learning/#notes"]').click()
     await page.waitForFunction(() => location.hash === '#notes' && document.body.dataset.page === 'learning')
@@ -218,6 +228,8 @@ export async function runNavbarChecks(browser, baseURL, report = () => {}) {
     }
 
     await page.setViewportSize({ width: 1440, height: 844 })
+    // Let the breakpoint change dismiss the old menu before driving the new one.
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
     await page.locator('#nav-toggle-learning').focus()
     await page.keyboard.press('ArrowDown')
     await page.locator('#nav-panel-learning').waitFor({ state: 'visible' })
