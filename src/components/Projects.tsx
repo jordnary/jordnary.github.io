@@ -1,5 +1,5 @@
 import { scrollPageTo, scrollPageBy, getPageViewportHeight } from '../lib/pageScrollSource'
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { projects, projectFilters, type ProjectCase, type ProjectFilter } from '../data/projects'
 import { getHashTargetId } from '../lib/hashScroll'
 import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl } from '../lib/routes'
@@ -38,6 +38,7 @@ export function Projects() {
   const [displayFilter, setDisplayFilter] = useState<ProjectFilter>(initialFilter)
   const [phase, setPhase] = useState<'idle' | 'leaving' | 'entering'>('idle')
   const [activeProject, setActiveProject] = useState<ProjectCase | null>(null)
+  const listRef = useRef<HTMLOListElement>(null)
   const filterTimer = useRef(0)
   const filteredProjects = projects.filter(project => displayFilter === '全部项目' || project.category === displayFilter)
 
@@ -68,6 +69,18 @@ export function Projects() {
   }
 
   useEffect(() => () => window.clearTimeout(filterTimer.current), [])
+
+  useLayoutEffect(() => {
+    // The next link takes the lower half of the actual gap, even when a title wraps.
+    const observer = new ResizeObserver(entries => {
+      for (const { target, contentRect } of entries) {
+        const next = target.closest('li')?.nextElementSibling
+        if (next instanceof HTMLElement) next.style.setProperty('--archive-hit-above', `${contentRect.height / 2}px`)
+      }
+    })
+    listRef.current?.querySelectorAll('.archive-project-gap').forEach(gap => observer.observe(gap))
+    return () => observer.disconnect()
+  }, [displayFilter])
 
   useEffect(() => {
     const restore = () => {
@@ -130,7 +143,7 @@ export function Projects() {
         </div>
       </header>
       <p className="archive-sr-only" role="status">{filteredProjects.length} of {projects.length} projects</p>
-      <ol className="archive-list" key={displayFilter} data-phase={phase} aria-label="Selected projects" aria-busy={phase === 'leaving'} inert={phase === 'leaving'}>
+      <ol ref={listRef} className="archive-list" key={displayFilter} data-phase={phase} aria-label="Selected projects" aria-busy={phase === 'leaving'} inert={phase === 'leaving'}>
         {filteredProjects.map((project, index) => (
           <li className="archive-project" id={project.id} key={project.id} style={{ '--project-order': index } as CSSProperties}>
             <a className="archive-project-link" href={getProjectHref(project.id)} aria-label={`${project.title} — View project`} data-project-preview
@@ -148,6 +161,7 @@ export function Projects() {
               <span className="archive-project-number" aria-hidden="true">{projects.indexOf(project) + 1}</span>
               <h2>{project.title}</h2>
               <span className="archive-project-category">{categoryLabels[project.category]}</span>
+              <span className="archive-project-gap" aria-hidden="true" />
             </a>
           </li>
         ))}

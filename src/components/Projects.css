@@ -193,21 +193,28 @@ html:has(.projects-archive)::-webkit-scrollbar {
 }
 
 .archive-project-link {
+  --number-gutter: 1.9vw;
+  --number-edge: 8px;
+  --link-inset: calc(var(--number-gutter) + var(--number-edge));
   position: relative;
-  display: block;
-  width: 100%;
-  max-width: 100%;
+  display: flex;
+  flex-direction: column;
   min-height: inherit;
-  padding: 0 0 var(--archive-project-edge);
+  /* Bring the number column inside the link without moving the text. */
+  margin-left: calc(-1 * var(--link-inset));
+  padding-left: var(--link-inset);
   scroll-margin-top: calc(var(--archive-header-bottom) + 35px);
   transition: opacity 220ms ease;
 }
 
-/* Give the first and last entries equal pointer space beyond their text. */
-.archive-project:first-child .archive-project-link::before {
+.archive-project-gap {
+  flex: 1 0 var(--archive-project-edge);
+}
+
+.archive-project-link::before {
   content: '';
   position: absolute;
-  inset: calc(-1 * var(--archive-project-edge)) 0 100%;
+  inset: calc(-1 * var(--archive-hit-above, var(--archive-project-edge))) 0 100%;
 }
 
 .archive-project:last-child .archive-project-link {
@@ -229,7 +236,7 @@ html:has(.projects-archive)::-webkit-scrollbar {
 
 .archive-project-number {
   position: absolute;
-  left: -1.9vw;
+  left: var(--number-edge);
   top: 0.95em;
   font-size: clamp(12px, 0.88vw, 22px);
   line-height: 1;
@@ -422,8 +429,8 @@ html:has(.projects-archive)::-webkit-scrollbar {
   .archive-project-link h2 {
     font-size: 31px;
   }
-  .archive-project-number {
-    left: -24px;
+  .archive-project-link {
+    --number-gutter: 24px;
   }
   .archive-preview {
     left: 6vw;
