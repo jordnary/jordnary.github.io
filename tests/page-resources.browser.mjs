@@ -15,6 +15,7 @@ export function connectionState(value = { effectiveType: '4g', downlink: 10, rtt
   const connection = Object.assign(new EventTarget(), value)
   Object.defineProperty(navigator, 'connection', { configurable: true, value: connection })
 }
+const contactArt = /\/street-graffiti-cycle(?:-[a-z0-9-]+)?\.webp(?:\?.*)?$/
 const modulePattern = name => new RegExp(`/assets/${name}-[^/]+\\.js$`)
 const baseURL = process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4174/'
 export const click = (page, path) => page.evaluate(path => {
@@ -102,6 +103,12 @@ export async function runChecks(browser) {
           assert.equal(requests.filter(path => path === selected).length, 1, `${path}: same responsive candidate once`)
           if (source.srcSet && selected !== new URL(source.src).pathname) assert.equal(requests.includes(new URL(source.src).pathname), false)
         }
+        if (path === '/contact/') {
+          const cover = await page.locator('.correspondence-graffiti-cover').evaluate(image => image.currentSrc)
+          assert.equal(requests.filter(p => contactArt.test(p)).length, 1)
+          assert.ok((await page.locator('.correspondence-graffiti').evaluate(el => getComputedStyle(el).backgroundImage)).includes(cover))
+          if (name === 'mobile-constrained') assert.match(cover, /-1200\.webp$/)
+        }
         const styles = requests.filter(path => path.endsWith('.css'))
         assert.equal(new Set(styles).size, styles.length, `${path}: stylesheet preload reuse`)
         if (path.includes('vae-gan')) assert.equal(requests.some(path => /ProjectsPage-|linework-background/.test(path)), false)
@@ -155,7 +162,7 @@ export async function runChecks(browser) {
       if ([5, 10, 20].includes(cycle + 1)) await record(cycle + 1)
     }
     assert.equal(requests.filter(path => modulePattern('ContactPage').test(path)).length, 1)
-    assert.equal(requests.filter(path => path.endsWith('/street-graffiti.webp')).length, 1)
+    assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
     assert.equal(await page.locator('link[data-page-image]').count(), 0, 'SPA visits do not accumulate hint nodes')
     assert.equal(new Set(lifecycle.map(sample => sample.domNodes)).size, 1, 'The same destination keeps a stable DOM across return cycles')
   })
@@ -164,7 +171,7 @@ export async function runChecks(browser) {
   for (const resource of ['ContactPage', 'street-graffiti']) {
     await run(async (page, requests) => {
       await home(page)
-      const gate = await hold(page, resource === 'ContactPage' ? modulePattern(resource) : '**/street-graffiti.webp')
+      const gate = await hold(page, resource === 'ContactPage' ? modulePattern(resource) : contactArt)
       await (await link(page, '/contact/')).focus()
       await page.waitForTimeout(400)
       assert.equal(gate.count(), 1)
@@ -187,12 +194,12 @@ export async function runChecks(browser) {
     await cdp.send('Network.enable')
     let imageRequest
     cdp.on('Network.requestWillBeSent', event => {
-      if (!event.request.url.endsWith('/street-graffiti.webp')) return
+      if (!contactArt.test(event.request.url)) return
       imageRequest = event.requestId
       priorities.push(event.request.initialPriority)
     })
     cdp.on('Network.resourceChangedPriority', event => { if (event.requestId === imageRequest) priorities.push(event.newPriority) })
-    const gate = await hold(page, '**/street-graffiti.webp')
+    const gate = await hold(page, contactArt)
     await (await link(page, '/contact/')).focus()
     await page.waitForTimeout(400)
     await click(page, '/contact/')
@@ -201,7 +208,7 @@ export async function runChecks(browser) {
     gate.release()
     await contentReady(page, '.correspondence')
     assert.equal(priorities[0], 'Low')
-    assert.equal(requests.filter(path => path.endsWith('/street-graffiti.webp')).length, 1)
+    assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
   })
   pass('Speculative image requests start at low priority and a required consumer reuses the pending request')
 
@@ -285,12 +292,12 @@ export async function runChecks(browser) {
     await (await link(page, '/contact/')).focus()
     await page.waitForTimeout(600)
     assert.ok(requests.some(path => modulePattern('ContactPage').test(path)))
-    assert.equal(requests.some(path => path.endsWith('/street-graffiti.webp')), false)
+    assert.equal(requests.some(path => contactArt.test(path)), false)
   }, {}, {})
   pass('Without connection information only one code target is warmed, without speculative images')
 
   await run(async (page, requests) => {
-    const gate = await hold(page, '**/street-graffiti.webp')
+    const gate = await hold(page, contactArt)
     await page.goto(new URL('/contact/', baseURL).href, { waitUntil: 'domcontentloaded' })
     await page.locator('.correspondence').waitFor()
     await (await link(page, '/about/')).focus()
@@ -344,7 +351,7 @@ export async function runChecks(browser) {
   for (const resource of ['js', 'css', 'image']) {
     await run(async page => {
       await home(page)
-      const pattern = resource === 'js' ? modulePattern('ContactPage') : resource === 'css' ? '**/ContactPage-*.css' : '**/street-graffiti.webp'
+      const pattern = resource === 'js' ? modulePattern('ContactPage') : resource === 'css' ? '**/ContactPage-*.css' : contactArt
       let failures = 0
       await page.route(pattern, route => { failures++; return route.abort() }, { times: 1 })
       await (await link(page, '/contact/')).focus()
