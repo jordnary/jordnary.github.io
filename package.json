@@ -18,6 +18,7 @@
     "sync:github": "node scripts/sync-github.mjs",
     "sync:projects": "node --use-env-proxy scripts/sync-project-docs.mjs",
     "test:homepage": "node tests/homepage-touch.browser.mjs && node tests/homepage-transition.browser.mjs && node tests/homepage-grid.browser.mjs",
+    "test:site-opening": "node tests/resource-phase-checks.mjs --fixture site-opening",
     "test:homepage-performance": "node tests/homepage-performance.browser.mjs",
     "test:homepage-hub": "node tests/homepage-hub.browser.mjs",
     "test:resources": "node tests/resource-loading.browser.mjs",

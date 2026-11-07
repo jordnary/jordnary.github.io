@@ -1,5 +1,14 @@
 # Local fonts
 
+## Opening wordmark
+
+`opening-archivo-black.woff2` is the Google Fonts subset of Archivo Black for
+`JORDNARY`, distributed under SIL Open Font License 1.1. The upstream license
+is included in `LICENSE.opening-archivo-black.txt`. Only the opening wordmark
+uses this 3 KB local face; it has no runtime dependency on Google Fonts.
+The source is `https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap&text=JORDNARY`.
+Regenerate the subset when the wordmark copy changes.
+
 `learning-rounded-medium.woff2` is a renamed subset of
 [Resource Han Rounded CN v1.910](https://github.com/CyanoHao/Resource-Han-Rounded/releases/tag/v1.910),
 licensed under SIL Open Font License 1.1. The full font license is included in

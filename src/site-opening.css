@@ -1,0 +1,122 @@
+@font-face {
+  font-family: 'Opening Archivo Black';
+  src: url('__SITE_BASE__fonts/opening-archivo-black.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+.site-opening {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  outline: none;
+  background: #fff;
+  color: #0d0d0d;
+  color-scheme: light;
+  overscroll-behavior: none;
+  touch-action: none;
+  isolation: isolate;
+}
+.site-opening::backdrop { background: transparent; }
+.site-opening-logo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding-bottom: 0.02em;
+  font-family: var(--opening-font, 'Opening Archivo Black'), sans-serif;
+  font-size: clamp(32px, 4.25vw, 108px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.075em;
+  opacity: 0;
+  -webkit-font-smoothing: antialiased;
+}
+.site-opening-lockup {
+  position: relative;
+  transform-origin: 50% 50%;
+}
+.site-opening-face,
+.site-opening-echo {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  white-space: nowrap;
+}
+.site-opening-face { position: relative; }
+.site-opening-echo { position: absolute; inset: 0; opacity: 0; }
+.site-opening-symbol { flex: none; width: 0.98em; height: 0.62em; margin-right: 0.11em; fill: currentColor; }
+.site-opening-name { display: block; transform: scaleY(0.94); }
+.site-opening-trademark {
+  align-self: flex-start;
+  margin-top: 0.55em;
+  margin-left: 0.25em;
+  font-family: Arial, sans-serif;
+  font-size: 0.21em;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.site-opening-progress {
+  position: absolute;
+  bottom: max(6.6vh, env(safe-area-inset-bottom, 0px) + 24px);
+  left: 50%;
+  width: clamp(80px, 8vw, 200px);
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #dedede;
+  transform: translateX(-50%);
+}
+.site-opening-progress > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.site-opening[data-state='playing'] .site-opening-logo { animation: site-opening-appear 240ms ease-out both; }
+.site-opening[data-state='playing'] .site-opening-lockup { animation: site-opening-tilt 2100ms cubic-bezier(0.45, 0, 0.2, 1) 150ms both; }
+.site-opening[data-state='playing'] .site-opening-echo { animation: site-opening-echo 1950ms cubic-bezier(0.45, 0, 0.2, 1) calc(220ms + var(--echo-delay)) both; }
+.site-opening[data-state='playing'] .site-opening-progress > span { animation: site-opening-progress 2450ms cubic-bezier(0.4, 0, 0.3, 1) both; }
+.site-opening[data-state='revealing'] { animation: site-opening-curtain 600ms cubic-bezier(0.76, 0, 0.24, 1) both; }
+.site-opening[data-state='revealing'] .site-opening-logo { animation: site-opening-disappear 180ms ease-out both; }
+.site-opening[data-state='revealing'] .site-opening-progress { animation: site-opening-disappear 180ms ease-out both; }
+.site-opening[data-state='revealing'] .site-opening-progress > span { transform: scaleX(1); }
+
+@keyframes site-opening-appear { from { opacity: 0; } to { opacity: 1; } }
+@keyframes site-opening-disappear { from { opacity: 1; } to { opacity: 0; } }
+@keyframes site-opening-tilt {
+  0%, 12%, 100% { transform: perspective(12em) rotateY(0) rotateZ(0) skewX(0) scale(1); }
+  40%, 63% { transform: perspective(12em) rotateY(-24deg) rotateZ(-4deg) skewX(-12deg) scale(0.94, 1.08); }
+  91% { transform: perspective(12em) rotateY(0) rotateZ(0) skewX(0) scale(1); }
+}
+@keyframes site-opening-echo {
+  0%, 12%, 100% { opacity: 0; transform: translate3d(0, 0, 0); }
+  36%, 62% { opacity: var(--echo-opacity); transform: translate3d(var(--echo-x), var(--echo-y), 0); }
+  92% { opacity: 0; transform: translate3d(0, 0, 0); }
+}
+@keyframes site-opening-progress {
+  0%, 8% { transform: scaleX(0); }
+  45% { transform: scaleX(0.35); }
+  78% { transform: scaleX(0.76); }
+  100% { transform: scaleX(0.94); }
+}
+@keyframes site-opening-curtain {
+  0%, 16% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, -101%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-opening, .site-opening * { animation: none !important; }
+}

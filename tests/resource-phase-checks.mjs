@@ -20,7 +20,7 @@ const checks = [
     'page-loading', 'project-page-transition', 'project-cursor-transition', 'search', 'navbar', 'site-mobile-viewport',
     'about-cover', 'about-decorations', 'homepage-hub', 'footer', 'learning-pointer', 'background-visibility',
     'learning', 'learning-scroll', 'learning-toolkit', 'home-photo-gallery', 'home-gallery-motion', 'home-gallery-scroll',
-    'homepage-touch', 'homepage-transition', 'homepage-grid', 'homepage-performance', 'focus-feedback',
+    'site-opening', 'homepage-touch', 'homepage-transition', 'homepage-grid', 'homepage-performance', 'focus-feedback',
     'project-reader-scroll', 'project-reader-hover', 'project-menu-viewport', 'project-contents', 'project-studio',
     'image-gallery', 'image-gallery-navigation', 'image-gallery-traversal', 'image-gallery-boundary', 'image-gallery-scroll-lock']
     .map(name => [name, [`tests/${name}.browser.mjs`]]),

@@ -39,6 +39,7 @@ export async function runHomepageGridChecks(browser, baseURL, report = () => {})
   const fresh = async () => {
     await page.goto(baseURL)
     await page.locator('.launch-intro-enter').waitFor()
+    await page.locator('.site-opening').waitFor({ state: 'hidden' })
   }
   const waitForHub = async () => {
     await page.locator('.homepage-portal[data-phase="hub"]').waitFor()

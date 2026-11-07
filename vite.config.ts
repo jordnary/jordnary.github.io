@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
 import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
+import { bootstrapSiteOpening } from './src/lib/siteOpening'
+import { isHomepagePortalUrl } from './src/lib/routes'
 import { showPageLoadFailure } from './src/lib/page-load-notice'
 import { searchIndex } from './scripts/search-index'
 import { notFoundPage } from './scripts/not-found-page'
@@ -17,13 +19,24 @@ function pageStartup(): Plugin {
     configResolved(config) { base = config.base },
     transformIndexHtml: {
       order: 'post',
-      handler(html) {
+      handler(html, context) {
+        const portal = isHomepagePortalUrl(new URL(context.originalUrl ?? context.path, 'https://example.com'), base)
+        if (portal) {
+          // The inline opening can paint while the application styles download.
+          // main.tsx waits for these sheets before mounting the covered page.
+          html = html.replace(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi, tag =>
+            tag.replace(/\s*\/?>$/, ' media="print" data-opening-styles onload="this.media=\'all\'" />'))
+        }
         // Keep the encoding declaration within the first 1024 bytes, even with
         // an inline startup guard ahead of all potentially failing entry assets.
         return { html: html.replace(/<meta charset="UTF-8"\s*\/?>\s*/i, ''), tags: [
           { tag: 'meta', attrs: { charset: 'UTF-8' }, injectTo: 'head-prepend' },
           { tag: 'style', attrs: { 'data-site-startup': '' }, children: readFileSync(new URL('./src/page-startup.css', import.meta.url), 'utf8').replaceAll('__SITE_BASE__', base), injectTo: 'head-prepend' },
           { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${showPageLoadFailure.toString()});`, injectTo: 'head-prepend' },
+          ...(portal ? [
+            { tag: 'style', attrs: { 'data-site-opening': '' }, children: readFileSync(new URL('./src/site-opening.css', import.meta.url), 'utf8').replaceAll('__SITE_BASE__', base), injectTo: 'head-prepend' as const },
+            { tag: 'script', attrs: { 'data-site-opening': '' }, children: `(${bootstrapSiteOpening.toString()})();`, injectTo: 'head-prepend' as const },
+          ] : []),
         ] }
       },
     },

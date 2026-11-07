@@ -84,6 +84,7 @@ export async function runHomepagePerformanceChecks(browser, baseURL, report = ()
       await session.send('Emulation.setCPUThrottlingRate', { rate: 4 })
       await page.goto(baseURL)
       await page.locator('.launch-intro-enter').waitFor()
+      await page.locator('.site-opening').waitFor({ state: 'hidden' })
       // Exclude one-time font loading and the introductory letter reveal.
       await page.evaluate(() => document.fonts.ready)
       await page.waitForTimeout(2500)

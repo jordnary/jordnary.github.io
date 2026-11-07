@@ -1,4 +1,5 @@
 import type {} from './projectTransitionBoot'
+import type {} from './siteOpening'
 import type { showPageLoadFailure } from './page-load-notice'
 
 declare global {
@@ -15,6 +16,7 @@ export function bootstrapPageStartup(notify: typeof showPageLoadFailure) {
     startup.failed = true
     window.clearTimeout(timer)
     clearNotice = notify()
+    window.__siteOpening?.dispose()
     window.__projectTransitionBoot?.dispose('skipped')
   }
   const error = (event: Event) => {

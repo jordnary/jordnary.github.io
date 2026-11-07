@@ -17,6 +17,7 @@ export async function runHomepageTouchChecks(browser, baseURL, report = () => {}
   const freshIntro = async () => {
     await page.goto(baseURL)
     await page.locator('.homepage-portal[data-phase="intro"]').waitFor()
+    await page.locator('.site-opening').waitFor({ state: 'hidden' })
   }
   const touch = (type, points = []) => input.send('Input.dispatchTouchEvent', {
     type, touchPoints: points.map(([x, y], id) => ({ x, y, id })),

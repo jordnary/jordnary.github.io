@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type AnimationEvent, type CSSProperties, type TouchEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type AnimationEvent, type CSSProperties, type TouchEvent } from 'react'
 import { homepageTransitionTiming, type HomepageTransitionPhase } from '../lib/homepage-transition'
+import { isSiteOpeningActive, subscribeSiteOpening } from '../lib/siteOpening'
 import { HomepageHub } from './HomepageHub'
 import { LaunchIntro } from './LaunchIntro'
 import { TransitionWipeOverlay } from './TransitionWipeOverlay'
 
 export function HomepagePortal() {
+  const opening = useSyncExternalStore(subscribeSiteOpening, isSiteOpeningActive)
   const [phase, setPhase] = useState<HomepageTransitionPhase>('intro')
   const hasEntered = useRef(false)
   const portalRef = useRef<HTMLDivElement>(null)
@@ -12,7 +14,7 @@ export function HomepagePortal() {
   const touchStart = useRef<{ identifier: number; x: number; y: number } | null>(null)
 
   const enter = useCallback(() => {
-    if (hasEntered.current) return
+    if (hasEntered.current || isSiteOpeningActive()) return
     hasEntered.current = true
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     setPhase(reducedMotion ? 'hub' : 'pushing')
@@ -54,6 +56,7 @@ export function HomepagePortal() {
   }, [])
 
   useEffect(() => {
+    if (opening) return
     if (phase === 'hub') {
       hubRef.current?.focus({ preventScroll: true })
       return
@@ -76,7 +79,7 @@ export function HomepagePortal() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('wheel', handleWheel)
     }
-  }, [enter, phase])
+  }, [enter, opening, phase])
 
   const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
     const touch = event.touches[0]
@@ -122,7 +125,7 @@ export function HomepagePortal() {
             onTouchEnd={handleTouchEnd}
             onTouchStart={handleTouchStart}
           >
-            <LaunchIntro active={phase === 'intro'} onEnter={enter} />
+            <LaunchIntro active={!opening && phase === 'intro'} preparing={opening} onEnter={enter} />
           </div>
         )}
         <div className="homepage-portal-hub" inert={phase !== 'hub'} ref={hubRef} tabIndex={-1}>

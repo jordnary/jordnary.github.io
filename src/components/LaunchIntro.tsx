@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-export function LaunchIntro({ active = true, onEnter }: { active?: boolean; onEnter: () => void }) {
+export function LaunchIntro({ active = true, preparing = false, onEnter }: { active?: boolean; preparing?: boolean; onEnter: () => void }) {
   const introRef = useRef<HTMLDivElement>(null)
   const firstPlanetRef = useRef<HTMLSpanElement>(null)
   const secondPlanetRef = useRef<HTMLSpanElement>(null)
@@ -57,6 +57,14 @@ export function LaunchIntro({ active = true, onEnter }: { active?: boolean; onEn
   useEffect(() => {
     syncPlaybackRef.current()
   }, [active])
+
+  useEffect(() => {
+    if (!preparing) return
+    // A late route must also have readable text when the opening lifts.
+    // Finish only the one-time entrances; ambient animation stays paused.
+    introRef.current?.querySelectorAll('.launch-intro-content, .launch-intro-description span')
+      .forEach(element => element.getAnimations().forEach(animation => animation.finish()))
+  }, [preparing])
 
   return (
     <div

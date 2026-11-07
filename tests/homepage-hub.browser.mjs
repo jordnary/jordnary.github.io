@@ -114,6 +114,7 @@ const setHidden = (page, hidden) => page.evaluate(value => {
 async function enter(page, url) {
   if (url) await page.goto(url)
   await page.locator('.launch-intro-enter').waitFor()
+  await page.locator('.site-opening').waitFor({ state: 'hidden' })
   await page.evaluate(() => window.__hubProbe.markListeners())
   await page.keyboard.press('Enter')
   await page.locator('.homepage-portal[data-phase="hub"]').waitFor()
@@ -426,6 +427,7 @@ async function visuals(browser, baseURL, baselineURL) {
           const page = await context.newPage()
           await page.goto(url)
           await page.locator('.launch-intro-enter').waitFor()
+          await page.locator('.site-opening').waitFor({ state: 'hidden' })
           await page.evaluate(() => document.fonts.ready)
           await page.keyboard.press('Enter')
           await page.locator('.homepage-portal[data-phase="hub"]').waitFor()
