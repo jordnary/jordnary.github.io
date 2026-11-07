@@ -17,8 +17,8 @@ export function NotFoundPage() {
       <path d={four} /><path d={zero} /><path d={four} />
     </svg>
     <div className="not-found-copy">
-      <h1 id="not-found-title"><span className="sr-only">404 — </span>The page you’re looking for wasn’t found.</h1>
-      <p>Check the address or use the menu above.</p>
+      <h1 id="not-found-title"><span className="sr-only">404 — </span>The Page you are looking was not found</h1>
+      <p>Don’t worry. Go back to the home page</p>
     </div>
   </section></SiteLayout>
 }

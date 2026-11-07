@@ -43,7 +43,7 @@ async function checkLayout(page) {
 }
 
 async function checkEntry(page) {
-  await page.getByRole('heading', { name: /404.*wasn’t found/ }).waitFor()
+  await page.getByRole('heading', { name: /404.*was not found/ }).waitFor()
   assert.equal(page.url(), missing)
   assert.equal(await page.locator('nav [aria-current="page"]').count(), 0)
   const start = await ink(page)

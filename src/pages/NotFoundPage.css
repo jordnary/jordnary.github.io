@@ -1,12 +1,9 @@
 :root:has(body[data-page="404"]) { scrollbar-gutter: auto; }
 
-/* The menu floats over the drawing; its height does not move the stage's
-   centre or floor. Keep the shared menu controls and dropdown behaviour. */
+/* Keep the shared opaque menu above the drawing without moving the stage's
+   centre or floor. */
 body[data-page="404"] .nav-shell {
   position: absolute;
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
 }
 
 body[data-page="404"] .nav-content { max-width: none; }
@@ -18,7 +15,7 @@ body[data-page="404"] .nav-content { max-width: none; }
   overflow: clip;
   isolation: isolate;
   background: #fff;
-  color: #0b0b0b;
+  color: #0c0c0c;
   font-family: "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -33,7 +30,7 @@ body[data-page="404"] .nav-content { max-width: none; }
 
 .not-found-copy {
   position: absolute;
-  inset: 49.2% var(--page-gutter) auto;
+  inset: 49.8% var(--page-gutter) auto;
   translate: 0 -50%;
   text-align: center;
   text-wrap: balance;
@@ -43,13 +40,14 @@ body[data-page="404"] .nav-content { max-width: none; }
   margin: 0;
   font-size: clamp(1.375rem, min(3.65cqw, 5.3cqh), 5.25rem);
   font-weight: 500;
-  letter-spacing: -.045em;
+  -webkit-text-stroke: .004em currentColor;
+  letter-spacing: -.024em;
   line-height: 1.08;
 }
 
 .not-found-copy p {
-  margin: .65em 0 0;
-  font-size: clamp(.875rem, min(1.98cqw, 2.82cqh), 2.4rem);
+  margin: .7em 0 0;
+  font-size: clamp(.875rem, min(1.98cqw, 2.6cqh), 2.4rem);
   letter-spacing: -.025em;
   line-height: 1.25;
 }
