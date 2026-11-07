@@ -48,9 +48,9 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
     Boolean(document.elementFromPoint(x, y)?.closest('.project-reader-scroll')), point)
   const withMotionPage = async (action, {
     project = 'triton-attention-optimization', chapter = 'sampling',
-    viewport = { width: 1440, height: 1000 }, fromPageTop = false,
+    viewport = { width: 1440, height: 1000 }, fromPageTop = false, reducedMotion = 'no-preference',
   } = {}) => {
-    const motionContext = await browser.newContext({ viewport, reducedMotion: 'no-preference' })
+    const motionContext = await browser.newContext({ viewport, reducedMotion })
     try {
       const motionPage = await motionContext.newPage()
       motionPage.on('pageerror', error => errors.push(error.message))
@@ -73,7 +73,12 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
   const observeScroll = async (motionPage, input) => {
     await motionPage.evaluate(() => {
       const body = document.querySelector('.project-reader-scroll')
-      const position = () => ({ page: scrollY, body: body.scrollTop, bodyMax: body.scrollHeight - body.clientHeight })
+      const sheet = body.querySelector('.project-reader-document')
+      const position = () => {
+        const transform = getComputedStyle(sheet).transform
+        return { page: scrollY, body: body.scrollTop, bodyMax: body.scrollHeight - body.clientHeight,
+          pull: transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42 }
+      }
       const probe = { initial: position(), frames: [], events: [], done: false }
       const listener = event => probe.events.push({
         canceled: event.defaultPrevented, cancelable: event.cancelable, delta: event.deltaY,
@@ -94,8 +99,8 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
       await motionPage.waitForFunction(() => {
         const probe = window.__readerWheelProbe
         const tail = probe.frames.slice(-8)
-        return probe.events.length > 0 && tail.length === 8
-          && tail.every(frame => frame.page === tail[0].page && frame.body === tail[0].body)
+        return probe.events.length > 0 && probe.frames.length - probe.events.at(-1).frame >= 8
+          && tail.every(frame => frame.page === tail[0].page && frame.body === tail[0].body && frame.pull === 0)
           && (tail[0].page !== probe.initial.page || tail[0].body !== probe.initial.body)
       }, undefined, { timeout: 5000 })
       return await motionPage.evaluate(() => {
@@ -145,6 +150,8 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
           assert.equal(probe.initial.bodyMax, 1, 'The real VAE layout has one pixel of inner overflow')
           assert.equal(probe.final.body, 1, 'The body consumes its actual overflow')
           assertBoundaryDistance(probe, 1)
+          if (probe.events[0].delta > 1) assert.ok(probe.frames.some(frame => frame.pull < 0),
+            'A continuous platform gesture gives a visible cue for the discarded distance')
           const edgeEvents = probe.events.filter(event => event.body >= 1)
           assert.ok(edgeEvents.length >= 5, 'Input continues across the boundary in the original gesture')
           const firstMovement = probe.frames.findIndex(frame => frame.page > 0)
@@ -414,11 +421,49 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
           const first = await observeWheels(motionPage, direction * 120)
           assert.equal(first.final.body - first.initial.body, direction, 'The last pixel is reachable')
           assert.ok(first.frames.every(frame => frame.page === first.initial.page), 'No animation frame spills onto the page')
+          assert.ok(first.frames.every(frame => frame.pull === 0), 'Discrete mouse ticks leave the sheet still')
           const second = await observeWheels(motionPage, direction * 120)
           assert.equal(second.final.page - second.initial.page, direction * 120, 'The next wheel moves the page without getting stuck')
           assert.equal(second.final.body, first.final.body)
         }
       })
+    })
+    await check('Precise input pulls the sheet at either edge without moving the page or delaying the next wheel', async () => {
+      for (const reducedMotion of ['no-preference', 'reduce']) {
+        await withMotionPage(async motionPage => {
+          for (const direction of [-1, 1]) {
+            await motionPage.locator('.project-reader-scroll').evaluate((body, direction) => {
+              body.scrollTop = direction > 0 ? body.scrollHeight - body.clientHeight - 1 : 1
+            }, direction)
+            const probe = await observeScroll(motionPage, async () => {
+              const send = () => motionPage.locator('.project-reader-scroll').evaluate((body, direction) => {
+                const { x, width, y } = body.getBoundingClientRect()
+                body.dispatchEvent(new WheelEvent('wheel', { deltaY: direction * 48, bubbles: true, cancelable: true,
+                  clientX: x + width / 2, clientY: y + 40 }))
+              }, direction)
+              await send()
+              await motionPage.waitForFunction(({ direction, reducedMotion }) => {
+                const probe = window.__readerWheelProbe
+                return probe.frames.some(frame => frame.body - probe.initial.body === direction
+                  && (reducedMotion === 'reduce' || frame.pull * direction < -1))
+              }, { direction, reducedMotion }, { timeout: 1500 })
+              await send()
+            })
+            assert.ok(probe.frames.slice(0, probe.events[1].frame).every(frame => frame.page === probe.initial.page),
+              'The crossing input leaves the page still')
+            assert.equal(probe.final.page - probe.initial.page, 48 * direction, 'The next input moves only the page')
+            assert.equal(probe.final.body - probe.initial.body, direction, 'Only the last pixel scrolls in the article')
+            assert.ok(probe.frames.every(frame => frame.bodyMax === probe.initial.bodyMax), 'The pull cannot extend the real scroll range')
+            if (reducedMotion === 'reduce') assert.ok(probe.frames.every(frame => frame.pull === 0))
+            else {
+              assert.ok(probe.frames.every(frame => frame.pull * direction <= 0 && Math.abs(frame.pull) <= 16))
+              assert.ok(probe.frames.some(frame => frame.pull !== 0 && frame.page !== probe.initial.page),
+                'The page responds while the sheet is still springing back')
+              assert.equal(probe.final.pull, 0, 'The sheet settles at its original position')
+            }
+          }
+        }, { reducedMotion })
+      }
     })
     await check('Continuous gestures retain their full distance without native target locking or duplicate scrolling', async () => {
       await withMotionPage(async motionPage => {

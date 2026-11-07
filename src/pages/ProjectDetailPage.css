@@ -128,6 +128,8 @@ html:has(.project-reader) { background: #f2f2f2; scrollbar-color: #b6b6b0 #f2f2f
 .project-reader-scroll { width: calc(100% - var(--reader-rail)); height: 100%; min-height: 0; margin-left: var(--reader-rail); padding: 0 8px 0 12px; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: auto; scrollbar-width: none; scrollbar-gutter: auto; }
 .project-reader-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .project-reader-scroll:focus-visible { outline: 1px solid var(--reader-rule); outline-offset: 5px; }
+/* A translated sheet must never add a scrollable pixel to the real chapter. */
+.project-reader-paper-clip { overflow-y: clip; }
 .project-reader-document { min-width: 0; padding: 4px 0 14px; }
 .project-introduction { opacity: 1; transform: translateY(0); transition: opacity 160ms ease, transform 160ms ease; }
 .project-introduction[data-phase='leaving'] { opacity: 0; transform: translateY(calc(-12px * var(--chapter-direction))); }

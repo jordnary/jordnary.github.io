@@ -261,32 +261,34 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
             <p className="project-reader-chapter-chinese">{chapterChinese}</p>
           </aside>
           <div className="project-reader-scroll" ref={scrollRef} tabIndex={0} role="region" aria-label="章节正文">
-            <article className="project-reader-document" aria-label={`${project.title} 项目介绍`}>
-              <div className="project-introduction" data-phase={chapter.phase} key={section.id}>
-                <section id={`project-${section.id}-content`} aria-labelledby={`project-${section.id}-title`}>
-                  <h2 id={`project-${section.id}-title`} tabIndex={-1}>{section.title}</h2>
-                  {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-                  {section.figures?.map(figure => {
-                    const resultIndex = images.findIndex(image => image.src === `${base}images/projects/${figure.file}`)
-                    return <figure className="project-introduction-figure" key={figure.file}>
-                      <div className="project-introduction-image">
-                        <img {...projectDisplayImage(images[resultIndex].src, 'figure')} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
-                        <ReaderImageButton onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
-                      </div>
-                      <figcaption>{figure.caption}</figcaption>
-                    </figure>
-                  })}
-                </section>
-              </div>
-              <nav className="project-reader-chapter-navigation" aria-label="Chapter navigation">
-                {activeChapter > 0 && <a className="project-reader-previous" href={`#project-${sections[activeChapter - 1].id}`} data-preserve-scroll>
-                  <ReaderSymbol direction="previous" /><span>Previous</span>
-                </a>}
-                {activeChapter < sections.length - 1 && <a className="project-reader-next" href={`#project-${sections[activeChapter + 1].id}`} data-preserve-scroll>
-                  <span>Next</span><ReaderSymbol direction="next" />
-                </a>}
-              </nav>
-            </article>
+            <div className="project-reader-paper-clip">
+              <article className="project-reader-document" aria-label={`${project.title} 项目介绍`}>
+                <div className="project-introduction" data-phase={chapter.phase} key={section.id}>
+                  <section id={`project-${section.id}-content`} aria-labelledby={`project-${section.id}-title`}>
+                    <h2 id={`project-${section.id}-title`} tabIndex={-1}>{section.title}</h2>
+                    {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+                    {section.figures?.map(figure => {
+                      const resultIndex = images.findIndex(image => image.src === `${base}images/projects/${figure.file}`)
+                      return <figure className="project-introduction-figure" key={figure.file}>
+                        <div className="project-introduction-image">
+                          <img {...projectDisplayImage(images[resultIndex].src, 'figure')} alt={figure.alt} width={figure.width} height={figure.height} loading="lazy" decoding="async" />
+                          <ReaderImageButton onClick={() => setPreviewIndex(resultIndex)} label={`放大查看：${figure.alt}`} />
+                        </div>
+                        <figcaption>{figure.caption}</figcaption>
+                      </figure>
+                    })}
+                  </section>
+                </div>
+                <nav className="project-reader-chapter-navigation" aria-label="Chapter navigation">
+                  {activeChapter > 0 && <a className="project-reader-previous" href={`#project-${sections[activeChapter - 1].id}`} data-preserve-scroll>
+                    <ReaderSymbol direction="previous" /><span>Previous</span>
+                  </a>}
+                  {activeChapter < sections.length - 1 && <a className="project-reader-next" href={`#project-${sections[activeChapter + 1].id}`} data-preserve-scroll>
+                    <span>Next</span><ReaderSymbol direction="next" />
+                  </a>}
+                </nav>
+              </article>
+            </div>
           </div>
         </div>
         <footer className="project-reader-end">

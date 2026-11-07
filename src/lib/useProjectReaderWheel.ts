@@ -1,6 +1,15 @@
 import { useEffect, type RefObject } from 'react'
 import { pageNavigationScrollEvent, getPageScrollTop, scrollPageBy, getPageViewportHeight } from './pageScrollSource'
 
+type ReaderWheel = { remaining: number; precise: boolean; target: 'article' | 'page' | null }
+
+// WheelEvent has no portable device ID. This hint affects only the visual cue,
+// never scroll ownership: line/page wheels and conventional mouse ticks skip it.
+function isPreciseWheel(event: WheelEvent & { momentum?: boolean; wheelDeltaY?: number }) {
+  return event.deltaMode === WheelEvent.DOM_DELTA_PIXEL
+    && (event.momentum || !event.wheelDeltaY || Math.abs(event.wheelDeltaY) % 120 !== 0)
+}
+
 /** Smooth each wheel on one surface; only a subsequent wheel can hand off. */
 export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, paused: boolean) {
   useEffect(() => {
@@ -10,12 +19,14 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
 
     const events = new AbortController()
     const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const sheet = article.querySelector<HTMLElement>('.project-reader-document')
+    let rebound: Animation | undefined
+    let direction = 0
     let frame = 0
     let previousTime = 0
     let pending = 0
     let fraction = 0
-    const wheels: number[] = []
-    let target: 'article' | 'page' | null = null
+    const wheels: ReaderWheel[] = []
     let point: { x: number; y: number } | null = null
     let controlledWheel: WheelEvent | null = null
     const stop = () => {
@@ -25,7 +36,8 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       pending = 0
       fraction = 0
       wheels.length = 0
-      target = null
+      rebound?.cancel()
+      rebound = undefined
     }
 
     const overArticle = (x: number, y: number) => article.contains(document.elementFromPoint(x, y))
@@ -35,20 +47,41 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       point = { x, y }
     }
 
-    const scrollStep = (distance: number) => {
+    const showEdge = (input: ReaderWheel, remainder: number) => {
+      if (!input.precise || motion.matches || !sheet) return
+      // More unused travel produces diminishing displacement, capped at 16px.
+      const pull = -Math.sign(remainder) * (3 + 13 * (1 - Math.exp(-Math.abs(remainder) / 32)))
+      rebound?.cancel()
+      rebound = sheet.animate([
+        { transform: 'translateY(0)', easing: 'cubic-bezier(.18,.7,.32,1)' },
+        { transform: `translateY(${pull}px)`, offset: 0.22, easing: 'cubic-bezier(.18,.65,.27,1)' },
+        { transform: 'translateY(0)' },
+      ], { duration: 310 })
+    }
+
+    const scrollStep = (input: ReaderWheel, distance: number) => {
       // Test the actual movement: rounded scrollHeight/clientHeight can hide
       // the last pixel (or report one that the browser cannot scroll).
-      if (target === 'article' || (!target && point && overArticle(point.x, point.y))) {
+      if (input.target === 'article' || (!input.target && point && overArticle(point.x, point.y))) {
         const before = article.scrollTop
         const scale = Number.parseFloat(getComputedStyle(article).zoom) || 1
         article.scrollBy({ top: distance / scale, behavior: 'instant' })
-        if (article.scrollTop !== before) {
-          target = 'article'
+        const moved = (article.scrollTop - before) * scale
+        if (moved) {
+          input.target = 'article'
+          // A wheel may already be finished when its last step is clamped.
+          if (input.remaining === distance && Math.abs(distance) - Math.abs(moved) > 0.5) {
+            const gap = distance < 0 ? article.scrollTop : article.scrollHeight - article.clientHeight - article.scrollTop
+            if (gap <= 1) showEdge(input, distance - moved)
+          }
           return true
         }
-        if (target === 'article') return false
+        if (input.target === 'article') {
+          showEdge(input, input.remaining)
+          return false
+        }
       }
-      target = 'page'
+      input.target = 'page'
       const before = getPageScrollTop()
       scrollPageBy({ top: distance, behavior: 'instant' })
       return getPageScrollTop() !== before
@@ -62,12 +95,13 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       // A frame may cover several inputs, or just part of one. Drop only the
       // blocked wheel's remainder; later wheels keep their full distance.
       while (budget > 0 && wheels.length) {
-        const step = Math.sign(pending) * Math.min(budget, Math.abs(wheels[0]))
-        const used = scrollStep(step) ? step : wheels[0]
+        const input = wheels[0]
+        const step = Math.sign(pending) * Math.min(budget, Math.abs(input.remaining))
+        const used = scrollStep(input, step) ? step : input.remaining
         pending -= used
-        wheels[0] -= used
+        input.remaining -= used
         budget -= Math.abs(step)
-        if (!wheels[0]) { wheels.shift(); target = null }
+        if (!input.remaining) wheels.shift()
       }
       if (wheels.length) frame = requestAnimationFrame(advance)
       else previousTime = 0
@@ -85,12 +119,13 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
         ? Number.parseFloat(getComputedStyle(article).lineHeight) || 16
         : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? getPageViewportHeight() : 1
       const distance = event.deltaY * unit
-      if ((pending + fraction) * distance < 0) stop()
+      if (direction * distance < 0) stop()
+      direction = Math.sign(distance)
       fraction += distance
       const pixels = Math.trunc(fraction)
       if (!pixels) return
       fraction -= pixels
-      wheels.push(pixels)
+      wheels.push({ remaining: pixels, precise: isPreciseWheel(event), target: null })
       pending += pixels
       if (motion.matches) {
         cancelAnimationFrame(frame)
@@ -106,7 +141,7 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
     window.addEventListener('pointermove', event => {
       if (event.pointerType !== 'touch') movePoint(event.clientX, event.clientY)
     }, { passive: true, signal: events.signal })
-    for (const type of ['pointerdown', 'keydown', 'touchstart', 'resize', 'blur', pageNavigationScrollEvent]) {
+    for (const type of ['pointerdown', 'keydown', 'touchstart', 'resize', 'blur', 'hashchange', pageNavigationScrollEvent]) {
       window.addEventListener(type, stop, { passive: true, signal: events.signal })
     }
     document.addEventListener('visibilitychange', stop, { signal: events.signal })
