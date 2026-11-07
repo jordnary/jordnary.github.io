@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { launchRealTabs, openSiblingTab } from './real-browser-tabs.mjs'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const tabs = await launchRealTabs(chromium, process.env.COMPANION_BROWSER_CHANNEL || 'msedge')
+const { chromium } = await import('playwright')
+const tabs = await launchRealTabs(chromium, process.env.COMPANION_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL)
 try {
   const page = await tabs.context.newPage()
   const errors = []

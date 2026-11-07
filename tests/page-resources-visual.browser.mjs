@@ -13,8 +13,8 @@ const views = [
   ['mobile', { width: 390, height: 844 }, true, 3],
   ['landscape', { width: 844, height: 390 }, true, 3],
 ]
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const results = []
 try {
   await mkdir(output, { recursive: true })

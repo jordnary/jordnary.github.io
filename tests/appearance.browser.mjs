@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.APPEARANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.APPEARANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const baseURL = process.env.APPEARANCE_TEST_URL || 'http://127.0.0.1:5173/'
 
 try {

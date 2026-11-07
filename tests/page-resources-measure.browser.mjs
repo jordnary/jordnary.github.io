@@ -126,8 +126,8 @@ function networkRecorder(cdp) {
   }
 }
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const result = options.has('merge') ? JSON.parse(await readFile(`${output}/${reportName}`, 'utf8'))
   : { browser: browser.version(), runs, settleMs, intentMs: 300, motion: 'no-preference', samples: [] }
 if (options.has('merge')) result.samples = result.samples.filter(sample => sample.phase === 'unused-intent'

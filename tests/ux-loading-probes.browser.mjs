@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 
 // Diagnostic observations, not passing assertions: faults are intentionally injected.
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.UX_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.UX_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const baseURL = process.env.UX_BASELINE_URL || 'http://127.0.0.1:4173/'
 const results = []
 const report = observation => { results.push(observation); console.log(JSON.stringify(observation)) }

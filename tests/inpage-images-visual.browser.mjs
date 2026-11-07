@@ -20,8 +20,8 @@ const ready = async (page, selector) => {
   }, selector)
   await page.locator(selector).evaluateAll(images => Promise.all(images.map(image => image.decode())))
 }
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const records = []
 try {
   await mkdir(output, { recursive: true })

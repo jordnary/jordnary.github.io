@@ -1,9 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises'
 import { connectionState } from './page-resources.browser.mjs'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+const { chromium } = await import('playwright')
 const forcedType = process.argv.find(arg => arg.startsWith('--ect='))?.split('=')[1]
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true,
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true,
   args: forcedType ? [`--force-effective-connection-type=${forcedType}`] : [] })
 const output = 'node_modules/.cache/inpage-images'
 await mkdir(output, { recursive: true })

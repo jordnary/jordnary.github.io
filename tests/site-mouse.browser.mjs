@@ -87,8 +87,8 @@ export async function runSiteMouseChecks(browser, baseURL, report = () => {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  const browser = await chromium.launch({ channel: process.env.LEARNING_BROWSER_CHANNEL || 'msedge', headless: true })
+  const { chromium } = await import('playwright')
+  const browser = await chromium.launch({ channel: process.env.LEARNING_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try {
     const checks = await runSiteMouseChecks(browser, process.env.LEARNING_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
     console.log(`${checks.length} site mouse checks passed`)

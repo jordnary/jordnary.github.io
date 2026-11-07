@@ -2,10 +2,10 @@ import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { connectionState } from './page-resources.browser.mjs'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+const { chromium } = await import('playwright')
 const browser = await chromium.launch(process.env.PROJECTS_BROWSER_EXECUTABLE
   ? { executablePath: process.env.PROJECTS_BROWSER_EXECUTABLE, headless: true }
-  : { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge', headless: true })
+  : { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 const baseURL = process.env.PROJECTS_TEST_URL || 'http://127.0.0.1:4173/'
 const files = ['poster', 'comparison', 'training', 'reconstructions', 'ablation', 'grids', 'samples']
 const original = index => `/images/projects/vaegan-${files[index]}.webp`

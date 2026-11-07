@@ -102,8 +102,8 @@ function networkRecorder(cdp) {
   } }
 }
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true, args: ['--force-effective-connection-type=3G'] })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true, args: ['--force-effective-connection-type=3G'] })
 const samples = []
 const methodVersion = 3
 try {

@@ -475,7 +475,7 @@ async function visuals(browser, baseURL, baselineURL) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   let browser
   try {
-    const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+    const { chromium } = await import('playwright')
     const realTabCheck = process.argv.includes('--real-tabs')
     let debugPort
     if (realTabCheck) {
@@ -489,7 +489,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     }
     browser = await chromium.launch({ ...(process.env.HOMEPAGE_BROWSER_EXECUTABLE
       ? { executablePath: process.env.HOMEPAGE_BROWSER_EXECUTABLE }
-      : { channel: process.env.HOMEPAGE_BROWSER_CHANNEL || 'msedge' }), headless: !realTabCheck,
+      : { channel: process.env.HOMEPAGE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL }), headless: !realTabCheck,
       ...(realTabCheck ? { args: [`--remote-debugging-port=${debugPort}`], ignoreDefaultArgs: [
         '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows',
       ] } : {}) })

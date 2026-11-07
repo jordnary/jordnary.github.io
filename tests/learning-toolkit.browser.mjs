@@ -177,7 +177,7 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
     assert.equal(await page.locator('.learning-toolkit-track').evaluate(element => getComputedStyle(element).transitionDuration), '0s')
     report('Reduced motion disables autoplay and animation while keeping manual browsing available')
 
-    const snapshotDirectory = 'node_modules/.companion-tools/toolkit-previews'
+    const snapshotDirectory = 'node_modules/.cache/toolkit-previews'
     await mkdir(snapshotDirectory, { recursive: true })
     for (const width of [2496, 1920, 1440, 1100, 900, 701, 700, 390, 320]) {
       await page.setViewportSize({ width, height: 1100 })
@@ -240,8 +240,8 @@ export async function runLearningToolkitChecks(browser, baseURL, report = () => 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  const browser = await chromium.launch({ channel: process.env.LEARNING_BROWSER_CHANNEL || 'msedge', headless: true })
+  const { chromium } = await import('playwright')
+  const browser = await chromium.launch({ channel: process.env.LEARNING_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try {
     await runLearningToolkitChecks(browser, process.env.LEARNING_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
   } catch (error) {

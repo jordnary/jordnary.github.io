@@ -129,8 +129,8 @@ async function buildInventory() {
   return assets.sort((a, b) => b.bytes - a.bytes)
 }
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.UX_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.UX_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 try {
   const result = { revision: execFileSync('git', ['rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim(),
     browser: browser.version(), runs, settleMs, motion: 'no-preference', profiles, assets: await buildInventory(), samples: [] }

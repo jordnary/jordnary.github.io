@@ -502,10 +502,10 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const { chromium } = await import('playwright')
   const browser = await chromium.launch(process.env.PROJECTS_BROWSER_EXECUTABLE
     ? { executablePath: process.env.PROJECTS_BROWSER_EXECUTABLE, headless: true, args: ['--enable-smooth-scrolling'] }
-    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge', headless: true, args: ['--enable-smooth-scrolling'] })
+    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true, args: ['--enable-smooth-scrolling'] })
   try {
     const checks = await runProjectReaderScrollChecks(browser, process.env.PROJECTS_TEST_URL || 'http://127.0.0.1:4173/', name => console.log(`PASS: ${name}`))
     console.log(`${checks.length} project reader scroll checks passed`)

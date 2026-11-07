@@ -14,7 +14,7 @@ const version = baseline ? 'baseline' : 'candidate'
 const runs = Number(process.argv.find(arg => arg.startsWith('--runs='))?.split('=')[1] || 1)
 const sample = Number(process.argv.find(arg => arg.startsWith('--sample='))?.split('=')[1] || 0)
 assert.ok(Number.isSafeInteger(sample) && sample >= 0)
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+const { chromium } = await import('playwright')
 
 // Measure owned browser resources without adding diagnostic APIs to production.
 function instrument() {
@@ -85,7 +85,7 @@ try {
   await mkdir(output, { recursive: true })
   server = await preview({ configFile: false, build: { outDir: process.argv.includes('--integrated') ? 'dist' : `${output}/${version}` }, preview: { host: '127.0.0.1', port: 4197, strictPort: true } })
   const baseURL = 'http://127.0.0.1:4197'
-  const channel = process.env.COMPANION_BROWSER_CHANNEL || 'msedge'
+  const channel = process.env.COMPANION_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL
   if (realTabs) tabs = await launchRealTabs(chromium, channel)
   browser = tabs?.browser ?? await chromium.launch({ channel, headless: true })
   const scenario = async (name, test, options = {}) => {

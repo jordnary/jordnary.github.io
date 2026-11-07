@@ -4,8 +4,8 @@ import { connectionState } from './page-resources.browser.mjs'
 
 // Deliberately approach the reader without opening it: all warmed reader fonts
 // are unconsumed in this window. Wait for completion rather than hiding bytes.
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true, args: ['--force-effective-connection-type=3G'] })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true, args: ['--force-effective-connection-type=3G'] })
 const samples = []
 try {
   for (const [version, base] of [['baseline', process.env.RESOURCE_BASELINE_URL || 'http://127.0.0.1:4175/'], ['candidate', process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4174/']]) {

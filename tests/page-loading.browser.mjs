@@ -592,8 +592,8 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+  const { chromium } = await import('playwright')
+  const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try {
     const checks = await runPageLoadingChecks(browser, process.env.PERFORMANCE_TEST_URL || 'http://127.0.0.1:4173/', message => console.log(`PASS: ${message}`))
     console.log(`${checks} page loading checks passed`)

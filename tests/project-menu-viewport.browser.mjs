@@ -214,9 +214,9 @@ export async function runProjectMenuViewportChecks(browser, baseURL, report = ()
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const playwright = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const playwright = await import('playwright')
   const engine = process.env.PROJECTS_BROWSER_ENGINE || 'chromium'
-  const browser = await playwright[engine].launch({ ...(engine === 'chromium' ? { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge' } : {}), headless: true })
+  const browser = await playwright[engine].launch({ ...(engine === 'chromium' ? { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL } : {}), headless: true })
   try {
     await runProjectMenuViewportChecks(browser, process.env.PROJECTS_TEST_URL || 'http://127.0.0.1:5173/', name => console.log(`PASS: ${name}`))
   } catch (error) {

@@ -398,8 +398,8 @@ export async function runChecks(browser) {
 }
 
 if (process.argv[1]?.replaceAll('\\', '/').endsWith('/page-resources.browser.mjs')) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true })
+  const { chromium } = await import('playwright')
+  const browser = await chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try { console.log(`${await runChecks(browser)} page resource checks passed`) }
   catch (error) { console.error(`Page resource checks failed: ${error.message}`); process.exitCode = 1 }
   finally { await browser.close() }

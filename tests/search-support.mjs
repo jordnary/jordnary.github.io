@@ -15,8 +15,8 @@ export const profiles = [
   { name: 'mobile-weak', viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, cpu: 4, mbps: 1.6, latency: 150 },
 ]
 export async function launch() {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  return chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || 'msedge', headless: true, args: ['--force-effective-connection-type=3G'] })
+  const { chromium } = await import('playwright')
+  return chromium.launch({ channel: process.env.PERFORMANCE_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true, args: ['--force-effective-connection-type=3G'] })
 }
 export async function home(page, base = baseURL, route = 'home/') {
   await page.goto(new URL(route, base).href, { waitUntil: 'domcontentloaded' })

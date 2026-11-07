@@ -39,7 +39,17 @@ npm run dev
 | `npm run test:project-details` | 项目章节、图集和返回状态。 |
 | `npm run test:gallery` | 通用图片浏览器。 |
 
-完整命令见 `package.json`。浏览器检查需要 Playwright 和浏览器，默认使用 Microsoft Edge；按对应测试启动开发服务或生产预览。可通过 `PROJECTS_TEST_URL`、`PROJECTS_BROWSER_CHANNEL`、`PROJECTS_BROWSER_EXECUTABLE` 指定测试入口与浏览器。
+干净检出可用以下命令验证生产预览。Playwright 和 Chromium 修订随 lockfile 固定；Linux CI 安装浏览器时加 `--with-deps`，并用 `xvfb-run -a` 运行最后一条命令，以便验证真实标签页切换。
+
+```sh
+npm ci
+npx --no-install playwright install chromium
+npm run build:test-preview
+npm run test:units
+npm run test:production
+```
+
+`npm run preview:test` 可单独查看测试构建。合成 GitHub/RSS 数据仅写入测试输出，不覆盖 `public/data` 或部署用的 `dist`。独立的 `production-tests.yml` 无需内容服务凭据或 Pages 权限。其他检查见 `package.json`；可用 `BROWSER_CHANNEL=msedge` 选择已安装的 Edge，或按套件指定浏览器和入口。
 
 ## 内容维护
 

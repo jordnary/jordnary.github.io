@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: process.env.COMPANION_BROWSER_CHANNEL || 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.COMPANION_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
 try {
   for (const [fixture, viewport] of [['live2d-regression', { width: 1280, height: 900 }], ['live2d-mobile-regression', { width: 390, height: 844 }]]) {
     const page = await browser.newPage({ viewport })

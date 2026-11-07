@@ -490,8 +490,8 @@ export async function runHomeNowPerformanceChecks(browser, baseURL, report = () 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-  const browser = await chromium.launch({ channel: 'msedge', headless: true })
+  const { chromium } = await import('playwright')
+  const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL, headless: true })
   try {
     const url = process.env.HOME_EDITORIAL_TEST_URL || 'http://localhost:5173/'
     await runHomeNowChecks(browser, url, console.log)

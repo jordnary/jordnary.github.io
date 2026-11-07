@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+const { chromium } = await import('playwright')
 const baseURL = process.env.HOME_EDITORIAL_TEST_URL || 'http://localhost:5173/'
 const snapshot = {
   fetchedAt: new Date().toISOString(), profile: { followers: 0, publicRepos: 12 },
@@ -9,7 +9,7 @@ const snapshot = {
 }
 
 for (const classic of [true, false]) {
-  const browser = await chromium.launch({ channel: 'msedge', headless: true,
+  const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL, headless: true,
     ...(classic ? { ignoreDefaultArgs: ['--hide-scrollbars'], args: ['--disable-features=OverlayScrollbar,OverlayScrollbars'] } : {}),
   })
   try {

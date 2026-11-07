@@ -429,10 +429,10 @@ export async function runProjectContentsChecks(browser, baseURL, report = () => 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const { chromium } = await import('playwright')
   const browser = await chromium.launch(process.env.PROJECTS_BROWSER_EXECUTABLE
     ? { executablePath: process.env.PROJECTS_BROWSER_EXECUTABLE, headless: true }
-    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge', headless: true })
+    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try {
     const checks = await runProjectContentsChecks(browser, process.env.PROJECTS_TEST_URL || 'http://127.0.0.1:4173/', name => console.log(`PASS: ${name}`))
     console.log(`${checks.length} project contents checks passed`)

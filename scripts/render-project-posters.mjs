@@ -15,13 +15,11 @@ const [studio, vae, gaussian, colorfit] = await Promise.all([
   asset('public/images/projects/gaussian-initializers.webp'),
   asset('public/images/projects/colorfit-comparison.webp'),
 ])
-const { chromium } = await import('playwright').catch(
-  () => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'),
-)
+const { chromium } = await import('playwright')
 const browser = await chromium.launch(
   process.env.PROJECTS_BROWSER_EXECUTABLE
     ? { executablePath: process.env.PROJECTS_BROWSER_EXECUTABLE, headless: true }
-    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge', headless: true },
+    : { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true },
 )
 try {
   const page = await browser.newPage({

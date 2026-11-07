@@ -777,10 +777,10 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
 }
 
 if (typeof process !== 'undefined' && process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const { chromium } = await import('playwright')
   const browser = await chromium.launch(process.env.HOME_EDITORIAL_BROWSER_EXECUTABLE
     ? { executablePath: process.env.HOME_EDITORIAL_BROWSER_EXECUTABLE, headless: true }
-    : { channel: process.env.HOME_EDITORIAL_BROWSER_CHANNEL || 'msedge', headless: true })
+    : { channel: process.env.HOME_EDITORIAL_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL, headless: true })
   try {
     const checks = await runHomeEditorialChecks(browser, process.env.HOME_EDITORIAL_TEST_URL || 'http://127.0.0.1:5173/', console.log)
     console.log(`${checks.length} home editorial checks passed`)

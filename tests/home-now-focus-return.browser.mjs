@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 
-const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
-const browser = await chromium.launch({ channel: 'msedge', headless: true })
+const { chromium } = await import('playwright')
+const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL, headless: true })
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, reducedMotion: 'no-preference' })
   await page.addInitScript(() => sessionStorage.setItem('site-live2d-collapsed-desktop', 'true'))

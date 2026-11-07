@@ -93,11 +93,11 @@ export async function runGalleryScrollLockChecks(browser, baseURL, classic, repo
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const { chromium } = await import('playwright').catch(() => import('../node_modules/.companion-tools/node_modules/playwright/index.mjs'))
+  const { chromium } = await import('playwright')
   for (const classic of [true, false]) {
     const browser = await chromium.launch({ headless: true,
       ...(process.env.PROJECTS_BROWSER_EXECUTABLE ? { executablePath: process.env.PROJECTS_BROWSER_EXECUTABLE }
-        : { channel: process.env.PROJECTS_BROWSER_CHANNEL || 'msedge' }),
+        : { channel: process.env.PROJECTS_BROWSER_CHANNEL || process.env.BROWSER_CHANNEL }),
       ...(classic ? { ignoreDefaultArgs: ['--hide-scrollbars'], args: ['--disable-features=OverlayScrollbar,OverlayScrollbars'] } : {}),
     })
     try {
