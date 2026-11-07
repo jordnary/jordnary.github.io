@@ -51,6 +51,8 @@ npm run test:production
 
 `npm run preview:test` 可单独查看测试构建。合成 GitHub/RSS 数据仅写入测试输出，不覆盖 `public/data` 或部署用的 `dist`。独立的 `production-tests.yml` 无需内容服务凭据或 Pages 权限。其他检查见 `package.json`；可用 `BROWSER_CHANNEL=msedge` 选择已安装的 Edge，或按套件指定浏览器和入口。
 
+[P6 验收记录](docs/p6-acceptance.md)列出了与重构前相同口径的路由数据、搜索 100 ms 结果、三视口差异以及仍需在线上或真机验证的项目。
+
 ## 内容维护
 
 | 文件 | 用途 |

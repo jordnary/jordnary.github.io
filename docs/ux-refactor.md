@@ -1,6 +1,6 @@
 # 以用户体验为先的资源管理重构
 
-状态：P0–P5 本轮范围已完成，下一阶段为 P6。P3 的资源准备、首次构造、字体和搜索见 6.8–6.13，项目展示图见 6.14，图集下载边界评估见 6.15（未采用拆分），P4 统一快照见 6.16。P5 承接 `417d06e`：Live2D 所有权和实测见 6.18，About、页脚及其余后台任务见 6.19–6.20。保留 `ec7cbc7` 搜索实现及其未达到 100 ms 的已知限制。更新：2026-11-07（Asia/Shanghai）。
+状态：P0–P6 已完成本地验收。[P6 最终交接](p6-acceptance.md)含 8 条路由的冷/热对照、三视口视觉验收、定向修复、未达标与未验证项。搜索 100 ms 整体目标仍未达到。P3 历史测量见 6.8–6.15，P4 快照见 6.16，P5 生命周期见 6.18–6.20。更新：2026-11-07（Asia/Shanghai）。
 
 本文是后续各轮工作的交接入口。目标是保留 React、Vite、现有页面设计和业务功能，重新确定资源何时请求、谁拥有请求、失败如何恢复，以及页面不可见时如何停止工作。优先级为：可操作与可恢复 > 视觉及交互连续性 > 内容及时出现 > 网络、CPU、内存开销。不得以减少功能、改变转场、降低原图能力或取消无障碍支持换取指标下降。
 
@@ -251,7 +251,7 @@ P0 复现的路由加载失败后空页、跨图目标受中间原图阻塞、Hu
 | P3 | 页面关键资源复用、搜索/图集功能拆分、受限意图预热、项目展示图与 HomeNow 字体 | 首次打开与键盘流程、快速切页/滚动点击、预热复用与无效请求计数；各 DPR 字体及图片视觉对照 | 本轮范围完成；项目展示图（6.14）、图集评估保留直接加载（6.15）；保留现有搜索，100 ms 缺口列入最终验收限制 |
 | P4 | GitHub/RSS 统一快照存储及 freshness | 有旧值离线、数据过期/损坏、存储禁用、重开、刷新、共享请求消费者卸载 | 已完成，见 6.16；包含 RSS 失败复用时间戳修复 |
 | P5 | Live2D 启动所有权、其余调度审查，保留既有有效暂停 | 真实隐藏/恢复、减少动效、场景销毁、网络/WebGL 恢复、动作重试、装饰与时钟暂停 | 已完成，定向对照与回归见 6.18–6.20 |
-| P6 | 依赖与旧分支清理、生产浏览器 CI、最终对照 | 全流程回归、同口径基线复测、视觉证据、剩余风险与交接、独立提交 | 待实现 |
+| P6 | 依赖与旧分支清理、生产浏览器 CI、最终对照 | 全流程回归、同口径基线复测、视觉证据、剩余风险与交接、独立提交 | 本地完成，见 6.21；远端 CI 待推送后验证 |
 
 P1 和 P2 的已复现体验缺陷优先于包体减重。P3–P5 可按测量收益调整先后，但不得跨阶段丢弃尚未解决的回归。每轮只提交已经验证的独立改动，失败则修复或回退该阶段，不把故障写成“后续再看”并声称完成。
 
@@ -275,24 +275,19 @@ P1 和 P2 的已复现体验缺陷优先于包体减重。P3–P5 可按测量�
 
 ### 6.3 复现命令
 
-在仓库根目录的 PowerShell 中执行。若未安装依赖，先 `npm ci`。现有测试优先导入 `playwright`，否则使用本地测试工具目录的副本；该副本没有被 lockfile 声明，因此新环境须显式安装测试工具。P6 应将其版本固定进 devDependencies/CI，而不是依赖个人目录。
+以下为当前版本的 PowerShell 命令。P0 当时依赖另行安装的浏览器测试工具；P6 已固定 Playwright 及其浏览器修订。无需内容服务凭据或旧构建产物。
 
 ```powershell
-# 新环境安装本次测量版本；已有可用 Playwright 时无需重复执行。
-npm install --prefix node_modules/.companion-tools --no-save playwright@1.63.0
-
-npm run images:build
-node scripts/inline-project-transition.mjs --check
-# 要求已有有效快照。首次建立快照时另行运行相应同步脚本。
-npm --ignore-scripts run build
-
-# 终端 A：保持预览运行。
-node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4173 --strictPort
+npm ci
+npx --no-install playwright install chromium
+npm run build:test-preview
+npm run preview:test -- --host 127.0.0.1 --port 4173 --strictPort
 ```
 
 ```powershell
-# 终端 B：测量与测试串行运行，默认使用已安装的 Microsoft Edge。
-node tests/ux-baseline.browser.mjs
+# 终端 B：测试默认使用锁定修订的 Chromium；历史测量显式选相同版本的 Edge。
+$env:BROWSER_CHANNEL = 'msedge'
+node tests/ux-baseline.browser.mjs --dist=node_modules/.cache/production-preview
 node tests/ux-loading-probes.browser.mjs
 npm run test:resources
 npm run test:page-loading
@@ -300,7 +295,7 @@ $env:HOMEPAGE_TEST_URL = 'http://127.0.0.1:4173/'
 node tests/homepage-performance.browser.mjs
 
 # 仅复测指定配置和路径时：
-node tests/ux-baseline.browser.mjs --profile=mobile-constrained --routes=/home/,/learning/ --runs=3 --output=node_modules/.cache/ux-candidate.json
+node tests/ux-baseline.browser.mjs --dist=node_modules/.cache/production-preview --profile=mobile-constrained --routes=/home/,/learning/ --runs=3 --output=node_modules/.cache/ux-candidate.json
 ```
 
 `UX_BASELINE_URL` 可指定预览入口，`UX_BROWSER_CHANNEL` 可切换已安装的浏览器通道。原始结果默认写入已忽略的 `node_modules/.cache/ux-baseline.json` 与 `ux-loading-probes.json`；不要把该目录或浏览器缓存提交。正式发布仍走既有 `npm run build` 生命周期，并验证数据同步及部署条件。
@@ -1576,3 +1571,7 @@ node tests/live2d-lifecycle.browser.mjs --integrated --real-tabs
 ```
 
 **P6 接手：** 保留 `ec7cbc7` 搜索及 6.13 的 100 ms 已知限制：首开/重开分别 **24/60、14/60** 个样本超标，最大 **526.8/126.2 ms**；本轮没有重测或修改搜索。完整全站同口径性能/视觉对照、生产浏览器 CI 与测试依赖固定留到 P6。真实移动设备、Safari/Firefox、长期堆/显存和线上缓存头也未在本轮验证。没有推送、部署或同步生产数据；按独立提交回滚并重建即可，无迁移。
+
+### 6.21 P6：最终验收与交接
+
+承接 `c56fc92`，以 `456f623` 为重构前基线完成生产构建、引用清理和 8 路由复测。详见 [P6 生产预览验收](p6-acceptance.md)：每版 96 个冷/热样本、Contact 修复后 12 个定向样本、45 对三视口截图，以及交互、失败恢复和真实标签生命周期。受限手机 Contact 冷访挂载中位数 2240 → 2112 ms；搜索按 6.13 的原口径仍有 15/60 首开超 100 ms，本批重开 0/60 超标。CI 与部署独立；本地验收、未达标及未验证项目分别记录。
