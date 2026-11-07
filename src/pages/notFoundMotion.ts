@@ -3,6 +3,7 @@ import Matter from 'matter-js'
 const { Bodies, Body, Composite, Engine, Sleeping, Vertices } = Matter
 const rad = Math.PI / 180
 const physicsStep = 1000 / 120
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
 
 // Keep the drawing and its collision surfaces in the same glyph coordinates.
 // The four has four convex strokes; its crossbar and toe
@@ -37,19 +38,29 @@ function makeZero() {
   return Body.create({ vertices, density: .0007 })
 }
 
-function createDigitScene(width: number, height: number) {
-  // Pick the glyph size on entry. A resize moves the edges of the world,
-  // not the digits: a fast edge can pass one and leave it without a floor.
+export function createDigitScene(width: number, height: number) {
+  // Glyphs and the supporting slab keep their entry size. Widening the stage
+  // can uncover a gap beside the slab, allowing overhanging digits to tumble.
   const scale = Math.min(height / 1340, width / 1520)
   let w = width / scale, h = height / scale
-  const engine = Engine.create({ enableSleeping: true, positionIterations: 8,
-    gravity: { x: 0, y: 1, scale: .0006432 } })
-  const edge = 48, above = 1800
-  const wall = { isStatic: true, friction: .45 }
-  const floor = Bodies.rectangle(w / 2, h + edge / 2, w, edge, wall)
-  const left = Bodies.rectangle(-edge / 2, (h - above) / 2, edge, h + above, wall)
-  const right = Bodies.rectangle(w + edge / 2, (h - above) / 2, edge, h + above, wall)
-  let movingEdges = false
+  const supportWidth = w
+  let leftX = 0, wallX = w, floorY = h, floorWidth = w, squeezeTime = 0
+  const engine = Engine.create({ enableSleeping: true, positionIterations: 12, velocityIterations: 8,
+    gravity: { x: 0, y: 1, scale: .0032 } })
+  const above = 1800, depth = Math.max(w, h, above) * 4
+  const wall = { isStatic: true, friction: .45, restitution: 0 }
+  const floor = Bodies.rectangle(w / 2, h + depth / 2, w, depth, wall)
+  const left = Bodies.rectangle(-depth / 2, (h - above) / 2, depth, h + above, wall)
+  const right = Bodies.rectangle(w + depth / 2, (h - above) / 2, depth, h + above, wall)
+  const movingEdges = () => leftX !== 0 || wallX !== w || floorY !== h
+  const placeEdges = () => {
+    const nextWidth = Math.min(supportWidth, wallX - leftX)
+    if (nextWidth !== floorWidth) Body.scale(floor, nextWidth / floorWidth, 1)
+    floorWidth = nextWidth
+    Body.setPosition(floor, { x: (leftX + wallX) / 2, y: floorY + depth / 2 })
+    Body.setPosition(left, { x: leftX - depth / 2, y: (h - above) / 2 })
+    Body.setPosition(right, { x: wallX + depth / 2, y: (h - above) / 2 })
+  }
   // The top four overhangs the zero to the left; the bottom four catches it
   // on the right. Only release conditions are chosen, never landing slots.
   const spawnX = w / 2 + Math.min(220, w * .1)
@@ -60,28 +71,41 @@ function createDigitScene(width: number, height: number) {
   ].map(({ body, x, y, angle }) => {
     const origin = { ...body.position }
     if (body.parts.length > 1) Body.setInertia(body, body.inertia * 1.5)
-    body.friction = .19
-    body.frictionAir = .008
-    body.restitution = .08
+    body.friction = .25
+    body.frictionAir = .016
+    body.restitution = .025
     Body.translate(body, { x, y })
     Body.setAngle(body, angle * rad)
-    Body.setVelocity(body, { x: 0, y: 4 })
+    Body.setVelocity(body, { x: 0, y: 18 })
     return { body, origin, escaped: false }
   })
   Composite.add(engine.world, [floor, left, right, ...digits.map(d => d.body)])
   return {
     digits,
     get viewBox() { return `0 0 ${w} ${h}` },
-    get asleep() { return digits.every(({ body, escaped }) => escaped || body.isSleeping) },
+    get asleep() { return !movingEdges() && digits.every(({ body, escaped }) => escaped || body.isSleeping) },
     step() {
-      Engine.update(engine, physicsStep)
-      if (movingEdges) {
-        Body.setVelocity(floor, { x: 0, y: 0 })
-        Body.setVelocity(right, { x: 0, y: 0 })
-        movingEdges = false
+      if (movingEdges()) {
+        // Sweep inward a few units per substep so contact normals stay local.
+        // Moving a static wall must not also inject a launch velocity.
+        leftX += clamp(-leftX, -10, 10)
+        wallX += clamp(w - wallX, -10, 10)
+        floorY += clamp(h - floorY, -10, 10)
+        placeEdges()
+        squeezeTime = 180
+        digits.forEach(d => { if (!d.escaped) Sleeping.set(d.body, false) })
       }
+      Engine.update(engine, physicsStep)
+      squeezeTime = Math.max(0, squeezeTime - physicsStep)
       for (const digit of digits) {
-        if (!digit.escaped && digit.body.bounds.min.y > h + 630) {
+        if (digit.escaped) continue
+        if (squeezeTime > 0) {
+          // Compression should lift and roll the pile, with little rebound.
+          const { body } = digit
+          Body.setVelocity(body, { x: clamp(body.velocity.x, -10, 10), y: Math.max(-8, body.velocity.y) })
+          Body.setAngularVelocity(body, clamp(body.angularVelocity, -.045, .045))
+        }
+        if (digit.body.bounds.min.y > h + 630) {
           digit.escaped = true
           Composite.remove(engine.world, digit.body)
         }
@@ -90,20 +114,42 @@ function createDigitScene(width: number, height: number) {
     resize(width: number, height: number) {
       const nw = width / scale, nh = height / scale
       if (nw === w && nh === h) return
-      Body.scale(floor, nw / w, 1)
-      Body.setPosition(floor, { x: nw / 2, y: nh + edge / 2 })
+      const live = digits.filter(d => !d.escaped)
+      // Measure from the simulated edges, so many small events arriving
+      // faster than physics can follow receive the same protection as a jump.
+      const abruptX = wallX - nw > 120 / scale
+      const abruptY = floorY - nh > 100 / scale
+      if (live.length && (abruptX || abruptY)) {
+        // Restore/maximise can skip the entire pile in one resize event.
+        // Carry the pile into the smaller frame as a group, preserving its
+        // sizes, relative contacts, rotations and momentum before squeezing.
+        const minX = Math.min(...live.map(d => d.body.bounds.min.x))
+        const maxX = Math.max(...live.map(d => d.body.bounds.max.x))
+        const centre = (minX + maxX) / 2, half = (maxX - minX) / 2
+        const target = half * 2 <= nw ? clamp(centre * nw / w, half, nw - half) : nw / 2
+        const dx = abruptX ? target - centre : 0
+        const dy = abruptY ? nh - floorY : 0
+        live.forEach(({ body }) => Body.translate(body, { x: dx, y: body.bounds.max.y > 0 ? dy : 0 }))
+        if (abruptX) {
+          // Start outside the carried pile, then squeeze it over successive
+          // frames instead of placing a wall through several whole glyphs.
+          leftX = Math.min(0, minX + dx)
+          wallX = Math.max(nw, maxX + dx)
+        }
+        if (abruptY) floorY = nh
+        squeezeTime = 180
+      }
+      // Outward edges withdraw immediately. Gravity and the finite support
+      // surface decide which digits land, pivot at the edge, or fall away.
+      if (nw > wallX) { leftX = 0; wallX = nw }
+      if (nh > floorY) floorY = nh
       for (const side of [left, right]) {
         Body.scale(side, 1, (nh + above) / (h + above))
-        Body.setPosition(side, { x: side === left ? -edge / 2 : nw + edge / 2, y: (nh - above) / 2 })
+        Body.setPosition(side, { x: side === left ? leftX - depth / 2 : wallX + depth / 2, y: (nh - above) / 2 })
       }
-      // Transfer edge motion to bodies actually in contact for one step.
-      // A maximise/restore jump isn't an unbounded launch impulse.
-      const impulse = (delta: number) => Math.max(-24, Math.min(24, delta))
-      Body.setVelocity(floor, { x: 0, y: impulse(nh - h) })
-      Body.setVelocity(right, { x: impulse(nw - w), y: 0 })
-      movingEdges = true
       w = nw; h = nh
-      digits.forEach(d => { if (!d.escaped) Sleeping.set(d.body, false) })
+      placeEdges()
+      live.forEach(d => Sleeping.set(d.body, false))
     },
     dispose() { Composite.clear(engine.world, false); Engine.clear(engine) },
   }
@@ -123,6 +169,7 @@ export function mountFallingDigits(svg: SVGSVGElement) {
     remainder += Math.min(now - last, 64)
     last = now
     while (remainder >= physicsStep && !scene.asleep) { scene.step(); remainder -= physicsStep }
+    if (scene.asleep) remainder = 0
     paint()
     frame = scene.asleep ? 0 : requestAnimationFrame(tick)
   }
