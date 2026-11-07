@@ -454,6 +454,21 @@
     .nav-mega-panel--projects .nav-mega-links,
     .nav-mega-panel--projects .nav-related-links { grid-column: 1 / -1; }
     .nav-mega-panel--projects .nav-related-links { padding-left: 0; }
+
+    .nav-mega-panel--about .nav-mega-content {
+      grid-template-areas: 'intro story' 'links story';
+      grid-template-rows: auto 1fr;
+      align-items: start;
+      row-gap: 1.25rem;
+    }
+    .nav-mega-panel--about .nav-mega-intro { grid-area: intro; }
+    .nav-mega-panel--about .nav-mega-links {
+      grid-area: links;
+      padding-top: 1rem;
+      border-top: 1px solid var(--navigation-line);
+    }
+    .nav-mega-panel--about .nav-related-links { grid-area: story; }
+    .nav-mega-panel--about .nav-story-link .nav-photo-frame { height: clamp(12rem, 24vw, 15rem); }
   }
   @media (width < 720px) {
     /* Keep the scrollbar lane when the modal locks background scrolling. */
