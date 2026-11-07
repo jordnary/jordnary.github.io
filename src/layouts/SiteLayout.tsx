@@ -30,7 +30,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
   return (
     <div inert={transitioning} className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${hasSharedChrome && isSearchOpen ? ' is-search-open' : ''}`}>
       <ShellContent page={page} shared={hasSharedChrome} pending={pending} onSearchOpen={openSearch}>{children}</ShellContent>
-      {hasSharedChrome && page !== '404' && <Live2DCompanion page={page} suspended={isSearchOpen} contentReady={!pending} />}
+      {hasSharedChrome && <Live2DCompanion page={page} suspended={isSearchOpen} contentReady={!pending} />}
       {hasSharedChrome && <SiteSearch
           isOpen={isSearchOpen}
           onClose={closeSearch}

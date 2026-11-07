@@ -6,8 +6,7 @@ import type { CompanionReaction, CompanionState } from '../lib/companion-behavio
 import type { CompanionHit } from '../lib/live2d-hit'
 import { githubProfileUrl } from '../lib/github'
 import { contactProfile } from '../data/contact'
-import { companionIntroductions } from '../data/companion-introductions'
-import type { SitePage } from '../lib/routes'
+import { companionIntroductions, type CompanionPage } from '../data/companion-introductions'
 import { CompanionTools, type CompanionAction } from './CompanionTools'
 import { ContactIcon } from './icons'
 import './Live2DCompanion.css'
@@ -39,7 +38,7 @@ function readPreference(key: string, fallback = false, storage: 'localStorage' |
 type CompanionProps = {
   suspended: boolean
   contentReady?: boolean
-  page?: SitePage
+  page?: CompanionPage
   actions?: readonly CompanionAction[]
 }
 
@@ -56,7 +55,7 @@ export function Live2DCompanion({ suspended, contentReady = true, page, actions 
   const [restoreFocus, setRestoreFocus] = useState(false)
   const [homeRequested, setHomeRequested] = useState(false)
   const launcherRef = useRef<HTMLButtonElement>(null)
-  const introducedPageRef = useRef<SitePage | undefined>(undefined)
+  const introducedPageRef = useRef<CompanionPage | undefined>(undefined)
 
   useEffect(() => {
     // Consume visits while collapsed so expanding never replays their introduction.
@@ -110,7 +109,7 @@ export function Live2DCompanion({ suspended, contentReady = true, page, actions 
 }
 
 function CompanionStage({ onCollapse, suspended, contentReady, page, introducedPageRef, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
-  introducedPageRef: RefObject<SitePage | undefined>
+  introducedPageRef: RefObject<CompanionPage | undefined>
   onCollapse: () => void
   focusOnReady: boolean
   homeRequested: boolean
