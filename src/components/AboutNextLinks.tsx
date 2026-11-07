@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { SmartLink } from './SmartLink'
 import { AboutNextSketch } from './AboutNextSketch'
 import { getRouteHref } from '../lib/routes'
@@ -10,36 +9,10 @@ const destinations = [
 ] as const
 
 export function AboutNextLinks() {
-  const linksRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const links = linksRef.current
-    if (!links) return
-
-    const cards = Array.from(links.querySelectorAll<HTMLAnchorElement>('.journey-next-link'))
-    const visible = new Set<Element>()
-    const syncMotion = () => {
-      cards.forEach(card => { card.dataset.motion = visible.has(card) && !document.hidden ? 'running' : 'paused' })
-    }
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) visible.add(entry.target)
-        else visible.delete(entry.target)
-      })
-      syncMotion()
-    })
-    cards.forEach(card => observer.observe(card))
-    document.addEventListener('visibilitychange', syncMotion)
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('visibilitychange', syncMotion)
-    }
-  }, [])
-
   return (
-    <div className="journey-next-links" ref={linksRef}>
+    <div className="journey-next-links">
       {destinations.map(({ kind, caption, title, note, href }) => (
-        <SmartLink className={`journey-next-link journey-next-link--${kind}`} href={href} key={kind} data-motion="paused">
+        <SmartLink className={`journey-next-link journey-next-link--${kind}`} href={href} key={kind} data-motion="paused" data-motion-threshold="0">
           <svg className="journey-next-border" viewBox="0 0 380 212" preserveAspectRatio="none" fill="none" aria-hidden="true" focusable="false">
             <path className="journey-next-paper" d="M12 10C87 5 158 11 224 8S327 7 368 12C374 48 369 79 372 111S369 172 368 200C295 205 233 199 174 203S60 201 12 198C7 163 11 130 8 99S10 39 12 10Z" />
             <path className="journey-next-border-echo" d="M22 6C86 3 131 7 165 6M375 23C378 69 373 93 376 120M357 206C295 210 260 204 229 207M6 184C2 157 6 135 4 116" />

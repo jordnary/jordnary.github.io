@@ -9,6 +9,7 @@ import { AboutExplorationArt } from './AboutExplorationArt'
 import { AboutIceberg } from './AboutIceberg'
 import { AboutJourneyDecorations } from './AboutJourneyDecorations'
 import { useAboutCoverReveal } from './useAboutCoverReveal'
+import { useAboutDecorationMotion } from './useAboutDecorationMotion'
 import { aboutProfile } from '../data/profile'
 import './About.css'
 
@@ -50,9 +51,10 @@ const chapters = [
 export function About() {
   const journeyRef = useRef<HTMLOListElement>(null)
   const coverRef = useAboutCoverReveal()
+  const decorationRoot = useAboutDecorationMotion()
 
   return (
-    <section className="about-journey site-container section-surface" id="about" aria-labelledby="about-title">
+    <section className="about-journey site-container section-surface" id="about" aria-labelledby="about-title" ref={decorationRoot}>
       <SectionBackdrop edge="none" />
       <header className="journey-cover section-surface" ref={coverRef}
         style={{ '--about-cover-image': `url("${aboutCoverImage(import.meta.env.BASE_URL).src}")` } as CSSProperties}>

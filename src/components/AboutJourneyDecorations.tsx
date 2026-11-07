@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { CodeGrowth, ExplorationPlane, KnowledgeConnections, ValidationNotes } from './AboutJourneySketches'
 import './AboutJourneyDecorations.css'
 
@@ -51,43 +50,16 @@ function PencilRings() {
 }
 
 export function AboutJourneyDecorations() {
-  const marginRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const margin = marginRef.current
-    if (!margin) return
-
-    const visible = new Set<HTMLElement>()
-    const pieces = Array.from(margin.querySelectorAll<HTMLElement>('.journey-margin-motif'))
-    const syncMotion = () => {
-      pieces.forEach(piece => { piece.dataset.motion = visible.has(piece) && !document.hidden ? 'running' : 'paused' })
-    }
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        const piece = entry.target as HTMLElement
-        if (entry.isIntersecting) visible.add(piece)
-        else visible.delete(piece)
-      })
-      syncMotion()
-    })
-    pieces.forEach(piece => observer.observe(piece))
-    document.addEventListener('visibilitychange', syncMotion)
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('visibilitychange', syncMotion)
-    }
-  }, [])
-
   return (
-    <div className="journey-margin-art" ref={marginRef} aria-hidden="true">
+    <div className="journey-margin-art" aria-hidden="true">
       <div className="journey-margin-paper journey-margin-paper--left" />
       <div className="journey-margin-paper journey-margin-paper--right" />
-      <div className="journey-margin-motif journey-margin-motif--loop" data-side="left" data-kind="question" data-motion="paused"><PencilLoop /></div>
-      <div className="journey-margin-motif journey-margin-motif--connections" data-side="right" data-kind="connections" data-motion="paused"><KnowledgeConnections /></div>
-      <div className="journey-margin-motif journey-margin-motif--notes" data-side="left" data-kind="notes" data-motion="paused"><ValidationNotes /></div>
-      <div className="journey-margin-motif journey-margin-motif--rings" data-side="right" data-kind="rings" data-motion="paused"><PencilRings /></div>
-      <div className="journey-margin-motif journey-margin-motif--growth" data-side="left" data-kind="growth" data-motion="paused"><CodeGrowth /></div>
-      <div className="journey-margin-motif journey-margin-motif--next" data-side="right" data-kind="next" data-motion="paused"><ExplorationPlane /></div>
+      <div className="journey-margin-motif journey-margin-motif--loop" data-side="left" data-kind="question" data-motion="paused" data-motion-threshold="0"><PencilLoop /></div>
+      <div className="journey-margin-motif journey-margin-motif--connections" data-side="right" data-kind="connections" data-motion="paused" data-motion-threshold="0"><KnowledgeConnections /></div>
+      <div className="journey-margin-motif journey-margin-motif--notes" data-side="left" data-kind="notes" data-motion="paused" data-motion-threshold="0"><ValidationNotes /></div>
+      <div className="journey-margin-motif journey-margin-motif--rings" data-side="right" data-kind="rings" data-motion="paused" data-motion-threshold="0"><PencilRings /></div>
+      <div className="journey-margin-motif journey-margin-motif--growth" data-side="left" data-kind="growth" data-motion="paused" data-motion-threshold="0"><CodeGrowth /></div>
+      <div className="journey-margin-motif journey-margin-motif--next" data-side="right" data-kind="next" data-motion="paused" data-motion-threshold="0"><ExplorationPlane /></div>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useId } from 'react'
 import './AboutOutroOrnaments.css'
 
 type SketchRingsProps = {
@@ -54,41 +54,13 @@ function SketchRings({ x, y, radius, phase, coralLayer = 2 }: SketchRingsProps) 
 
 export function AboutOutroOrnaments() {
   const apertureId = useId()
-  const ornamentsRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const ornaments = ornamentsRef.current
-    if (!ornaments) return
-
-    const pieces = Array.from(ornaments.querySelectorAll<SVGSVGElement>(':scope > svg'))
-    const visible = new Set<Element>()
-    const syncMotion = () => {
-      pieces.forEach(piece => { piece.dataset.motion = visible.has(piece) && !document.hidden ? 'running' : 'paused' })
-    }
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.15) visible.add(entry.target)
-        else visible.delete(entry.target)
-      })
-      syncMotion()
-    }, { threshold: [0, 0.15] })
-
-    // Observe fixed SVG bounds so the animated clipping cannot pause its own clock.
-    pieces.forEach(piece => observer.observe(piece))
-    document.addEventListener('visibilitychange', syncMotion)
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('visibilitychange', syncMotion)
-    }
-  }, [])
-
   return (
-    <div className="journey-outro-ornaments" aria-hidden="true" ref={ornamentsRef}>
-      <svg className="journey-outro-ornament--left" viewBox="0 0 100 170" focusable="false" overflow="visible" data-motion="paused">
+    <div className="journey-outro-ornaments" aria-hidden="true">
+      <svg className="journey-outro-ornament--left" viewBox="0 0 100 170" focusable="false" overflow="visible" data-motion="paused" data-motion-threshold="0.15">
         <SketchRings x={35} y={38} radius={24} phase={0.2} />
         <SketchRings x={57} y={111} radius={34} phase={0.65} coralLayer={1} />
       </svg>
-      <svg className="journey-outro-ornament--right" viewBox="0 0 80 80" focusable="false" overflow="visible" data-motion="paused">
+      <svg className="journey-outro-ornament--right" viewBox="0 0 80 80" focusable="false" overflow="visible" data-motion="paused" data-motion-threshold="0.15">
         <defs>
           <clipPath id={apertureId} clipPathUnits="userSpaceOnUse">
             <circle className="journey-outro-ring-aperture" cx="40" cy="40" r="32" />

@@ -54,6 +54,19 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
   await context.addInitScript(() => {
     sessionStorage.setItem('site-live2d-collapsed-desktop', 'true')
     sessionStorage.setItem('site-live2d-collapsed-mobile', 'true')
+    const targets = new Map()
+    const prototype = IntersectionObserver.prototype
+    const observe = prototype.observe, disconnect = prototype.disconnect, unobserve = prototype.unobserve
+    prototype.observe = function (node) {
+      if (node.hasAttribute('data-motion-threshold')) {
+        if (!targets.has(this)) targets.set(this, new Set())
+        targets.get(this).add(node)
+      }
+      return observe.call(this, node)
+    }
+    prototype.unobserve = function (node) { targets.get(this)?.delete(node); return unobserve.call(this, node) }
+    prototype.disconnect = function () { targets.delete(this); return disconnect.call(this) }
+    window.__aboutDecorationObservers = () => [...targets.values()].filter(group => [...group].some(node => node.matches('.journey-margin-motif'))).map(group => group.size)
   })
   const page = await context.newPage()
   const errors = []
@@ -199,6 +212,15 @@ export async function runAboutDecorationsChecks(browser, baseURL, report = () =>
       assert.ok(samples.every(sample => sample.visible[0] === 0 && sample.times.length === 0), 'Switching to reduced motion removes every animation and holds the first pencil pose')
     }
     pass('Changing to reduced motion leaves one complete, motionless drawing per sketch')
+    assert.deepEqual(await page.evaluate(() => window.__aboutDecorationObservers()), [])
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.waitForFunction(() => window.__aboutDecorationObservers().join(',') === '13')
+    await page.locator('a[href="/contact/"]:visible').first().click()
+    await page.waitForURL('**/contact/')
+    await page.waitForFunction(() => !document.querySelector('#about') && !window.__aboutDecorationObservers().length)
+    await page.goBack()
+    await page.waitForFunction(() => window.__aboutDecorationObservers().join(',') === '13')
+    pass('One observer serves all 13 decoration bounds, disconnects on reduced motion or exit, and restores once')
     assert.deepEqual(errors, [], 'The decoration checks produce no uncaught browser errors')
   } finally {
     await context.close()

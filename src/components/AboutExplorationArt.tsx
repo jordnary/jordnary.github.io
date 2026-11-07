@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react'
+import { useId } from 'react'
 import './AboutExplorationArt.css'
 
 const explorationTrail = 'M91 309C138 365 333 346 406 233S401 70 337 85'
@@ -30,30 +30,8 @@ function SketchLines({ frames }: { frames: [string, string, string] }) {
 
 export function AboutExplorationArt() {
   const gradientId = useId()
-  const atlasRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    const atlas = atlasRef.current
-    if (!atlas) return
-
-    let inView = false
-    const syncMotion = () => {
-      atlas.dataset.motion = inView && !document.hidden ? 'running' : 'paused'
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      inView = entry.isIntersecting && entry.intersectionRatio >= 0.15
-      syncMotion()
-    }, { threshold: [0, 0.15] })
-    observer.observe(atlas)
-    document.addEventListener('visibilitychange', syncMotion)
-    return () => {
-      observer.disconnect()
-      document.removeEventListener('visibilitychange', syncMotion)
-    }
-  }, [])
-
   return (
-    <figure className="journey-atlas" ref={atlasRef} data-motion="paused" data-cover-reveal>
+    <figure className="journey-atlas" data-motion="paused" data-motion-threshold="0.15" data-cover-reveal>
       <div className="journey-atlas-label journey-cover-reveal">好奇心的轨迹</div>
       <div className="journey-atlas-map" aria-hidden="true">
         <svg className="journey-atlas-drawing journey-cover-reveal" viewBox="0 0 540 440" fill="none" focusable="false">
