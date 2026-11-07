@@ -122,9 +122,14 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
     const start = probe.initial[target], end = probe.final[target]
     return probe.frames.some(frame => frame[target] > Math.min(start, end) && frame[target] < Math.max(start, end))
   }
-  const assertTinyOverflowDistance = (probe, expected) => {
-    const traveled = Math.abs(probe.final.page - probe.initial.page) + Math.abs(probe.final.body - probe.initial.body)
-    near(traveled, expected, 'Continuous input is consumed once across the tiny boundary')
+  const assertBoundaryDistance = (probe, bodyDistance) => {
+    // Only the wheel that finishes the article can lose distance at the boundary.
+    const deltas = probe.events.map(event => Math.abs(event.delta))
+    let spent = 0
+    let next = 0
+    while (next < deltas.length && spent < bodyDistance) spent += deltas[next++]
+    const expected = deltas.slice(next).reduce((sum, delta) => sum + delta, 0)
+    near(Math.abs(probe.final.page - probe.initial.page), expected, 'The page receives only subsequent wheels, in full')
   }
   try {
     await check('VAE implementation at page top hands a continuous gesture past one-pixel body overflow to the page', async () => {
@@ -139,7 +144,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
           assert.equal(probe.initial.body, 0, 'The body starts at its top')
           assert.equal(probe.initial.bodyMax, 1, 'The real VAE layout has one pixel of inner overflow')
           assert.equal(probe.final.body, 1, 'The body consumes its actual overflow')
-          assertTinyOverflowDistance(probe, 260)
+          assertBoundaryDistance(probe, 1)
           const edgeEvents = probe.events.filter(event => event.body >= 1)
           assert.ok(edgeEvents.length >= 5, 'Input continues across the boundary in the original gesture')
           const firstMovement = probe.frames.findIndex(frame => frame.page > 0)
@@ -170,7 +175,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
           await motionPage.mouse.move(before.point.x, before.point.y)
           const probe = await observeGesture(motionPage, before.point, -260)
           assert.equal(probe.final.body, 0, 'The body reaches its upper boundary')
-          assertTinyOverflowDistance(probe, 260)
+          assertBoundaryDistance(probe, before.body * zoom)
           const firstEdge = probe.events.find(event => event.body === 0)
           const firstMovement = probe.frames.findIndex(frame => frame.page < probe.initial.page)
           assert.ok(firstEdge && firstMovement >= 0 && firstMovement <= firstEdge.frame + 2,
@@ -186,7 +191,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
           const point = { x: box.x + box.width / 2, y: box.y + 30 }
           await motionPage.mouse.move(point.x, point.y)
           const probe = await observeGesture(motionPage, point, 260)
-          assertTinyOverflowDistance(probe, 260)
+          assertBoundaryDistance(probe, probe.final.body)
           if (probe.final.body === 0) near(probe.final.page, 260, 'Non-overflowing chapters pass the complete distance to the page')
         }, { project: 'vae-digits', chapter: 'implementation', viewport: { width: 1704, height }, fromPageTop: true })
       }
@@ -202,7 +207,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
         const probe = await observeGesture(motionPage, point, 260)
         assert.equal(probe.initial.bodyMax, 0, 'Integer dimensions hide the fractional overflow')
         assert.ok(probe.final.body > 0 && probe.final.body < 1, 'The body consumes its real fractional range')
-        assertTinyOverflowDistance(probe, 260)
+        assertBoundaryDistance(probe, probe.final.body * 1.25)
         assert.ok(probe.events.slice(1, -1).some(event => event.page > 20), 'Page movement starts during the original gesture')
       }, { project: 'vae-digits', chapter: 'implementation', viewport: { width: 1704, height: 990 }, fromPageTop: true })
     })
@@ -215,6 +220,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
       await wheel(60)
       let after = await state()
       near(after.body, before.bodyMax, 'The body consumes its final 20px')
+      assert.equal(after.page, before.page, 'The wheel that reaches the bottom cannot move the page')
       const boundaryPage = after.page
       await burst(20, 8)
       after = await state()
@@ -229,9 +235,11 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
       const box = await position(20, 180)
       const point = { x: box.x + box.width / 2, y: box.y + 15 }
       await page.mouse.move(point.x, point.y)
+      const before = await state()
       await wheel(-60)
       near((await state()).body, 0, 'The crossing wheel reaches the top of the body')
       const boundaryPage = (await state()).page
+      assert.equal(boundaryPage, before.page, 'The wheel that reaches the top cannot move the page')
       await burst(-20, 8)
       let after = await state()
       near(after.body, 0, 'The body stays at its upper boundary')
@@ -252,9 +260,8 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
       await wheel(80)
       assert.equal(await ownsPoint(point), true, 'Page movement brought the reader beneath the unchanged pointer')
       const crossing = await state()
-      const pageDistance = crossing.page - before.page
-      assert.ok(pageDistance > 0 && pageDistance < 80, 'Page motion stops as soon as the body enters the pointer')
-      near(crossing.body, before.body + 80 - pageDistance, 'The same input continues in the newly hovered body')
+      near(crossing.page, before.page + 80, 'The wheel that starts on the page scrolls only the page')
+      assert.equal(crossing.body, before.body, 'Moving the body under the pointer cannot redirect the same wheel')
       await wheel(60)
       let after = await state()
       near(after.page, crossing.page, 'Further input leaves the page still after the body moves beneath the pointer')
@@ -317,6 +324,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
       await wheel(-1)
       const crossing = await state()
       assert.equal(crossing.body, 0, 'The crossing wheel consumes the remaining half body pixel')
+      assert.equal(crossing.page, before.page, 'The fractional boundary does not leak input to the page')
       await wheel(-10)
       const boundaryPage = (await state()).page
       near(boundaryPage, crossing.page - 10, 'The next outward wheel moves the page at the fractional boundary')
@@ -394,6 +402,24 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
         near(bodyProbe.final.page, bodyProbe.initial.page, 'Body scrolling leaves page position unchanged')
       })
     })
+    await check('A single smooth wheel stops at the last pixel and the next wheel scrolls the page', async () => {
+      await withMotionPage(async motionPage => {
+        for (const direction of [-1, 1]) {
+          const point = await motionPage.locator('.project-reader-scroll').evaluate((body, direction) => {
+            body.scrollTop = direction > 0 ? body.scrollHeight - body.clientHeight - 1 : 1
+            const rect = body.getBoundingClientRect()
+            return { x: rect.x + rect.width / 2, y: rect.y + 40 }
+          }, direction)
+          await motionPage.mouse.move(point.x, point.y)
+          const first = await observeWheels(motionPage, direction * 120)
+          assert.equal(first.final.body - first.initial.body, direction, 'The last pixel is reachable')
+          assert.ok(first.frames.every(frame => frame.page === first.initial.page), 'No animation frame spills onto the page')
+          const second = await observeWheels(motionPage, direction * 120)
+          assert.equal(second.final.page - second.initial.page, direction * 120, 'The next wheel moves the page without getting stuck')
+          assert.equal(second.final.body, first.final.body)
+        }
+      })
+    })
     await check('Continuous gestures retain their full distance without native target locking or duplicate scrolling', async () => {
       await withMotionPage(async motionPage => {
         const pagePoint = { x: 20, y: 300 }
@@ -436,9 +462,7 @@ export async function runProjectReaderScrollChecks(browser, baseURL, report = ()
             `Page handoff begins within two frames of the first outward input: event frame ${outwardEvents[0].frame}, movement frame ${firstMovement}`)
           assert.ok(outwardEvents.slice(1, -1).some(event => direction * (event.page - probe.initial.page) > 20),
             'The page makes sustained progress before the gesture ends')
-          const distance = direction * (probe.final.page - probe.initial.page)
-          assert.ok(distance >= 180 && distance <= 220,
-            `The continued gesture reaches the page once without losing input: expected about 200px, got ${distance}px`)
+          assertBoundaryDistance(probe, 60)
           assert.ok(atEdge(probe.final), 'The body remains at its reached boundary')
           assert.ok(hasIntermediateFrame(probe, 'page'), 'The page handoff renders intermediate positions')
           const frameSteps = probe.frames.slice(1).map((frame, index) => direction * (frame.page - probe.frames[index].page))

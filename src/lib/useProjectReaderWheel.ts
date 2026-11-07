@@ -1,7 +1,7 @@
 import { useEffect, type RefObject } from 'react'
 import { pageNavigationScrollEvent, getPageScrollTop, scrollPageBy, getPageViewportHeight } from './pageScrollSource'
 
-/** Route wheel motion by the current pointer position, including during a gesture. */
+/** Smooth each wheel on one surface; only a subsequent wheel can hand off. */
 export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, paused: boolean) {
   useEffect(() => {
     const article = scrollRef.current
@@ -13,6 +13,9 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
     let frame = 0
     let previousTime = 0
     let pending = 0
+    let fraction = 0
+    const wheels: number[] = []
+    let target: 'article' | 'page' | null = null
     let point: { x: number; y: number } | null = null
     let controlledWheel: WheelEvent | null = null
     const stop = () => {
@@ -20,51 +23,53 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       frame = 0
       previousTime = 0
       pending = 0
+      fraction = 0
+      wheels.length = 0
+      target = null
     }
 
-    const consume = (distance: number) => {
-      if (!point) return 0
-      // Read the current hit and geometry once per frame, before scrolling.
-      // Wheel targets can remain latched to where a native gesture started.
-      const hovered = article.contains(document.elementFromPoint(point.x, point.y))
-      const bounds = article.getBoundingClientRect()
-      const scale = Number.parseFloat(getComputedStyle(article).zoom) || 1
-      let remaining = distance
-      let consumed = 0
-      if (hovered) {
-        const before = article.scrollTop
-        article.scrollBy({ top: distance / scale, behavior: 'instant' })
-        consumed = (article.scrollTop - before) * scale
-        remaining -= consumed
-      }
-      if (remaining * distance <= 0) return consumed
+    const overArticle = (x: number, y: number) => article.contains(document.elementFromPoint(x, y))
+    const movePoint = (x: number, y: number) => {
+      if (point?.x === x && point.y === y) return
+      if (point && (pending || fraction) && overArticle(point.x, point.y) !== overArticle(x, y)) stop()
+      point = { x, y }
+    }
 
-      // Stop at the point where page motion brings the article under the
-      // pointer. The next frame consumes the rest using the new hovered region.
-      if (!hovered && point.x >= bounds.left && point.x < bounds.right) {
-        if (remaining > 0 && point.y < bounds.top) {
-          remaining = Math.min(remaining, Math.ceil(bounds.top - point.y))
-        } else if (remaining < 0 && point.y >= bounds.bottom) {
-          remaining = Math.max(remaining, -Math.floor(point.y - bounds.bottom) - 1)
+    const scrollStep = (distance: number) => {
+      // Test the actual movement: rounded scrollHeight/clientHeight can hide
+      // the last pixel (or report one that the browser cannot scroll).
+      if (target === 'article' || (!target && point && overArticle(point.x, point.y))) {
+        const before = article.scrollTop
+        const scale = Number.parseFloat(getComputedStyle(article).zoom) || 1
+        article.scrollBy({ top: distance / scale, behavior: 'instant' })
+        if (article.scrollTop !== before) {
+          target = 'article'
+          return true
         }
+        if (target === 'article') return false
       }
+      target = 'page'
       const before = getPageScrollTop()
-      scrollPageBy({ top: remaining, behavior: 'instant' })
-      return consumed + getPageScrollTop() - before
+      scrollPageBy({ top: distance, behavior: 'instant' })
+      return getPageScrollTop() !== before
     }
 
     const advance = (time: number) => {
       frame = 0
-      const available = Math.trunc(pending)
-      if (!available) { previousTime = 0; return }
       const elapsed = previousTime ? Math.min(48, time - previousTime) : 16
       previousTime = time
-      const distance = motion.matches ? available : Math.sign(available)
-        * Math.min(Math.abs(available), Math.max(1, Math.floor(Math.abs(pending) * (1 - Math.exp(-elapsed / 70)))))
-      const consumed = consume(distance)
-      pending -= consumed
-      if (!consumed) { stop(); return }
-      if (Math.abs(pending) >= 1) frame = requestAnimationFrame(advance)
+      let budget = motion.matches ? Math.abs(pending) : Math.max(1, Math.floor(Math.abs(pending) * (1 - Math.exp(-elapsed / 70))))
+      // A frame may cover several inputs, or just part of one. Drop only the
+      // blocked wheel's remainder; later wheels keep their full distance.
+      while (budget > 0 && wheels.length) {
+        const step = Math.sign(pending) * Math.min(budget, Math.abs(wheels[0]))
+        const used = scrollStep(step) ? step : wheels[0]
+        pending -= used
+        wheels[0] -= used
+        budget -= Math.abs(step)
+        if (!wheels[0]) { wheels.shift(); target = null }
+      }
+      if (wheels.length) frame = requestAnimationFrame(advance)
       else previousTime = 0
     }
 
@@ -75,13 +80,18 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       // gesture to the old scroll container. Touch and keyboard remain native.
       event.preventDefault()
       controlledWheel = event
-      point = { x: event.clientX, y: event.clientY }
+      movePoint(event.clientX, event.clientY)
       const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE
         ? Number.parseFloat(getComputedStyle(article).lineHeight) || 16
         : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? getPageViewportHeight() : 1
       const distance = event.deltaY * unit
-      if (pending * distance < 0) stop()
-      pending += distance
+      if ((pending + fraction) * distance < 0) stop()
+      fraction += distance
+      const pixels = Math.trunc(fraction)
+      if (!pixels) return
+      fraction -= pixels
+      wheels.push(pixels)
+      pending += pixels
       if (motion.matches) {
         cancelAnimationFrame(frame)
         advance(performance.now())
@@ -93,9 +103,8 @@ export function useProjectReaderWheel(scrollRef: RefObject<HTMLElement | null>, 
       if (event !== controlledWheel) stop()
       controlledWheel = null
     }, { passive: true, signal: events.signal })
-    // Pointer movement only records coordinates; it never measures or scrolls.
     window.addEventListener('pointermove', event => {
-      if (event.pointerType !== 'touch') point = { x: event.clientX, y: event.clientY }
+      if (event.pointerType !== 'touch') movePoint(event.clientX, event.clientY)
     }, { passive: true, signal: events.signal })
     for (const type of ['pointerdown', 'keydown', 'touchstart', 'resize', 'blur', pageNavigationScrollEvent]) {
       window.addEventListener(type, stop, { passive: true, signal: events.signal })

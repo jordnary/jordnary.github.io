@@ -20,6 +20,8 @@ export async function runProjectReaderHoverChecks(browser, baseURL, report = () 
       && document.querySelector('.project-reader-layout')?.dataset.phase === 'idle')
     await page.evaluate(() => document.fonts.ready)
     await page.locator('.project-introduction img').evaluateAll(images => Promise.all(images.map(image => image.decode())))
+    // Let the initial chapter anchor settle before positioning the pointer.
+    await frames()
     await page.evaluate(offset => {
       const body = document.querySelector('.project-reader-scroll')
       body.scrollTop = offset
@@ -57,7 +59,7 @@ export async function runProjectReaderHoverChecks(browser, baseURL, report = () 
     await page.waitForFunction(() => {
       const probe = window.__readerHoverProbe
       const tail = probe.frames.slice(-10)
-      return probe.events.length > 0 && tail.length === 10
+      return probe.events.length > 0 && probe.frames.length - probe.events.at(-1).frame >= 10
         && tail.every(frame => frame.page === tail[0].page && frame.body === tail[0].body)
     }, undefined, { timeout: 5000 })
     return page.evaluate(() => {
@@ -158,7 +160,7 @@ export async function runProjectReaderHoverChecks(browser, baseURL, report = () 
       assert.ok(reverseFrames.every(frame => frame.body <= 1), 'The old body target does not consume reversed page input')
       const pageStarted = probe.frames.findIndex((frame, index) => index >= reversal.frame && frame.page > reversal.page + 1)
       assert.ok(pageStarted >= 0 && pageStarted <= reversal.frame + 2, 'The page reverses within two frames')
-      assert.ok(probe.events.filter(event => event.delta > 0).slice(1, -1).some(event => event.page > reversal.page + 30),
+      assert.ok(probe.events.filter(event => event.delta > 0).slice(1, -1).some(event => event.page > reversal.page),
         'Page reversal makes progress before the gesture ends')
       assert.ok(probe.final.page - reversal.page > 70, 'Reversed input is delivered to the current page region')
       smoothMonotonic(probe.frames.slice(0, reversal.frame), 'page', -1)
