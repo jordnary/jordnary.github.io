@@ -1,40 +1,170 @@
-// Rigid poses in the drawing's coordinate system: [frame at 30 fps, x, y, degrees].
-// Keep the contact frames; interpolate the travel between them at the display's
-// refresh rate. The SVG scales the entire scene, including its floor, as one unit.
-type Pose = readonly [number, number, number, number]
+import Matter from 'matter-js'
 
-export const digitTracks: readonly (readonly Pose[])[] = [
-  [ // The upper four balances on the zero, tips, then slides on its long edge.
-    [0, 1100, 205, -1], [4, 1068, 304, 1.5], [8, 1037, 414, 4.4],
-    [11, 1019, 468, 5.7], [18, 971, 470, -0.9], [28, 909, 473, -8.8],
-    [35, 867, 481, -14.9], [41, 830, 495, -22.9], [47, 794, 521, -35.2],
-    [51, 773, 547, -44], [56, 745, 603, -59.5], [57, 730, 618, -63.7],
-    [63, 659, 686, -78.3], [68, 599, 763, -91.7], [74, 531, 884, -108.3],
-    [78, 495, 968, -118], [82, 449, 1102, -130.2], [85, 421, 1125, -127],
-    [86, 414, 1127, -126.8], [94, 379, 1127, -126.7], [98, 364, 1127, -126.7],
-  ],
-  [ // The oval takes the impact upright. Its centre drops as it rolls onto its side.
-    [0, 1120, 752, 44], [4, 1092, 851, 26.8], [8, 1064, 973, 5.8],
-    [11, 1042, 1024, -2.3], [13, 1025, 1022, -3], [18, 997, 1023, -7],
-    [22, 985, 1023, -9], [28, 972, 1023, -9.8], [40, 962, 1026, -16.5],
-    [54, 963, 1027, -20.9], [64, 976, 1033, -28.6], [72, 965, 1043, -38.5],
-    [79, 939, 1060, -51.1], [83, 911, 1080, -62.3], [90, 894, 1100, -74.7],
-    [96, 860, 1115, -90.8], [101, 850, 1114, -91.2], [107, 852, 1114, -90.4],
-    [113, 852, 1114, -90.6],
-  ],
-  [ // The lower four catches the floor first, rocks back and stays put.
-    [0, 1445, 1082, -13.8], [4, 1466, 1107, -17.7], [10, 1484, 1112, -21.4],
-    [15, 1496, 1123, -27.7], [18, 1498, 1121, -29.3], [20, 1498, 1123, -29.4],
-    [22, 1498, 1125, -28.4],
-  ],
-]
+const { Bodies, Body, Composite, Engine, Sleeping, Vertices } = Matter
+const rad = Math.PI / 180
+const physicsStep = 1000 / 120
 
-export const curtainDelay = 3500
+// Keep the drawing and its collision surfaces in the same glyph coordinates.
+// The four has four convex strokes; its crossbar and toe
+// can each catch the floor or another digit.
+export const four = 'M4 -362H119V0H199V102H119V243H3V102H-255V-10ZM0 -204V0H-155Z'
+export const zero = 'M0 -315C146 -315 223 -211 223 0S146 315 0 315S-223 211 -223 0S-146 -315 0 -315ZM0 -213C73 -213 100 -157 100 0S73 213 0 213S-100 157 -100 0S-73 -213 0 -213Z'
 
-export function animateDigit(element: SVGPathElement, track: readonly Pose[]) {
-  const end = track[track.length - 1][0]
-  return element.animate(track.map(([frame, x, y, angle]) => ({
-    offset: frame / end,
-    transform: `translate(${x}px, ${y}px) rotate(${angle}deg)`,
-  })), { duration: end * 1000 / 30, delay: curtainDelay, fill: 'backwards' })
+function polygon(points: number[][]) {
+  const vertices = points.map(([x, y]) => ({ x, y }))
+  return Body.create({ vertices, position: Vertices.centre(vertices) })
+}
+
+function makeFour() {
+  return Body.create({ parts: [
+    polygon([[4, -362], [119, -362], [119, 0], [0, 0], [0, -204]]),
+    polygon([[4, -362], [0, -204], [-155, 0], [-255, 0], [-255, -10]]),
+    Bodies.rectangle(-28, 51, 454, 102), Bodies.rectangle(61, 172.5, 116, 141),
+  ] })
+}
+
+function makeZero() {
+  // Sample the outer Bézier, including the flat shoulders that let it settle
+  // on its side. The enclosed counter doesn't take part in external contacts.
+  const quarter = Array.from({ length: 11 }, (_, i) => {
+    const t = i / 10, u = 1 - t
+    return { x: 3*u*u*t*146 + 3*u*t*t*223 + t*t*t*223,
+      y: -315*(u*u*u + 3*u*u*t) - 211*3*u*t*t }
+  })
+  const vertices = [quarter, quarter.toReversed().map(p => ({ x: p.x, y: -p.y })),
+    quarter.map(p => ({ x: -p.x, y: -p.y })), quarter.toReversed().map(p => ({ x: -p.x, y: p.y }))]
+    .flatMap(arc => arc.slice(0, -1))
+  return Body.create({ vertices, density: .0007 })
+}
+
+function createDigitScene(width: number, height: number) {
+  // Pick the glyph size on entry. A resize moves the edges of the world,
+  // not the digits: a fast edge can pass one and leave it without a floor.
+  const scale = Math.min(height / 1340, width / 1520)
+  let w = width / scale, h = height / scale
+  const engine = Engine.create({ enableSleeping: true, positionIterations: 8,
+    gravity: { x: 0, y: 1, scale: .0006432 } })
+  const edge = 48, above = 1800
+  const wall = { isStatic: true, friction: .45 }
+  const floor = Bodies.rectangle(w / 2, h + edge / 2, w, edge, wall)
+  const left = Bodies.rectangle(-edge / 2, (h - above) / 2, edge, h + above, wall)
+  const right = Bodies.rectangle(w + edge / 2, (h - above) / 2, edge, h + above, wall)
+  let movingEdges = false
+  // The top four overhangs the zero to the left; the bottom four catches it
+  // on the right. Only release conditions are chosen, never landing slots.
+  const spawnX = w / 2 + Math.min(220, w * .1)
+  const digits = [
+    { body: makeFour(), x: spawnX - 85, y: -1380, angle: 1 },
+    { body: makeZero(), x: spawnX, y: -880, angle: 130 },
+    { body: makeFour(), x: spawnX + 45, y: -245, angle: 1 },
+  ].map(({ body, x, y, angle }) => {
+    const origin = { ...body.position }
+    if (body.parts.length > 1) Body.setInertia(body, body.inertia * 1.5)
+    body.friction = .19
+    body.frictionAir = .008
+    body.restitution = .08
+    Body.translate(body, { x, y })
+    Body.setAngle(body, angle * rad)
+    Body.setVelocity(body, { x: 0, y: 4 })
+    return { body, origin, escaped: false }
+  })
+  Composite.add(engine.world, [floor, left, right, ...digits.map(d => d.body)])
+  return {
+    digits,
+    get viewBox() { return `0 0 ${w} ${h}` },
+    get asleep() { return digits.every(({ body, escaped }) => escaped || body.isSleeping) },
+    step() {
+      Engine.update(engine, physicsStep)
+      if (movingEdges) {
+        Body.setVelocity(floor, { x: 0, y: 0 })
+        Body.setVelocity(right, { x: 0, y: 0 })
+        movingEdges = false
+      }
+      for (const digit of digits) {
+        if (!digit.escaped && digit.body.bounds.min.y > h + 630) {
+          digit.escaped = true
+          Composite.remove(engine.world, digit.body)
+        }
+      }
+    },
+    resize(width: number, height: number) {
+      const nw = width / scale, nh = height / scale
+      if (nw === w && nh === h) return
+      Body.scale(floor, nw / w, 1)
+      Body.setPosition(floor, { x: nw / 2, y: nh + edge / 2 })
+      for (const side of [left, right]) {
+        Body.scale(side, 1, (nh + above) / (h + above))
+        Body.setPosition(side, { x: side === left ? -edge / 2 : nw + edge / 2, y: (nh - above) / 2 })
+      }
+      // Transfer edge motion to bodies actually in contact for one step.
+      // A maximise/restore jump isn't an unbounded launch impulse.
+      const impulse = (delta: number) => Math.max(-24, Math.min(24, delta))
+      Body.setVelocity(floor, { x: 0, y: impulse(nh - h) })
+      Body.setVelocity(right, { x: impulse(nw - w), y: 0 })
+      movingEdges = true
+      w = nw; h = nh
+      digits.forEach(d => { if (!d.escaped) Sleeping.set(d.body, false) })
+    },
+    dispose() { Composite.clear(engine.world, false); Engine.clear(engine) },
+  }
+}
+
+export function mountFallingDigits(svg: SVGSVGElement) {
+  const paths = svg.querySelectorAll('path')
+  const motion = matchMedia('(prefers-reduced-motion: reduce)')
+  let scene = createDigitScene(svg.clientWidth, svg.clientHeight)
+  let frame = 0, last = 0, remainder = 0
+
+  const paint = () => scene.digits.forEach(({ body, origin, escaped }, i) => {
+    paths[i].style.visibility = escaped ? 'hidden' : ''
+    paths[i].setAttribute('transform', `translate(${body.position.x} ${body.position.y}) rotate(${body.angle / rad}) translate(${-origin.x} ${-origin.y})`)
+  })
+  const tick = (now: number) => {
+    remainder += Math.min(now - last, 64)
+    last = now
+    while (remainder >= physicsStep && !scene.asleep) { scene.step(); remainder -= physicsStep }
+    paint()
+    frame = scene.asleep ? 0 : requestAnimationFrame(tick)
+  }
+  const sync = () => {
+    if (motion.matches || document.hidden) {
+      cancelAnimationFrame(frame)
+      frame = 0
+    }
+    if (motion.matches) {
+      // Resolve the same contacts without displaying motion.
+      for (let i = 0; i < 3600 && !scene.asleep; i++) scene.step()
+    } else if (!document.hidden && !scene.asleep && !frame) {
+      last = performance.now()
+      frame = requestAnimationFrame(tick)
+    }
+    svg.setAttribute('viewBox', scene.viewBox)
+    paint()
+  }
+  const restore = (e: PageTransitionEvent) => {
+    if (!e.persisted) return
+    scene.dispose()
+    scene = createDigitScene(svg.clientWidth, svg.clientHeight)
+    remainder = 0
+    sync()
+  }
+  const size = new ResizeObserver(() => {
+    if (svg.clientWidth && svg.clientHeight) {
+      scene.resize(svg.clientWidth, svg.clientHeight)
+      sync()
+    }
+  })
+  sync()
+  size.observe(svg)
+  window.addEventListener('pageshow', restore)
+  document.addEventListener('visibilitychange', sync)
+  motion.addEventListener('change', sync)
+  return () => {
+    size.disconnect()
+    window.removeEventListener('pageshow', restore)
+    document.removeEventListener('visibilitychange', sync)
+    motion.removeEventListener('change', sync)
+    cancelAnimationFrame(frame)
+    scene.dispose()
+  }
 }

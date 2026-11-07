@@ -46,9 +46,9 @@ const ShellContent = memo(function ShellContent({ children, page, shared, pendin
   children: ReactNode; page: SitePage | '404'; shared: boolean; pending: boolean; onSearchOpen: () => void
 }) {
   return <div className="app-shell-content">
-    {shared && <ScrollProgress />}
+    {shared && page !== '404' && <ScrollProgress />}
     {shared && <Navbar activePage={page} onSearchOpen={onSearchOpen} />}
     <main tabIndex={-1}>{children}</main>
-    {shared && !pending && <Footer paperSeam={page === 'about'} />}
+    {shared && page !== '404' && !pending && <Footer paperSeam={page === 'about'} />}
   </div>
 })
