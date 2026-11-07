@@ -32,7 +32,7 @@ export function GalleryExample() {
 
 `src` 与 `alt` 必填；`title`、`caption`、`thumbnail`、`width`、`height`、`source` 可选。`thumbnail` 可以指向较小的预览图，原图仍由 `src` 提供；`source` 会生成图片来源链接。部署在子路径时，请按页面的 `import.meta.env.BASE_URL` 构造资源地址。
 
-`activeIndex` 为从零开始的索引，`null`、越界或非整数值关闭浏览器。`onIndexChange` 同步缩略图、方向键与手势选择。建议将静态图片列表定义在组件外，或使用 `useMemo` 保持列表引用稳定。原有 `ImageGalleryDialog` 入口保留兼容导出。
+`activeIndex` 为从零开始的索引，`null`、越界或非整数值关闭浏览器。`onIndexChange` 同步缩略图、方向键与手势选择。建议将静态图片列表定义在组件外，或使用 `useMemo` 保持列表引用稳定。
 
 `GalleryTrigger` 是独立的 44px 图标按钮，放在 `position: relative` 的图片容器内。普通图片本身不绑定放大操作，避免点击图片与图标含义不一致。
 
