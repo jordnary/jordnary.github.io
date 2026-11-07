@@ -9,7 +9,7 @@ import { navigationImage } from '../lib/inpage-images'
 import { usePaintedContent } from '../lib/usePaintedContent'
 import './Navbar.css'
 
-type NavbarProps = { activePage: SitePage; onSearchOpen: () => void }
+type NavbarProps = { activePage: SitePage | '404'; onSearchOpen: () => void }
 
 export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false)

@@ -8,6 +8,7 @@ import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
 import { showPageLoadFailure } from './src/lib/page-load-notice'
 import { searchIndex } from './scripts/search-index'
+import { notFoundPage } from './scripts/not-found-page'
 
 function pageStartup(): Plugin {
   let base = '/'
@@ -134,7 +135,8 @@ function projectPages(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), searchIndex(), projectPages(), pageResources(), pageStartup()],
+  appType: 'mpa',
+  plugins: [react(), tailwindcss(), searchIndex(), projectPages(), pageResources(), pageStartup(), notFoundPage()],
   build: {
     rollupOptions: {
       input: {
@@ -145,6 +147,7 @@ export default defineConfig({
         projects: fileURLToPath(new URL('./projects/index.html', import.meta.url)),
         projectStudio: fileURLToPath(new URL('./projects/studio/index.html', import.meta.url)),
         contact: fileURLToPath(new URL('./contact/index.html', import.meta.url)),
+        notFound: fileURLToPath(new URL('./404.html', import.meta.url)),
       },
     },
   },

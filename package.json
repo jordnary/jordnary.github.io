@@ -26,6 +26,7 @@
     "test:first-open": "node tests/first-open.browser.mjs",
     "test:search": "node tests/search.browser.mjs",
     "test:page-loading": "node tests/page-loading.browser.mjs",
+    "test:not-found": "node tests/not-found.browser.mjs",
     "test:gallery-loading": "node tests/gallery-loading.browser.mjs",
     "test:home-gallery": "node tests/home-photo-gallery.browser.mjs && node tests/home-gallery-motion.browser.mjs && node tests/home-gallery-scroll.browser.mjs",
     "test:home-now": "node tests/home-now.browser.mjs && node tests/home-now-scroll-lock.browser.mjs && node tests/home-now-focus-return.browser.mjs && node tests/home-now-ornament.browser.mjs",

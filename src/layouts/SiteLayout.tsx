@@ -9,7 +9,7 @@ import { searchRecovery } from '../lib/search-recovery'
 
 type SiteLayoutProps = {
   children: ReactNode
-  page: SitePage
+  page: SitePage | '404'
   isProjectDetail?: boolean
   href?: string
   transitioning?: boolean
@@ -30,7 +30,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
   return (
     <div inert={transitioning} className={`app-shell${isProjectDetail ? ' app-shell--project-detail' : ''}${hasSharedChrome && isSearchOpen ? ' is-search-open' : ''}`}>
       <ShellContent page={page} shared={hasSharedChrome} pending={pending} onSearchOpen={openSearch}>{children}</ShellContent>
-      {hasSharedChrome && <Live2DCompanion page={page} suspended={isSearchOpen} contentReady={!pending} />}
+      {hasSharedChrome && page !== '404' && <Live2DCompanion page={page} suspended={isSearchOpen} contentReady={!pending} />}
       {hasSharedChrome && <SiteSearch
           isOpen={isSearchOpen}
           onClose={closeSearch}
@@ -43,7 +43,7 @@ export function SiteLayout({ children, page, isProjectDetail = false, href = win
 // Opening search only changes its surface, background blur and companion pause.
 // Preserve the page/navigation/footer subtree through that local state update.
 const ShellContent = memo(function ShellContent({ children, page, shared, pending, onSearchOpen }: {
-  children: ReactNode; page: SitePage; shared: boolean; pending: boolean; onSearchOpen: () => void
+  children: ReactNode; page: SitePage | '404'; shared: boolean; pending: boolean; onSearchOpen: () => void
 }) {
   return <div className="app-shell-content">
     {shared && <ScrollProgress />}
