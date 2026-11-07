@@ -100,6 +100,12 @@ export async function runFooterChecks(browser, baseURL, report = () => {}) {
       await footer.scrollIntoViewIfNeeded()
       await footer.getByRole('link', { name: label, exact: true }).click()
       await page.waitForURL(url => url.pathname.endsWith(pathname))
+      if (label === 'Projects') {
+        await page.locator('.projects-archive').waitFor()
+        assert.equal(await footer.count(), 0, 'The standalone projects archive does not mount a shared footer')
+        await page.goBack()
+        await page.waitForURL(url => url.pathname.endsWith('/learning/'))
+      }
       await footer.waitFor()
     }
     await page.keyboard.press('Tab')

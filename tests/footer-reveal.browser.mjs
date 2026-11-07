@@ -223,7 +223,7 @@ async function runFooterTopNavigationChecks(browser, baseURL, report) {
   try {
     for (const width of [1920, 390]) {
       await page.setViewportSize({ width, height: 1080 })
-      const routes = width === 1920 ? ['home/', 'learning/', 'projects/', 'contact/'] : ['contact/']
+      const routes = width === 1920 ? ['home/', 'learning/', 'contact/'] : ['contact/']
       for (const route of routes) {
         await page.goto(new URL(route, baseURL).href)
         await page.locator('.footer-shell[data-reveal]').waitFor({ state: 'attached' })
