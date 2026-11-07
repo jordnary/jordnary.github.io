@@ -57,7 +57,10 @@ export async function runTouchChecks(browser, baseURL, report = () => {}) {
       await page.touchscreen.tap(points[part].x, points[part].y)
       await page.locator(`[data-phase="responding"][data-reaction="touch_${part}"]`).waitFor({ timeout: 5000 })
       assert.ok(await page.locator('.live2d-dialogue').innerText())
-      await page.locator('[data-phase="idle"]').waitFor({ timeout: 15000 })
+      await page.locator('[data-phase="idle"]').waitFor({ timeout: 15000 }).catch(async error => {
+        const state = await page.evaluate(() => ({ hidden: document.hidden, stage: { ...document.querySelector('.live2d-stage')?.dataset } }))
+        throw new Error(`touch_${part} did not return to idle: ${JSON.stringify({ ...state, errors })}`, { cause: error })
+      })
       pass(`Native mobile tap plays touch_${part} once and returns to idle`)
       await mount.click()
     }

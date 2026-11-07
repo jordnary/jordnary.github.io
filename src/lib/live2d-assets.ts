@@ -3,15 +3,14 @@ import { CompanionLoadError } from './companion-loading.ts'
 /** Fetch essential resources with a shared cancellation boundary before GPU setup. */
 export async function loadCompanionAssets(url: string, signal: AbortSignal) {
   const controller = new AbortController()
-  const cancel = () => controller.abort()
   signal.throwIfAborted()
-  signal.addEventListener('abort', cancel, { once: true })
   const blobs: string[] = []
   const release = () => {
-    signal.removeEventListener('abort', cancel)
+    signal.removeEventListener('abort', release)
     controller.abort()
     blobs.splice(0).forEach((blob) => URL.revokeObjectURL(blob))
   }
+  signal.addEventListener('abort', release, { once: true })
   const fetchResource = async (resource: string) => {
     let response: Response
     try { response = await fetch(resource, { signal: controller.signal }) }

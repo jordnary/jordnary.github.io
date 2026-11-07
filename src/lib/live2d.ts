@@ -2,30 +2,24 @@ import type { Application } from 'pixi.js'
 import type { Cubism4InternalModel, Live2DModel } from 'pixi-live2d-display/cubism4'
 import { createCompanionBehavior, type CompanionReaction, type CompanionState } from './companion-behavior'
 import { createCompanionHitTest, hitAlphaThreshold, type CompanionHit } from './live2d-hit'
-import { CompanionLoadError, type LoadStage } from './companion-loading'
+import { CompanionLoadError, classifyLoadError, type LoadStage } from './companion-loading'
 import { loadCompanionAssets } from './live2d-assets'
 import { createMotionLoader } from './companion-motion-loader'
-import { classifyLoadError } from './companion-loading'
+import { createCompanionCoreLoader } from './companion-core'
 
 const coreUrl = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
-let corePromise: Promise<void> | undefined
-
-function loadCore() {
-  if ('Live2DCubismCore' in window) return Promise.resolve()
-  if (corePromise) return corePromise
-
-  corePromise = new Promise<void>((resolve, reject) => {
+const loadCore = createCompanionCoreLoader(() => {
+  return new Promise<void>((resolve, reject) => {
     const script = document.createElement('script')
     const timeout = window.setTimeout(() => finish(false), 15000)
     const finish = (success: boolean) => {
       window.clearTimeout(timeout)
       script.onload = null
       script.onerror = null
+      script.remove()
       if (success) {
         resolve()
       } else {
-        script.remove()
-        corePromise = undefined
         reject(new CompanionLoadError('network'))
       }
     }
@@ -35,8 +29,7 @@ function loadCore() {
     script.onerror = () => finish(false)
     document.head.append(script)
   })
-  return corePromise
-}
+}, () => 'Live2DCubismCore' in window)
 
 export type Live2DScene = {
   destroy: () => void
@@ -51,29 +44,43 @@ export type Live2DScene = {
 export async function createLive2DScene(
   canvas: HTMLCanvasElement,
   container: HTMLElement,
-  signal: AbortSignal,
+  parentSignal: AbortSignal,
   onState: (state: CompanionState) => void = () => {},
   initiallyPaused: () => boolean = () => document.hidden,
   playHome = false,
   onLoadStage: (stage: LoadStage) => void = () => {},
 ): Promise<Live2DScene> {
-  signal.throwIfAborted()
+  parentSignal.throwIfAborted()
+  const lifetime = new AbortController()
+  const signal = lifetime.signal
+  const cancel = () => lifetime.abort()
+  parentSignal.addEventListener('abort', cancel, { once: true })
   onLoadStage('runtime')
-  await loadCore()
-  signal.throwIfAborted()
-  const [{ Application, Container, Texture }, { Live2DModel, Live2DFactory, Cubism4ModelSettings, MotionPreloadStrategy }] = await Promise.all([
-    import('pixi.js'),
-    import('pixi-live2d-display/cubism4'),
-  ]).catch(() => { throw new CompanionLoadError(navigator.onLine ? 'module' : 'network') })
-  signal.throwIfAborted()
-  onLoadStage('assets')
-  const assets = await loadCompanionAssets(new URL(`${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`, document.baseURI).href, signal)
+  // Assets and Pixi do not depend on Core; only the Cubism adapter's evaluation does.
+  const moduleFailed = (): never => { throw new CompanionLoadError(navigator.onLine ? 'module' : 'network') }
+  const modules = Promise.all([
+    import('pixi.js').catch(moduleFailed),
+    loadCore(signal).then(() => {
+      signal.throwIfAborted()
+      return import('pixi-live2d-display/cubism4').catch(moduleFailed)
+    }),
+  ])
+  const modelURL = new URL(`${import.meta.env.BASE_URL}live2d/vampire/model.model3.json`, document.baseURI).href
+  const markAssets = () => { if (!signal.aborted) onLoadStage('assets') }
+  const [runtime, assets] = await Promise.all([
+    modules.then(value => { markAssets(); return value }),
+    loadCompanionAssets(modelURL, signal).catch(error => { markAssets(); throw error }),
+  ]).catch(error => {
+    lifetime.abort()
+    parentSignal.removeEventListener('abort', cancel)
+    throw error
+  })
+  const [{ Application, Container, Texture }, { Live2DModel, Live2DFactory, Cubism4ModelSettings, MotionPreloadStrategy }] = runtime
 
   let app: Application | undefined
   let model: Live2DModel<Cubism4InternalModel> | undefined
   let observer: ResizeObserver | undefined
   let behavior: ReturnType<typeof createCompanionBehavior> | undefined
-  let entranceTimeout = 0
   let destroyed = false
   let reconnect: (() => void) | undefined
   let preparing = false
@@ -93,7 +100,9 @@ export async function createLive2DScene(
   const destroy = () => {
     if (destroyed) return
     destroyed = true
-    window.clearTimeout(entranceTimeout)
+    parentSignal.removeEventListener('abort', cancel)
+    signal.removeEventListener('abort', destroy)
+    lifetime.abort()
     observer?.disconnect()
     if (reconnect) window.removeEventListener('online', reconnect)
     behavior?.destroy()
@@ -101,7 +110,6 @@ export async function createLive2DScene(
     app?.stop()
     if (!preparing) releaseModel()
     app?.destroy(false)
-    signal.removeEventListener('abort', destroy)
   }
 
   try {
@@ -118,6 +126,10 @@ export async function createLive2DScene(
       autoStart: false,
       sharedTicker: false,
     }) } catch { throw new CompanionLoadError('webgl') }
+    // Pointer picking and focus belong to CompanionStage. Pixi's unused interaction
+    // plugin otherwise keeps a second system ticker alive even when app.stop() runs.
+    // Pixi 6 supports a null target at runtime, but its declaration omits null.
+    app.renderer.plugins.interaction.setTargetElement(null!)
     signal.addEventListener('abort', destroy, { once: true })
     const settings = new Cubism4ModelSettings(assets.source)
     // The adapter's legacy URL resolver corrupts blob URLs; retain native resolution.
@@ -168,14 +180,12 @@ export async function createLive2DScene(
     app.stage.addChild(model)
     onLoadStage('motions')
     // Preload idle for recovery, but never start it ahead of the entrance.
-    let idleMotion = await manager.loadMotion('idle', 0)
-    idleMotion?.setFadeInTime(0.45)
-    signal.throwIfAborted()
-    const homeMotion = !playHome || reducedMotion.matches ? undefined : await Promise.race([
-      manager.loadMotion('home', 0).catch(() => undefined),
-      new Promise<undefined>((resolve) => { entranceTimeout = window.setTimeout(resolve, 8000) }),
+    const [initialIdle, homeMotion] = await Promise.all([
+      manager.loadMotion('idle', 0),
+      !playHome || reducedMotion.matches ? undefined : manager.loadMotion('home', 0),
     ])
-    window.clearTimeout(entranceTimeout)
+    let idleMotion = initialIdle
+    idleMotion?.setFadeInTime(0.45)
     signal.throwIfAborted()
     homeMotion?.setIsLoop(false)
     // The first visible pose belongs entirely to home, without blending from idle.

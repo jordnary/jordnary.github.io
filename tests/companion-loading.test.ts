@@ -58,7 +58,7 @@ test('HTTP failures distinguish transient and permanent errors without retaining
 
 test('transient failures retry twice, stop while hidden, and do not loop on online events', async (t) => {
   t.mock.timers.enable({ apis: ['setTimeout', 'Date'] })
-  let available = false
+  let available = true
   let online = true
   let attempts = 0
   const loader = createCompanionLoader({
@@ -66,6 +66,7 @@ test('transient failures retry twice, stop while hidden, and do not loop on onli
     change() {}, ready() {}, available: () => available, online: () => online,
   })
   loader.start(); await flush()
+  available = false; loader.sync()
   t.mock.timers.tick(10000); await flush()
   assert.equal(attempts, 1)
   available = true; online = false; loader.sync()
@@ -80,6 +81,52 @@ test('transient failures retry twice, stop while hidden, and do not loop on onli
   assert.equal(loader.state.status, 'error')
   loader.connected(); t.mock.timers.tick(60000); await flush()
   assert.equal(attempts, 3)
+  loader.destroy()
+})
+
+test('remembered startup waits for content and visibility; explicit demand cancels idle delay', async () => {
+  let visible = false
+  let content = false
+  let scheduled = 0
+  let cancellations = 0
+  let calls = 0
+  let run!: () => void
+  const loader = createCompanionLoader({
+    async load() { calls++; return { destroy() {} } }, change() {}, ready() {},
+    available: () => visible, contentReady: () => content,
+    schedule(start) { scheduled++; run = start; return () => { cancellations++ } },
+  })
+  loader.start(true); await flush()
+  assert.equal(scheduled, 0); assert.equal(calls, 0)
+  visible = true; loader.sync()
+  assert.equal(scheduled, 0)
+  content = true; loader.sync(); loader.sync()
+  assert.equal(scheduled, 1)
+  visible = false; loader.sync()
+  assert.equal(cancellations, 1)
+  visible = true; loader.sync()
+  assert.equal(scheduled, 2)
+  loader.start(); await flush()
+  assert.equal(calls, 1); assert.equal(cancellations, 2)
+  run(); loader.sync(); await flush()
+  assert.equal(calls, 1)
+  loader.destroy()
+})
+
+test('offline initial demand makes no attempt and reconnects only while available', async () => {
+  let online = false
+  let visible = true
+  let calls = 0
+  const loader = createCompanionLoader({
+    async load() { calls++; return { destroy() {} } }, change() {}, ready() {},
+    online: () => online, available: () => visible,
+  })
+  loader.start(); await flush()
+  assert.equal(loader.state.status, 'offline'); assert.equal(calls, 0)
+  visible = false; online = true; loader.connected(); await flush()
+  assert.equal(calls, 0)
+  visible = true; loader.sync(); await flush()
+  assert.equal(calls, 1)
   loader.destroy()
 })
 

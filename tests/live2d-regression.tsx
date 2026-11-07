@@ -364,8 +364,22 @@ try {
     return originalMotion.apply(this, args)
   }
   reduced.set(false)
+  // Suspend an actual in-flight expansion, not an already-hidden initial demand.
+  const fetchResource = window.fetch
+  let releaseModel!: () => void
+  let modelRequested!: () => void
+  const modelGate = new Promise<void>(resolve => { releaseModel = resolve })
+  const fetchingModel = new Promise<void>(resolve => { modelRequested = resolve })
+  window.fetch = async (...args) => {
+    if (String(args[0]).includes('/live2d/vampire/model.model3.json')) { modelRequested(); await modelGate }
+    return fetchResource(...args)
+  }
   ;(document.querySelector('.live2d-launcher') as HTMLButtonElement).click()
+  await fetchingModel
   render(true)
+  await nextPaint()
+  window.fetch = fetchResource
+  releaseModel()
   await until(() => document.querySelector('canvas.is-ready'))
   check(phase() === 'idle' && !dialogue(), 'An expansion that finishes loading while suspended waits before playing home')
   check(entranceMotions.join(',') === 'home', 'Expansion prepares home as its first motion without ever starting idle')

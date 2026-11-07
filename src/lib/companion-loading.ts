@@ -29,6 +29,8 @@ type Options<T extends Scene> = {
   ready: (scene: T) => void
   available?: () => boolean
   online?: () => boolean
+  contentReady?: () => boolean
+  schedule?: (start: () => void) => () => void
 }
 
 // This controller owns attempts; React only renders its current state.
@@ -42,6 +44,9 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
   let retryTimer: ReturnType<typeof setTimeout> | undefined
   let contextTimer: ReturnType<typeof setTimeout> | undefined
   let pending = false
+  let initial = true
+  let deferred = false
+  let cancelStart: (() => void) | undefined
   let retryAt = 0
   let retries = 0
   let contextWaiting = false
@@ -55,22 +60,35 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
   const clearTimers = () => { clearTimeout(deadline); clearTimeout(slowTimer) }
   const release = () => {
     clearTimers()
-    controller?.abort()
     scene?.destroy()
     scene = undefined
+    controller?.abort()
+    controller = undefined
   }
   const sync = () => {
     clearTimeout(retryTimer)
     if (disposed || !pending || contextWaiting) return
-    if (!online()) { publish({ ...state, status: 'offline' }); return }
+    if (!available() || (initial && deferred && options.contentReady?.() === false)) {
+      cancelStart?.(); cancelStart = undefined
+      return
+    }
+    if (!online()) { cancelStart?.(); cancelStart = undefined; publish({ ...state, status: 'offline' }); return }
+    if (initial) {
+      if (deferred && options.schedule) {
+        if (!cancelStart) cancelStart = options.schedule(() => { cancelStart = undefined; begin() })
+      } else begin()
+      return
+    }
     publish({ ...state, status: 'recovering' })
-    if (!available()) return
     retryTimer = setTimeout(() => {
-      if (!disposed && pending && available() && online()) { pending = false; start() }
+      if (!disposed && pending && available() && online()) begin()
     }, Math.max(0, retryAt - Date.now()))
   }
-  const start = () => {
-    if (disposed || state.status === 'loading') return
+  const begin = () => {
+    if (disposed || !pending || state.status === 'loading') return
+    if (!available() || !online() || (initial && deferred && options.contentReady?.() === false)) { sync(); return }
+    cancelStart?.(); cancelStart = undefined
+    initial = false
     pending = false
     clearTimeout(retryTimer)
     clearTimeout(contextTimer)
@@ -115,12 +133,22 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
     }).catch(fail)
   }
   return {
-    start,
+    start(remembered = false) {
+      if (disposed || state.status === 'loading' || state.status === 'ready') return
+      deferred = remembered
+      pending = true
+      if (!deferred) { cancelStart?.(); cancelStart = undefined }
+      sync()
+    },
     retry() {
       if (disposed || state.status === 'loading' || contextWaiting) return
       retries = 0
       contextRecovery = false
-      start()
+      pending = true
+      retryAt = Date.now()
+      deferred = false
+      if (available() && online()) begin()
+      else sync()
     },
     sync,
     connected() {
@@ -159,6 +187,7 @@ export function createCompanionLoader<T extends Scene>(options: Options<T>) {
     get diagnostics() { return [...diagnostics] },
     destroy() {
       disposed = true; generation++; pending = false
+      cancelStart?.(); cancelStart = undefined
       clearTimeout(retryTimer); clearTimeout(contextTimer); release()
     },
   }

@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type RefObject } from 'react'
 import type { Live2DScene } from '../lib/live2d'
 import { CompanionLoadError, createCompanionLoader, type LoadState } from '../lib/companion-loading'
+import { scheduleCompanionStart } from '../lib/companion-startup'
 import type { CompanionReaction, CompanionState } from '../lib/companion-behavior'
 import type { CompanionHit } from '../lib/live2d-hit'
 import { githubProfileUrl } from '../lib/github'
@@ -37,11 +38,12 @@ function readPreference(key: string, fallback = false, storage: 'localStorage' |
 
 type CompanionProps = {
   suspended: boolean
+  contentReady?: boolean
   page?: SitePage
   actions?: readonly CompanionAction[]
 }
 
-export function Live2DCompanion({ suspended, page, actions = noActions }: CompanionProps) {
+export function Live2DCompanion({ suspended, contentReady = true, page, actions = noActions }: CompanionProps) {
   const compact = useSyncExternalStore(
     subscribeCompact,
     () => window.matchMedia(compactQuery).matches,
@@ -89,7 +91,7 @@ export function Live2DCompanion({ suspended, page, actions = noActions }: Compan
   return (
     <aside aria-label="网站看板娘" className={`live2d-companion${collapsed ? ' is-collapsed' : ''}`} hidden={suspended}>
       {!collapsed ? (
-        <CompanionStage page={page} introducedPageRef={introducedPageRef} actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
+        <CompanionStage page={page} contentReady={contentReady} introducedPageRef={introducedPageRef} actions={actions} chatEnabled={chatEnabled} focusOnReady={restoreFocus} homeRequested={homeRequested} onHomePrepared={() => setHomeRequested(false)} onCollapse={toggle} onToggleChat={toggleChat} suspended={suspended} />
       ) : (
         <button
           aria-expanded="false"
@@ -107,7 +109,7 @@ export function Live2DCompanion({ suspended, page, actions = noActions }: Compan
   )
 }
 
-function CompanionStage({ onCollapse, suspended, page, introducedPageRef, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
+function CompanionStage({ onCollapse, suspended, contentReady, page, introducedPageRef, actions, focusOnReady, homeRequested, onHomePrepared, chatEnabled, onToggleChat }: CompanionProps & {
   introducedPageRef: RefObject<SitePage | undefined>
   onCollapse: () => void
   focusOnReady: boolean
@@ -119,6 +121,8 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<Live2DScene | null>(null)
   const suspendedRef = useRef(suspended)
+  const contentReadyRef = useRef(contentReady)
+  const syncStageRef = useRef<(() => void) | null>(null)
   const entranceRef = useRef(homeRequested)
   const recoveringRef = useRef(false)
   const focusPendingRef = useRef(focusOnReady)
@@ -141,9 +145,9 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
 
   useEffect(() => {
     suspendedRef.current = suspended
-    sceneRef.current?.pause(document.hidden || suspended || !!document.querySelector('.toast'))
-    loaderRef.current?.sync()
-  }, [suspended])
+    contentReadyRef.current = contentReady
+    syncStageRef.current?.()
+  }, [suspended, contentReady])
 
   useEffect(() => {
     if (!page || introducedPageRef.current === page) return
@@ -159,7 +163,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    let canvas = document.createElement('canvas')
+    let canvas: HTMLCanvasElement | null = null
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const compactMedia = window.matchMedia(compactQuery)
     let hideTimer = 0
@@ -186,7 +190,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
     }
     const hitModel = (event: MouseEvent) => {
       const target = event.target
-      if (!available() || !(target instanceof Element)) return null
+      if (!canvas || !sceneRef.current || !available() || !(target instanceof Element)) return null
       if (target.closest(interactiveSelector) || window.getSelection()?.toString()) return null
       const rect = canvas.getBoundingClientRect()
       const x = event.clientX - rect.left
@@ -199,7 +203,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       ) ?? null
     }
     const inHoverArea = (event: PointerEvent) => {
-      if (!sceneRef.current) return false
+      if (!canvas || !sceneRef.current) return false
       if (event.target instanceof Element && event.target.closest('.live2d-tools')) return true
       // Include gaps around the artwork and tools, excluding the bubble and
       // the canvas's unused space above the model. Clicks still use hitModel.
@@ -216,11 +220,17 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       hover(false)
     }
     const syncVisibility = () => {
+      const visible = available()
       loaderRef.current?.sync()
-      sceneRef.current?.pause(!available())
-      if (!available()) {
+      sceneRef.current?.pause(!visible)
+      if (!visible) {
         discardIntroduction()
-        resetFocus()
+        press = null
+        window.clearTimeout(touchTimer)
+        window.clearTimeout(hoverTimer)
+        window.clearTimeout(hideTimer)
+        hideTimer = 0
+        setHovered(false)
       }
     }
     const pointerLeave = (event: PointerEvent) => {
@@ -230,7 +240,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
     const pointerMove = (event: PointerEvent) => {
       // Every input type can turn a tap into a drag, even if it returns to its origin.
       if (press?.pointerId === event.pointerId && Math.hypot(event.clientX - press.x, event.clientY - press.y) > 6) press = null
-      if (event.pointerType !== 'mouse' || !available()) return
+      if (event.pointerType !== 'mouse' || !sceneRef.current || !available()) return
       sceneRef.current?.focus(
         (event.clientX / window.innerWidth) * 2 - 1,
         1 - (event.clientY / window.innerHeight) * 2,
@@ -268,27 +278,32 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         talkFromPointer(started.hit === 'head' ? 'touch_head' : started.hit === 'special' ? 'touch_special' : 'touch_body')
       }
     }
+    const pointerDown = (event: PointerEvent) => { startPress(event); touchTools(event) }
 
     const contextLost = (event: Event) => { event.preventDefault(); loader.contextLost() }
     const contextRestored = () => loader.contextRestored()
     const disconnectCanvas = () => {
+      if (!canvas) return
       canvas.removeEventListener('webglcontextlost', contextLost)
       canvas.removeEventListener('webglcontextrestored', contextRestored)
       canvas.remove()
+      canvas = null
     }
     const loader = createCompanionLoader<Live2DScene>({
       available,
+      contentReady: () => contentReadyRef.current !== false,
+      schedule: scheduleCompanionStart,
       online: () => navigator.onLine,
       async load(signal, onStage) {
         disconnectCanvas()
-        canvas = document.createElement('canvas')
+        const view = canvas = document.createElement('canvas')
         canvas.setAttribute('aria-hidden', 'true')
         canvas.addEventListener('webglcontextlost', contextLost)
         canvas.addEventListener('webglcontextrestored', contextRestored)
         container.append(canvas)
         const { createLive2DScene } = await import('../lib/live2d').catch(() => { throw new CompanionLoadError(navigator.onLine ? 'module' : 'network') })
         signal.throwIfAborted()
-        return createLive2DScene(canvas, container, signal, (state) => {
+        return createLive2DScene(view, container, signal, (state) => {
           if (!signal.aborted) setInteraction(state)
         }, () => !available(), entranceRef.current, onStage)
       },
@@ -300,7 +315,9 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
         }
         if (state.status !== 'ready') {
           sceneRef.current = null
-          canvas.classList.remove('is-ready')
+          canvas?.classList.remove('is-ready')
+          // Only a lost context still needs its canvas to receive restoration.
+          if (state.status === 'error' || state.status === 'offline' || (state.status === 'recovering' && state.failure !== 'webgl')) disconnectCanvas()
           setInteraction({ phase: 'idle', reaction: null, text: '' })
           setHovered(false)
         }
@@ -308,7 +325,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       },
       ready(scene) {
         sceneRef.current = scene
-        canvas.classList.add('is-ready')
+        canvas?.classList.add('is-ready')
         syncVisibility()
         homePrepared()
         entranceRef.current = false
@@ -316,30 +333,11 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       },
     })
     loaderRef.current = loader
+    syncStageRef.current = syncVisibility
     const connected = () => loader.connected()
     window.addEventListener('online', connected)
     window.addEventListener('offline', loader.sync)
-    let frame = 0
-    let idle = 0
-    let startup = 0
-    let fallback = 0
-    let started = false
-    const start = () => {
-      if (started) return
-      started = true
-      window.clearTimeout(startup)
-      cancelAnimationFrame(frame)
-      if (idle) window.cancelIdleCallback(idle)
-      loader.start()
-    }
-    if (entranceRef.current) start()
-    else {
-      startup = window.setTimeout(start, 1000)
-      frame = requestAnimationFrame(() => {
-        if (typeof window.requestIdleCallback === 'function') idle = window.requestIdleCallback(start, { timeout: 1000 })
-        else fallback = window.setTimeout(start, 0)
-      })
-    }
+    loader.start(!entranceRef.current)
 
     document.addEventListener('visibilitychange', syncVisibility)
     // Toasts mount in a portal; synchronize their visibility without polling.
@@ -347,8 +345,7 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
     toastObserver.observe(document.body, { childList: true })
     reducedMotion.addEventListener('change', syncVisibility)
     window.addEventListener('pointermove', pointerMove, { passive: true })
-    window.addEventListener('pointerdown', startPress, { passive: true })
-    window.addEventListener('pointerdown', touchTools, { passive: true })
+    window.addEventListener('pointerdown', pointerDown, { passive: true })
     window.addEventListener('pointerup', touchTools, { passive: true })
     window.addEventListener('pointercancel', resetFocus)
     window.addEventListener('scroll', resetFocus, { passive: true, capture: true })
@@ -359,23 +356,18 @@ function CompanionStage({ onCollapse, suspended, page, introducedPageRef, action
       window.clearTimeout(hideTimer)
       window.clearTimeout(touchTimer)
       window.clearTimeout(hoverTimer)
-      window.clearTimeout(startup)
-      window.clearTimeout(fallback)
-      cancelAnimationFrame(frame)
-      if (idle) window.cancelIdleCallback(idle)
       loader.destroy()
       loaderRef.current = null
+      syncStageRef.current = null
       disconnectCanvas()
       window.removeEventListener('online', connected)
       window.removeEventListener('offline', loader.sync)
       toastObserver.disconnect()
-      sceneRef.current?.destroy()
       sceneRef.current = null
       document.removeEventListener('visibilitychange', syncVisibility)
       reducedMotion.removeEventListener('change', syncVisibility)
       window.removeEventListener('pointermove', pointerMove)
-      window.removeEventListener('pointerdown', startPress)
-      window.removeEventListener('pointerdown', touchTools)
+      window.removeEventListener('pointerdown', pointerDown)
       window.removeEventListener('pointerup', touchTools)
       window.removeEventListener('pointercancel', resetFocus)
       window.removeEventListener('scroll', resetFocus, true)

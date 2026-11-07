@@ -37,3 +37,26 @@ test('invalid settings are rejected before fetching their referenced files', asy
   await assert.rejects(loadCompanionAssets(modelURL, new AbortController().signal), { kind: 'resource' })
   assert.equal(requests, 1)
 })
+
+test('aborting after assets finish releases every blob, and later release is idempotent', async (t) => {
+  const created: string[] = []
+  const revoked: string[] = []
+  t.mock.method(URL, 'createObjectURL', () => { const url = `blob:asset-${created.length}`; created.push(url); return url })
+  t.mock.method(URL, 'revokeObjectURL', (url: string) => { revoked.push(url) })
+  // The scene may still be waiting for its Core or adapter after all files arrive.
+  const originalBitmap = Object.getOwnPropertyDescriptor(globalThis, 'createImageBitmap')
+  Object.defineProperty(globalThis, 'createImageBitmap', { value: async () => ({ close() {} }), configurable: true })
+  t.after(() => {
+    if (originalBitmap) Object.defineProperty(globalThis, 'createImageBitmap', originalBitmap)
+    else Reflect.deleteProperty(globalThis, 'createImageBitmap')
+  })
+  t.mock.method(globalThis, 'fetch', async (url: string) => {
+    if (url === modelURL) return Response.json(source)
+    return new Response(url.endsWith('.moc3') ? 'MOC3' : url.endsWith('.json') ? '{}' : 'texture')
+  })
+  const controller = new AbortController()
+  const assets = await loadCompanionAssets(modelURL, controller.signal)
+  assert.equal(created.length, 3)
+  controller.abort(); assets.release()
+  assert.deepEqual(revoked.sort(), created.sort())
+})
