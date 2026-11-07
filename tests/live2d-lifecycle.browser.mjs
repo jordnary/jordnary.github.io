@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:net'
 import { preview } from 'vite'
 import sharp from 'sharp'
+import { launchRealTabs, openSiblingTab } from './real-browser-tabs.mjs'
 
 const output = 'node_modules/.cache/live2d-lifecycle'
 const baseline = process.argv.includes('--baseline')
@@ -80,26 +80,17 @@ const close = page => page.locator('[aria-label="收起看板娘"]').evaluate(bu
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 const samples = []
 const checks = []
-let browser, observer, server
+let browser, tabs, server
 try {
   await mkdir(output, { recursive: true })
   server = await preview({ configFile: false, build: { outDir: process.argv.includes('--integrated') ? 'dist' : `${output}/${version}` }, preview: { host: '127.0.0.1', port: 4197, strictPort: true } })
   const baseURL = 'http://127.0.0.1:4197'
-  let debugPort
-  if (realTabs) {
-    const socket = createServer()
-    await new Promise(resolve => socket.listen(0, '127.0.0.1', resolve))
-    debugPort = socket.address().port
-    await new Promise(resolve => socket.close(resolve))
-  }
-  browser = await chromium.launch({ channel: process.env.COMPANION_BROWSER_CHANNEL || 'msedge', headless: !realTabs,
-    ...(realTabs ? { args: [`--remote-debugging-port=${debugPort}`], ignoreDefaultArgs: [
-      '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows',
-    ] } : {}) })
-  if (realTabs) observer = await chromium.connectOverCDP(`http://127.0.0.1:${debugPort}`, { noDefaults: true })
+  const channel = process.env.COMPANION_BROWSER_CHANNEL || 'msedge'
+  if (realTabs) tabs = await launchRealTabs(chromium, channel)
+  browser = tabs?.browser ?? await chromium.launch({ channel, headless: true })
   const scenario = async (name, test, options = {}) => {
     if (filter && !name.includes(filter)) return
-    const context = realTabs ? observer.contexts()[0] : await browser.newContext({ viewport: { width: 1440, height: 900 }, ...options })
+    const context = tabs?.context ?? await browser.newContext({ viewport: { width: 1440, height: 900 }, ...options })
     await context.addInitScript(instrument)
     const page = await context.newPage()
     const errors = []
@@ -128,7 +119,7 @@ try {
     return sample
   }
   if (realTabs) {
-    await scenario('trusted tab visibility stops rendering and restores current motion preference', async (page, context) => {
+    await scenario('trusted tab visibility stops rendering and restores current motion preference', async page => {
       await page.bringToFront()
       await page.goto(`${baseURL}/contact/`)
       await page.waitForFunction(() => !document.hidden, undefined, { polling: 100, timeout: 5000 })
@@ -136,12 +127,7 @@ try {
       await ready(page)
       await cpu(page, 'visible')
       const original = await page.locator('.live2d-companion canvas').elementHandle()
-      const session = await context.newCDPSession(page)
-      const { targetInfo } = await session.send('Target.getTargetInfo')
-      const opened = context.waitForEvent('page')
-      await session.send('Target.createTarget', { url: 'about:blank', browserContextId: targetInfo.browserContextId, newWindow: false })
-      const other = await opened
-      await other.bringToFront()
+      const other = await openSiblingTab(page)
       await page.waitForFunction(() => document.hidden, undefined, { polling: 100 })
       await delay(300)
       const hidden = await cpu(page, 'hidden')
@@ -414,7 +400,7 @@ try {
   const mode = realTabs ? 'tabs' : visual ? 'visual' : measureOnly ? 'measure' : 'checks'
   const selection = filter ? `-${filter.replace(/[^a-z0-9]+/gi, '-')}` : ''
   await writeFile(`${output}/${version}-${mode}${process.argv.includes('--integrated') ? '-integrated' : ''}${selection}${sample ? `-${sample}` : ''}.json`, JSON.stringify({ browser: browser?.version(), passed: !process.exitCode, checks, samples }, null, 2))
-  await observer?.close()
-  await browser?.close()
+  if (tabs) await tabs.close()
+  else await browser?.close()
   if (server) await new Promise(resolve => server.httpServer.close(resolve))
 }

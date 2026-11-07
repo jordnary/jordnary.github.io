@@ -48,7 +48,7 @@ export function getFooterOrbitPath(elapsed: number) {
   return `${outerRing} ${counter}Z`
 }
 
-export function useFooterOrbit(svgRef: RefObject<SVGSVGElement | null>, isInView: boolean) {
+export function useFooterOrbit(svgRef: RefObject<SVGSVGElement | null>, active: boolean) {
   const elapsed = useRef(0)
 
   useEffect(() => {
@@ -79,16 +79,14 @@ export function useFooterOrbit(svgRef: RefObject<SVGSVGElement | null>, isInView
       previousTime = null
       if (reducedMotion.matches) elapsed.current = 0
       paint()
-      if (isInView && !document.hidden && !reducedMotion.matches) frame = requestAnimationFrame(draw)
+      if (active && !reducedMotion.matches) frame = requestAnimationFrame(draw)
     }
 
     sync()
-    document.addEventListener('visibilitychange', sync)
     reducedMotion.addEventListener('change', sync)
     return () => {
       cancelAnimationFrame(frame)
-      document.removeEventListener('visibilitychange', sync)
       reducedMotion.removeEventListener('change', sync)
     }
-  }, [svgRef, isInView])
+  }, [svgRef, active])
 }

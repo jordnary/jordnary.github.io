@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { SectionPaperSeam } from './SectionBackdrop'
 import { SmartLink } from './SmartLink'
 import { getFooterOrbitPath, useFooterOrbit } from './useFooterOrbit'
@@ -64,6 +64,7 @@ const brandLetters = [...'JORDNARY'].map((letter, index) => ({
 export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
   const footerRef = useRef<HTMLElement>(null)
   useFooterReveal(footerRef, paperSeam)
+  const { brandActive, clockActive } = useFooterActivity(footerRef)
   const currentYear = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Shanghai', year: 'numeric' }).format(new Date())
 
   return (
@@ -76,8 +77,8 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
     >
       <div className="footer-surface">
         <div className="footer-content">
-          <FooterBrand />
-          <ShanghaiTime />
+          <FooterBrand active={brandActive} />
+          <ShanghaiTime active={clockActive} />
           <nav aria-label="Footer navigation" className="footer-nav">
             <div className="footer-nav-column">
               <h2 className="footer-heading">Explore</h2>
@@ -115,27 +116,47 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
   )
 }
 
-function FooterBrand() {
-  const brandRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
-  const [isInView, setIsInView] = useState(false)
-  useFooterOrbit(svgRef, isInView)
-
+function useFooterActivity(footerRef: RefObject<HTMLElement | null>) {
+  const [brandActive, setBrandActive] = useState(false)
+  const [clockActive, setClockActive] = useState(false)
   useEffect(() => {
-    const brand = brandRef.current
-    if (!brand) return
-    const observer = new IntersectionObserver(([entry]) => setIsInView(entry.isIntersecting))
+    const brand = footerRef.current?.querySelector('.footer-brand')
+    const clock = footerRef.current?.querySelector('.footer-clock')
+    if (!brand || !clock) return
+    // In a short viewport the wordmark and the clock can be revealed separately.
+    let brandInView = false, clockInView = false
+    const sync = () => {
+      setBrandActive(brandInView && !document.hidden)
+      setClockActive(clockInView && !document.hidden)
+    }
+    const observer = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (entry.target === brand) brandInView = entry.isIntersecting
+        if (entry.target === clock) clockInView = entry.isIntersecting
+      }
+      sync()
+    })
     observer.observe(brand)
-    return () => observer.disconnect()
-  }, [])
+    observer.observe(clock)
+    document.addEventListener('visibilitychange', sync)
+    return () => {
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', sync)
+    }
+  }, [footerRef])
+  return { brandActive, clockActive }
+}
+
+function FooterBrand({ active }: { active: boolean }) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  useFooterOrbit(svgRef, active)
 
   return (
     <div
       aria-label="JORDNARY"
       role="img"
       className="footer-brand"
-      data-in-view={isInView}
-      ref={brandRef}
+      data-in-view={active}
     >
       <svg ref={svgRef} className="footer-wordmark" viewBox="0 0 1448 256" aria-hidden="true" fill="none">
         {brandLetters.map(({ x, letter, ...drawing }, index) => (
@@ -161,26 +182,16 @@ function FooterOrbit() {
   )
 }
 
-function ShanghaiTime() {
+function ShanghaiTime({ active }: { active: boolean }) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | undefined
+    if (!active) return
     const update = () => setNow(new Date())
-    const sync = () => {
-      clearInterval(timer)
-      if (!document.hidden) {
-        update()
-        timer = setInterval(update, 1000)
-      }
-    }
-    sync()
-    document.addEventListener('visibilitychange', sync)
-    return () => {
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', sync)
-    }
-  }, [])
+    update()
+    const timer = setInterval(update, 1000)
+    return () => clearInterval(timer)
+  }, [active])
 
   return (
     <div className="footer-clock">

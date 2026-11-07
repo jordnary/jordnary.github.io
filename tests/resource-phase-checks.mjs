@@ -15,7 +15,8 @@ const checks = [
   ['navigation-units', ['--test', 'tests/project-page-transition.test.ts', 'tests/routes.test.ts', 'tests/nav-scroll-visibility.test.ts']],
   ...['projects', 'project-details', 'project-media-density', 'gallery-loading', 'page-resources', 'resource-loading', 'first-open',
     'home-now', 'home-now-scroll-lock', 'home-now-focus-return', 'home-now-ornament', 'snapshots',
-    'page-loading', 'project-page-transition', 'project-cursor-transition', 'search', 'navbar', 'site-mobile-viewport']
+    'page-loading', 'project-page-transition', 'project-cursor-transition', 'search', 'navbar', 'site-mobile-viewport',
+    'about-cover', 'about-decorations', 'homepage-hub', 'footer', 'learning-pointer', 'background-visibility']
     .map(name => [name, [`tests/${name}.browser.mjs`]]),
   ['snapshot-units', ['--test', 'tests/github-snapshot.test.mjs', 'tests/snapshot-store.test.mjs', 'tests/rss-snapshot.test.mjs', 'tests/github-avatar.test.mjs', 'tests/cleanup-history.test.mjs']],
 ]
@@ -28,6 +29,7 @@ try {
     const child = spawn(process.execPath, args, { windowsHide: true, env: { ...process.env,
       PERFORMANCE_TEST_URL: baseURL, PROJECTS_TEST_URL: baseURL, HOME_EDITORIAL_TEST_URL: baseURL,
       PROJECT_TRANSITION_TEST_URL: baseURL, NAV_TEST_URL: baseURL,
+      ABOUT_TEST_URL: baseURL, HOMEPAGE_TEST_URL: baseURL, FOOTER_TEST_URL: baseURL, LEARNING_TEST_URL: baseURL,
     } })
     let text = ''
     child.stdout.on('data', data => { text += data })
