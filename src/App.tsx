@@ -1,6 +1,6 @@
 import { createElement, Suspense, useEffect, useLayoutEffect } from 'react'
 import { SiteLayout } from './layouts/SiteLayout'
-import { getProjectFromUrl, getProjectStudioHref, isProjectStudioUrl, projectStudioRoute, siteRoutes, type SitePage } from './lib/routes'
+import { getProjectFromUrl, getProjectStudioHref, isProjectStudioUrl, notFoundRoute, projectStudioRoute, siteRoutes, type AppPage } from './lib/routes'
 import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
 import { ProjectsCursor } from './components/ProjectsCursor'
@@ -8,7 +8,7 @@ import { useInputModality } from './lib/useInputModality'
 import { PageErrorBoundary } from './components/PageErrorBoundary'
 import type {} from './lib/pageStartup'
 
-function App({ page: initialPage }: { page: SitePage }) {
+function App({ page: initialPage }: { page: AppPage }) {
   useInputModality()
   const { page, href, module, renderId, transition, renderFailed } = useSiteNavigation(initialPage)
   const project = getProjectFromUrl(new URL(href))
@@ -25,15 +25,31 @@ function App({ page: initialPage }: { page: SitePage }) {
     return () => window.removeEventListener('mousedown', preventMiddleButtonAutoscroll, true)
   }, [])
 
-  useEffect(() => {
-    const route = isStudio ? projectStudioRoute : siteRoutes[page]
-    const description = document.querySelector('meta[name="description"]')
+  useLayoutEffect(() => {
+    const route = page === '404' ? notFoundRoute : isStudio ? projectStudioRoute : siteRoutes[page]
+    const description = document.querySelector('meta[name="description"]') ?? document.createElement('meta')
+    description.setAttribute('name', 'description')
+    if (!description.isConnected) document.head.append(description)
 
     document.title = project ? `${project.title} | 项目案例` : route.title
     document.body.dataset.page = page
     document.documentElement.lang = isStudio ? 'en' : 'zh-CN'
-    description?.setAttribute('content', project?.description ?? route.description)
-    document.querySelector('link[rel="canonical"]')?.setAttribute('href', `${window.location.origin}${isStudio ? getProjectStudioHref() : new URL(href).pathname}`)
+    description.setAttribute('content', project?.description ?? route.description)
+    const robots = document.querySelector('meta[name="robots"]')
+    const canonical = document.querySelector('link[rel="canonical"]')
+    if (page === '404') {
+      const noindex = robots ?? document.createElement('meta')
+      noindex.setAttribute('name', 'robots')
+      noindex.setAttribute('content', 'noindex, follow')
+      if (!noindex.isConnected) document.head.append(noindex)
+      canonical?.remove()
+    } else {
+      robots?.remove()
+      const link = canonical ?? document.createElement('link')
+      link.setAttribute('rel', 'canonical')
+      link.setAttribute('href', `${window.location.origin}${isStudio ? getProjectStudioHref() : new URL(href).pathname}`)
+      if (!link.isConnected) document.head.append(link)
+    }
   }, [page, project, href, isStudio])
 
   return (

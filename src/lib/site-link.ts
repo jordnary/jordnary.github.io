@@ -1,4 +1,4 @@
-import { getPageFromUrl } from './routes'
+import { getNavigationPageFromUrl } from './routes'
 
 /** The same native-link exclusions apply to navigation and speculative intent. */
 export function siteLink(target: EventTarget | null) {
@@ -6,6 +6,6 @@ export function siteLink(target: EventTarget | null) {
   if (!(anchor instanceof HTMLAnchorElement) || anchor.hasAttribute('download')
     || (anchor.target && anchor.target.toLowerCase() !== '_self') || anchor.relList.contains('external')) return null
   const url = new URL(anchor.href)
-  if (url.origin !== window.location.origin || !getPageFromUrl(url)) return null
+  if (url.origin !== window.location.origin || !getNavigationPageFromUrl(url)) return null
   return { anchor, url }
 }

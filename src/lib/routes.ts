@@ -3,6 +3,7 @@ import { projects } from '../data/projects.ts'
 export const sitePages = ['home', 'about', 'learning', 'projects', 'contact'] as const
 
 export type SitePage = (typeof sitePages)[number]
+export type AppPage = SitePage | '404'
 
 type SiteRoute = {
   description: string
@@ -44,6 +45,12 @@ export const projectStudioRoute: SiteRoute = {
   description: 'A creative development practice exploring computer science, artificial intelligence and the web.',
 }
 
+export const notFoundRoute: SiteRoute = {
+  label: '404',
+  title: '404 | Page not found',
+  description: 'The page you are looking for was not found.',
+}
+
 export function getRouteHref(page: SitePage, base = import.meta.env?.BASE_URL ?? '/') {
   if (page === 'home') {
     return `${base.replace(/\/$/, '')}/home/`
@@ -65,7 +72,20 @@ export function isHomepagePortalUrl(url: URL, base = import.meta.env.BASE_URL) {
 export function getPageFromDocument() {
   const page = document.body.dataset.page
 
-  return isSitePage(page) ? page : 'home'
+  return page === '404' ? '404' : isSitePage(page) ? page : 'home'
+}
+
+/** Missing document routes share the app; assets and URLs outside its base stay native. */
+export function getNavigationPageFromUrl(url: URL, base = import.meta.env.BASE_URL): AppPage | null {
+  const page = getPageFromUrl(url, base)
+  if (page) return page
+  const root = base.replace(/\/$/, '')
+  let path: string
+  try { path = decodeURIComponent(url.pathname) } catch { return null }
+  if (!path.startsWith(`${root}/`)) return null
+  const relative = path.slice(root.length + 1)
+  if (/^(?:assets|data|fonts|images|live2d|vendor)(?:\/|$)/i.test(relative)) return null
+  return /\.[^/]+$/.test(path) && !/\.html$/i.test(path) ? null : '404'
 }
 
 /** Match only the static pages this app can render, including their HTML URLs. */

@@ -143,7 +143,8 @@ try {
   // Exercise the site's normal link handler with a broken same-origin link.
   await page.locator('main').evaluate((main, href) => {
     const a = document.createElement('a')
-    a.href = href; a.textContent = 'Missing document'; main.append(a); a.click()
+    // In-place navigation preserves the document, including injected test nodes.
+    a.href = href; a.textContent = 'Missing document'; main.append(a); a.click(); a.remove()
   }, missing)
   await page.waitForURL(missing)
   await checkEntry(page)

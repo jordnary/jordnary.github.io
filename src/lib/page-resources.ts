@@ -1,5 +1,5 @@
 import { studioArtworks } from '../data/project-studio'
-import { getPageFromUrl, getProjectFromUrl, isHomepagePortalUrl, isProjectStudioUrl } from './routes'
+import { getNavigationPageFromUrl, getProjectFromUrl, isHomepagePortalUrl, isProjectStudioUrl } from './routes'
 import { responsiveImage } from './responsive-images'
 import { projectDisplayImage } from './project-images'
 
@@ -14,6 +14,7 @@ export const pageModuleFiles = {
   studio: 'src/pages/ProjectStudioPage.tsx',
   contact: 'src/pages/ContactPage.tsx',
   detail: 'src/pages/ProjectDetailPage.tsx',
+  '404': 'src/pages/NotFoundPage.tsx',
 } as const
 export type PageModuleKey = keyof typeof pageModuleFiles
 
@@ -45,7 +46,7 @@ export function contactCoverImage(base: string): PageImage {
 export function getPageResources(url: URL, base: string) {
   const project = getProjectFromUrl(url, base)
   const key: PageModuleKey | null = isHomepagePortalUrl(url, base) ? 'portal'
-    : isProjectStudioUrl(url, base) ? 'studio' : project ? 'detail' : getPageFromUrl(url, base)
+    : isProjectStudioUrl(url, base) ? 'studio' : project ? 'detail' : getNavigationPageFromUrl(url, base)
   if (!key) return null
   const cover = project?.image?.cover ?? project?.image
   const images: PageImage[] = key === 'learning' ? learningCoverImages(base)

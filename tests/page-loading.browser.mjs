@@ -561,11 +561,13 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
       link.remove()
       return intercepted
     }, options)
-    for (const options of [{ target: '_blank' }, { download: true }, { modified: true }, { href: 'https://example.com/' }, { href: '/unknown/' }]) {
+    for (const options of [{ target: '_blank' }, { download: true }, { modified: true }, { href: 'https://example.com/' }, { href: '/missing.pdf' }]) {
       assert.equal(await probe(options), false)
     }
+    assert.equal(await probe({ href: '/unknown/' }), true)
+    await page.locator('.not-found').waitFor()
   })
-  pass('External links, new tabs, downloads, modifier keys and unknown routes retain native behavior')
+  pass('External links, new tabs, downloads and assets stay native; missing documents use the shared app')
 
   // Visual evidence is ignored by Git and uses only repository-relative names.
   await mkdir('node_modules/.cache/page-loading', { recursive: true })

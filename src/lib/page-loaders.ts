@@ -1,5 +1,5 @@
 import { createElement, type ComponentType } from 'react'
-import { getProjectFromUrl } from './routes'
+import { getProjectFromUrl, type AppPage } from './routes'
 import { getPageResources, type PageModuleKey } from './page-resources'
 import { preparePageImages } from './page-images'
 import { pageNetworkPolicy } from './page-network'
@@ -14,6 +14,7 @@ const imports = {
   projects: () => import('../pages/ProjectsPage').then(module => ({ default: module.ProjectsPage })),
   studio: () => import('../pages/ProjectStudioPage').then(module => ({ default: module.ProjectStudioPage })),
   contact: () => import('../pages/ContactPage').then(module => ({ default: module.ContactPage })),
+  '404': () => import('../pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })),
   detail: () => import('../pages/ProjectDetailPage').then(module => ({
     default: ({ href }: { href: string }) => createElement(module.default, { href, project: getProjectFromUrl(new URL(href))! }),
   })),
@@ -39,14 +40,14 @@ export function isPagePreloadError(error: unknown) {
   return Boolean(error && typeof error === 'object' && preloadErrors.has(error))
 }
 
-export function hasFailedPage(url: URL) {
-  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
+export function hasFailedPage(url: URL, page?: AppPage) {
+  const key = page === '404' ? '404' : getPageResources(url, import.meta.env.BASE_URL)?.key
   const task = key ? pages.get(key) : undefined
   return Boolean(task?.failed)
 }
 
-export function loadPage(url: URL, intent = false): Promise<PageModule> {
-  const key = getPageResources(url, import.meta.env.BASE_URL)?.key
+export function loadPage(url: URL, intent = false, page?: AppPage): Promise<PageModule> {
+  const key = page === '404' ? '404' : getPageResources(url, import.meta.env.BASE_URL)?.key
   if (!key) return Promise.reject(new Error('Unknown site route'))
   // Discover images alongside code without letting a large bitmap delay the shell.
   if (!intent && pageNetworkPolicy().images) void preparePageImages(url, 'low')

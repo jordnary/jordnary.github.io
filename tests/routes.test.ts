@@ -1,7 +1,24 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl, sitePages } from '../src/lib/routes.ts'
+import { getNavigationPageFromUrl, getPageFromUrl, getProjectFromUrl, getProjectHref, getProjectStudioHref, isProjectStudioUrl, sitePages } from '../src/lib/routes.ts'
 import { projects } from '../src/data/projects.ts'
+
+test('missing documents use the shared app without claiming assets or URLs outside its base', () => {
+  for (const base of ['/', '/portfolio/']) {
+    for (const path of ['404.html', 'missing/', 'missing/nested/document.html?from=test#section', 'projects/unknown/', 'about/extra/']) {
+      const url = new URL(`${base}${path}`, 'https://example.com')
+      assert.equal(getNavigationPageFromUrl(url, base), '404')
+      assert.equal(getPageFromUrl(url, base), null, 'The server still recognizes these as missing documents')
+    }
+    for (const path of ['images/missing/', 'live2d/missing/', 'data/missing.html', 'fonts/missing.woff2', 'file.pdf', 'file%2Epdf', 'bad%escape']) {
+      assert.equal(getNavigationPageFromUrl(new URL(`${base}${path}`, 'https://example.com'), base), null)
+    }
+    assert.equal(getNavigationPageFromUrl(new URL(`${base}contact/`, 'https://example.com'), base), 'contact')
+  }
+  for (const path of ['/missing/', '/portfolio-other/missing/']) {
+    assert.equal(getNavigationPageFromUrl(new URL(path, 'https://example.com'), '/portfolio/'), null)
+  }
+})
 
 test('client navigation recognizes every static page and its HTML alias at root and under a deployment base', () => {
   for (const base of ['/', '/portfolio/']) {

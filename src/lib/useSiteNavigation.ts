@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll, getPageScrollTop, getPageScrollLeft, scrollPageTo } from './pageScrollSource'
-import { getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type SitePage } from './routes'
+import { getNavigationPageFromUrl, getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type AppPage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
 import { hasFailedPage, isPagePreloadError, loadPage, type PageModule } from './page-loaders'
 import { projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
@@ -11,7 +11,7 @@ import { installPagePrefetch } from './page-prefetch'
 import { siteLink } from './site-link'
 
 type Position = { left: number; top: number }
-type Navigation = { page: SitePage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior; module?: PageModule; renderId?: number }
+type Navigation = { page: AppPage; href: string; position?: Position; focus: boolean; behavior?: ScrollBehavior; module?: PageModule; renderId?: number }
 type PageTransition = { id: number; initiallyCovered?: boolean; onCovered: () => Promise<void>; onComplete: () => void }
 type Actions = { renderFailed: (error: unknown) => void }
 const historyKey = 'siteNavigationKey'
@@ -24,13 +24,18 @@ function savedPosition(): Position | undefined {
 }
 
 /** Load before committing; only the latest navigation owns history, focus and scroll. */
-export function useSiteNavigation(initialPage: SitePage) {
+export function useSiteNavigation(initialPage: AppPage) {
   const [navigation, setNavigation] = useState<Navigation>(() => ({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false }))
   const [transition, setTransition] = useState<PageTransition | null>(null)
   const transitioning = useRef(false)
   const actions = useRef<Actions | null>(null)
+  const initialPath = useRef(window.location.pathname)
 
   useEffect(() => {
+    // A server-rendered 404 can also be a missing asset URL. Restore that entry
+    // through history without intercepting ordinary asset links elsewhere.
+    const pageFromUrl = (url: URL) => initialPage === '404' && url.pathname === initialPath.current
+      ? '404' : getNavigationPageFromUrl(url)
     const prefetch = installPagePrefetch()
     const previousRestoration = window.history.scrollRestoration
     window.history.scrollRestoration = 'manual'
@@ -111,7 +116,7 @@ export function useSiteNavigation(initialPage: SitePage) {
         setNavigation(previous => ({ ...next, module, renderId: (previous.renderId ?? 0) + (resetBoundary ? 1 : 0) }))
       }
       // Import rejection and timeouts are handled here, before any history/page commit.
-      const ready = waitForPage(loadPage(new URL(next.href)), controller.signal).then(value => {
+      const ready = waitForPage(loadPage(new URL(next.href), false, next.page), controller.signal).then(value => {
         module = value
         // Reload paper is opaque from its first HTML frame. Prepare content
         // behind it immediately, without delaying the existing reveal timeline.
@@ -160,7 +165,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       const link = siteLink(event.target)
       if (!link) return
       const { anchor, url } = link
-      const page = getPageFromUrl(url)
+      const page = getNavigationPageFromUrl(url)
       if (!page) return
       if (anchor.hasAttribute('data-site-reload')) { event.preventDefault(); reopen(url.href); return }
       // Only the visible project transition blocks repeat clicks, not a pending import.
@@ -180,7 +185,7 @@ export function useSiteNavigation(initialPage: SitePage) {
       persistPosition()
       // A new user activation can recover a rejected browser module/CSS cache.
       // Timeouts keep sharing the original pending import instead.
-      if (hasFailedPage(url) || reloadHref === url.href) { reopen(url.href); return }
+      if (hasFailedPage(url, page) || reloadHref === url.href) { reopen(url.href); return }
       navigate({ page, href: url.href, focus: true, behavior, position }, () => {
         if (url.href !== window.location.href) {
           const fromList = getPageFromUrl(currentUrl) === 'projects'
@@ -193,11 +198,11 @@ export function useSiteNavigation(initialPage: SitePage) {
       })
     }
     const pop = () => {
-      const page = getPageFromUrl(new URL(window.location.href))
+      const page = pageFromUrl(new URL(window.location.href))
       if (!page) return
       const targetKey = ensureKey()
       const url = new URL(window.location.href)
-      if (hasFailedPage(url) || reloadHref === url.href) { reopen(url.href); return }
+      if (hasFailedPage(url, page) || reloadHref === url.href) { reopen(url.href); return }
       navigate({ page, href: window.location.href, position: positions.get(targetKey) ?? savedPosition(), focus: true }, () => {
         currentKey = targetKey
       })
