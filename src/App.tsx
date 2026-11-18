@@ -74,7 +74,6 @@ function PageReady({ href }: { href: string }) {
   useEffect(() => {
     // A deferred route can commit after the navigation hook's first scroll restore.
     window.dispatchEvent(new CustomEvent('site-page-ready', { detail: { href } }))
-    window.__siteOpening?.ready()
   }, [href])
   return null
 }

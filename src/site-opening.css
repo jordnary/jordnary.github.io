@@ -31,12 +31,16 @@
 .site-opening::backdrop { background: transparent; }
 .site-opening-logo {
   position: absolute;
-  inset: 0;
+  inset: 0 0 auto;
   display: grid;
   place-items: center;
-  padding-bottom: 0.02em;
+  /* Align the wordmark with the title above the center of the launch screen. */
+  height: var(--site-viewport-height, 100%);
+  box-sizing: border-box;
+  padding-bottom: min(4.5rem, 18vh);
   font-family: var(--opening-font, 'Opening Archivo Black'), sans-serif;
-  font-size: clamp(35px, 4.7vw, 120px);
+  /* Keep the full-size face until its animated silhouette needs the space. */
+  font-size: min(var(--opening-full-size), calc((100vw - 16px) / 7.29), 35vh);
   font-weight: 400;
   line-height: 1;
   letter-spacing: -0.075em;
@@ -57,7 +61,14 @@
 }
 .site-opening-face { position: relative; }
 .site-opening-echo { position: absolute; inset: 0; opacity: 0; }
-.site-opening-symbol { flex: none; width: 0.98em; height: 0.62em; margin-right: 0.11em; fill: currentColor; }
+.site-opening-symbol {
+  flex: none;
+  width: 1.03em;
+  height: 0.9em;
+  margin-right: 0.025em;
+  /* Crop the app icon's transparent margin and preserve the artwork's aspect ratio. */
+  background: url('__SITE_BASE__app-icon.png') center / 146% auto no-repeat;
+}
 .site-opening-name { display: block; transform: scaleY(0.94); }
 .site-opening-trademark {
   align-self: flex-start;

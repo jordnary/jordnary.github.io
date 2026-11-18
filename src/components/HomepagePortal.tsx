@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type AnimationEvent, type CSSProperties, type TouchEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type AnimationEvent, type CSSProperties, type TouchEvent } from 'react'
 import { homepageTransitionTiming, type HomepageTransitionPhase } from '../lib/homepage-transition'
-import { isSiteOpeningActive, subscribeSiteOpening } from '../lib/siteOpening'
+import { bootstrapSiteOpening, isSiteOpeningActive, subscribeSiteOpening } from '../lib/siteOpening'
+import openingStyles from '../site-opening.css?raw'
 import { HomepageHub } from './HomepageHub'
 import { LaunchIntro } from './LaunchIntro'
 import { TransitionWipeOverlay } from './TransitionWipeOverlay'
@@ -12,6 +13,30 @@ export function HomepagePortal() {
   const portalRef = useRef<HTMLDivElement>(null)
   const hubRef = useRef<HTMLDivElement>(null)
   const touchStart = useRef<{ identifier: number; x: number; y: number } | null>(null)
+
+  useLayoutEffect(() => {
+    // Direct root entries already have the critical styles and a running opening.
+    if (!document.querySelector('style[data-site-opening]')) {
+      const style = document.createElement('style')
+      style.dataset.siteOpening = ''
+      style.textContent = openingStyles.replaceAll('__SITE_BASE__', import.meta.env.BASE_URL)
+      document.head.append(style)
+    }
+    const play = () => {
+      bootstrapSiteOpening()
+      window.__siteOpening?.ready()
+    }
+    play()
+    const restore = (event: PageTransitionEvent) => {
+      if (!event.persisted) return
+      hasEntered.current = false
+      touchStart.current = null
+      setPhase('intro')
+      play()
+    }
+    window.addEventListener('pageshow', restore)
+    return () => window.removeEventListener('pageshow', restore)
+  }, [])
 
   const enter = useCallback(() => {
     if (hasEntered.current || isSiteOpeningActive()) return
@@ -41,6 +66,7 @@ export function HomepagePortal() {
   }, [complete, phase])
 
   useEffect(() => {
+    const portal = portalRef.current
     document.body.classList.add('homepage-portal-active')
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     const handleMotionChange = () => {
@@ -50,6 +76,7 @@ export function HomepagePortal() {
     }
     motionPreference.addEventListener('change', handleMotionChange)
     return () => {
+      if (!portal?.isConnected) window.__siteOpening?.dispose()
       document.body.classList.remove('homepage-portal-active')
       motionPreference.removeEventListener('change', handleMotionChange)
     }

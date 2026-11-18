@@ -11,21 +11,24 @@ declare global {
 export const isSiteOpeningActive = () => Boolean(window.__siteOpening && window.__siteOpening.status !== 'complete')
 
 export function subscribeSiteOpening(callback: () => void) {
+  window.addEventListener('site-opening-start', callback)
   window.addEventListener('site-opening-complete', callback)
-  return () => window.removeEventListener('site-opening-complete', callback)
+  return () => {
+    window.removeEventListener('site-opening-start', callback)
+    window.removeEventListener('site-opening-complete', callback)
+  }
 }
 
 /** Inlined before entry assets. Keep dependencies inside this function. */
 export function bootstrapSiteOpening() {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
-  if (preference.matches || document.hidden || window.__siteOpening) return
+  if (preference.matches || document.hidden || (window.__siteOpening && window.__siteOpening.status !== 'complete')) return
 
   const overlay = document.createElement('dialog')
   overlay.className = 'site-opening'
   overlay.setAttribute('aria-label', '正在打开网站')
   overlay.setAttribute('aria-busy', 'true')
-  const wordmark = '<svg class="site-opening-symbol" viewBox="0 0 58 36" aria-hidden="true">'
-    + '<path d="M2 1h32v34h-8V15L6 35l-6-6L20 9H2zM38 1h7v34h-7zM50 1h7v34h-7z"/></svg>'
+  const wordmark = '<span class="site-opening-symbol"></span>'
     + '<span class="site-opening-name">JORDNARY</span><span class="site-opening-trademark">™</span>'
   // Screen-space offsets from the face, measured in wordmark widths and ems.
   // Paint the faintest copy first so the nearer impressions overlap it.
@@ -103,9 +106,13 @@ export function bootstrapSiteOpening() {
   }
 
   try {
+    // Use the previous 4.7vw size at full screen throughout this playback.
+    const fullScreenSize = Math.max(35, Math.min(120, window.screen.width * 0.047))
+    overlay.style.setProperty('--opening-full-size', `${fullScreenSize}px`)
     overlay.style.setProperty('--opening-duration', `${timelineDuration}ms`)
     document.documentElement.append(overlay)
     overlay.showModal()
+    window.dispatchEvent(new Event('site-opening-start'))
     overlay.addEventListener('cancel', event => {
       prevent(event)
       timelineReady = true

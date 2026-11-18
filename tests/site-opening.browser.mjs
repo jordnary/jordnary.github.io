@@ -75,6 +75,27 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
         assert.equal(overshoot.shadows.length, 0)
         assert.ok(overshoot.width > full.width * 1.04 && undershoot.width < full.width)
         assert.ok(Math.abs(rest.width - full.width) < 1)
+        const fullScreenSize = await page.evaluate(() => Math.max(35, Math.min(120, screen.width * 0.047)))
+        for (const [width, height] of [[1920, 900], [1024, 620], [880, 390], [390, 844], [320, 190]]) {
+          await page.setViewportSize({ width, height })
+          const layout = await page.locator('.site-opening-lockup').evaluate(lockup => {
+            const animations = lockup.getAnimations({ subtree: true })
+            const saved = animations.map(animation => animation.currentTime)
+            const fits = [0, 620, 1250, 1900, 2100, 2400].every(time => {
+              animations.forEach(animation => { animation.currentTime = time })
+              return [...lockup.children].filter(el => Number(getComputedStyle(el).opacity) > 0).every(el => {
+                const box = el.getBoundingClientRect()
+                return box.left >= 0 && box.right <= innerWidth && box.top >= 0 && box.bottom <= innerHeight
+              })
+            })
+            animations.forEach((animation, index) => { animation.currentTime = saved[index] })
+            return { fits, size: parseFloat(getComputedStyle(lockup).fontSize) }
+          })
+          assert.ok(layout.fits, `The moving face and echoes fit at ${width} × ${height}`)
+          if (width >= 880) assert.ok(Math.abs(layout.size - fullScreenSize) < 0.01)
+          else assert.ok(layout.size < fullScreenSize)
+        }
+        await page.setViewportSize({ width: 1440, height: 900 })
       }
       await page.waitForTimeout(2400)
       assert.equal(await page.locator(opening).getAttribute('data-state'), 'playing', 'Wait for real content after the visual timeline')
@@ -82,7 +103,7 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       assert.equal(await page.locator(opening).count(), 1, 'Skipping must not expose an unloaded page')
       released = true
       await Promise.all(held.splice(0).map(route => route.continue()))
-      await page.locator(`${opening}[data-state="revealing"]`).waitFor()
+      await page.waitForFunction(() => document.querySelector('.site-opening')?.dataset.state === 'revealing')
       if (extension === 'js') {
         const opacity = await page.locator('.site-opening-logo').evaluate(logo => {
           const [fade] = logo.getAnimations()
@@ -126,9 +147,23 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
         return box.left >= 0 && box.right <= innerWidth && box.top > 0 && box.bottom < innerHeight
       })
       assert.ok(fits, 'The complete wordmark fits the viewport')
-      await page.screenshot({ path: `${output}/${name}-echo.png` })
-      await page.locator(`${opening}[data-state="revealing"]`).waitFor()
-      assert.equal(await page.locator('.launch-intro-content').evaluate(element => getComputedStyle(element).opacity), '1')
+      const [reveal] = await Promise.all([
+        page.waitForFunction(() => {
+          if (document.querySelector('.site-opening')?.dataset.state !== 'revealing') return false
+          const center = selector => {
+            const box = document.querySelector(selector).getBoundingClientRect()
+            return box.top + box.height / 2
+          }
+          return {
+            offset: center('.site-opening-face .site-opening-name') - center('#launch-intro-title'),
+            opacity: getComputedStyle(document.querySelector('.launch-intro-content')).opacity,
+          }
+        }),
+        page.screenshot({ path: `${output}/${name}-echo.png` }),
+      ])
+      const { offset, opacity } = await reveal.jsonValue()
+      assert.ok(Math.abs(offset) <= 6, `Opening and intro title centers align within 6px (offset ${offset})`)
+      assert.equal(opacity, '1')
       await finished(page)
       await frame(page)
       assert.equal(await page.locator('.launch-intro').getAttribute('data-running'), 'true')
@@ -140,8 +175,14 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
         await page.locator('.homepage-hub-link[href$="/home/"]').click()
         await page.locator('.home-editorial').waitFor()
         await page.goBack()
+        await page.locator(`${opening}[data-state="playing"]`).waitFor()
+        await page.goForward()
+        await page.locator('.home-editorial').waitFor()
+        assert.equal(await page.locator(opening).count(), 0, 'Leaving during a replay releases the dialog')
+        await page.goBack()
+        await page.locator(`${opening}[data-state="playing"]`).waitFor()
+        await finished(page)
         await page.locator('.launch-intro-enter').waitFor()
-        assert.equal(await page.locator(opening).count(), 0, 'Internal history navigation does not replay the document opening')
         await page.reload()
         await page.locator(opening).waitFor()
         await finished(page)
@@ -190,8 +231,14 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     await page.locator('.home-editorial').waitFor()
     assert.equal(await page.locator('[data-site-opening]').count(), 0)
     assert.equal(await page.locator('link[data-opening-styles]').count(), 0)
+    await page.getByRole('link', { name: 'Jordnary', exact: true }).click()
+    await page.locator(`${opening}[data-state="playing"]`).waitFor()
+    const icon = await page.locator('.site-opening-face .site-opening-symbol').evaluate(el => getComputedStyle(el).backgroundImage)
+    assert.ok(icon.includes(new URL('app-icon.png', baseURL).href))
+    await finished(page)
+    await page.locator('.launch-intro-enter').waitFor()
     assert.deepEqual(errors, [])
-    pass('Direct content-page visits keep their existing startup behavior')
+    pass('Direct content-page visits play the opening when the brand link returns to the root')
   } finally { await context.close() }
   return passed
 }
