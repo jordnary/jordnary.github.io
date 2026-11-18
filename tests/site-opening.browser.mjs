@@ -47,6 +47,35 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       assert.equal(state.portal, false)
       assert.ok(held.length > 0, 'Entry requests run concurrently with the opening')
       await page.screenshot({ path: `${output}/held-${extension}.png` })
+      if (extension === 'js') {
+        const samples = await page.locator('.site-opening-lockup').evaluate(lockup => {
+          const animations = lockup.getAnimations({ subtree: true })
+          const saved = animations.map(animation => animation.currentTime)
+          const face = lockup.querySelector('.site-opening-face')
+          const echoes = [...lockup.querySelectorAll('.site-opening-echo')]
+          const samples = [100, 365, 620, 1250, 2100, 2230, 2400].map(time => {
+            for (const animation of animations) animation.currentTime = time
+            const box = face.getBoundingClientRect()
+            return {
+              opacity: Number(getComputedStyle(lockup).opacity),
+              width: box.width,
+              center: box.left + box.width / 2,
+              shadows: echoes.filter(echo => Number(getComputedStyle(echo).opacity) > 0.01)
+                .map(echo => echo.getBoundingClientRect().bottom - box.bottom),
+            }
+          })
+          animations.forEach((animation, index) => { animation.currentTime = saved[index] })
+          return samples
+        })
+        const [entering, full, turning, projected, overshoot, undershoot, rest] = samples
+        assert.ok(entering.opacity > 0 && entering.opacity < full.opacity && full.opacity === 1)
+        assert.ok(projected.width < full.width * 0.8 && projected.center < full.center)
+        assert.ok(turning.shadows.length > 0 && turning.shadows.length < projected.shadows.length)
+        assert.ok(projected.shadows.every((offset, i, offsets) => offset > 0 && (!i || offset < offsets[i - 1])))
+        assert.equal(overshoot.shadows.length, 0)
+        assert.ok(overshoot.width > full.width * 1.04 && undershoot.width < full.width)
+        assert.ok(Math.abs(rest.width - full.width) < 1)
+      }
       await page.waitForTimeout(2400)
       assert.equal(await page.locator(opening).getAttribute('data-state'), 'playing', 'Wait for real content after the visual timeline')
       await page.keyboard.press('Escape')
@@ -54,6 +83,19 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       released = true
       await Promise.all(held.splice(0).map(route => route.continue()))
       await page.locator(`${opening}[data-state="revealing"]`).waitFor()
+      if (extension === 'js') {
+        const opacity = await page.locator('.site-opening-logo').evaluate(logo => {
+          const [fade] = logo.getAnimations()
+          const saved = fade.currentTime
+          const samples = [0, 100, 250, 365].map(time => {
+            fade.currentTime = time
+            return Number(getComputedStyle(logo).opacity)
+          })
+          fade.currentTime = saved
+          return samples
+        })
+        assert.ok(opacity[0] === 1 && opacity[1] < 1 && opacity[1] > opacity[2] && opacity[2] > 0 && opacity[3] === 0)
+      }
       assert.equal(await page.locator('.launch-intro-content').evaluate(element => getComputedStyle(element).opacity), '1', 'Late routes also reveal fully prepared text')
       await finished(page)
       await page.locator('.launch-intro-enter').waitFor()

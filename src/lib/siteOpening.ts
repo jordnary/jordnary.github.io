@@ -27,14 +27,23 @@ export function bootstrapSiteOpening() {
   const wordmark = '<svg class="site-opening-symbol" viewBox="0 0 58 36" aria-hidden="true">'
     + '<path d="M2 1h32v34h-8V15L6 35l-6-6L20 9H2zM38 1h7v34h-7zM50 1h7v34h-7z"/></svg>'
     + '<span class="site-opening-name">JORDNARY</span><span class="site-opening-trademark">™</span>'
+  // Screen-space offsets from the face, measured in wordmark widths and ems.
+  // Paint the faintest copy first so the nearer impressions overlap it.
+  const projections = [
+    { x: 22.6, y: 0.81, angle: 5.8, scale: 0.95, alpha: 0.032, delay: 740 },
+    { x: 19.0, y: 0.68, angle: 4.9, scale: 0.96, alpha: 0.062, delay: 680 },
+    { x: 14.9, y: 0.53, angle: 3.8, scale: 0.97, alpha: 0.10, delay: 620 },
+    { x: 10.4, y: 0.37, angle: 2.6, scale: 0.98, alpha: 0.22, delay: 560 },
+    { x: 5.5, y: 0.20, angle: 1.4, scale: 0.99, alpha: 0.50, delay: 490 },
+  ]
   overlay.innerHTML = '<div class="site-opening-logo" aria-hidden="true"><div class="site-opening-lockup">'
-    + Array.from({ length: 7 }, (_, index) => {
-      const layer = 7 - index
-      return `<div class="site-opening-echo" style="--echo-x:${layer * 0.23}em;--echo-y:${layer * 0.16}em;--echo-opacity:${0.36 * Math.pow(0.72, layer - 1)};--echo-delay:${layer * 16}ms">${wordmark}</div>`
-    }).join('')
+    + projections.map(({ x, y, angle, scale, alpha, delay }) =>
+      `<div class="site-opening-echo" style="--echo-x:${x}%;--echo-y:${y}em;--echo-angle:${angle}deg;--echo-scale:${scale};--echo-opacity:${alpha};--echo-delay:${delay}ms">${wordmark}</div>`
+    ).join('')
     + `<div class="site-opening-face">${wordmark}</div></div></div>`
     + '<div class="site-opening-progress" aria-hidden="true"><span></span></div>'
 
+  const timelineDuration = 2500
   let contentReady = false
   let timelineReady = false
   let started = false
@@ -61,8 +70,8 @@ export function bootstrapSiteOpening() {
     if (boot.status !== 'playing') return
     const progress = overlay.querySelector('.site-opening-progress > span')
       ?.getAnimations().find(animation => 'animationName' in animation && animation.animationName === 'site-opening-progress')
-    const elapsed = typeof progress?.currentTime === 'number' ? progress.currentTime : 2450
-    if (elapsed < 2450) later(finishTimeline, Math.max(16, 2450 - elapsed))
+    const elapsed = typeof progress?.currentTime === 'number' ? progress.currentTime : timelineDuration
+    if (elapsed < timelineDuration) later(finishTimeline, Math.max(16, timelineDuration - elapsed))
     else { timelineReady = true; reveal() }
   }
   const boot: NonNullable<Window['__siteOpening']> = window.__siteOpening = {
@@ -94,6 +103,7 @@ export function bootstrapSiteOpening() {
   }
 
   try {
+    overlay.style.setProperty('--opening-duration', `${timelineDuration}ms`)
     document.documentElement.append(overlay)
     overlay.showModal()
     overlay.addEventListener('cancel', event => {
@@ -115,7 +125,7 @@ export function bootstrapSiteOpening() {
       // Freeze the face for this playback; a late font must not resize the logo.
       overlay.style.setProperty('--opening-font', fontReady ? '"Opening Archivo Black"' : '"Arial Black", Arial')
       overlay.dataset.state = 'playing'
-      later(finishTimeline, 2450)
+      later(finishTimeline, timelineDuration)
     }
     void document.fonts.load('16px "Opening Archivo Black"').then(fonts => start(fonts.length > 0), () => start(false))
     later(() => start(false), 180)
