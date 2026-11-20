@@ -38,6 +38,7 @@ export function studioImage(artwork: typeof studioArtworks[number], base: string
 }
 
 export const aboutCoverImage = (base: string): PageImage => ({ src: `${base}images/about/fiber-paper.webp` })
+export const contactStampImage = (base: string): PageImage => ({ src: `${base}images/contact/airmail-insignia.webp` })
 export function contactCoverImage(base: string): PageImage {
   const src = `${base}images/contact/street-graffiti-cycle.webp`
   return { src, ...responsiveImage(src, '100vw', base) }
@@ -58,5 +59,5 @@ export function getPageResources(url: URL, base: string) {
   // Large archive/studio artwork starts at entry execution: parser-time requests
   // delayed route code on constrained links, and svh needs an initialized viewport.
   const htmlImages = key === 'projects' || key === 'studio' ? [] : images
-  return { key, id: project ? `detail:${project.id}` : key, images, htmlImages }
+  return { key, images, htmlImages }
 }

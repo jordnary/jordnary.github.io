@@ -6,6 +6,16 @@ export const homeGalleryImage = (src: string): PageImage => ({
   src, ...responsiveImage(src, '(max-width: 600px) 84vw, (max-width: 900px) 63vw, 42vw'),
 })
 
+export function learningNoteImage(file: string): PageImage {
+  const src = `${import.meta.env.BASE_URL}images/learning/${file}`
+  return { src, ...responsiveImage(src, '(max-width: 640px) 100vw, 600px') }
+}
+
+export function learningTowerImage(file: string): PageImage {
+  const src = `${import.meta.env.BASE_URL}images/learning/${file}`
+  return { src, ...responsiveImage(src, '(max-width: 899px) 100vw, 767px') }
+}
+
 export function navigationImage(photo: NavigationPhoto, base = import.meta.env.BASE_URL): PageImage {
   const src = `${base}images/navigation/${navigationPhotos[photo].file}-1920.webp`
   // Include the small hover zoom, with the same description at prepare/display.

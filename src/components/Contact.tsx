@@ -1,5 +1,5 @@
 import { useCallback, useState, type CSSProperties } from 'react'
-import { contactCoverImage } from '../lib/page-resources'
+import { contactCoverImage, contactStampImage } from '../lib/page-resources'
 import { Toast } from './Toast'
 import { ContactAirmail } from './ContactAirmail'
 import { CopyIcon } from './icons'
@@ -9,7 +9,7 @@ import { contactLinks, contactProfile } from '../data/contact'
 import './Contact.css'
 
 const otherContactLinks = contactLinks.filter((link) => !link.href.startsWith('mailto:'))
-const airmailStamp = `${import.meta.env.BASE_URL}images/contact/airmail-insignia.webp`
+const airmailStamp = contactStampImage(import.meta.env.BASE_URL)
 const coverImage = contactCoverImage(import.meta.env.BASE_URL)
 
 export function Contact() {
@@ -93,7 +93,7 @@ export function Contact() {
                   <circle cx="35" cy="35" r="29" /><circle cx="35" cy="35" r="23" />
                   <path d="M55 22q12-6 24 0t24 0 24 0M55 35q12-6 24 0t24 0 24 0M55 48q12-6 24 0t24 0 24 0" />
                 </svg>
-                <img className="correspondence-mail-mark" src={airmailStamp} alt="" width="240" height="204" decoding="async" />
+                <img className="correspondence-mail-mark" {...airmailStamp} alt="" width="240" height="204" decoding="async" />
               </div>
             </div>
             <a className="correspondence-address" href={`mailto:${contactProfile.email}`} aria-label={`发送邮件至 ${contactProfile.email}`}>

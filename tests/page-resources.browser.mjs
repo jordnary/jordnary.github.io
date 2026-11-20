@@ -66,12 +66,7 @@ export async function runChecks(browser) {
   const run = async (fn, options = {}, connection = undefined) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', ...options })
     await context.addInitScript(connectionState, connection)
-    // An idle opportunity is an input to these policy checks. A headless
-    // browser can withhold it indefinitely, including with no active network.
-    await context.addInitScript(() => {
-      const nativeIdle = window.requestIdleCallback?.bind(window)
-      if (nativeIdle) window.requestIdleCallback = (fn, options) => nativeIdle(fn, options ?? { timeout: 32 })
-    })
+    await context.addInitScript(() => performance.setResourceTimingBufferSize(2000))
     const page = await context.newPage()
     page.setDefaultTimeout(15000)
     const errors = []
@@ -117,7 +112,7 @@ export async function runChecks(browser) {
         }
         const styles = requests.filter(path => path.endsWith('.css'))
         assert.equal(new Set(styles).size, styles.length, `${path}: stylesheet preload reuse`)
-        if (path.includes('vae-gan')) assert.equal(requests.some(path => /ProjectsPage-|linework-background/.test(path)), false)
+        if (path.includes('vae-gan')) assert.equal(requests.some(path => /ProjectsPage-/.test(path)), false)
       }
     }, options)
     pass(`${name}: all eight HTML entries discover their own code and reuse image/CSS candidates`)
@@ -175,77 +170,53 @@ export async function runChecks(browser) {
   })
   pass('Short hover cancels; stable hover/focus coalesce; click and 20 return cycles reuse code/images')
 
-  for (const resource of ['ContactPage', 'street-graffiti']) {
+  // Warm from a cold opening document with no focus, hover or navigation.
+  for (const profile of profiles) {
+    const { name, cpu: _, ...options } = profile
     await run(async (page, requests) => {
-      await home(page)
-      const gate = await hold(page, resource === 'ContactPage' ? modulePattern(resource) : contactArt)
-      await (await link(page, '/contact/')).focus()
-      await page.waitForTimeout(400)
-      assert.equal(gate.count(), 1)
-      await (await link(page, '/learning/', 'queued')).focus()
-      await page.waitForTimeout(180)
-      assert.equal(requests.some(path => modulePattern('LearningPage').test(path)), false)
-      await click(page, '/about/')
-      await contentReady(page, '.about-journey')
-      assert.equal(gate.count(), 1, 'Required navigation bypasses the held speculative target')
-      gate.release()
-      await page.waitForTimeout(300)
-      assert.equal(requests.some(path => modulePattern('LearningPage').test(path)), false)
-    })
+      await page.goto(baseURL)
+      await page.locator('.launch-intro-enter').waitFor()
+      const cover = requests.find(path => contactArt.test(path))
+      assert.ok(cover, 'The Contact background request starts in the opening document')
+      await page.waitForFunction(cover => {
+        const paths = performance.getEntriesByType('resource').map(entry => new URL(entry.name).pathname)
+        return paths.includes(cover) && ['airmail-insignia', 'hero-campus-sketch', 'fiber-paper', 'linework-background',
+          'now-building', 'servers', 'hero-tower-sketch', 'starlit-summit'].every(name => paths.some(path => path.includes(name)))
+      }, cover)
+      assert.ok(!requests.some(path => modulePattern('ContactPage').test(path)))
+      await page.locator('.launch-intro-enter').click()
+      await page.locator('.homepage-hub-link[href$="/contact/"]').click()
+      await contentReady(page, '.correspondence')
+      const src = await page.locator('.correspondence-graffiti-cover').evaluate(image => image.currentSrc)
+      assert.equal(new URL(src).pathname, cover)
+      assert.ok((await page.locator('.correspondence-graffiti').evaluate(el => getComputedStyle(el).backgroundImage)).includes(src))
+      assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
+    }, options)
+    pass(`${name}: opening to Contact reuses the background fetched before interaction; cross-page artwork is already warm`)
   }
-  pass('A pending import or image occupies one slot; a click bypasses it and clears stale targets')
 
   await run(async (page, requests, context) => {
-    await home(page)
     const cdp = await context.newCDPSession(page)
     await cdp.send('Network.enable')
-    let imageRequest
     cdp.on('Network.requestWillBeSent', event => {
-      if (!contactArt.test(event.request.url)) return
-      imageRequest = event.requestId
-      priorities.push(event.request.initialPriority)
+      if (contactArt.test(event.request.url)) priorities.push(event.request.initialPriority)
     })
-    cdp.on('Network.resourceChangedPriority', event => { if (event.requestId === imageRequest) priorities.push(event.newPriority) })
     const gate = await hold(page, contactArt)
-    await (await link(page, '/contact/')).focus()
-    await page.waitForTimeout(400)
-    await click(page, '/contact/')
-    await page.locator('.correspondence').waitFor()
-    await page.waitForTimeout(100)
-    gate.release()
+    try {
+      await page.goto(new URL('/home/', baseURL).href, { waitUntil: 'domcontentloaded' })
+      await page.locator('.home-editorial').waitFor()
+      assert.equal(gate.count(), 1)
+      await click(page, '/about/')
+      await page.locator('.about-journey').waitFor()
+      await click(page, '/contact/')
+      await page.locator('.correspondence').waitFor()
+      assert.equal(gate.count(), 1)
+    } finally { gate.release() }
     await contentReady(page, '.correspondence')
-    assert.equal(priorities[0], 'Low')
+    assert.ok(['Low', 'Lowest'].includes(priorities[0]))
     assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
   })
-  pass('Speculative image requests start at low priority and a required consumer reuses the pending request')
-
-  await run(async (page, requests) => {
-    await home(page)
-    await page.evaluate(() => {
-      window.requestIdleCallback = () => 1
-      window.cancelIdleCallback = () => {}
-    })
-    await (await link(page, '/contact/')).focus()
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(path => modulePattern('ContactPage').test(path)), false)
-    await click(page, '/contact/')
-    await contentReady(page, '.correspondence')
-  })
-  pass('Without an idle opportunity speculation waits, and a click still works')
-
-  await run(async (page, requests) => {
-    await home(page)
-    await page.evaluate(() => { window.requestIdleCallback = undefined; window.cancelIdleCallback = undefined })
-    const target = await link(page, '/contact/')
-    await target.hover()
-    await page.waitForTimeout(140)
-    await page.mouse.move(600, 300)
-    await page.waitForTimeout(250)
-    assert.equal(requests.some(path => modulePattern('ContactPage').test(path)), false)
-    await target.focus()
-    await page.waitForResponse(response => modulePattern('ContactPage').test(response.url()))
-  })
-  pass('The no-idle-API timer fallback is cancellable and still warms a sustained intent')
+  pass('An in-flight Contact background survives route changes and is shared with the visible page')
 
   for (const [path, selector, name] of [['/about/', '.about-journey', 'AboutPage'], ['/learning/', '.learning-studio', 'LearningPage']]) {
     await run(async (page, _requests, context) => {
@@ -271,27 +242,6 @@ export async function runChecks(browser) {
   }
   pass('Prepared About/Learning imports render directly without a loading notice at CPU 4x')
 
-  await run(async (page, requests) => {
-    await home(page)
-    const gate = await hold(page, modulePattern('ContactPage'))
-    await (await link(page, '/contact/')).focus()
-    await page.waitForTimeout(300)
-    await (await link(page, '/learning/', 'queued-focus')).focus()
-    await page.waitForTimeout(150)
-    const pointer = await link(page, '/about/', 'queued-pointer')
-    await pointer.dispatchEvent('pointerover', { pointerType: 'mouse' })
-    await page.waitForTimeout(150)
-    const touch = await link(page, '/projects/', 'queued-touch')
-    await touch.dispatchEvent('pointerdown', { pointerType: 'touch', button: 0, clientX: 20, clientY: 20 })
-    await page.waitForTimeout(150)
-    await touch.dispatchEvent('pointercancel', { pointerType: 'touch' })
-    gate.release()
-    await page.waitForTimeout(800)
-    assert.ok(requests.some(path => modulePattern('AboutPage').test(path)))
-    assert.equal(requests.some(path => /(?:LearningPage|ProjectsPage)-/.test(path)), false)
-  })
-  pass('Only the two newest waiting targets survive; touch cancellation removes unstarted work')
-
   for (const value of [
     { effectiveType: '4g', downlink: 10, rtt: 20, saveData: true },
     { effectiveType: '3g', downlink: 1.6, rtt: 150 },
@@ -301,83 +251,32 @@ export async function runChecks(browser) {
       await home(page)
       await (await link(page, '/contact/')).focus()
       await page.waitForTimeout(400)
-      assert.equal(requests.some(path => /ContactPage-|street-graffiti/.test(path)), false)
+      assert.equal(requests.some(path => modulePattern('ContactPage').test(path)), false)
+      assert.ok(requests.some(path => contactArt.test(path)))
       await click(page, '/contact/')
       await contentReady(page, '.correspondence')
     }, {}, value)
   }
-  pass('Save-Data, 3G and constrained 4G suppress speculation while clicks still work')
+  pass('Essential images load on constrained connections while optional code waits for the click')
 
   await run(async (page, requests) => {
     await home(page)
     await (await link(page, '/contact/')).focus()
     await page.waitForTimeout(600)
     assert.ok(requests.some(path => modulePattern('ContactPage').test(path)))
-    assert.equal(requests.some(path => contactArt.test(path)), false)
+    assert.ok(requests.some(path => contactArt.test(path)))
   }, {}, {})
-  pass('Without connection information only one code target is warmed, without speculative images')
-
-  await run(async (page, requests) => {
-    const gate = await hold(page, contactArt)
-    await page.goto(new URL('/contact/', baseURL).href, { waitUntil: 'domcontentloaded' })
-    await page.locator('.correspondence').waitFor()
-    await (await link(page, '/about/')).focus()
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(path => modulePattern('AboutPage').test(path)), false)
-    gate.release()
-    await page.waitForResponse(response => modulePattern('AboutPage').test(response.url()))
-  })
-  pass('An unfinished current critical image blocks speculative code until visible content is ready')
-
-  await run(async (page, requests) => {
-    await home(page)
-    const gate = await hold(page, modulePattern('ContactPage'))
-    await click(page, '/contact/')
-    await (await link(page, '/learning/')).focus()
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('site-page-ready', { detail: { href: new URL('/home/', location.href).href } })))
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(path => modulePattern('LearningPage').test(path)), false)
-    gate.release()
-    await contentReady(page, '.correspondence')
-  })
-  pass('A late ready event from the retained page cannot unlock speculation during the next navigation')
-
-  await run(async (page, requests) => {
-    await home(page)
-    const gate = await hold(page, '**/intent-visible.webp')
-    await page.evaluate(() => {
-      const image = new Image()
-      image.width = image.height = 50
-      image.style.cssText = 'position:fixed;top:100px;left:10px'
-      image.src = '/intent-visible.webp'
-      document.querySelector('main').append(image)
-    })
-    await (await link(page, '/contact/')).focus()
-    await page.waitForTimeout(400)
-    assert.equal(requests.some(path => modulePattern('ContactPage').test(path)), false)
-    gate.release()
-    await page.waitForResponse(response => modulePattern('ContactPage').test(response.url()))
-  })
-  pass('Newly visible in-page image work also blocks speculation')
-
-  await run(async (page, requests) => {
-    await page.goto(new URL('/learning/', baseURL).href)
-    await page.locator('.learning-studio').waitFor()
-    await (await link(page, '/contact/')).focus()
-    await page.waitForResponse(response => modulePattern('ContactPage').test(response.url()))
-    assert.equal(requests.filter(path => modulePattern('ContactPage').test(path)).length, 1)
-  }, { reducedMotion: 'no-preference' })
-  pass('Clipped, unrequested Learning artwork does not indefinitely block intent warming')
+  pass('Browsers without connection estimates preload the same essential images')
 
   for (const resource of ['js', 'css', 'image']) {
     await run(async page => {
-      await home(page)
       const pattern = resource === 'js' ? modulePattern('ContactPage') : resource === 'css' ? '**/ContactPage-*.css' : contactArt
       let failures = 0
       await page.route(pattern, route => { failures++; return route.abort() }, { times: 1 })
+      await home(page)
       await (await link(page, '/contact/')).focus()
       await page.waitForTimeout(600)
-      assert.equal(failures, 1, `${resource}: fault reached during intent`)
+      assert.equal(failures, 1, `${resource}: preload failure reached before navigation`)
       assert.equal(await page.locator('.page-load-feedback').count(), 0)
       assert.equal(await page.locator('.home-editorial').count(), 1)
       await click(page, '/contact/')

@@ -4,7 +4,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
-import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
+import { aboutCoverImage, contactCoverImage, contactStampImage, getPageResources, learningCoverImages, pageModuleFiles } from './src/lib/page-resources'
 import { navigationPhotos, type NavigationPhoto } from './src/data/navigation-photos'
 import { navigationImage } from './src/lib/inpage-images'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
@@ -57,7 +57,10 @@ function pageResources(): Plugin {
     const menu = (Object.keys(navigationPhotos) as NavigationPhoto[]).map(photo => ({
       image: navigationImage(photo, base), priority: hasNavbar ? 'high' : 'low',
     }))
-    return [...covers, ...menu].map(({ image, priority }) => ({
+    const shared = [contactCoverImage(base), contactStampImage(base), aboutCoverImage(base), ...learningCoverImages(base)]
+      .filter(image => !covers.some(cover => cover.image.src === image.src))
+      .map(image => ({ image, priority: 'low' }))
+    return [...covers, ...menu, ...shared].map(({ image, priority }) => ({
       tag: 'link',
       attrs: { rel: 'preload', as: 'image', href: image.src, fetchpriority: priority, 'data-page-image': '',
         ...(image.srcSet ? { imagesrcset: image.srcSet, imagesizes: image.sizes! } : {}) },

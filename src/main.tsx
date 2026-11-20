@@ -4,9 +4,11 @@ import './index.css'
 import App from './App.tsx'
 import { getPageFromDocument } from './lib/routes.ts'
 import { trackPagePreloadErrors } from './lib/page-loaders'
+import { preloadSiteImages } from './lib/site-images'
 import type {} from './lib/pageStartup'
 
 const stopTracking = trackPagePreloadErrors()
+window.addEventListener('site-page-ready', preloadSiteImages, { once: true })
 if (import.meta.hot) import.meta.hot.dispose(stopTracking)
 
 // The opening curtain stays white while its nonblocking entry styles download.

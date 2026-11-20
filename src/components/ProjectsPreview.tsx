@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { projects, type ProjectCase } from '../data/projects'
 import { projectDisplayImage } from '../lib/project-images'
-import { prepareImages } from '../lib/page-images'
+import { preloadImages } from '../lib/page-images'
 
 type PreviewController = { request: (project: ProjectCase | null) => void }
 type Clip = [number, number, number, number]
@@ -25,7 +25,7 @@ export function ProjectsPreview({ project }: { project: ProjectCase | null }) {
     const container = containerRef.current
     if (!container) return
     if (getComputedStyle(container).display !== 'none') {
-      void prepareImages(projects.flatMap(item => previewImage(item) ?? []), 'low')
+      preloadImages(projects.flatMap(item => previewImage(item) ?? []), 'low')
     }
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')

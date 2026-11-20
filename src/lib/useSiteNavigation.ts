@@ -36,7 +36,7 @@ export function useSiteNavigation(initialPage: AppPage) {
     // through history without intercepting ordinary asset links elsewhere.
     const pageFromUrl = (url: URL) => initialPage === '404' && url.pathname === initialPath.current
       ? '404' : getNavigationPageFromUrl(url)
-    const prefetch = installPagePrefetch()
+    const stopPrefetch = installPagePrefetch()
     const previousRestoration = window.history.scrollRestoration
     window.history.scrollRestoration = 'manual'
     const positions = new Map<string, Position>()
@@ -77,7 +77,6 @@ export function useSiteNavigation(initialPage: AppPage) {
     }
     const dismissFailure = () => {
       cancelActive()
-      prefetch.current(new URL(renderedHref), true)
       releaseCover()
       const delta = currentIndex - window.history.state[indexKey]
       // Back/Forward already moved the cursor. Closing the notice returns to
@@ -96,7 +95,6 @@ export function useSiteNavigation(initialPage: AppPage) {
     const navigate = (next: Navigation, commitHistory: () => void, initiallyCovered = false, initial = false) => {
       cancelActive()
       clearNotice?.()
-      prefetch.current(new URL(next.href))
       const id = ++revision
       const controller = new AbortController()
       const attempt = { id, controller, committed: false }
@@ -126,7 +124,6 @@ export function useSiteNavigation(initialPage: AppPage) {
         if (!animate || covered || initiallyCovered) commit()
       }, () => {
         if (active !== attempt || controller.signal.aborted || openingEntry) return
-        prefetch.current(new URL(renderedHref), !initial)
         releaseCover()
         clearNotice = showPageLoadFailure(dismissFailure)
       })
@@ -229,7 +226,7 @@ export function useSiteNavigation(initialPage: AppPage) {
       && (!window.__projectTransitionBoot || window.__projectTransitionBoot.status === 'active')
     navigate({ page: initialPage, href: window.location.href, position: savedPosition(), focus: false }, () => {}, reload, true)
     return () => {
-      prefetch.dispose()
+      stopPrefetch()
       cancelActive()
       clearNotice?.()
       actions.current = null

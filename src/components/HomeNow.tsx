@@ -4,8 +4,7 @@ import { homeNow } from '../data/home-editorial'
 import { HomePhotoGallery } from './HomePhotoGallery'
 import { LiveUpdates } from './LiveUpdates'
 import { useHomeNowReaderMotion, type ReadingVisit } from './useHomeNowReaderMotion'
-import { homeGalleryImage, nowFrameImage, nowOrnamentImage } from '../lib/inpage-images'
-import { prepareImages } from '../lib/page-images'
+import { homeGalleryImage, nowFrameImage } from '../lib/inpage-images'
 import { pageConnection } from '../lib/page-network'
 import { usePaintedContent } from '../lib/usePaintedContent'
 import { prepareReaderFonts, rememberReaderFonts } from '../lib/reader-fonts'
@@ -17,7 +16,6 @@ export function HomeNow() {
   const dismiss = useCallback(() => setVisit(null), [])
   useEffect(rememberReaderFonts, [])
   useEffect(() => {
-    void prepareImages([nowFrameImage(), nowOrnamentImage()], 'low')
     if (pageConnection()?.saveData || !containerRef.current) return
     const observer = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) {

@@ -68,7 +68,7 @@ npm run test:production
 
 项目 ID 同时用于介绍页地址和索引。Vite 根据项目数据生成各详情页的 HTML 入口；项目介绍随代码维护，不依赖远端 README。修改实验数字或配图时，应同步核对对应报告与素材来源。
 
-增加页面时，在 `src/pages` 创建组件，在 `src/lib/routes.ts` 声明路由，并更新 `src/lib/page-resources.ts` 的模块/关键图片描述和 `src/lib/page-loaders.ts` 的动态入口；添加静态 HTML 及 `vite.config.ts` 构建入口。HTML 提示和站内导航共用资源描述，验收策略与测量方法见 [资源重构交接](docs/ux-refactor.md#68-p3-页面关键资源与受限意图预取)。
+增加页面时，在 `src/pages` 创建组件，在 `src/lib/routes.ts` 声明路由，并更新 `src/lib/page-resources.ts` 的资源描述、`src/lib/page-loaders.ts` 的动态入口、静态 HTML 和 Vite 构建入口。各入口的 HTML 会预加载菜单照片、Contact 背景、About 封面和 Learning 首屏图。首个页面渲染后，`src/lib/site-images.ts` 在后台加载跨页画廊和插图，使用与展示组件相同的响应式尺寸。切页会复用浏览器已经开始的请求。
 
 图片与字体使用 `public` 内的正式素材。各素材目录的 README 和许可证保留来源、授权及维护说明；字体子集变更见 [字体说明](public/fonts/README.md)。图片浏览模块的接口见 [Image gallery](src/components/image-gallery/README.md)。
 
