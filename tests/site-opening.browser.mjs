@@ -20,6 +20,23 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     return { context, page, errors }
   }
 
+  for (const asset of ['opening-symbol.png', 'fonts/opening-archivo-black.woff2']) {
+    const { context, page } = await setup()
+    try {
+      let release
+      const held = new Promise(resolve => { release = resolve })
+      await page.route(`**/${asset}`, async route => { await held; await route.continue() })
+      const requested = page.waitForRequest(`**/${asset}`)
+      await page.goto(baseURL, { waitUntil: 'commit' })
+      await requested
+      await page.waitForTimeout(250)
+      assert.equal(await page.locator(opening).getAttribute('data-state'), null)
+      release()
+      await page.locator(`${opening}[data-state="playing"]`).waitFor()
+    } finally { await context.close() }
+    pass(`The opening waits for a delayed ${asset} before starting its timeline`)
+  }
+
   // Hold every entry script and sheet, including preloaded route chunks. The
   // reference animation must be visibly painting without the application.
   for (const extension of ['js', 'css']) {

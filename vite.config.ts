@@ -35,7 +35,7 @@ function pageStartup(): Plugin {
           { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${showPageLoadFailure.toString()});`, injectTo: 'head-prepend' },
           ...(portal ? [
             { tag: 'style', attrs: { 'data-site-opening': '' }, children: readFileSync(new URL('./src/site-opening.css', import.meta.url), 'utf8').replaceAll('__SITE_BASE__', base), injectTo: 'head-prepend' as const },
-            { tag: 'script', attrs: { 'data-site-opening': '' }, children: `(${bootstrapSiteOpening.toString()})();`, injectTo: 'head-prepend' as const },
+            { tag: 'script', attrs: { 'data-site-opening': '' }, children: `(${bootstrapSiteOpening.toString()})(${JSON.stringify(base)});`, injectTo: 'head-prepend' as const },
           ] : []),
         ] }
       },

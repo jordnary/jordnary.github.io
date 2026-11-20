@@ -23,7 +23,7 @@ export function HomepagePortal() {
       document.head.append(style)
     }
     const play = () => {
-      bootstrapSiteOpening()
+      bootstrapSiteOpening(import.meta.env.BASE_URL)
       window.__siteOpening?.ready()
     }
     play()

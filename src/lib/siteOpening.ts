@@ -1,7 +1,7 @@
 declare global {
   interface Window {
     __siteOpening?: {
-      status: 'playing' | 'revealing' | 'complete'
+      status: 'preparing' | 'playing' | 'revealing' | 'complete'
       ready: () => void
       dispose: () => void
     }
@@ -20,7 +20,7 @@ export function subscribeSiteOpening(callback: () => void) {
 }
 
 /** Inlined before entry assets. Keep dependencies inside this function. */
-export function bootstrapSiteOpening() {
+export function bootstrapSiteOpening(base: string) {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
   if (preference.matches || document.hidden || (window.__siteOpening && window.__siteOpening.status !== 'complete')) return
 
@@ -49,7 +49,6 @@ export function bootstrapSiteOpening() {
   const timelineDuration = 2500
   let contentReady = false
   let timelineReady = false
-  let started = false
   const timers: number[] = []
   let paintFrame = 0
   const later = (callback: () => void, delay: number) => {
@@ -62,7 +61,7 @@ export function bootstrapSiteOpening() {
   const visibilityChanged = () => { if (document.hidden) boot.dispose() }
   const motionChanged = () => { if (preference.matches) boot.dispose() }
   const reveal = () => {
-    if (!contentReady || !timelineReady || boot.status !== 'playing') return
+    if (!contentReady || !timelineReady || boot.status === 'revealing' || boot.status === 'complete') return
     boot.status = 'revealing'
     overlay.dataset.state = 'revealing'
     overlay.setAttribute('aria-busy', 'false')
@@ -78,7 +77,7 @@ export function bootstrapSiteOpening() {
     else { timelineReady = true; reveal() }
   }
   const boot: NonNullable<Window['__siteOpening']> = window.__siteOpening = {
-    status: 'playing',
+    status: 'preparing',
     ready: () => {
       if (contentReady || paintFrame || boot.status === 'complete') return
       // Let the route commit and paint under the opaque curtain before revealing.
@@ -126,16 +125,23 @@ export function bootstrapSiteOpening() {
     window.addEventListener('site-navigation-interrupted', interrupted)
     document.addEventListener('visibilitychange', visibilityChanged)
     preference.addEventListener('change', motionChanged)
-    const start = (fontReady: boolean) => {
-      if (started || boot.status === 'complete') return
-      started = true
+    let fontReady = false
+    const start = () => {
+      if (boot.status !== 'preparing') return
+      boot.status = 'playing'
       // Freeze the face for this playback; a late font must not resize the logo.
       overlay.style.setProperty('--opening-font', fontReady ? '"Opening Archivo Black"' : '"Arial Black", Arial')
       overlay.dataset.state = 'playing'
       later(finishTimeline, timelineDuration)
     }
-    void document.fonts.load('16px "Opening Archivo Black"').then(fonts => start(fonts.length > 0), () => start(false))
-    later(() => start(false), 180)
+    const symbol = new Image()
+    // Match the CSS mask's CORS mode so it shares the same request.
+    symbol.crossOrigin = 'anonymous'
+    symbol.fetchPriority = 'high'
+    symbol.src = `${base}opening-symbol.png`
+    const font = document.fonts.load('16px "Opening Archivo Black"').then(faces => { fontReady = faces.length > 0 })
+    void Promise.allSettled([symbol.decode(), font]).then(start)
+    later(start, 1200)
     // The independent startup guard supplies the existing recovery notice.
     later(boot.dispose, 8000)
   } catch {
