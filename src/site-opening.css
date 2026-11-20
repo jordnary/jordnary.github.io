@@ -62,12 +62,22 @@
 .site-opening-face { position: relative; }
 .site-opening-echo { position: absolute; inset: 0; opacity: 0; }
 .site-opening-symbol {
+  position: relative;
   flex: none;
-  width: 1.03em;
-  height: 0.9em;
-  margin-right: 0.025em;
-  /* Crop the app icon's transparent margin and preserve the artwork's aspect ratio. */
-  background: url('__SITE_BASE__app-icon.png') center / 146% auto no-repeat;
+  width: 1.06em;
+  height: 1em;
+}
+.site-opening-symbol::before {
+  content: '';
+  position: absolute;
+  /* The JT strokes span rows 213–373 of the 512px icon. Align those
+     strokes to the capitals and let the orbit overhang the letter slot. */
+  width: 2.1em;
+  height: 2.1em;
+  left: -0.35em;
+  top: -0.70em;
+  background: currentColor;
+  mask: url('__SITE_BASE__opening-symbol.png') center / contain no-repeat;
 }
 .site-opening-name { display: block; transform: scaleY(0.94); }
 .site-opening-trademark {
@@ -113,7 +123,7 @@
 .site-opening[data-state='playing'] .site-opening-progress > span { animation: site-opening-progress var(--opening-duration) cubic-bezier(0.4, 0, 0.3, 1) both; }
 .site-opening[data-state='revealing'] { animation: site-opening-curtain 480ms cubic-bezier(0.76, 0, 0.24, 1) both; }
 .site-opening[data-state='revealing'] .site-opening-logo,
-.site-opening[data-state='revealing'] .site-opening-progress { animation: site-opening-disappear 365ms cubic-bezier(0.3, 0.76, 0.55, 1) both; }
+.site-opening[data-state='revealing'] .site-opening-progress { animation: site-opening-disappear 260ms cubic-bezier(0.3, 0.76, 0.55, 1) both; }
 .site-opening[data-state='revealing'] .site-opening-progress > span { transform: scaleX(1); }
 
 @keyframes site-opening-appear { from { opacity: 0; } to { opacity: 1; } }
@@ -147,7 +157,8 @@
   100% { transform: scaleX(0.94); }
 }
 @keyframes site-opening-curtain {
-  0%, 35% { clip-path: inset(0); }
+  /* Keep the moving edge clear of the artwork until its fade finishes. */
+  0%, 55% { clip-path: inset(0); }
   100% { clip-path: inset(0 0 100%); }
 }
 @media (prefers-reduced-motion: reduce) {

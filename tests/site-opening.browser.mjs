@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { mkdir } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
+import sharp from 'sharp'
 
 const opening = '.site-opening'
 const finished = page => page.locator(opening).waitFor({ state: 'detached', timeout: 10000 })
@@ -105,17 +106,27 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       await Promise.all(held.splice(0).map(route => route.continue()))
       await page.waitForFunction(() => document.querySelector('.site-opening')?.dataset.state === 'revealing')
       if (extension === 'js') {
-        const opacity = await page.locator('.site-opening-logo').evaluate(logo => {
+        const { opacity, curtainAtStart, curtainAtFadeEnd } = await page.locator('.site-opening-logo').evaluate(logo => {
           const [fade] = logo.getAnimations()
-          const saved = fade.currentTime
-          const samples = [0, 100, 250, 365].map(time => {
-            fade.currentTime = time
+          const overlay = logo.closest('.site-opening')
+          const [curtain] = overlay.getAnimations()
+          const savedFade = fade.currentTime
+          const savedCurtain = curtain.currentTime
+          const duration = fade.effect.getComputedTiming().activeDuration
+          const opacity = [0, 0.25, 0.75, 1].map(fraction => {
+            fade.currentTime = duration * fraction
             return Number(getComputedStyle(logo).opacity)
           })
-          fade.currentTime = saved
-          return samples
+          curtain.currentTime = 0
+          const curtainAtStart = getComputedStyle(overlay).clipPath
+          curtain.currentTime = duration
+          const curtainAtFadeEnd = getComputedStyle(overlay).clipPath
+          fade.currentTime = savedFade
+          curtain.currentTime = savedCurtain
+          return { opacity, curtainAtStart, curtainAtFadeEnd }
         })
         assert.ok(opacity[0] === 1 && opacity[1] < 1 && opacity[1] > opacity[2] && opacity[2] > 0 && opacity[3] === 0)
+        assert.equal(curtainAtFadeEnd, curtainAtStart, 'The curtain stays fully open until the wordmark is invisible')
       }
       assert.equal(await page.locator('.launch-intro-content').evaluate(element => getComputedStyle(element).opacity), '1', 'Late routes also reveal fully prepared text')
       await finished(page)
@@ -233,8 +244,18 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     assert.equal(await page.locator('link[data-opening-styles]').count(), 0)
     await page.getByRole('link', { name: 'Jordnary', exact: true }).click()
     await page.locator(`${opening}[data-state="playing"]`).waitFor()
-    const icon = await page.locator('.site-opening-face .site-opening-symbol').evaluate(el => getComputedStyle(el).backgroundImage)
-    assert.ok(icon.includes(new URL('app-icon.png', baseURL).href))
+    const icon = await page.locator('.site-opening-face .site-opening-symbol').evaluate(el => getComputedStyle(el, '::before').maskImage)
+    const maskURL = new URL('opening-symbol.png', baseURL).href
+    assert.ok(icon.includes(maskURL))
+    const response = await page.request.get(maskURL)
+    assert.ok(response.ok())
+    const { data, info } = await sharp(await response.body()).extractChannel('alpha').raw().toBuffer({ resolveWithObject: true })
+    // Follow both stems across the underside of the JT crossbar.
+    for (const x of [236, 302]) {
+      for (let y = 239; y <= 249; y++) {
+        assert.ok(data[y * info.width + x] >= 248, `Gap at the crossbar joint (${x}, ${y})`)
+      }
+    }
     await finished(page)
     await page.locator('.launch-intro-enter').waitFor()
     assert.deepEqual(errors, [])
