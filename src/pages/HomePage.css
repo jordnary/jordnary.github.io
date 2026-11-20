@@ -127,20 +127,20 @@
 .home-editorial-section-bottom { position: relative; display: flex; justify-content: space-between; align-items: center; min-height: 100px; gap: 24px; margin-top: 45px; }
 .home-editorial-section-bottom > p { font-size: 11px; letter-spacing: .12em; }
 .home-editorial-pill { display: flex; align-items: center; justify-content: space-between; gap: 45px; min-width: 225px; min-height: 52px; padding: 13px 23px; border: 1px solid rgb(35 53 43 / .55); border-radius: 999px; font-size: 12px; letter-spacing: .06em; transition: background 250ms ease, color 250ms ease; }
-.home-editorial-pill svg { width: 26px; height: 20px; transition: transform 220ms ease; }
+.home-editorial-pill svg { width: 26px; height: 20px; }
 .home-editorial-pill:hover { color: var(--home-accent); background: var(--home-ink); }
-.home-editorial-pill:hover svg { transform: translateX(4px); }
 
 .home-editorial-section .home-editorial-section-bottom {
   min-height: max(46px, 4vw);
   margin-top: calc(clamp(56px, 4.8vw, 120px) - 20px);
 }
 .home-editorial .home-editorial-action-link {
+  --action-inset: max(18px, 1.2vw);
   position: relative;
   isolation: isolate;
   display: inline-flex;
   justify-content: space-between;
-  gap: max(12px, 1vw);
+  gap: var(--action-inset);
   /* Match the reference: 40% of the desktop photo width and 15% of its height. */
   width: max(196px, 16vw);
   height: max(46px, 4vw);
@@ -148,7 +148,7 @@
   min-height: 0;
   margin-left: auto;
   margin-right: calc(clamp(22px, 4vw, 100px) - var(--home-gutter));
-  padding: 0 max(18px, 1.2vw);
+  padding: 0 var(--action-inset);
   overflow: hidden;
   border-color: var(--home-ink);
   /* Let background bubbles remain visible beneath the label and outline. */
@@ -171,7 +171,9 @@
   transform: translateY(101%);
   transition: transform 420ms cubic-bezier(.65, 0, .35, 1);
 }
-.home-editorial-action-link span { flex: 1; text-align: center; }
+/* Balance the visible gaps around the glyphs, including space inside the arrow SVG. */
+.home-editorial-action-link span { flex: 1; padding-inline-start: .14em; text-align: center; }
+.home-editorial-back-to-top span { padding-inline-start: .34em; }
 .home-editorial-action-link svg {
   flex: 0 0 auto;
   width: max(17px, 1.04vw);
@@ -181,7 +183,6 @@
 .home-editorial .home-editorial-action-link:is(:hover, :focus-visible) { color: var(--home-accent); background: transparent; }
 .home-editorial-action-link:is(:hover, :focus-visible)::before { transform: translateY(0); }
 .home-editorial-action-link:focus-visible { outline-color: var(--home-ink); }
-.home-editorial-action-link:focus-visible svg { transform: translateX(4px); }
 .home-editorial-back-to-top svg { rotate: -90deg; }
 
 .home-editorial-now {
@@ -276,7 +277,7 @@
   .home-editorial-section-bottom > p { font-size: 9px; max-width: 8em; line-height: 1.9; }
   .home-editorial-pill { min-width: 175px; min-height: 46px; padding: 11px 18px; gap: 23px; font-size: 11px; }
   .home-editorial-pill svg { width: 21px; }
-  .home-editorial .home-editorial-action-link { min-width: 0; min-height: 0; padding: 0 18px; gap: 12px; font-size: 13px; }
+  .home-editorial .home-editorial-action-link { min-width: 0; min-height: 0; font-size: 13px; }
   .home-editorial-action-link svg { width: 17px; height: 13px; }
 }
 
