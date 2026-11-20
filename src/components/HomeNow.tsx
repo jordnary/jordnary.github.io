@@ -8,6 +8,7 @@ import { homeGalleryImage, nowFrameImage } from '../lib/inpage-images'
 import { pageConnection } from '../lib/page-network'
 import { usePaintedContent } from '../lib/usePaintedContent'
 import { prepareReaderFonts, rememberReaderFonts } from '../lib/reader-fonts'
+import { InlineMark } from './icons'
 import './HomeNow.css'
 
 export function HomeNow() {
@@ -105,7 +106,7 @@ function NowReader({ visit, onClose }: { visit: ReadingVisit; onClose: () => voi
               </div>
               <LiveUpdates kind={entry.key} />
             </article>
-            <footer className="home-now-reader-end"><span aria-hidden="true">✳</span><p lang="en">Leave a little room for wonder.</p><span>日常，还在继续。</span></footer>
+            <footer className="home-now-reader-end"><InlineMark shape="asterisk" /><p lang="en">Leave a little room for wonder.</p><span>日常，还在继续。</span></footer>
             </>}
           </div>
         </div>

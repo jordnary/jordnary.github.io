@@ -166,7 +166,7 @@ html:not([data-input-modality='pointer']) .home-now-close:focus-visible::before 
 .home-now-reader .rss-item-copy strong { color: var(--now-ink); font-family: var(--now-type); font-size: 21px; line-height: 1.65; font-weight: 400; overflow-wrap: anywhere; white-space: normal; overflow: visible; text-overflow: clip; }
 .home-now-reader :is(.github-repository-main, .rss-item-copy) > span { display: block; overflow: visible; color: var(--now-muted); font-size: 17px; line-height: 1.9; overflow-wrap: anywhere; -webkit-line-clamp: unset; }
 .home-now-reader .github-repository-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 14px; color: var(--now-muted); font-size: 14px; }
-.home-now-reader .github-repository-meta span:not(:last-child)::after { color: #84966b; }
+.home-now-reader .github-repository-meta > span:not(:last-child)::after { color: #84966b; }
 .home-now-reader .github-language { color: inherit; }
 .home-now-reader .github-repository-arrow { position: absolute; top: 34px; right: 0; font-size: 24px; line-height: 1; color: #728260; }
 .home-now-reader .github-repository-ornament {
@@ -203,7 +203,7 @@ html:not([data-input-modality='pointer']) .home-now-close:focus-visible::before 
 .home-now-reader .live-state > span:not(.live-state-orbit) { color: var(--now-muted); font-size: 15px; line-height: 1.9; }
 .home-now-reader .live-state-orbit { width: 22px; height: 22px; margin: 0 auto; border-color: var(--now-rule); border-top-color: var(--now-ink); }
 .home-now-reader-end { display: grid; justify-items: center; gap: 12px; margin-top: 38px; padding: 30px 0 24px; border-top: 1px solid var(--now-rule); color: var(--now-muted); text-align: center; }
-.home-now-reader-end > span:first-child { font-size: 22px; color: #84966b; }
+.home-now-reader-end > .inline-mark { font-size: 22px; color: #84966b; }
 .home-now-reader-end p { margin: 0; font-family: var(--now-display); font-size: 28px; }
 .home-now-reader-end > span:last-child { font-size: 16px; letter-spacing: .08em; }
 .home-now-reader-trail { position: relative; display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 12px; width: min(var(--now-column), calc(100% - 104px)); min-height: 52px; margin: 0 auto 10px; border-top: 1px solid var(--now-rule); color: #5b6d4a; font-size: 11px; letter-spacing: .12em; }

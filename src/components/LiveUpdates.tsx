@@ -4,6 +4,7 @@ import { rssSnapshotStore, type RssFeed } from '../lib/rss'
 import type { SnapshotStore } from '../lib/snapshot-store'
 import { useSnapshot } from '../lib/useSnapshot'
 import { nowOrnamentImage } from '../lib/inpage-images'
+import { InlineMark } from './icons'
 
 export function LiveUpdates({ kind }: { kind: 'code' | 'reading' }) {
   return kind === 'code'
@@ -37,7 +38,7 @@ function LiveSnapshot<T>({ kind, store, children }: { kind: 'code' | 'reading'; 
         <RefreshIcon /><span>{refreshing ? '更新中…' : '刷新动态'} <span lang="en">/ {refreshing ? 'Loading' : 'Refresh'}</span></span>
       </button>
       {!refreshing && ((feedback === 'success' && state.status === 'ready') || (feedback === 'error' && state.status === 'error')) && <p className={`live-refresh-feedback is-${feedback}`} role="status">
-        {feedback === 'success' ? <><CheckIcon />已更新 / Updated</> : <><AlertIcon />更新失败，请重试 / Please try again</>}
+        {feedback === 'success' ? <><InlineMark shape="check" />已更新 / Updated</> : <><AlertIcon />更新失败，请重试 / Please try again</>}
       </p>}
     </div>
     <div className="home-now-live-content" aria-busy={refreshing}>
@@ -45,7 +46,7 @@ function LiveSnapshot<T>({ kind, store, children }: { kind: 'code' | 'reading'; 
       {state.data && state.stale && refreshing && <p className="live-inline-note" role="status">显示上次成功的数据，正在检查更新。<span lang="en"> Checking for updates.</span></p>}
       {state.data && state.status === 'error' && <p className="live-inline-note" role="status">暂时无法更新，显示上次成功的数据。<span lang="en"> Showing the last available update.</span></p>}
     </div>
-    {kind === 'code' && <a className="home-now-source" href={githubProfileUrl} target="_blank" rel="noreferrer">前往 GitHub <span lang="en">/ View on GitHub ↗</span></a>}
+    {kind === 'code' && <a className="home-now-source" href={githubProfileUrl} target="_blank" rel="noreferrer">前往 GitHub <span lang="en">/ View on GitHub <InlineMark shape="up-right" /></span></a>}
   </div>
 }
 
@@ -159,14 +160,14 @@ function GitHubRepository({ repository }: { repository: GitHubSnapshot['repos'][
       </span>
       <span className="github-repository-meta">
         <span className="github-language">{repository.language || 'Code'}</span>
-        <span>★ {formatNumber(repository.stars)}</span>
+        <span><InlineMark shape="star" /> <span className="sr-only">星标数 </span>{formatNumber(repository.stars)}</span>
         <span>{formatDate(repository.updatedAt)} 更新</span>
       </span>
     </span>
     <span className="github-repository-ornament" ref={ornamentRef} aria-hidden="true">
       <img {...nowOrnamentImage()} fetchPriority="low" decoding="async" alt="" width="2172" height="724" />
     </span>
-    <span className="github-repository-arrow" aria-hidden="true">↗</span>
+    <span className="github-repository-arrow" aria-hidden="true"><InlineMark shape="up-right" /></span>
   </a>
 }
 
@@ -279,13 +280,6 @@ function RefreshIcon() {
   )
 }
 
-function CheckIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
-      <path d="m5 12.5 4.4 4.4L19 7.5" />
-    </svg>
-  )
-}
 
 function AlertIcon() {
   return (

@@ -7,16 +7,27 @@ const iconProps = {
   viewBox: '0 0 24 24',
 } as const
 
-const journeyMarkPaths = {
+const inlineMarkPaths = {
   'up-right': 'M4 20Q12 13 20 4M10 5l10-1-1 10',
   'down-right': 'M4 4L20 20M10 20h10V10',
+  up: 'M12 20V4m-7 7 7-7 7 7',
+  down: 'M12 4v16m-7-7 7 7 7-7',
+  left: 'M20 12H4m7-7-7 7 7 7',
+  right: 'M4 12h16m-7-7 7 7-7 7',
+  enter: 'M20 5v9H4m6-6-6 6 6 6',
+  restart: 'M4 5v6h6M4.5 10a8 8 0 1 1 .5 6',
+  close: 'm6 6 12 12M18 6 6 18',
+  plus: 'M12 4v16M4 12h16',
+  empty: 'M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0ZM4.5 21l15-18',
+  check: 'm5 12.5 4.4 4.4L19 7.5',
+  star: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z',
   asterisk: 'M12 2.5v19M2.5 12h19M5.5 5.5l13 13M5.5 18.5l13-13',
 }
 
-export function JourneyMark({ shape }: { shape: keyof typeof journeyMarkPaths }) {
+export function InlineMark({ shape }: { shape: keyof typeof inlineMarkPaths }) {
   return (
-    <svg {...iconProps} className="journey-mark" width="1em" height="1em" strokeWidth="1.5" aria-hidden="true" focusable="false">
-      <path d={journeyMarkPaths[shape]} />
+    <svg {...iconProps} className="inline-mark" width="1em" height="1em" strokeWidth="1.5" aria-hidden="true" focusable="false">
+      <path d={inlineMarkPaths[shape]} fill={shape === 'star' ? 'currentColor' : 'none'} />
     </svg>
   )
 }

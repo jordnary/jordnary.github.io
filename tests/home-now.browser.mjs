@@ -119,6 +119,8 @@ export async function runHomeNowChecks(browser, baseURL, report = () => {}) {
       await reader.waitFor()
       await reader.locator('.github-repository').first().waitFor()
       assert.equal(await reader.locator('.github-repository').count(), 3)
+      assert.ok(await reader.locator('.home-now-reader-end > svg[aria-hidden="true"] path').isVisible(), 'The closing asterisk renders as line art')
+      assert.doesNotMatch(await reader.locator('.home-now-reader-end').textContent(), /✳/u)
       assert.equal(await reader.locator('.rss-item').count(), 0)
       assert.equal(page.url(), initialURL, 'Explore keeps the current home page')
       assert.equal(await page.locator('dialog:modal').count(), 1)

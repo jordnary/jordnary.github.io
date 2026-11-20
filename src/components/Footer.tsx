@@ -105,7 +105,7 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
             </nav>
           </div>
           <div className="footer-meta">
-            <p>© {currentYear} Jordnary</p>
+            <p>©&#xFE0E; {currentYear} Jordnary</p>
             <p>Built with curiosity.</p>
           </div>
         </div>

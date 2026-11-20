@@ -29,7 +29,7 @@ export function bootstrapSiteOpening() {
   overlay.setAttribute('aria-label', '正在打开网站')
   overlay.setAttribute('aria-busy', 'true')
   const wordmark = '<span class="site-opening-symbol"></span>'
-    + '<span class="site-opening-name">JORDNARY</span><span class="site-opening-trademark">™</span>'
+    + '<span class="site-opening-name">JORDNARY</span><span class="site-opening-trademark">™\uFE0E</span>'
   // Screen-space offsets from the face, measured in wordmark widths and ems.
   // Paint the faintest copy first so the nearer impressions overlap it.
   const projections = [

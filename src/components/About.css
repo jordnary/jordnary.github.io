@@ -92,8 +92,7 @@
 .journey-intro h1 em svg { position: absolute; bottom: -0.12em; left: -2%; width: 105%; height: 0.24em; color: var(--cover-secondary); stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
 .journey-title-period { color: var(--cover-secondary); }
 .journey-handwritten { margin: 1.7rem 0 0 2rem; color: var(--cover-secondary); font-family: 'Segoe Print', 'Bradley Hand', cursive; font-size: clamp(1.3rem, 2.1vw, 1.9rem); font-style: italic; letter-spacing: -0.06em; transform: rotate(-6deg); transform-origin: left center; }
-.journey-mark { display: inline-block; flex: none; vertical-align: -0.1em; }
-.journey-handwritten .journey-mark { margin-inline-start: 0.4em; font-size: 1.15em; transform: rotate(12deg); }
+.journey-handwritten .inline-mark { margin-inline-start: 0.4em; font-size: 1.15em; transform: rotate(12deg); }
 .journey-cover-notes {
   display: grid;
   grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
@@ -109,14 +108,14 @@
 .journey-scroll-title em { position: relative; color: var(--cover-accent); font-style: normal; }
 .journey-scroll-title em::after { content: ''; position: absolute; left: 0; right: 0; bottom: -0.12em; height: 0.2em; border-top: 1px solid var(--cover-secondary); border-radius: 50%; transform: rotate(-4deg); }
 .journey-scroll-icon { display: inline-grid; width: 1.2em; height: 1.2em; margin-inline-start: 0.45em; vertical-align: middle; place-items: center; border: 1px solid var(--cover-rule); border-radius: 50%; color: var(--cover-accent); transition: transform 200ms ease, background 200ms ease, border-color 200ms ease; }
-.journey-scroll-icon .journey-mark { font-size: 0.72em; }
+.journey-scroll-icon .inline-mark { font-size: 0.72em; }
 .journey-scroll-link:hover .journey-scroll-icon { transform: translate(3px, 3px); border-color: var(--cover-accent); background: color-mix(in srgb, var(--cover-accent) 12%, transparent); }
 .journey-prologue-trail { display: block; width: min(100%, 16rem); height: 2.5rem; margin-top: 0.35rem; overflow: visible; stroke: var(--cover-secondary); stroke-width: 1; opacity: 0.65; }
 .journey-prologue-trail > path:nth-child(2) { stroke: var(--cover-accent); opacity: 0.3; }
 .journey-prologue-trail > circle { fill: var(--cover-point-fill); stroke: var(--cover-accent); }
 .journey-intro-aside { min-width: 0; }
 .journey-note-index { display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.7rem; color: var(--cover-secondary); font-size: 0.9375rem; font-weight: 500; letter-spacing: 0.08em; }
-.journey-note-index .journey-mark { font-size: 1.2em; }
+.journey-note-index .inline-mark { font-size: 1.2em; }
 .journey-intro-copy { color: var(--cover-ink); font-size: clamp(1.0625rem, 1.35vw, 1.1875rem); line-height: 1.85; text-wrap: pretty; }
 .journey-keywords { display: grid; grid-template-columns: repeat(4, max-content); gap: 0.65rem clamp(1rem, 1.75vw, 1.6rem); margin: 1.1rem 0 0; padding: 0; list-style: none; color: var(--cover-accent); font-size: 0.875rem; font-weight: 500; line-height: 1.6; }
 .journey-keywords li { display: flex; align-items: baseline; gap: 0.5rem; }
@@ -143,7 +142,7 @@
 .journey-atlas-topic-web { left: 64.3%; top: 83%; }
 .journey-atlas-origin { position: absolute; left: 0; top: 81%; color: var(--cover-muted); font-size: 0.875rem; line-height: 1.5; }
 .journey-atlas figcaption { display: flex; justify-content: flex-end; align-items: center; gap: 0.8rem; margin-top: 0.85rem; padding-right: 1rem; color: var(--cover-ink); font-family: var(--journey-serif); font-size: 1rem; line-height: 1.7; letter-spacing: 0.04em; }
-.journey-atlas figcaption .journey-mark { color: var(--cover-secondary); font-size: 1.15em; }
+.journey-atlas figcaption .inline-mark { color: var(--cover-secondary); font-size: 1.15em; }
 .journey-chapter-heading { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.8rem; padding: 1rem 0; border-top: 1px solid var(--journey-border); color: var(--journey-muted); font-size: 0.7rem; scroll-margin-top: 7rem; }
 .journey-chapter-heading > span { font-size: 0.58rem; letter-spacing: 0.14em; }
 /* Keep the curve above the outro's paper edge without lifting the white backdrop. */

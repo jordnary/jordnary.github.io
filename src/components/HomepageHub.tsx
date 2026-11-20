@@ -5,7 +5,14 @@ import { GitHubAvatar } from './GitHubAvatar'
 import { ContactIcon } from './icons'
 
 const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
-  { page: 'home', glyph: '⌂' },
+  {
+    page: 'home',
+    glyph: (
+      <svg className="homepage-hub-glyph-svg" fill="none" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8M5.5 9v11h13V9" />
+      </svg>
+    ),
+  },
   {
     page: 'about',
     glyph: (
@@ -23,7 +30,14 @@ const hubPages: Array<{ page: SitePage; glyph: ReactNode }> = [
       </svg>
     ),
   },
-  { page: 'projects', glyph: '▦' },
+  {
+    page: 'projects',
+    glyph: (
+      <svg className="homepage-hub-glyph-svg" fill="none" strokeLinejoin="round" viewBox="0 0 24 24">
+        <path d="M4 4h16v16H4ZM4 12h16M12 4v16" />
+      </svg>
+    ),
+  },
   {
     page: 'contact',
     glyph: (

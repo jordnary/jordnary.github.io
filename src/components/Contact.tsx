@@ -2,7 +2,7 @@ import { useCallback, useState, type CSSProperties } from 'react'
 import { contactCoverImage, contactStampImage } from '../lib/page-resources'
 import { Toast } from './Toast'
 import { ContactAirmail } from './ContactAirmail'
-import { CopyIcon } from './icons'
+import { CopyIcon, InlineMark } from './icons'
 import { ArtisticLabel } from './ArtisticLabel'
 import { SmartLink } from './SmartLink'
 import { contactLinks, contactProfile } from '../data/contact'
@@ -69,7 +69,7 @@ export function Contact() {
               </div>
             </div>
             <p className="correspondence-hello"><span>Say</span><em>hello.</em></p>
-            <div className="correspondence-postcard-bottom"><span>让好奇心有回音。</span><span>↗</span></div>
+            <div className="correspondence-postcard-bottom"><span>让好奇心有回音。</span><span><InlineMark shape="up-right" /></span></div>
             <svg className="correspondence-postmark" viewBox="0 0 114 48" fill="none" focusable="false"><path d="M2 9q14-12 28 0t28 0 28 0 28 0M2 23q14-12 28 0t28 0 28 0 28 0M2 37q14-12 28 0t28 0 28 0 28 0" /></svg>
           </div>
           <div className="correspondence-seal"><span>LET’S</span><strong>talk</strong></div>
@@ -110,7 +110,7 @@ export function Contact() {
                 onClick={handleCopyEmail}
                 type="button"
               >
-                {copyToastId > 0 && copySucceeded ? <span className="correspondence-copy-check" aria-hidden="true">✓</span> : <CopyIcon />}
+                {copyToastId > 0 && copySucceeded ? <span className="correspondence-copy-check" aria-hidden="true"><InlineMark shape="check" /></span> : <CopyIcon />}
                 <span>{copyToastId > 0 && copySucceeded ? '已复制' : '复制邮箱'}</span>
               </button>
               <span className="correspondence-email-signoff" aria-hidden="true">a little hello, a new beginning.</span>
@@ -130,7 +130,7 @@ export function Contact() {
                   <span className="correspondence-link-kicker"><span>{String(index + 1).padStart(2, '0')}</span> / {link.href.startsWith('http') ? 'OPEN SOURCE' : 'BACK TO THE START'}</span>
                   <span className="correspondence-link-body">
                     <span className="correspondence-link-content"><span className="correspondence-link-title"><ArtisticLabel>{link.title}</ArtisticLabel></span><span className="correspondence-link-description">{link.description}</span></span>
-                    <span className="correspondence-link-arrow" aria-hidden="true">{link.href.startsWith('http') ? '↗' : '→'}</span>
+                    <span className="correspondence-link-arrow" aria-hidden="true"><InlineMark shape={link.href.startsWith('http') ? 'up-right' : 'right'} /></span>
                   </span>
                 </SmartLink>
               ))}

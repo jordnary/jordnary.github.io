@@ -1,4 +1,5 @@
 import type { SearchEntry } from '../data/searchIndex'
+import { InlineMark } from './icons'
 
 export function SearchResults({ results, query, activeIndex, onClose, onActivate }: {
   results: SearchEntry[]
@@ -16,7 +17,7 @@ export function SearchResults({ results, query, activeIndex, onClose, onActivate
           onMouseMove={() => onActivate(index)} role="option">
           <span className="site-search-result-type">{result.kind}</span>
           <span className="site-search-result-copy"><strong>{result.title}</strong><span>{result.description}</span></span>
-          <span aria-hidden="true" className="site-search-result-arrow">→</span>
+          <span aria-hidden="true" className="site-search-result-arrow"><InlineMark shape="right" /></span>
         </a>
       </li>)}
     </ul> : <div className="site-search-empty"><p>暂时没有匹配内容。</p><span>换一个关键词，或从首页继续探索。</span></div>}

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { InlineMark } from './icons'
 
 export function LaunchIntro({ active = true, preparing = false, onEnter }: { active?: boolean; preparing?: boolean; onEnter: () => void }) {
   const introRef = useRef<HTMLDivElement>(null)
@@ -103,7 +104,7 @@ export function LaunchIntro({ active = true, preparing = false, onEnter }: { act
         </p>
         <button className="launch-intro-enter" onClick={onEnter} type="button">
           <span className="launch-intro-enter-label">PRESS ENTER</span>
-          <span className="launch-intro-enter-key">↵</span>
+          <span className="launch-intro-enter-key"><InlineMark shape="enter" /></span>
         </button>
       </div>
 

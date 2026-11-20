@@ -1,6 +1,7 @@
 import { PageSection } from './PageSection'
 import { LearningGeometry, type LearningGeometryKind } from './LearningGeometry'
 import { timelineItems } from '../data/timeline'
+import { InlineMark } from './icons'
 
 const stageDiagrams: Record<string, { kind: LearningGeometryKind; label: string }> = {
   Now: { kind: 'framework', label: 'UNDERSTAND' },
@@ -42,11 +43,11 @@ export function Timeline() {
           </li>
         ))}
       </ol>
-      <div className="learning-blueprint-ruler" aria-hidden="true"><span>理解 → 实践 → 再探索</span><span>01 — 03</span></div>
+      <div className="learning-blueprint-ruler" aria-hidden="true"><span>理解 <InlineMark shape="right" /> 实践 <InlineMark shape="right" /> 再探索</span><span>01 — 03</span></div>
       <div className="learning-loop-note">
-        <span aria-hidden="true">↺</span>
+        <span aria-hidden="true"><InlineMark shape="restart" /></span>
         <p>理解 · 实践 · 记录，再带着问题出发。</p>
-        <a href="#notes">回到学习笔记 <span aria-hidden="true">↗</span></a>
+        <a href="#notes">回到学习笔记 <span aria-hidden="true"><InlineMark shape="up-right" /></span></a>
       </div>
     </PageSection>
   )

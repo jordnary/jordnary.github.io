@@ -9,6 +9,7 @@ import { LearningPixelLabel } from './LearningPixelLabel'
 import { LearningNotesTicker } from './LearningNotesTicker'
 import { learningTowerImage } from '../lib/inpage-images'
 import { learningCoverImages } from '../lib/page-resources'
+import { InlineMark } from './icons'
 
 const reducedMotionQuery = '(prefers-reduced-motion: reduce)'
 const imageRoot = `${import.meta.env.BASE_URL}images/learning/`
@@ -173,7 +174,7 @@ function LearningCover({ staticScene }: { staticScene: boolean }) {
       <span className="learning-cover-side-note">FIG. 001 / THE ARCHITECTURE OF INTELLIGENCE</span>
       <span className="learning-cover-side-index">从一条线索，构筑新的理解。</span>
       <div className="learning-cover-reticle"><b className="learning-cover-selection" /><i /><span ref={coordinateRef}>{'X:0PX\nY:0PX'}</span><div ref={hintRef} className="learning-cover-drag-hint">按住左键并拖拽<br />绘制选框</div></div>
-      <div className="learning-cover-image-baseline"><span>好奇是起点，理解没有终点。</span><span>EXPLORE THE STRUCTURE <b>↓</b></span></div>
+      <div className="learning-cover-image-baseline"><span>好奇是起点，理解没有终点。</span><span>EXPLORE THE STRUCTURE <b><InlineMark shape="down" /></b></span></div>
     </div>
   )
 }
@@ -241,7 +242,7 @@ export function LearningHeroScene() {
               <span className="learning-art-coordinate learning-art-coordinate-top">INPUT / 好奇</span>
               <span className="learning-art-coordinate learning-art-coordinate-bottom">OUTPUT / 新的理解</span>
             </div>
-            <figcaption className="learning-hero-art-caption"><span>一条线索，慢慢有了形状。</span><span>SCROLL TO DEVELOP ↓</span></figcaption>
+            <figcaption className="learning-hero-art-caption"><span>一条线索，慢慢有了形状。</span><span>SCROLL TO DEVELOP <InlineMark shape="down" /></span></figcaption>
           </figure>
 
           <div className="learning-hero-narrative" ref={narrativeRef}>
@@ -271,9 +272,9 @@ export function LearningHeroScene() {
           </div>
         </section>
         <nav className="learning-contents" aria-label="学习页目录">
-          <a href="#skills"><span>01</span> 知识地图 <span aria-hidden="true">↗</span></a>
-          <a href="#notes"><span>02</span> 学习笔记 <span aria-hidden="true">↗</span></a>
-          <a href="#timeline"><span>03</span> 下一步 <span aria-hidden="true">↗</span></a>
+          <a href="#skills"><span>01</span> 知识地图 <span aria-hidden="true"><InlineMark shape="up-right" /></span></a>
+          <a href="#notes"><span>02</span> 学习笔记 <span aria-hidden="true"><InlineMark shape="up-right" /></span></a>
+          <a href="#timeline"><span>03</span> 下一步 <span aria-hidden="true"><InlineMark shape="up-right" /></span></a>
         </nav>
       </div>
     </>

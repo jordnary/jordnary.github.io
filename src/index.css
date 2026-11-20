@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+.inline-mark { display: inline-block; flex: none; vertical-align: -0.1em; }
+
 :root {
   --radius-card: 0.5rem;
   --radius-soft: 0.75rem;
@@ -4316,7 +4318,7 @@ a {
     font-size: 0.64rem;
   }
 
-  .github-repository-meta span:not(:last-child)::after {
+  .github-repository-meta > span:not(:last-child)::after {
     content: "·";
     margin-left: 0.65rem;
     color: var(--color-border-hover);

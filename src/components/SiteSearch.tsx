@@ -3,6 +3,7 @@ import { clearSearchRecovery, searchRecovery } from '../lib/search-recovery'
 import entries from 'virtual:site-search-entries'
 import { searchSite } from '../lib/search'
 import { SearchResults } from './SiteSearchResults'
+import { InlineMark } from './icons'
 import './SiteSearchResults.css'
 
 type SiteSearchProps = { isOpen: boolean; onClose: () => void; onOpen: () => void }
@@ -89,8 +90,8 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
       </div>
       <div className="site-search-footer">
         <div aria-label="搜索快捷键" className="site-search-shortcuts">
-          <span className="site-search-shortcut"><kbd>↑</kbd><kbd>↓</kbd><span>选择</span></span>
-          <span className="site-search-shortcut"><kbd>↵</kbd><span>打开</span></span>
+          <span className="site-search-shortcut"><kbd><InlineMark shape="up" /><span className="sr-only">上方向键</span></kbd><kbd><InlineMark shape="down" /><span className="sr-only">下方向键</span></kbd><span>选择</span></span>
+          <span className="site-search-shortcut"><kbd><InlineMark shape="enter" /><span className="sr-only">回车键</span></kbd><span>打开</span></span>
           <span className="site-search-shortcut"><kbd>Esc</kbd><span>关闭</span></span>
         </div>
         <button onClick={onClose} type="button">关闭</button>

@@ -5,6 +5,7 @@ import { learningNotes, noteDifficulties, noteProgresses, noteTopics, type Learn
 import { learningPhotos, noteCovers } from '../data/note-covers'
 import { useNoteGallery } from '../lib/useNoteGallery'
 import { learningNoteImage } from '../lib/inpage-images'
+import { InlineMark } from './icons'
 
 const noteFontSizes = [90, 100, 110, 120, 130]
 const noteFontSizeKey = 'learning-note-font-size'
@@ -59,21 +60,21 @@ export function LearningNotes() {
                       <p className="note-cover-label">{cover.label}</p>
                       <h3>{cover.title}</h3>
                       <p className="note-cover-summary">{note.summary}</p>
-                      <div className="note-cover-bottom"><span><i />{note.progress}</span><span className="note-read-label">打开笔记 <span className="note-open-arrow" aria-hidden="true">↗</span></span></div>
+                      <div className="note-cover-bottom"><span><i />{note.progress}</span><span className="note-read-label">打开笔记 <span className="note-open-arrow" aria-hidden="true"><InlineMark shape="up-right" /></span></span></div>
                     </div>
                   </button>
                 </article>
               )
             })}
           </div>
-          {filteredNotes.length === 0 && <div className="notes-empty site-container"><span aria-hidden="true">∅</span><h3>这一页，暂时留白。</h3><p>还没有符合这些条件的笔记，换个方向探索吧。</p><button type="button" onClick={() => { reset(); setTopic('全部主题'); setProgress('全部进度'); setDifficulty('全部难度') }}>查看全部笔记 <span aria-hidden="true">↗</span></button></div>}
+          {filteredNotes.length === 0 && <div className="notes-empty site-container"><span aria-hidden="true"><InlineMark shape="empty" /></span><h3>这一页，暂时留白。</h3><p>还没有符合这些条件的笔记，换个方向探索吧。</p><button type="button" onClick={() => { reset(); setTopic('全部主题'); setProgress('全部进度'); setDifficulty('全部难度') }}>查看全部笔记 <span aria-hidden="true"><InlineMark shape="up-right" /></span></button></div>}
         </div>
         <div className="notes-gallery-footer site-container">
           <span className="notes-page-number">{filteredNotes.length ? String(activeIndex + 1).padStart(2, '0') : '00'} <span>/ {String(filteredNotes.length).padStart(2, '0')}</span></span>
           <div className="notes-progress" aria-hidden="true"><span ref={progressRef} /></div>
           <div className="notes-arrows" aria-label="翻阅笔记">
-            <button aria-label="上一篇笔记" type="button" disabled={!canScroll || activeIndex === 0} onClick={() => goTo(activeIndex - 1)}>←</button>
-            <button aria-label="下一篇笔记" type="button" disabled={!canScroll || activeIndex >= filteredNotes.length - 1} onClick={() => goTo(activeIndex + 1)}>→</button>
+            <button aria-label="上一篇笔记" type="button" disabled={!canScroll || activeIndex === 0} onClick={() => goTo(activeIndex - 1)}><InlineMark shape="left" /></button>
+            <button aria-label="下一篇笔记" type="button" disabled={!canScroll || activeIndex >= filteredNotes.length - 1} onClick={() => goTo(activeIndex + 1)}><InlineMark shape="right" /></button>
           </div>
         </div>
       </div>
@@ -136,7 +137,7 @@ function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void
   return createPortal(
     <dialog className="learning-note-reader" ref={dialogRef} aria-labelledby="note-reader-title" data-closing={isClosing} style={{ '--note-reader-font-scale': fontSize / 100 } as CSSProperties} onCancel={event => { event.preventDefault(); requestClose() }} onClick={event => { if (event.target === event.currentTarget) requestClose() }}>
       <div className="note-reader-scroll">
-        <header className="note-reader-masthead"><span>LEARNING JOURNAL / 学习手记</span><button type="button" aria-label="关闭笔记" onClick={requestClose}><span aria-hidden="true">×</span></button></header>
+        <header className="note-reader-masthead"><span>LEARNING JOURNAL / 学习手记</span><button type="button" aria-label="关闭笔记" onClick={requestClose}><span aria-hidden="true"><InlineMark shape="close" /></span></button></header>
         <article className="note-reader-paper">
           <div className="note-reader-meta"><span>{note.topic}</span><span>{note.progress}</span><span>{note.difficulty}</span></div>
           <h2 id="note-reader-title">{note.title}</h2>
@@ -155,11 +156,11 @@ function NoteReader({ note, onClose }: { note: LearningNote; onClose: () => void
             <section><h3><span>04</span>容易走偏的地方</h3><ul className="note-reader-pitfalls">{note.pitfalls.map(pitfall => <li key={pitfall}>{pitfall}</li>)}</ul></section>
             <section>
               <h3><span>05</span>合上笔记，试着回答</h3><p>{note.review.question}</p>
-              <details className="note-reader-review"><summary>想好之后，展开参考答案 <span aria-hidden="true">＋</span></summary><p>{note.review.answer}</p></details>
+              <details className="note-reader-review"><summary>想好之后，展开参考答案 <span aria-hidden="true"><InlineMark shape="plus" /></span></summary><p>{note.review.answer}</p></details>
             </section>
-            <section><h3><span>06</span>回到参考资料</h3><a href={note.reference.href} target="_blank" rel="noreferrer">{note.reference.label} <span aria-hidden="true">↗</span></a></section>
+            <section><h3><span>06</span>回到参考资料</h3><a href={note.reference.href} target="_blank" rel="noreferrer">{note.reference.label} <span aria-hidden="true"><InlineMark shape="up-right" /></span></a></section>
           </div>
-          <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><span>KEEP LEARNING ↗</span></footer>
+          <footer className="note-reader-end"><p>理解没有终点，这一页还会继续生长。</p><span>KEEP LEARNING <InlineMark shape="up-right" /></span></footer>
         </article>
       </div>
       <div className="note-reader-font-controls" role="group" aria-label="调整笔记字号">
