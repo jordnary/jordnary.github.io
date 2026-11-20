@@ -47,8 +47,13 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
         await scrollTo(page, end - 120)
         await frames(page)
         const reversed = await surface.boundingBox()
-        assert.ok(Math.abs(reversed.y - bottom.y - 120) < 1,
-          `${reducedMotion}, before ${route}: the blue mobile footer moves with the page when scrolling away from the bottom (moved ${reversed.y - bottom.y}px)`)
+        const expectedShift = reducedMotion === 'reduce' ? 120 : 0
+        assert.ok(Math.abs(reversed.y - bottom.y - expectedShift) < 1,
+          `${reducedMotion}, before ${route}: footer moved ${reversed.y - bottom.y}px, expected ${expectedShift}px`)
+        const slot = await page.locator('.footer-shell').boundingBox()
+        assert.ok(Math.abs(slot.y - bottom.y - 120) < 1, 'Reversing scroll covers 120px of the footer')
+        assert.ok(await page.evaluate(y => !document.elementFromPoint(20, y)?.closest('.footer-shell'), slot.y - 2),
+          'The covered part of the menu cannot intercept touches')
         await expectPaperOutsideFrame(page)
         await scrollTo(page, 0)
         await frames(page)
@@ -72,7 +77,20 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
       await page.waitForFunction(() => document.body.dataset.page === 'home')
       await frames(page)
       await expectPaperOutsideFrame(page)
-      report(`${reducedMotion}: mobile footer scrolls out of view; white outer surfaces survive reversal, navigation and Back`)
+      if (reducedMotion === 'no-preference') {
+        await scrollTo(page, 'end')
+        await page.waitForSelector('.footer-shell[data-reveal="true"]')
+        const shortFrame = await page.addStyleTag({ content: ':root { --site-viewport-height: 300px; }' })
+        await page.waitForSelector('.footer-shell[data-reveal="false"]', { state: 'attached' })
+        await scrollTo(page, 'end')
+        const surface = await page.locator('.footer-surface').boundingBox()
+        assert.ok(surface.height > 300 && Math.abs(surface.y + surface.height - 300) < 1,
+          'A footer taller than the mobile frame scrolls all the way to its last row')
+        await shortFrame.evaluate(style => style.remove())
+        await scrollTo(page, 'end')
+        await page.waitForSelector('.footer-shell[data-reveal="true"]')
+      }
+      report(`${reducedMotion}: mobile footer reveal, scroll reversal, clipping and link navigation`)
     }
     assert.deepEqual(errors, [])
   } finally { await context.close() }
@@ -90,7 +108,8 @@ export async function runSiteMobileViewportChecks(browser, baseURL, report = () 
       const html = await response.text()
       assert.match(html, /name="viewport" content="[^"]*viewport-fit=contain/)
       assert.match(html, /<link[^>]+rel="stylesheet"/, 'The initial HTML loads render-blocking styles before the application')
-      await page.locator('main').waitFor({ state: 'attached' })
+      // Routes load lazily; the empty main shell has no scroll range yet.
+      await page.locator('main > *').first().waitFor({ state: 'attached' })
       if (!route) await page.locator('.homepage-portal').waitFor()
       await frames(page)
       const initial = await page.locator('#root').boundingBox()
