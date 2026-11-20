@@ -144,6 +144,8 @@ try {
       if (cycle) {
         await page.locator('#now .home-gallery-open').first().click()
         await ready(page, '.home-now-reader-scene img')
+        // Compare complete reader visits, including the content mounted after the cover paints.
+        await page.locator('.home-now-live-content[aria-busy="false"]').waitFor()
         await closeReader(page)
       }
       if ([0, 5, 10, 20].includes(cycle)) {
