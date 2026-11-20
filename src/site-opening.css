@@ -38,7 +38,7 @@
   height: var(--site-viewport-height, 100%);
   box-sizing: border-box;
   padding-bottom: min(4.5rem, 18vh);
-  font-family: var(--opening-font, 'Opening Archivo Black'), sans-serif;
+  font-family: 'Opening Archivo Black', sans-serif;
   /* Keep the full-size face until its animated silhouette needs the space. */
   font-size: min(var(--opening-full-size), calc((100vw - 16px) / 7.29), 35vh);
   font-weight: 400;

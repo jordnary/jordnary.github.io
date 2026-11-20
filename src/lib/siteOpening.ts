@@ -62,6 +62,10 @@ export function bootstrapSiteOpening(base: string) {
   const motionChanged = () => { if (preference.matches) boot.dispose() }
   const reveal = () => {
     if (!contentReady || !timelineReady || boot.status === 'revealing' || boot.status === 'complete') return
+    if (boot.status === 'preparing') {
+      boot.dispose()
+      return
+    }
     boot.status = 'revealing'
     overlay.dataset.state = 'revealing'
     overlay.setAttribute('aria-busy', 'false')
@@ -125,23 +129,25 @@ export function bootstrapSiteOpening(base: string) {
     window.addEventListener('site-navigation-interrupted', interrupted)
     document.addEventListener('visibilitychange', visibilityChanged)
     preference.addEventListener('change', motionChanged)
-    let fontReady = false
-    const start = () => {
+    const skipUnreadyOpening = () => {
       if (boot.status !== 'preparing') return
-      boot.status = 'playing'
-      // Freeze the face for this playback; a late font must not resize the logo.
-      overlay.style.setProperty('--opening-font', fontReady ? '"Opening Archivo Black"' : '"Arial Black", Arial')
-      overlay.dataset.state = 'playing'
-      later(finishTimeline, timelineDuration)
+      timelineReady = true
+      reveal()
     }
     const symbol = new Image()
     // Match the CSS mask's CORS mode so it shares the same request.
     symbol.crossOrigin = 'anonymous'
     symbol.fetchPriority = 'high'
     symbol.src = `${base}opening-symbol.png`
-    const font = document.fonts.load('16px "Opening Archivo Black"').then(faces => { fontReady = faces.length > 0 })
-    void Promise.allSettled([symbol.decode(), font]).then(start)
-    later(start, 1200)
+    const font = document.fonts.load('16px "Opening Archivo Black"', 'JORDNARY')
+    void Promise.all([symbol.decode(), font]).then(([, faces]) => {
+      if (!faces.length) { skipUnreadyOpening(); return }
+      if (boot.status !== 'preparing' || timelineReady) return
+      boot.status = 'playing'
+      overlay.dataset.state = 'playing'
+      later(finishTimeline, timelineDuration)
+    }, skipUnreadyOpening)
+    later(skipUnreadyOpening, 3500)
     // The independent startup guard supplies the existing recovery notice.
     later(boot.dispose, 8000)
   } catch {

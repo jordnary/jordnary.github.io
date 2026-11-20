@@ -29,10 +29,11 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       const requested = page.waitForRequest(`**/${asset}`)
       await page.goto(baseURL, { waitUntil: 'commit' })
       await requested
-      await page.waitForTimeout(250)
+      await page.waitForTimeout(1400)
       assert.equal(await page.locator(opening).getAttribute('data-state'), null)
       release()
       await page.locator(`${opening}[data-state="playing"]`).waitFor()
+      assert.ok(await page.evaluate(() => document.fonts.check('16px "Opening Archivo Black"', 'JORDNARY')))
     } finally { await context.close() }
     pass(`The opening waits for a delayed ${asset} before starting its timeline`)
   }
@@ -220,13 +221,22 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     } finally { await context.close() }
   }
 
-  for (const mode of ['reduce', 'changed', 'font-error', 'entry-error', 'hidden', 'watchdog']) {
+  for (const mode of ['reduce', 'changed', 'font-error', 'symbol-error', 'symbol-stall', 'entry-error', 'hidden', 'watchdog']) {
     const { context, page, errors } = await setup(mode === 'reduce' ? { reducedMotion: 'reduce' } : {})
     try {
+      const missingArtwork = ['font-error', 'symbol-error', 'symbol-stall'].includes(mode)
+      if (missingArtwork) await page.addInitScript(() => {
+        window.openingAnimated = false
+        document.addEventListener('animationstart', event => {
+          if (event.animationName.startsWith('site-opening-')) window.openingAnimated = true
+        })
+      })
+      if (mode === 'symbol-error') await page.route('**/opening-symbol.png', route => route.abort())
+      if (mode === 'symbol-stall') await page.route('**/opening-symbol.png', () => {})
       if (mode === 'font-error') await page.route('**/fonts/opening-archivo-black.woff2', route => route.abort())
       if (mode === 'entry-error') await page.route(/\/assets\/main-[^/]+\.js$/, route => route.abort())
       if (mode === 'watchdog') await page.route(/\/assets\/main-[^/]+\.js$/, () => {})
-      await page.goto(baseURL, { waitUntil: mode.endsWith('error') || mode === 'watchdog' ? 'commit' : 'load' })
+      await page.goto(baseURL, { waitUntil: missingArtwork || mode.endsWith('error') || mode === 'watchdog' ? 'commit' : 'load' })
       if (mode === 'changed') {
         await page.locator(opening).waitFor()
         await page.emulateMedia({ reducedMotion: 'reduce' })
@@ -239,9 +249,9 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
           delete document.hidden
         })
       }
-      if (mode === 'font-error') {
-        await page.locator(`${opening}[data-state="playing"]`).waitFor()
-        assert.match(await page.locator('.site-opening-logo').evaluate(element => getComputedStyle(element).fontFamily), /Arial Black/)
+      if (missingArtwork) {
+        await page.waitForFunction(() => window.__siteOpening?.status === 'complete')
+        assert.equal(await page.evaluate(() => window.openingAnimated), false)
       }
       if (mode === 'entry-error' || mode === 'watchdog') await page.locator('.page-load-feedback').waitFor({ timeout: 10000 })
       await finished(page)
