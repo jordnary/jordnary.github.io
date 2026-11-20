@@ -1,4 +1,4 @@
-// Shared contours keep the visible paper edge and the footer mask aligned.
+// Shared contours for the torn edges of the page sections.
 function tornContour(offset: number, seed: number) {
   let state = seed
   const random = () => {
@@ -16,7 +16,3 @@ function tornContour(offset: number, seed: number) {
 
 export const paperTear = tornContour(15, 17)
 export const surfaceTear = tornContour(37, 41)
-
-export const paperSeamMask = `url("data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 64" preserveAspectRatio="none"><path d="${paperTear}" fill="white"/></svg>`,
-)}")`

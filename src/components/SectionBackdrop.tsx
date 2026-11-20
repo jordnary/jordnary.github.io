@@ -13,13 +13,11 @@ type SectionBackdropProps = {
   decoration?: SectionDecoration
 }
 
-export function SectionPaperSeam({ className = '' }: { className?: string }) {
+export function SectionPaperSeam() {
   return (
-    <svg className={`section-paper-seam ${className}`} viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      {/* The footer mask supplies the upper edge; everything below this rim is transparent. */}
-      <g className="section-paper-seam-shadow">
-        <path className="section-backdrop-paper-rim" d={`M0 0H1440V64H0Z ${surfaceTear}`} fillRule="evenodd" />
-      </g>
+    <svg className="section-paper-seam" viewBox="0 0 1440 64" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path className="section-backdrop-paper-rim" d={`M0 0H1440V64H0Z ${surfaceTear}`} fillRule="evenodd" />
+      <path fill="var(--section-sage)" d={`M0 0H1440V64H0Z ${paperTear}`} fillRule="evenodd" />
     </svg>
   )
 }

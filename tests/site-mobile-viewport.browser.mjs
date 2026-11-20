@@ -18,6 +18,44 @@ async function expectPaperOutsideFrame(page) {
   assert.ok(pixels.every(channel => channel === 255), 'Every pixel from the scroll frame to the screen edge is white')
 }
 
+async function checkMovingAboutSeam(page) {
+  await scrollTo(page, 'end')
+  const end = await page.locator('#site-scroll').evaluate(element => element.scrollTop)
+  const seam = page.locator('.section-paper-seam')
+  const bounds = await seam.boundingBox()
+  const firstRow = Math.floor(bounds.y)
+  const lastRow = Math.ceil(bounds.y + bounds.height + 180)
+
+  // Scan the painted contour itself. The compositor can advance scroll between
+  // a DOM measurement and a screenshot, especially during a direction change.
+  await scrollTo(page, end - 180)
+  const paintedRows = new Set()
+  for (const remaining of [162, 144, 34, 129, 146, 165, 35]) {
+    await page.locator('#site-scroll').evaluate((element, top) => {
+      element.scrollTo({ top, behavior: 'smooth' })
+    }, end - remaining)
+    for (let sample = 0; sample < 3; sample++) {
+      const strip = await page.screenshot({ clip: { x: 0, y: firstRow, width: 390, height: lastRow - firstRow } })
+      const { data, info } = await sharp(strip).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+      for (const x of [12, 90, 160, 235, 300]) {
+        let visible = false
+        for (let y = 2; y < info.height - 3; y++) {
+          const offset = (y * info.width + x) * info.channels
+          const above = offset - 2 * info.width * info.channels
+          if (data[above] === 233 && data[above + 1] === 240 && data[above + 2] === 232 &&
+              data[offset] === 255 && data[offset + 1] === 255 && data[offset + 2] === 255) {
+            visible = true
+            if (x === 12) paintedRows.add(y)
+            break
+          }
+        }
+        assert.ok(visible, `The white torn edge remains visible below the sage paper at x=${x} while scrolling toward ${remaining}px from the end`)
+      }
+    }
+  }
+  assert.ok(paintedRows.size > 3, 'The screenshots captured the rim at different scroll positions')
+}
+
 async function runMobileFooterScrollChecks(browser, baseURL, report) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })
   const page = await context.newPage()
@@ -32,6 +70,7 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
       // Cover both an edge flush with the viewport and a visible browser gutter.
       if (reducedMotion === 'reduce') await page.addStyleTag({ content: ':root { --site-viewport-height: 700px; }' })
       const root = await page.locator('#root').elementHandle()
+      await checkMovingAboutSeam(page)
 
       for (const [label, route] of [['Contact', 'contact/'], ['Learning', 'learning/'], ['Home', 'home/'], ['About', 'about/']]) {
         await page.evaluate(() => document.fonts.ready)

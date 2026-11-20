@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { SectionPaperSeam } from './SectionBackdrop'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { SmartLink } from './SmartLink'
 import { getFooterOrbitPath, useFooterOrbit } from './useFooterOrbit'
 import { useFooterReveal } from './useFooterReveal'
 import { contactLinks } from '../data/contact'
 import { getRouteHref, type SitePage } from '../lib/routes'
-import { paperSeamMask } from '../lib/paper-tear'
 import './Footer.css'
 
 const footerPages: { page: SitePage; label: string }[] = [
@@ -71,7 +69,6 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
     <footer
       ref={footerRef}
       className={`footer-shell${paperSeam ? ' footer-shell--paper-seam' : ''}`}
-      style={paperSeam ? { '--paper-seam-mask': paperSeamMask } as CSSProperties : undefined}
       id="site-footer"
       lang="en"
     >
@@ -113,7 +110,6 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
           </div>
         </div>
       </div>
-      {paperSeam && <SectionPaperSeam />}
     </footer>
   )
 }

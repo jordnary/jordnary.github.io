@@ -1,5 +1,6 @@
 import { memo, useCallback, useState, type ReactNode } from 'react'
 import { Footer } from '../components/Footer'
+import { SectionPaperSeam } from '../components/SectionBackdrop'
 import { Live2DCompanion } from '../components/Live2DCompanion'
 import { Navbar } from '../components/Navbar'
 import { ScrollProgress } from '../components/ScrollProgress'
@@ -49,6 +50,7 @@ const ShellContent = memo(function ShellContent({ children, page, shared, pendin
     {shared && page !== '404' && <ScrollProgress />}
     {shared && <Navbar activePage={page} onSearchOpen={onSearchOpen} />}
     <main tabIndex={-1}>{children}</main>
+    {page === 'about' && !pending && <SectionPaperSeam />}
     {shared && page !== '404' && !pending && <Footer paperSeam={page === 'about'} />}
   </div>
 })

@@ -188,7 +188,7 @@
   background: url('/images/about/outro-paper.webp') 0 0 / 640px auto repeat;
   mix-blend-mode: luminosity;
   opacity: 0.72;
-  mask-image: linear-gradient(transparent, #000 1rem);
+  mask-image: linear-gradient(transparent, #000 1rem, #000 calc(100% - var(--paper-seam-height) - 1rem), transparent calc(100% - var(--paper-seam-height)));
 }
 .journey-outro-kicker { display: flex; justify-content: center; align-items: center; gap: 0.6rem; color: var(--journey-accent); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.18em; }
 .journey-outro-kicker > span { width: 0.5rem; height: 0.5rem; border: 1px solid currentColor; border-radius: 50%; }

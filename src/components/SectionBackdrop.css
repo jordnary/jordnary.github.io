@@ -47,16 +47,16 @@
 .section-backdrop-fiber { fill: color-mix(in srgb, var(--section-fill) 50%, var(--section-white)); }
 
 .section-paper-seam {
-  position: absolute;
-  inset: 0 0 auto;
+  /* Scroll with the closing paragraph, above the separately clipped menu. */
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: var(--paper-seam-height);
+  margin-top: calc(-1 * var(--paper-seam-height));
   pointer-events: none;
   user-select: none;
 }
-
-.section-paper-seam-shadow { filter: drop-shadow(0 3px 3px rgb(25 43 50 / 0.16)); }
 
 .section-margin {
   position: absolute;
