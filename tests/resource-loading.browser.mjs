@@ -14,6 +14,17 @@ export async function runResourceLoadingChecks(browser, baseURL, report = () => 
     assert.ok(!initialResources.some(name => /(?:LearningPage|ProjectStudioPage|ProjectDetailPage|HomePage)-/.test(name)))
     report('The portal does not download unrelated page modules')
 
+    await page.locator('.launch-intro-enter').click()
+    const completed = await page.evaluate(() => performance.getEntriesByType('resource')
+      .filter(entry => entry.initiatorType === 'link').map(entry => entry.name))
+    await page.locator('.homepage-hub-link[href$="/home/"]').click()
+    await page.locator('#nav-toggle-projects').click()
+    const photos = await page.locator('.nav-mega-panel .nav-photo-frame img').evaluateAll(images =>
+      images.map(image => ({ src: image.currentSrc, loaded: image.complete && image.naturalWidth > 0 })))
+    assert.equal(photos.length, 4)
+    assert.ok(photos.every(image => image.loaded && completed.includes(image.src)))
+    report('Entering Home from the opening reuses the prepared images on the first menu click')
+
     await open('/projects/studio/')
     await page.locator('.studio-gallery-frame img').first().waitFor({ state: 'attached' })
     await page.waitForFunction(() => [...document.querySelectorAll('.studio-gallery-frame img')].every(image => image.complete && image.naturalWidth))

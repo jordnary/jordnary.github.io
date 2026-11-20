@@ -50,11 +50,13 @@ function pageResources(): Plugin {
   const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
   const imageTags = (url: URL) => {
     const resources = getPageResources(url, base)
-    const hasNavbar = ['home', 'about', 'learning', 'contact', '404'].includes(resources?.key ?? '')
-    const covers = (resources?.htmlImages ?? []).map(image => ({ image, priority: resources?.key === 'learning' ? 'high' : 'low' }))
-    const menu = hasNavbar ? (Object.keys(navigationPhotos) as NavigationPhoto[]).map(photo => ({
-      image: navigationImage(photo, base), priority: 'high',
-    })) : []
+    if (!resources) return []
+    const hasNavbar = ['home', 'about', 'learning', 'contact', '404'].includes(resources.key)
+    const covers = resources.htmlImages.map(image => ({ image, priority: resources.key === 'learning' ? 'high' : 'low' }))
+    // SPA navigation reuses the first document, including when it starts at the opening.
+    const menu = (Object.keys(navigationPhotos) as NavigationPhoto[]).map(photo => ({
+      image: navigationImage(photo, base), priority: hasNavbar ? 'high' : 'low',
+    }))
     return [...covers, ...menu].map(({ image, priority }) => ({
       tag: 'link',
       attrs: { rel: 'preload', as: 'image', href: image.src, fetchpriority: priority, 'data-page-image': '',
