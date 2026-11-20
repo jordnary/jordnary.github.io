@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
 
 type Point = { x: number; y: number }
 
@@ -8,7 +7,8 @@ export function NotFoundCursor() {
 
   useLayoutEffect(() => {
     const cursor = cursorRef.current
-    if (!cursor) return
+    const scene = cursor?.parentElement
+    if (!cursor || !scene) return
 
     const pointer = matchMedia('(hover: hover) and (pointer: fine)')
     const motion = matchMedia('(prefers-reduced-motion: no-preference)')
@@ -39,7 +39,21 @@ export function NotFoundCursor() {
       const settling = Math.hypot(target.x - position.x, target.y - position.y) > .1
       if (!settling) position = { ...target }
 
-      cursor.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`
+      // The transparent model and its speech bubble pass pointer events to the scene.
+      const companion = document.querySelector('.live2d-companion:not([hidden])')
+      const overlaps = (element: Element) => {
+        const { left, top, right, bottom } = element.getBoundingClientRect()
+        return top < bottom && [target, position].some(point => point
+          && point.x >= left && point.x <= right && point.y >= top && point.y <= bottom)
+      }
+      const bubble = companion?.querySelector('.live2d-dialogue p')
+      if (companion && (overlaps(companion) || (bubble && overlaps(bubble)))) {
+        clear()
+        return
+      }
+
+      const bounds = scene.getBoundingClientRect()
+      cursor.style.transform = `translate3d(${position.x - bounds.left}px, ${position.y - bounds.top}px, 0) translate(-50%, -50%)`
       cursor.dataset.active = 'true'
       previousTime = settling ? time : 0
       if (settling) frame = requestAnimationFrame(draw)
@@ -62,8 +76,8 @@ export function NotFoundCursor() {
       if (!pointer.matches || !motion.matches) clear()
     }
 
-    document.addEventListener('pointermove', move, { passive: true })
-    document.documentElement.addEventListener('pointerleave', clear)
+    scene.addEventListener('pointermove', move, { passive: true })
+    scene.addEventListener('pointerleave', clear)
     document.addEventListener('pointercancel', clear)
     document.addEventListener('visibilitychange', clear)
     document.addEventListener('keydown', keyboard, true)
@@ -74,8 +88,8 @@ export function NotFoundCursor() {
 
     return () => {
       clear()
-      document.removeEventListener('pointermove', move)
-      document.documentElement.removeEventListener('pointerleave', clear)
+      scene.removeEventListener('pointermove', move)
+      scene.removeEventListener('pointerleave', clear)
       document.removeEventListener('pointercancel', clear)
       document.removeEventListener('visibilitychange', clear)
       document.removeEventListener('keydown', keyboard, true)
@@ -86,5 +100,5 @@ export function NotFoundCursor() {
     }
   }, [])
 
-  return createPortal(<span ref={cursorRef} className="not-found-cursor" data-active="false" aria-hidden="true" />, document.body)
+  return <span ref={cursorRef} className="not-found-cursor" data-active="false" aria-hidden="true" />
 }

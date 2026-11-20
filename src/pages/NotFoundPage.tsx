@@ -9,7 +9,7 @@ export function NotFoundPage() {
     return mountFallingDigits(drawing.current!)
   }, [])
 
-  return <><NotFoundCursor /><section className="not-found" aria-labelledby="not-found-title" lang="en">
+  return <section className="not-found" aria-labelledby="not-found-title" lang="en">
     <svg ref={drawing} className="not-found-digits" aria-hidden="true" fillRule="evenodd">
       <path d={four} /><path d={zero} /><path d={four} />
     </svg>
@@ -17,5 +17,6 @@ export function NotFoundPage() {
       <h1 id="not-found-title"><span className="sr-only">404 — </span>The Page you are looking was not found</h1>
       <p>Don’t worry. Go back to the home page</p>
     </div>
-  </section></>
+    <NotFoundCursor />
+  </section>
 }

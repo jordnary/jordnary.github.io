@@ -49,10 +49,13 @@ try {
     try {
       assert.equal((await page.goto(origin + missing)).status(), 404)
       await ready(page, '404')
+      const navBounds = await page.locator('.nav-content').boundingBox()
       const launcher = await page.locator('.live2d-launcher').elementHandle()
       // Collapsed visits stay lightweight and keep the same launcher in both directions.
       await clickLink(page, '/contact/')
       await ready(page, 'contact')
+      assert.deepEqual(await page.locator('.nav-content').boundingBox(), navBounds,
+        'The 404 and contact pages align their navigation')
       await page.goBack()
       await ready(page, '404')
       assert.equal(page.url(), origin + missing)
@@ -65,6 +68,23 @@ try {
       const canvas = await page.locator('.live2d-companion canvas').elementHandle()
       const assetCount = assets.length
       assert.ok(assetCount >= 3, 'The real model, geometry and texture were loaded')
+      if (!mobile) {
+        await page.emulateMedia({ reducedMotion: 'no-preference' })
+        const cursor = page.locator('.not-found-cursor[data-active="true"]')
+        await page.mouse.move(320, 340)
+        await cursor.waitFor()
+        await page.locator('.nav-content .nav-brand').hover()
+        await cursor.waitFor({ state: 'hidden' })
+        await page.mouse.move(320, 340)
+        await cursor.waitFor()
+        const model = await page.locator('.live2d-canvas-wrap').boundingBox()
+        await page.mouse.move(model.x + model.width / 2, model.y + model.height / 2)
+        await cursor.waitFor({ state: 'hidden' })
+        await page.mouse.move(model.x - 24, model.y + model.height / 2)
+        await cursor.waitFor()
+        await page.emulateMedia({ reducedMotion: 'reduce' })
+        await cursor.waitFor({ state: 'hidden' })
+      }
       const shared = async () => {
         assert.ok(await canvas.evaluate(node => node.isConnected && node === document.querySelector('.live2d-companion canvas.is-ready')),
           'The original WebGL canvas survives page changes')

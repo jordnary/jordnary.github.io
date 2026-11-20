@@ -33,17 +33,17 @@ const inViewport = (digit, viewport) => digit.visible && digit.right > 0 && digi
 async function checkLayout(page) {
   assert.ok(await page.locator('.not-found').evaluate(scene => {
     const r = scene.getBoundingClientRect(), header = document.querySelector('.nav-shell').getBoundingClientRect()
-    const nav = document.querySelector('.nav-content').getBoundingClientRect()
     const scroll = document.querySelector('#site-scroll')
-    return r.top === 0 && r.left === 0 && r.width === innerWidth && Math.abs(r.height - innerHeight) <= 1
-      && header.left === 0 && header.right === innerWidth && nav.left <= 32 && innerWidth - nav.right <= 32
+    return r.top === 0 && r.left === 0 && r.width === document.documentElement.clientWidth && Math.abs(r.height - innerHeight) <= 1
+      && header.left === r.left && header.right === r.right
       && document.documentElement.scrollHeight <= innerHeight + 1 && scroll.scrollHeight <= r.height + 1
-  }), 'The stage fills the viewport and the menu reaches both gutters')
+  }), 'The stage fills the available viewport below the shared header layer')
   assert.equal(await page.locator('main :is(a,button), .not-found-curtain, .not-found-counter').count(), 0)
 }
 
 async function checkEntry(page) {
-  await page.getByRole('heading', { name: /404.*was not found/ }).waitFor()
+  await page.getByRole('heading', { name: '404 — The Page you are looking was not found', exact: true }).waitFor()
+  assert.equal(await page.title(), '404 | Page not found')
   assert.equal(page.url(), missing)
   assert.equal(await page.locator('nav [aria-current="page"]').count(), 0)
   const start = await ink(page)

@@ -1,12 +1,9 @@
-:root:has(body[data-page="404"]) { scrollbar-gutter: auto; }
-
 body[data-page="404"] { --not-found-green: #44c45c; }
 
 .not-found-cursor {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  z-index: 150;
   display: none;
   width: 8px;
   height: 8px;
@@ -26,8 +23,6 @@ body[data-page="404"] { --not-found-green: #44c45c; }
 body[data-page="404"] .nav-shell {
   position: absolute;
 }
-
-body[data-page="404"] .nav-content { max-width: none; }
 
 .not-found {
   position: relative;
