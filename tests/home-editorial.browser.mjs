@@ -86,7 +86,7 @@ export async function runHomeEditorialChecks(browser, baseURL, report = () => {}
 
   await check('The home hero is present and every visible cover loads', async page => {
     await home(page)
-    assert.match(await page.title(), /Personal Website/)
+    assert.equal(await page.title(), 'Home | Jordnary')
     assert.equal(await page.getByRole('heading', { level: 1, name: '用好奇心，创造自己的世界。' }).count(), 1)
     await page.waitForFunction(() => {
       const hero = document.querySelector('.home-editorial-headlines')

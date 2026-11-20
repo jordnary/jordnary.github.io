@@ -7,7 +7,7 @@ import { projects } from './src/data/projects'
 import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
 import { bootstrapSiteOpening } from './src/lib/siteOpening'
-import { isHomepagePortalUrl } from './src/lib/routes'
+import { getProjectFromUrl, isHomepagePortalUrl } from './src/lib/routes'
 import { showPageLoadFailure } from './src/lib/page-load-notice'
 import { searchIndex } from './scripts/search-index'
 import { notFoundPage } from './scripts/not-found-page'
@@ -105,8 +105,14 @@ function pageResources(): Plugin {
 function projectPages(): Plugin {
   let base = '/'
   const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const setProjectTitle = (html: string, name: string) => html.replace(/<title>.*?<\/title>/, () => `<title>${escape(name)}</title>`)
   return {
     name: 'project-detail-pages',
+    transformIndexHtml(html, context) {
+      if (!context.server || !context.originalUrl) return
+      const project = getProjectFromUrl(new URL(context.originalUrl, 'https://example.com'), base)
+      if (project) return setProjectTitle(html, project.title)
+    },
     configResolved(config) { base = config.base },
     configureServer(server) {
       server.middlewares.use((request, _response, next) => {
@@ -136,8 +142,7 @@ function projectPages(): Plugin {
         const template = bundle['projects/index.html']
         if (!template || template.type !== 'asset') throw new Error('Missing projects HTML entry')
         for (const project of projects) {
-          const source = String(template.source)
-            .replace(/<title>.*?<\/title>/, `<title>${escape(project.title)} | 项目案例</title>`)
+          const source = setProjectTitle(String(template.source), project.title)
             .replace(/(<meta name="description" content=")[^"]*("\s*\/?>)/, `$1${escape(project.description)}$2`)
             .replace(/(<link rel="canonical" href=")[^"]*("\s*\/?>)/, `$1${escape(new URL(`projects/${project.id}/`, process.env.SITE_URL ? `${process.env.SITE_URL.replace(/\/$/, '')}/` : 'https://jordnary.github.io/').href)}$2`)
           this.emitFile({ type: 'asset', fileName: `projects/${project.id}/index.html`, source })

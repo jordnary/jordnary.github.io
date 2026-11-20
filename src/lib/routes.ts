@@ -14,34 +14,36 @@ type SiteRoute = {
 export const siteRoutes: Record<SitePage, SiteRoute> = {
   home: {
     label: '首页',
-    title: 'Jordnary | Personal Website',
+    title: 'Home | Jordnary',
     description: 'Jordnary 的个人主页，记录计算机、AI 与 Web 学习。',
   },
   about: {
     label: '关于',
-    title: '关于 | Jordnary',
+    title: 'About | Jordnary',
     description: '认识我为何选择 CS、AI 与 Web，以及我持续学习和创造的方式。',
   },
   learning: {
     label: '学习',
-    title: '知识沉淀 | Jordnary',
+    title: 'Learning | Jordnary',
     description: '整理计算机、AI 和前端工程化的学习笔记与阶段计划。',
   },
   projects: {
     label: '项目',
-    title: 'Projects | Portfolio',
+    title: 'Projects | Jordnary',
     description: 'Selected projects in web development, machine learning and visual experiments.',
   },
   contact: {
     label: '联系',
-    title: '联系 | Jordnary',
+    title: 'Contact | Jordnary',
     description: '留一个简单的联系方式，欢迎交流学习与创作。',
   },
 }
 
+export const homepagePortalTitle = 'Welcome | Jordnary'
+
 export const projectStudioRoute: SiteRoute = {
   label: 'Studio',
-  title: 'Creative Development | Portfolio',
+  title: 'Creative Development Portfolio',
   description: 'A creative development practice exploring computer science, artificial intelligence and the web.',
 }
 

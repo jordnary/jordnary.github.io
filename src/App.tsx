@@ -1,6 +1,6 @@
 import { createElement, Suspense, useEffect, useLayoutEffect } from 'react'
 import { SiteLayout } from './layouts/SiteLayout'
-import { getProjectFromUrl, getProjectStudioHref, isProjectStudioUrl, notFoundRoute, projectStudioRoute, siteRoutes, type AppPage } from './lib/routes'
+import { getProjectFromUrl, getProjectStudioHref, homepagePortalTitle, isHomepagePortalUrl, isProjectStudioUrl, notFoundRoute, projectStudioRoute, siteRoutes, type AppPage } from './lib/routes'
 import { useSiteNavigation } from './lib/useSiteNavigation'
 import { ProjectPageTransition } from './components/ProjectPageTransition'
 import { ProjectsCursor } from './components/ProjectsCursor'
@@ -11,8 +11,10 @@ import type {} from './lib/pageStartup'
 function App({ page: initialPage }: { page: AppPage }) {
   useInputModality()
   const { page, href, module, renderId, transition, renderFailed } = useSiteNavigation(initialPage)
-  const project = getProjectFromUrl(new URL(href))
-  const isStudio = isProjectStudioUrl(new URL(href))
+  const url = new URL(href)
+  const project = getProjectFromUrl(url)
+  const isStudio = isProjectStudioUrl(url)
+  const isPortal = isHomepagePortalUrl(url)
 
   useLayoutEffect(() => { window.__siteStartup?.dispose() }, [])
 
@@ -31,7 +33,7 @@ function App({ page: initialPage }: { page: AppPage }) {
     description.setAttribute('name', 'description')
     if (!description.isConnected) document.head.append(description)
 
-    document.title = project ? `${project.title} | 项目案例` : route.title
+    document.title = project?.title ?? (isPortal ? homepagePortalTitle : route.title)
     document.body.dataset.page = page
     document.documentElement.lang = isStudio ? 'en' : 'zh-CN'
     description.setAttribute('content', project?.description ?? route.description)
@@ -50,7 +52,7 @@ function App({ page: initialPage }: { page: AppPage }) {
       link.setAttribute('href', `${window.location.origin}${isStudio ? getProjectStudioHref() : new URL(href).pathname}`)
       if (!link.isConnected) document.head.append(link)
     }
-  }, [page, project, href, isStudio])
+  }, [page, project, href, isStudio, isPortal])
 
   return (
     <>

@@ -167,8 +167,9 @@ export async function runProjectDetailChecks(browser, baseURL, report = () => {}
       const response = await page.goto(url(`projects/${project.id}/`))
       assert.equal(response.status(), 200)
       const html = await response.text()
-      assert.ok(html.includes(`<title>${project.title} | 项目案例</title>`), 'Static HTML has project metadata')
+      assert.ok(html.includes(`<title>${project.title}</title>`), 'Static HTML has project metadata')
       await loaded()
+      assert.equal(await page.title(), project.title)
       assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1)
       assert.equal(await page.getByRole('heading', { level: 1, name: project.title, exact: true }).count(), 1)
       const { sections } = projectIntroductions[project.id]
