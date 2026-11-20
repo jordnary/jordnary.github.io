@@ -132,7 +132,7 @@ export function Projects() {
   }, [])
 
   return (
-    <div className="projects-archive" id="projects" lang="en">
+    <div className="projects-archive" id="projects" lang="en" data-projects-cursor-surface="archive">
       <img className="archive-background" {...background} width="1920" height="1081" alt="" fetchPriority="high" draggable={false} />
       <img className="archive-header-mask" {...background} width="1920" height="1081" alt="" aria-hidden="true" draggable={false} />
       <ProjectsWordmark href={getProjectStudioHref()} label="About the studio" />

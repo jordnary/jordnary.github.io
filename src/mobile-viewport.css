@@ -67,7 +67,7 @@
   }
 
   /* Modal dialogs enter the browser's top layer and need the same boundary. */
-  html :is(dialog.archive-menu, dialog.mobile-nav-dialog, dialog.project-page-transition) {
+  html :is(dialog.mobile-nav-dialog, dialog.project-page-transition) {
     inset: 0 0 auto;
     width: 100%;
     height: var(--site-viewport-height);
@@ -76,19 +76,11 @@
     clip-path: inset(0);
   }
 
-  html body .archive-menu-content {
-    overscroll-behavior: contain;
-  }
-
   html body :is(dialog.learning-note-reader, dialog.home-now-reader) {
     top: calc(var(--site-viewport-height) / 2);
     bottom: auto;
     margin-block: 0;
     translate: 0 -50%;
-  }
-
-  html body .archive-menu button.archive-menu-toggle {
-    position: absolute;
   }
 
   html body .image-gallery {

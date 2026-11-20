@@ -61,12 +61,12 @@
   .projects-cursor:popover-open { display: block; }
   .projects-cursor[data-active='true'] { opacity: 1; }
 
-  :is(.projects-archive, .project-studio, .project-reader, .project-page-transition)[data-projects-cursor='active'],
-  :is(.projects-archive, .project-studio, .project-reader, .project-page-transition)[data-projects-cursor='active'] * {
+  html[data-projects-cursor='active'] [data-projects-cursor-surface],
+  html[data-projects-cursor='active'] [data-projects-cursor-surface] * {
     cursor: none !important;
   }
 
   /* Keep the system pointer suppressed while the closing modal hands off input. */
-  html[data-project-transition-cursor='active'],
-  html[data-project-transition-cursor='active'] * { cursor: none !important; }
+  html[data-projects-cursor='transition'],
+  html[data-projects-cursor='transition'] * { cursor: none !important; }
 }

@@ -111,7 +111,7 @@ export function ProjectStudioPage() {
   }, [])
 
   return (
-    <div className="project-studio" ref={pageRef} lang="en" data-theme={theme} data-theme-animated={animateTheme}>
+    <div className="project-studio" ref={pageRef} lang="en" data-projects-cursor-surface="studio" data-theme={theme} data-theme-animated={animateTheme}>
       <h1 className="studio-title">
         <span>CREATIVE</span><span>DEVELOPMENT</span><span>PORTFOLIO</span>
       </h1>

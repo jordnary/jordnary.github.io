@@ -186,7 +186,7 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
   }, [activeHeading, tocOpen])
 
   return (
-    <div className="project-reader" id="project-cover">
+    <div className="project-reader" id="project-cover" data-projects-cursor-surface="reader">
       <nav className="project-reader-topbar" aria-label="面包屑">
         <a className="project-reader-back" href={getRouteHref('projects')} data-project-return aria-label="返回项目">
           <ReaderDash /><span>Back To Index</span>
@@ -302,7 +302,9 @@ export default function ProjectDetailPage({ project, href }: { project: ProjectC
       </div>
       <ImageGallery images={images} activeIndex={previewIndex} onIndexChange={setPreviewIndex} onClose={() => setPreviewIndex(null)} />
       {createPortal(
-        <div className="project-reader-menu"><ProjectsMenu onOpenChange={setMenuOpen} /></div>,
+        <div className="project-reader-menu" data-projects-cursor-surface="reader">
+          <ProjectsMenu onOpenChange={setMenuOpen} />
+        </div>,
         document.body,
       )}
     </div>

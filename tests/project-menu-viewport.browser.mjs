@@ -74,7 +74,45 @@ async function assertReaderMenuPaintIsStable(page, baseURL) {
   }
 }
 
+async function assertReaderMenuCursor(browser, baseURL, report) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: 'no-preference' })
+  try {
+    await page.goto(new URL('projects/personal-website/', baseURL).href)
+    const menuButton = trigger(page)
+    const menu = page.getByRole('dialog', { name: 'Site navigation' })
+    const assertReaderCursor = async (target, mode) => {
+      await target.hover()
+      await page.locator(`.projects-cursor:popover-open[data-active="true"][data-surface="reader"][data-mode="${mode}"]`).waitFor()
+      assert.equal(await target.evaluate(element => getComputedStyle(element).cursor), 'none')
+    }
+    const heading = page.locator('.project-reader h1')
+    await assertReaderCursor(heading, 'default')
+    for (const [target, mode] of [[menuButton, 'interactive'], [heading, 'default'], [menuButton, 'interactive']]) {
+      // Sample the hit element before the cursor's next animation frame.
+      const crossing = await target.evaluateHandle(element => {
+        const sample = { style: null }
+        element.addEventListener('pointerover', event => { sample.style = getComputedStyle(event.target).cursor },
+          { once: true, capture: true })
+        return sample
+      })
+      await assertReaderCursor(target, mode)
+      assert.equal(await crossing.evaluate(sample => sample.style), 'none')
+      await crossing.dispose()
+    }
+    await menuButton.click()
+    await assertReaderCursor(menu.locator('.archive-wordmark'), 'default')
+    await assertReaderCursor(menu.getByRole('link', { name: 'Projects', exact: true }), 'interactive')
+    const closeButton = menu.getByRole('button', { name: 'Close menu', exact: true })
+    await assertReaderCursor(closeButton, 'interactive')
+    await closeButton.click()
+    await menu.waitFor({ state: 'hidden' })
+    await assertReaderCursor(page.locator('.project-reader h1'), 'default')
+    report('Reader menu trigger, links and Close use the shared cursor ring, with the normal dot over menu and article text')
+  } finally { await page.close() }
+}
+
 export async function runProjectMenuViewportChecks(browser, baseURL, report = () => {}) {
+  await assertReaderMenuCursor(browser, baseURL, report)
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'no-preference' })
   const page = await context.newPage()
   const errors = []

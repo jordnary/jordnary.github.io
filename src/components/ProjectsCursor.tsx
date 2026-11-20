@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef } from 'react'
 import './ProjectsCursor.css'
 
 const interactiveSelector = 'a[href], button:not(:disabled), [role="button"]:not([aria-disabled="true"])'
-const surfaceSelector = '.projects-archive, .project-studio, .project-reader'
 
 type CursorPoint = { x: number; y: number }
 
@@ -19,7 +18,6 @@ export function ProjectsCursor() {
     let position: CursorPoint | null = null
     let frame = 0
     let previousTime = 0
-    let surface: HTMLElement | null = null
     let modal: HTMLDialogElement | null = null
     let appearance = ''
 
@@ -33,9 +31,7 @@ export function ProjectsCursor() {
       position = target ? { ...target } : null
       cursor.dataset.active = 'false'
       cursor.dataset.mode = 'default'
-      delete document.documentElement.dataset.projectTransitionCursor
-      if (surface) delete surface.dataset.projectsCursor
-      surface = null
+      delete document.documentElement.dataset.projectsCursor
       modal = null
       appearance = ''
       if (cursor.matches(':popover-open')) cursor.hidePopover()
@@ -54,22 +50,19 @@ export function ProjectsCursor() {
       const transition = document.querySelector<HTMLDialogElement>('.project-page-transition[open]')
         ?? (document.querySelector('.app-shell[inert]') ? document.querySelector<HTMLDialogElement>('.project-page-transition') : null)
       const hit = document.elementFromPoint(target.x, target.y)
-      const nextSurface = transition ?? hit?.closest<HTMLElement>(surfaceSelector) ?? null
-      if (!nextSurface) {
+      const nextSurface = transition ?? hit?.closest<HTMLElement>('[data-projects-cursor-surface]')
+      const kind = transition ? 'transition' : nextSurface?.dataset.projectsCursorSurface
+      if (!nextSurface || !kind) {
         // Keep the pointer location on ordinary pages so an incoming interlude
         // starts at the click, even if the visitor does not move again.
         hide()
         return
       }
 
-      const kind = transition ? 'transition' : nextSurface.classList.contains('project-studio') ? 'studio'
-        : nextSurface.classList.contains('project-reader') ? 'reader' : 'archive'
       const nextAppearance = `${kind}:${nextSurface.dataset.theme ?? ''}:${nextSurface.dataset.themeAnimated ?? ''}`
-      if (surface !== nextSurface || appearance !== nextAppearance) {
-        if (surface) delete surface.dataset.projectsCursor
-        surface = nextSurface
+      if (appearance !== nextAppearance) {
         appearance = nextAppearance
-        const style = getComputedStyle(surface)
+        const style = getComputedStyle(nextSurface)
         cursor.dataset.surface = kind
         cursor.style.setProperty('--projects-cursor-ink', kind === 'studio' ? style.getPropertyValue('--studio-ink') : '#171717')
         cursor.style.setProperty('--projects-cursor-paper', kind === 'studio' ? style.getPropertyValue('--studio-paper') : '#f2f2f2')
@@ -79,8 +72,6 @@ export function ProjectsCursor() {
         ? 'preview'
         : hit?.closest(interactiveSelector) ? 'interactive' : 'default'
       cursor.dataset.mode = mode
-      if (transition) document.documentElement.dataset.projectTransitionCursor = 'active'
-      else delete document.documentElement.dataset.projectTransitionCursor
 
       if (!position) position = { ...target }
       const viewport = window.visualViewport
@@ -118,8 +109,9 @@ export function ProjectsCursor() {
         }
       }
       cursor.dataset.active = 'true'
-      // Hide the native cursor only after a replacement has a valid position.
-      nextSurface.dataset.projectsCursor = 'active'
+      // One visible cursor covers every Projects surface, including portaled menus.
+      const scope = transition ? 'transition' : 'active'
+      if (document.documentElement.dataset.projectsCursor !== scope) document.documentElement.dataset.projectsCursor = scope
 
       if (settling) frame = requestAnimationFrame(draw)
       else previousTime = 0
