@@ -73,6 +73,14 @@ export async function runAboutCoverChecks(browser, baseURL, report = () => {}) {
     assert.ok(staticCover, 'Reduced motion cancels every reveal and leaves all content visible')
     assert.deepEqual(errors, [], 'The cover produces no uncaught browser errors')
     report('Reduced motion keeps all cover content visible without reveal animations')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    for (const location of ['.journey-handwritten', '.journey-atlas figcaption', '.journey-scroll-icon', '.journey-note-index']) {
+      const mark = page.locator(location).locator('svg[aria-hidden="true"] path')
+      assert.ok(await mark.isVisible(), `The mobile ${location} mark renders as a decorative vector`)
+    }
+    assert.doesNotMatch(await page.locator('#about').textContent(), /[↗↘✳]/u, 'Journey marks never fall back to emoji glyphs')
+    report('Mobile arrows and asterisk use visible line art independent of the system font')
   } finally { await context.close() }
 }
 

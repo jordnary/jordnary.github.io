@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { JourneyMark } from './icons'
 import './AboutExplorationArt.css'
 
 const explorationTrail = 'M91 309C138 365 333 346 406 233S401 70 337 85'
@@ -108,7 +109,7 @@ export function AboutExplorationArt() {
         <div className="journey-atlas-topic journey-atlas-topic-web journey-cover-reveal"><strong>Web</strong><span>动手创造</span></div>
         <span className="journey-atlas-origin journey-cover-reveal">从一个问题出发</span>
       </div>
-      <figcaption className="journey-cover-reveal">不急着抵达，先保持好奇。<span aria-hidden="true">↗</span></figcaption>
+      <figcaption className="journey-cover-reveal">不急着抵达，先保持好奇。<JourneyMark shape="up-right" /></figcaption>
     </figure>
   )
 }

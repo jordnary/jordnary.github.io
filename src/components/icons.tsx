@@ -7,6 +7,20 @@ const iconProps = {
   viewBox: '0 0 24 24',
 } as const
 
+const journeyMarkPaths = {
+  'up-right': 'M4 20Q12 13 20 4M10 5l10-1-1 10',
+  'down-right': 'M4 4L20 20M10 20h10V10',
+  asterisk: 'M12 2.5v19M2.5 12h19M5.5 5.5l13 13M5.5 18.5l13-13',
+}
+
+export function JourneyMark({ shape }: { shape: keyof typeof journeyMarkPaths }) {
+  return (
+    <svg {...iconProps} className="journey-mark" width="1em" height="1em" strokeWidth="1.5" aria-hidden="true" focusable="false">
+      <path d={journeyMarkPaths[shape]} />
+    </svg>
+  )
+}
+
 export function FocusIcon({ icon }: { icon: string }) {
   const props = {
     ...iconProps,
