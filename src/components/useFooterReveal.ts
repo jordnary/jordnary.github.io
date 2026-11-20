@@ -10,9 +10,7 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
 
     let frame = 0
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const coarsePointer = window.matchMedia('(pointer: coarse)')
     const scrollFrame = footer.closest('#site-scroll')
-    let nearFooter = false
 
     const update = () => {
       frame = 0
@@ -20,10 +18,7 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
       const viewport = getPageViewportHeight()
       // Reserve the natural height before fixing the surface beneath the page.
       footer.style.setProperty('--footer-height', `${height}px`)
-      // Release the fixed blue surface away from the mobile page end so it
-      // cannot tint the browser toolbar after the footer has scrolled away.
-      const canReveal = !reducedMotion.matches && height > 0 && height < viewport
-      footer.dataset.reveal = String(canReveal && (!coarsePointer.matches || nearFooter))
+      footer.dataset.reveal = String(!reducedMotion.matches && height > 0 && height < viewport)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(update)
@@ -42,24 +37,16 @@ export function useFooterReveal(footerRef: RefObject<HTMLElement | null>, paperS
     resize.observe(surface, { box: 'border-box' })
     // The stationary frame can resize independently of the browser window.
     if (scrollFrame) resize.observe(scrollFrame)
-    const proximity = new IntersectionObserver(([entry]) => {
-      nearFooter = entry.isIntersecting
-      if (coarsePointer.matches) schedule()
-    }, { root: scrollFrame, rootMargin: '160px 0px' })
-    proximity.observe(footer)
     window.addEventListener('resize', schedule)
     reducedMotion.addEventListener('change', update)
-    coarsePointer.addEventListener('change', update)
     footer.addEventListener('focusin', revealFocus)
     update()
 
     return () => {
       cancelAnimationFrame(frame)
       resize.disconnect()
-      proximity.disconnect()
       window.removeEventListener('resize', schedule)
       reducedMotion.removeEventListener('change', update)
-      coarsePointer.removeEventListener('change', update)
       footer.removeEventListener('focusin', revealFocus)
       delete footer.dataset.reveal
       footer.style.removeProperty('--footer-height')

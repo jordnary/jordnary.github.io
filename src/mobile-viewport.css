@@ -50,6 +50,13 @@
     scroll-behavior: smooth;
   }
 
+  /* Give the fixed frame its own opaque bottom edge, including when the
+     small viewport fills the screen and there is no visible gutter below it. */
+  #root:has(.footer-shell) {
+    box-sizing: border-box;
+    border-bottom: 4px solid #fff;
+  }
+
   /* These two viewers already lock input and restore scroll positions. Keeping
      their scroll container intact avoids a second full-page layout on open. */
   body:has(dialog[open]:not(.home-now-reader)) #site-scroll,

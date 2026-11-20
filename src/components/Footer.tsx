@@ -75,40 +75,42 @@ export function Footer({ paperSeam = false }: { paperSeam?: boolean }) {
       id="site-footer"
       lang="en"
     >
-      <div className="footer-surface">
-        <div className="footer-content">
-          <FooterBrand active={brandActive} />
-          <ShanghaiTime active={clockActive} />
-          <nav aria-label="Footer navigation" className="footer-nav">
-            <div className="footer-nav-column">
-              <h2 className="footer-heading">Explore</h2>
-              <ul>
-                {footerPages.map(({ page, label }) => (
-                  <li key={page}>
-                    <SmartLink className="footer-link" href={getRouteHref(page)}>
-                      <span className="footer-link-label">{label}</span>
-                    </SmartLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="footer-nav-column">
-              <h2 className="footer-heading">Connect</h2>
-              <ul>
-                {contactLinks.filter(({ title }) => title === 'GitHub' || title === 'Email').map(({ title, href }) => (
-                  <li key={title}>
-                    <SmartLink className="footer-link" href={href}>
-                      <span className="footer-link-label">{title}</span>
-                    </SmartLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
-        </div>
-        <div className="footer-meta">
-          <p>© {currentYear} Jordnary</p>
-          <p>Built with curiosity.</p>
+      <div className="footer-reveal-track">
+        <div className="footer-surface">
+          <div className="footer-content">
+            <FooterBrand active={brandActive} />
+            <ShanghaiTime active={clockActive} />
+            <nav aria-label="Footer navigation" className="footer-nav">
+              <div className="footer-nav-column">
+                <h2 className="footer-heading">Explore</h2>
+                <ul>
+                  {footerPages.map(({ page, label }) => (
+                    <li key={page}>
+                      <SmartLink className="footer-link" href={getRouteHref(page)}>
+                        <span className="footer-link-label">{label}</span>
+                      </SmartLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="footer-nav-column">
+                <h2 className="footer-heading">Connect</h2>
+                <ul>
+                  {contactLinks.filter(({ title }) => title === 'GitHub' || title === 'Email').map(({ title, href }) => (
+                    <li key={title}>
+                      <SmartLink className="footer-link" href={href}>
+                        <span className="footer-link-label">{title}</span>
+                      </SmartLink>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </nav>
+          </div>
+          <div className="footer-meta">
+            <p>© {currentYear} Jordnary</p>
+            <p>Built with curiosity.</p>
+          </div>
         </div>
       </div>
       {paperSeam && <SectionPaperSeam />}

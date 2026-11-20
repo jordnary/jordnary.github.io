@@ -11,11 +11,11 @@ const scrollTo = (page, top) => page.locator('#site-scroll').evaluate((element, 
 }, top)
 
 async function expectPaperOutsideFrame(page) {
-  const { data, info } = await sharp(await page.screenshot()).extract({ left: 0, top: 710, width: 390, height: 120 }).removeAlpha().raw().toBuffer({ resolveWithObject: true })
-  for (let offset = 0; offset < data.length; offset += info.channels) {
-    assert.ok(data[offset] >= 240 && data[offset + 1] >= 240 && data[offset + 2] >= 240,
-      'No text, artwork or menu pixels can escape the stationary frame')
-  }
+  const frame = await page.locator('#site-scroll').boundingBox()
+  const top = Math.ceil(frame.y + frame.height)
+  const { width, height } = page.viewportSize()
+  const pixels = await sharp(await page.screenshot()).extract({ left: 0, top, width, height: height - top }).removeAlpha().raw().toBuffer()
+  assert.ok(pixels.every(channel => channel === 255), 'Every pixel from the scroll frame to the screen edge is white')
 }
 
 async function runMobileFooterScrollChecks(browser, baseURL, report) {
@@ -29,7 +29,8 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
       await page.goto(new URL('about/', baseURL).href)
       await page.locator('.footer-shell').waitFor({ state: 'attached' })
       await page.evaluate(() => document.fonts.ready)
-      await page.addStyleTag({ content: ':root { --site-viewport-height: 700px; }' })
+      // Cover both an edge flush with the viewport and a visible browser gutter.
+      if (reducedMotion === 'reduce') await page.addStyleTag({ content: ':root { --site-viewport-height: 700px; }' })
       const root = await page.locator('#root').elementHandle()
 
       for (const [label, route] of [['Contact', 'contact/'], ['Learning', 'learning/'], ['Home', 'home/'], ['About', 'about/']]) {
@@ -40,7 +41,9 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
         const surface = page.locator('.footer-surface')
         const bottom = await surface.boundingBox()
         const end = await page.locator('#site-scroll').evaluate(element => element.scrollTop)
-        assert.ok(Math.abs(bottom.y + bottom.height - 700) < 1,
+        const frame = await page.locator('#site-scroll').boundingBox()
+        assert.ok(frame.height < (await root.boundingBox()).height, 'The outer frame reserves its own white bottom edge')
+        assert.ok(Math.abs(bottom.y + bottom.height - frame.height) < 1,
           `${reducedMotion}, before ${route}: the complete footer remains reachable (bottom ${bottom.y + bottom.height}px)`)
         await expectPaperOutsideFrame(page)
 
@@ -57,7 +60,7 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
         await expectPaperOutsideFrame(page)
         await scrollTo(page, 0)
         await frames(page)
-        assert.ok((await surface.boundingBox()).y >= 700, 'Returning to the top moves the blue footer outside the viewport')
+        assert.ok((await surface.boundingBox()).y >= frame.height, 'Returning to the top moves the blue footer outside the viewport')
         assert.deepEqual(await page.evaluate(() => [document.documentElement, document.body, document.getElementById('root')]
           .map(element => getComputedStyle(element).backgroundColor)), Array(3).fill('rgb(255, 255, 255)'),
         'The browser-facing document surfaces remain opaque white')
@@ -84,8 +87,10 @@ async function runMobileFooterScrollChecks(browser, baseURL, report) {
         await page.waitForSelector('.footer-shell[data-reveal="false"]', { state: 'attached' })
         await scrollTo(page, 'end')
         const surface = await page.locator('.footer-surface').boundingBox()
-        assert.ok(surface.height > 300 && Math.abs(surface.y + surface.height - 300) < 1,
+        const frame = await page.locator('#site-scroll').boundingBox()
+        assert.ok(surface.height > frame.height && Math.abs(surface.y + surface.height - frame.height) < 1,
           'A footer taller than the mobile frame scrolls all the way to its last row')
+        await expectPaperOutsideFrame(page)
         await shortFrame.evaluate(style => style.remove())
         await scrollTo(page, 'end')
         await page.waitForSelector('.footer-shell[data-reveal="true"]')

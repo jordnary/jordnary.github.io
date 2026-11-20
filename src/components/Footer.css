@@ -38,6 +38,8 @@
 }
 
 /* The moving footer slot uncovers an actually stationary surface underneath. */
+.footer-reveal-track { display: contents; }
+
 .footer-shell[data-reveal="true"] {
   height: var(--footer-height);
   clip-path: inset(0);
@@ -47,6 +49,23 @@
   position: fixed;
   inset-inline: 0;
   bottom: 0;
+}
+
+@media (pointer: coarse) {
+  /* Give the surface one footer-height of sticky travel inside the clipped
+     slot. The scrolling frame owns the reveal throughout the gesture. */
+  .footer-shell[data-reveal="true"] .footer-reveal-track {
+    position: absolute;
+    inset: -100% 0 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .footer-shell[data-reveal="true"] .footer-surface {
+    position: sticky;
+    flex: none;
+  }
 }
 
 /* The search blur creates a fixed-position containing block of its own. */
