@@ -213,7 +213,7 @@ export async function runChecks(browser) {
       assert.equal(gate.count(), 1)
     } finally { gate.release() }
     await contentReady(page, '.correspondence')
-    assert.ok(['Low', 'Lowest'].includes(priorities[0]))
+    assert.equal(priorities[0], 'High')
     assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
   })
   pass('An in-flight Contact background survives route changes and is shared with the visible page')

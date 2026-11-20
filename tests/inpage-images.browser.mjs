@@ -125,7 +125,7 @@ try {
     const page = await saved.newPage()
     await page.goto(new URL('home/', base).href)
     await ready(page, '.home-gallery img')
-    await page.locator('#selected a[href$="/learning/"]').click()
+    await page.locator('#selected .home-gallery-link[href$="/learning/"]').click()
     await ready(page, '.note-cover-photo')
     assert.equal(await page.locator('.note-cover-photo').count(), 15)
     assert.ok(await page.locator('.notes-gallery').evaluate(el => el.getBoundingClientRect().top >= innerHeight))

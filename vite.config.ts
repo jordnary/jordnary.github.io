@@ -52,14 +52,15 @@ function pageResources(): Plugin {
     const resources = getPageResources(url, base)
     if (!resources) return []
     const hasNavbar = ['home', 'about', 'learning', 'contact', '404'].includes(resources.key)
-    const covers = resources.htmlImages.map(image => ({ image, priority: resources.key === 'learning' ? 'high' : 'low' }))
+    const covers = resources.htmlImages.map(image => ({ image, priority: 'high' }))
     // SPA navigation reuses the first document, including when it starts at the opening.
     const menu = (Object.keys(navigationPhotos) as NavigationPhoto[]).map(photo => ({
       image: navigationImage(photo, base), priority: hasNavbar ? 'high' : 'low',
     }))
-    const shared = [contactCoverImage(base), contactStampImage(base), aboutCoverImage(base), ...learningCoverImages(base)]
+    const contact = contactCoverImage(base)
+    const shared = [contact, contactStampImage(base), aboutCoverImage(base), ...learningCoverImages(base)]
       .filter(image => !covers.some(cover => cover.image.src === image.src))
-      .map(image => ({ image, priority: 'low' }))
+      .map(image => ({ image, priority: image === contact ? 'high' : 'low' }))
     return [...covers, ...menu, ...shared].map(({ image, priority }) => ({
       tag: 'link',
       attrs: { rel: 'preload', as: 'image', href: image.src, fetchpriority: priority, 'data-page-image': '',
