@@ -29,6 +29,7 @@
   isolation: isolate;
 }
 .site-opening::backdrop { background: transparent; }
+.site-opening:not([data-state]) > * { visibility: hidden; }
 .site-opening-logo {
   position: absolute;
   inset: 0 0 auto;

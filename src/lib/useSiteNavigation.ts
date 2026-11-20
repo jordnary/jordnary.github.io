@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { scrollToHashTarget } from './hashScroll'
 import { notifyNavigationScroll, getPageScrollTop, getPageScrollLeft, scrollPageTo } from './pageScrollSource'
-import { getNavigationPageFromUrl, getPageFromUrl, getProjectFromUrl, isProjectStudioUrl, type AppPage } from './routes'
+import { getNavigationPageFromUrl, getPageFromUrl, getProjectFromUrl, isHomepagePortalUrl, isProjectStudioUrl, type AppPage } from './routes'
 import { shouldTransitionProjects } from './project-page-transition'
 import { hasFailedPage, isPagePreloadError, loadPage, type PageModule } from './page-loaders'
 import { projectCoverBudgetMs, reopenPage, waitForPage } from './page-loading'
@@ -109,6 +109,7 @@ export function useSiteNavigation(initialPage: AppPage) {
         if (active !== attempt || controller.signal.aborted || attempt.committed || !module) return
         attempt.committed = true
         commitHistory()
+        if (!isHomepagePortalUrl(new URL(next.href))) window.__siteOpening?.dispose()
         currentIndex = window.history.state[indexKey]
         renderedHref = next.href
         const resetBoundary = renderFailure
@@ -116,13 +117,15 @@ export function useSiteNavigation(initialPage: AppPage) {
         setNavigation(previous => ({ ...next, module, renderId: (previous.renderId ?? 0) + (resetBoundary ? 1 : 0) }))
       }
       // Import rejection and timeouts are handled here, before any history/page commit.
-      const ready = waitForPage(loadPage(new URL(next.href), false, next.page), controller.signal).then(value => {
+      const openingEntry = initial && window.__siteOpening?.status === 'preparing'
+      const loading = loadPage(new URL(next.href), false, next.page)
+      const ready = (openingEntry ? loading : waitForPage(loading, controller.signal)).then(value => {
         module = value
         // Reload paper is opaque from its first HTML frame. Prepare content
         // behind it immediately, without delaying the existing reveal timeline.
         if (!animate || covered || initiallyCovered) commit()
       }, () => {
-        if (active !== attempt || controller.signal.aborted) return
+        if (active !== attempt || controller.signal.aborted || openingEntry) return
         prefetch.current(new URL(renderedHref), !initial)
         releaseCover()
         clearNotice = showPageLoadFailure(dismissFailure)

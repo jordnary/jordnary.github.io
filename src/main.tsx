@@ -9,7 +9,7 @@ import type {} from './lib/pageStartup'
 const stopTracking = trackPagePreloadErrors()
 if (import.meta.hot) import.meta.hot.dispose(stopTracking)
 
-// The opening paints independently while its nonblocking entry styles download.
+// The opening curtain stays white while its nonblocking entry styles download.
 // Route imports retain Vite's stylesheet gate after the shell is mounted.
 const mount = () => {
   if (!window.__siteStartup?.failed) createRoot(document.getElementById('site-scroll')!).render(

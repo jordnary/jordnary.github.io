@@ -20,9 +20,9 @@ export function subscribeSiteOpening(callback: () => void) {
 }
 
 /** Inlined before entry assets. Keep dependencies inside this function. */
-export function bootstrapSiteOpening(base: string) {
+export function bootstrapSiteOpening() {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)')
-  if (preference.matches || document.hidden || (window.__siteOpening && window.__siteOpening.status !== 'complete')) return
+  if (window.__siteOpening && window.__siteOpening.status !== 'complete') return
 
   const overlay = document.createElement('dialog')
   overlay.className = 'site-opening'
@@ -48,7 +48,7 @@ export function bootstrapSiteOpening(base: string) {
 
   const timelineDuration = 2500
   let contentReady = false
-  let timelineReady = false
+  let assetsReady = false
   const timers: number[] = []
   let paintFrame = 0
   const later = (callback: () => void, delay: number) => {
@@ -58,14 +58,21 @@ export function bootstrapSiteOpening(base: string) {
   }
   const prevent = (event: Event) => event.preventDefault()
   const interrupted = () => boot.dispose()
-  const visibilityChanged = () => { if (document.hidden) boot.dispose() }
-  const motionChanged = () => { if (preference.matches) boot.dispose() }
-  const reveal = () => {
-    if (!contentReady || !timelineReady || boot.status === 'revealing' || boot.status === 'complete') return
-    if (boot.status === 'preparing') {
+  const start = () => {
+    if (boot.status !== 'preparing' || !contentReady || !assetsReady || document.hidden) return
+    if (preference.matches) {
       boot.dispose()
       return
     }
+    boot.status = 'playing'
+    overlay.dataset.state = 'playing'
+    later(finishTimeline, timelineDuration)
+  }
+  const motionChanged = () => {
+    if (preference.matches && boot.status !== 'preparing') boot.dispose()
+  }
+  const reveal = () => {
+    if (boot.status !== 'playing') return
     boot.status = 'revealing'
     overlay.dataset.state = 'revealing'
     overlay.setAttribute('aria-busy', 'false')
@@ -78,7 +85,7 @@ export function bootstrapSiteOpening(base: string) {
       ?.getAnimations().find(animation => 'animationName' in animation && animation.animationName === 'site-opening-progress')
     const elapsed = typeof progress?.currentTime === 'number' ? progress.currentTime : timelineDuration
     if (elapsed < timelineDuration) later(finishTimeline, Math.max(16, timelineDuration - elapsed))
-    else { timelineReady = true; reveal() }
+    else reveal()
   }
   const boot: NonNullable<Window['__siteOpening']> = window.__siteOpening = {
     status: 'preparing',
@@ -89,7 +96,7 @@ export function bootstrapSiteOpening(base: string) {
         paintFrame = requestAnimationFrame(() => {
           paintFrame = 0
           contentReady = true
-          reveal()
+          start()
         })
       })
     },
@@ -99,8 +106,7 @@ export function bootstrapSiteOpening(base: string) {
       timers.forEach(timer => window.clearTimeout(timer))
       cancelAnimationFrame(paintFrame)
       window.removeEventListener('pagehide', interrupted)
-      window.removeEventListener('site-navigation-interrupted', interrupted)
-      document.removeEventListener('visibilitychange', visibilityChanged)
+      document.removeEventListener('visibilitychange', start)
       preference.removeEventListener('change', motionChanged)
       if (overlay.open) overlay.close()
       overlay.remove()
@@ -116,41 +122,53 @@ export function bootstrapSiteOpening(base: string) {
     document.documentElement.append(overlay)
     overlay.showModal()
     window.dispatchEvent(new Event('site-opening-start'))
-    overlay.addEventListener('cancel', event => {
-      prevent(event)
-      timelineReady = true
-      reveal()
-    })
+    overlay.addEventListener('cancel', prevent)
     overlay.addEventListener('animationend', event => {
       if (event.target === overlay && event.animationName === 'site-opening-curtain') boot.dispose()
-      if (event.animationName === 'site-opening-progress') { timelineReady = true; reveal() }
+      if (event.animationName === 'site-opening-progress') reveal()
     })
     window.addEventListener('pagehide', interrupted)
-    window.addEventListener('site-navigation-interrupted', interrupted)
-    document.addEventListener('visibilitychange', visibilityChanged)
+    document.addEventListener('visibilitychange', start)
     preference.addEventListener('change', motionChanged)
-    const skipUnreadyOpening = () => {
-      if (boot.status !== 'preparing') return
-      timelineReady = true
-      reveal()
+    // Read the opening stylesheet itself, including pseudo-elements and keyframes.
+    // Both direct entries and SPA visits install this sheet before bootstrapping.
+    const sheet = document.querySelector<HTMLStyleElement>('style[data-site-opening]')?.sheet
+    if (!sheet) return
+    const pending: Promise<unknown>[] = [...overlay.querySelectorAll('img')].map(image => image.decode())
+    const urls = new Set<string>()
+    const fontFamilies = new Set<string>()
+    const familyName = (value: string) => value.trim().replace(/^["']|["']$/g, '').toLowerCase()
+    const collect = (rules: CSSRuleList) => {
+      for (const rule of rules) {
+        if (rule instanceof CSSFontFaceRule) {
+          fontFamilies.add(familyName(rule.style.fontFamily))
+        } else if (rule instanceof CSSStyleRule || rule instanceof CSSKeyframeRule) {
+          for (const match of rule.style.cssText.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s)]+))\s*\)/gi)) {
+            const url = match[1] ?? match[2] ?? match[3]
+            if (url && !url.startsWith('#')) urls.add(url)
+          }
+        }
+        if ('cssRules' in rule) collect((rule as CSSGroupingRule).cssRules)
+      }
     }
-    const symbol = new Image()
-    // Match the CSS mask's CORS mode so it shares the same request.
-    symbol.crossOrigin = 'anonymous'
-    symbol.fetchPriority = 'high'
-    symbol.src = `${base}opening-symbol.png`
-    const font = document.fonts.load('16px "Opening Archivo Black"', 'JORDNARY')
-    void Promise.all([symbol.decode(), font]).then(([, faces]) => {
-      if (!faces.length) { skipUnreadyOpening(); return }
-      if (boot.status !== 'preparing' || timelineReady) return
-      boot.status = 'playing'
-      overlay.dataset.state = 'playing'
-      later(finishTimeline, timelineDuration)
-    }, skipUnreadyOpening)
-    later(skipUnreadyOpening, 3500)
-    // The independent startup guard supplies the existing recovery notice.
-    later(boot.dispose, 8000)
+    collect(sheet.cssRules)
+    for (const face of document.fonts) {
+      if (fontFamilies.has(familyName(face.family))) pending.push(face.load())
+    }
+    for (const src of urls) {
+      const image = new Image()
+      image.crossOrigin = 'anonymous'
+      image.fetchPriority = 'high'
+      image.src = src
+      pending.push(image.decode())
+    }
+    void Promise.all(pending).then(() => {
+      assetsReady = true
+      start()
+    }, () => {
+      // Keep the white curtain when a declared resource cannot be prepared.
+    })
   } catch {
-    boot.dispose()
+    // Keep the curtain if the browser cannot initialize the opening.
   }
 }

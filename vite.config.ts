@@ -24,7 +24,7 @@ function pageStartup(): Plugin {
       handler(html, context) {
         const portal = isHomepagePortalUrl(new URL(context.originalUrl ?? context.path, 'https://example.com'), base)
         if (portal) {
-          // The inline opening can paint while the application styles download.
+          // The white curtain can paint while the application styles download.
           // main.tsx waits for these sheets before mounting the covered page.
           html = html.replace(/<link\b[^>]*\brel=["']stylesheet["'][^>]*>/gi, tag =>
             tag.replace(/\s*\/?>$/, ' media="print" data-opening-styles onload="this.media=\'all\'" />'))
@@ -37,7 +37,7 @@ function pageStartup(): Plugin {
           { tag: 'script', attrs: { 'data-site-startup': '' }, children: `(${bootstrapPageStartup.toString()})(${showPageLoadFailure.toString()});`, injectTo: 'head-prepend' },
           ...(portal ? [
             { tag: 'style', attrs: { 'data-site-opening': '' }, children: readFileSync(new URL('./src/site-opening.css', import.meta.url), 'utf8').replaceAll('__SITE_BASE__', base), injectTo: 'head-prepend' as const },
-            { tag: 'script', attrs: { 'data-site-opening': '' }, children: `(${bootstrapSiteOpening.toString()})(${JSON.stringify(base)});`, injectTo: 'head-prepend' as const },
+            { tag: 'script', attrs: { 'data-site-opening': '' }, children: `(${bootstrapSiteOpening.toString()})();`, injectTo: 'head-prepend' as const },
           ] : []),
         ] }
       },

@@ -301,21 +301,21 @@ export async function runPageLoadingChecks(browser, baseURL, report = () => {}) 
 
   await withPage(async page => {
     const gate = await hold(page, modulePattern('main'))
-    const loaded = page.goto(url('/'), { waitUntil: 'domcontentloaded' })
+    const loaded = page.goto(url('/home/'), { waitUntil: 'domcontentloaded' })
     await gate.requested
     assert.equal(await page.locator(feedback).count(), 0)
     await page.locator(`${feedback}[data-state="error"]`).waitFor({ timeout: 11000 })
     await gate.release()
     await loaded
     await frame(page)
-    assert.equal(await page.locator('.launch-intro-enter').count(), 0, 'A timed-out entry waits for explicit recovery')
+    assert.equal(await page.locator('.home-editorial').count(), 0, 'A timed-out content entry waits for explicit recovery')
     await page.locator(feedback).click()
     await page.locator(feedback).waitFor({ state: 'detached' })
     assert.equal(await page.evaluate(() => window.__siteStartup.failed), true)
     await page.reload()
-    await page.locator('.launch-intro-enter').waitFor()
+    await page.locator('.home-editorial').waitFor()
   })
-  pass('Entry timeout ignores late scripts after dismissal; explicit refresh recovers')
+  pass('Content entry timeout ignores late scripts after dismissal; explicit refresh recovers')
 
   for (const navigate of [false, true]) {
     await withPage(async page => {

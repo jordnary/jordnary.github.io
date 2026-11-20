@@ -15,15 +15,17 @@ export function bootstrapPageStartup(notify: typeof showPageLoadFailure) {
     if (startup.failed) return
     startup.failed = true
     window.clearTimeout(timer)
+    if (window.__siteOpening?.status === 'preparing') return
     clearNotice = notify()
-    window.__siteOpening?.dispose()
     window.__projectTransitionBoot?.dispose('skipped')
   }
   const error = (event: Event) => {
     if ((event.target instanceof HTMLScriptElement && event.target.type === 'module')
       || (event.target instanceof HTMLLinkElement && event.target.rel === 'stylesheet')) fail()
   }
-  const timer = window.setTimeout(fail, 8000)
+  const timer = window.setTimeout(() => {
+    if (window.__siteOpening?.status !== 'preparing') fail()
+  }, 8000)
   const startup: NonNullable<Window['__siteStartup']> = window.__siteStartup = {
     failed: false,
     dispose: () => {

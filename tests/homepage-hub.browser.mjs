@@ -236,8 +236,11 @@ export async function runHubLifecycleChecks(browser, baseURL, report = () => {})
       await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })))
       await idle(page, `${name} pagehide`)
       await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })))
+      await page.locator('.homepage-portal[data-phase="intro"]').waitFor()
+      await enter(page)
+      assert.equal(await page.evaluate(() => window.__hubProbe.captureOwners()), owners)
       await moving(page, `${name} pageshow`)
-      pass(`${name}: page lifecycle pause and resume leaves a single loop`)
+      pass(`${name}: re-entering after the restored opening resumes a single loop`)
 
       for (let cycle = 0; cycle < 20; cycle++) {
         await page.emulateMedia({ reducedMotion: 'reduce' })

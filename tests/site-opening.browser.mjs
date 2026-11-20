@@ -20,26 +20,51 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     return { context, page, errors }
   }
 
-  for (const asset of ['opening-symbol.png', 'fonts/opening-archivo-black.woff2']) {
-    const { context, page } = await setup()
-    try {
-      let release
-      const held = new Promise(resolve => { release = resolve })
-      await page.route(`**/${asset}`, async route => { await held; await route.continue() })
-      const requested = page.waitForRequest(`**/${asset}`)
-      await page.goto(baseURL, { waitUntil: 'commit' })
-      await requested
-      await page.waitForTimeout(1400)
-      assert.equal(await page.locator(opening).getAttribute('data-state'), null)
-      release()
-      await page.locator(`${opening}[data-state="playing"]`).waitFor()
-      assert.ok(await page.evaluate(() => document.fonts.check('16px "Opening Archivo Black"', 'JORDNARY')))
-    } finally { await context.close() }
-    pass(`The opening waits for a delayed ${asset} before starting its timeline`)
+  const expectWhite = async page => {
+    assert.deepEqual(await page.locator(opening).evaluate(dialog => [
+      dialog.matches(':modal'), getComputedStyle(dialog).backgroundColor, dialog.dataset.state ?? null,
+      ...[...dialog.children].map(child => getComputedStyle(child).visibility),
+    ]), [true, 'rgb(255, 255, 255)', null, 'hidden', 'hidden'])
   }
 
-  // Hold every entry script and sheet, including preloaded route chunks. The
-  // reference animation must be visibly painting without the application.
+  // Add artwork unknown to the bootstrap, including a dependency used only by a keyframe.
+  for (const fails of [false, true]) {
+    const { context, page } = await setup()
+    try {
+      await page.route(baseURL, async route => {
+        const response = await route.fetch()
+        const html = (await response.text()).replace(/(<style[^>]+data-site-opening[^>]*>)/,
+          '$1@keyframes extra-opening-layer { to { background-image: url("/extra-opening-art.png"); } }')
+        await route.fulfill({ response, body: html })
+      })
+      let release
+      const held = new Promise(resolve => { release = resolve })
+      await page.route('**/extra-opening-art.png', async route => {
+        if (fails) return route.abort()
+        await held
+        const response = await page.request.get(new URL('opening-symbol.png', baseURL).href)
+        await route.fulfill({ response })
+      })
+      const requested = page.waitForRequest('**/extra-opening-art.png')
+      await page.goto(baseURL, { waitUntil: 'commit' })
+      await requested
+      await page.locator('.homepage-portal').waitFor()
+      await page.keyboard.press('Escape')
+      await page.waitForTimeout(8200)
+      await expectWhite(page)
+      if (fails) {
+        await page.emulateMedia({ reducedMotion: 'reduce' })
+        await frame(page)
+        await expectWhite(page)
+      } else {
+        release()
+        await page.locator(`${opening}[data-state="playing"]`).waitFor()
+        await finished(page)
+      }
+    } finally { await context.close() }
+    pass(fails ? 'Unusable artwork keeps the opening white' : 'Late artwork starts the full opening after the former timeout')
+  }
+
   for (const extension of ['js', 'css']) {
     const { context, page, errors } = await setup()
     const held = []
@@ -50,21 +75,16 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
         held.push(route)
       })
       await page.goto(baseURL, { waitUntil: 'commit' })
-      await page.locator(`${opening}[data-state="playing"]`).waitFor()
+      await page.locator(opening).waitFor()
       await page.waitForFunction(() => performance.getEntriesByType('paint').length > 0)
-      await page.waitForFunction(() => [...document.querySelectorAll('.site-opening-echo')]
-        .some(element => Number(getComputedStyle(element).opacity) > 0.05))
-      const state = await page.evaluate(() => ({
-        background: getComputedStyle(document.querySelector('.site-opening')).backgroundColor,
-        color: getComputedStyle(document.querySelector('.site-opening')).color,
-        modal: document.querySelector('.site-opening').matches(':modal'),
-        portal: Boolean(document.querySelector('.homepage-portal')),
-      }))
-      assert.equal(state.background, 'rgb(255, 255, 255)')
-      assert.equal(state.color, 'rgb(13, 13, 13)')
-      assert.equal(state.modal, true)
-      assert.equal(state.portal, false)
-      assert.ok(held.length > 0, 'Entry requests run concurrently with the opening')
+      await expectWhite(page)
+      assert.ok(held.length > 0)
+      await page.keyboard.press('Escape')
+      if (extension === 'js') await page.waitForTimeout(8200)
+      await expectWhite(page)
+      released = true
+      await Promise.all(held.splice(0).map(route => route.continue()))
+      await page.locator(`${opening}[data-state="playing"]`).waitFor()
       await page.screenshot({ path: `${output}/held-${extension}.png` })
       if (extension === 'js') {
         const samples = await page.locator('.site-opening-lockup').evaluate(lockup => {
@@ -116,12 +136,6 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
         }
         await page.setViewportSize({ width: 1440, height: 900 })
       }
-      await page.waitForTimeout(2400)
-      assert.equal(await page.locator(opening).getAttribute('data-state'), 'playing', 'Wait for real content after the visual timeline')
-      await page.keyboard.press('Escape')
-      assert.equal(await page.locator(opening).count(), 1, 'Skipping must not expose an unloaded page')
-      released = true
-      await Promise.all(held.splice(0).map(route => route.continue()))
       await page.waitForFunction(() => document.querySelector('.site-opening')?.dataset.state === 'revealing')
       if (extension === 'js') {
         const { opacity, curtainAtStart, curtainAtFadeEnd } = await page.locator('.site-opening-logo').evaluate(logo => {
@@ -151,7 +165,7 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       await page.locator('.launch-intro-enter').waitFor()
       assert.equal(await page.evaluate(() => window.__siteOpening.status), 'complete')
       assert.deepEqual(errors, [])
-      pass(`Opening paints with delayed ${extension.toUpperCase()}, loads concurrently, and reveals only after content is ready`)
+      pass(`Opening waits for delayed ${extension.toUpperCase()} and then plays through`)
     } finally { await context.close() }
   }
 
@@ -221,45 +235,33 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
     } finally { await context.close() }
   }
 
-  for (const mode of ['reduce', 'changed', 'font-error', 'symbol-error', 'symbol-stall', 'entry-error', 'hidden', 'watchdog']) {
-    const { context, page, errors } = await setup(mode === 'reduce' ? { reducedMotion: 'reduce' } : {})
+  for (const mode of ['reduce', 'changed', 'asset-error', 'reduced-asset-error', 'entry-error', 'stylesheet-error', 'hidden']) {
+    const { context, page, errors } = await setup(mode.startsWith('reduce') ? { reducedMotion: 'reduce' } : {})
     try {
-      const missingArtwork = ['font-error', 'symbol-error', 'symbol-stall'].includes(mode)
-      if (missingArtwork) await page.addInitScript(() => {
-        window.openingAnimated = false
-        document.addEventListener('animationstart', event => {
-          if (event.animationName.startsWith('site-opening-')) window.openingAnimated = true
-        })
-      })
-      if (mode === 'symbol-error') await page.route('**/opening-symbol.png', route => route.abort())
-      if (mode === 'symbol-stall') await page.route('**/opening-symbol.png', () => {})
-      if (mode === 'font-error') await page.route('**/fonts/opening-archivo-black.woff2', route => route.abort())
+      if (mode.endsWith('asset-error')) await page.route('**/fonts/opening-archivo-black.woff2', route => route.abort())
       if (mode === 'entry-error') await page.route(/\/assets\/main-[^/]+\.js$/, route => route.abort())
-      if (mode === 'watchdog') await page.route(/\/assets\/main-[^/]+\.js$/, () => {})
-      await page.goto(baseURL, { waitUntil: missingArtwork || mode.endsWith('error') || mode === 'watchdog' ? 'commit' : 'load' })
-      if (mode === 'changed') {
-        await page.locator(opening).waitFor()
-        await page.emulateMedia({ reducedMotion: 'reduce' })
+      if (mode === 'stylesheet-error') await page.route(/\/assets\/main-[^/]+\.css$/, route => route.abort())
+      if (mode === 'hidden') await page.addInitScript(() => Object.defineProperty(document, 'hidden', { configurable: true, value: true }))
+      await page.goto(baseURL)
+      if (mode === 'changed') await page.emulateMedia({ reducedMotion: 'reduce' })
+      if (mode.endsWith('error')) {
+        await expectWhite(page)
+      } else {
+        if (mode === 'hidden') {
+          await page.locator('.homepage-portal').waitFor()
+          await expectWhite(page)
+          await page.evaluate(() => {
+            delete document.hidden
+            document.dispatchEvent(new Event('visibilitychange'))
+          })
+          await page.locator(`${opening}[data-state="playing"]`).waitFor()
+        }
+        await finished(page)
+        await page.locator('.launch-intro-enter').waitFor()
+        assert.equal(await page.locator(':modal').count(), 0)
       }
-      if (mode === 'hidden') {
-        await page.locator(opening).waitFor()
-        await page.evaluate(() => {
-          Object.defineProperty(document, 'hidden', { configurable: true, value: true })
-          document.dispatchEvent(new Event('visibilitychange'))
-          delete document.hidden
-        })
-      }
-      if (missingArtwork) {
-        await page.waitForFunction(() => window.__siteOpening?.status === 'complete')
-        assert.equal(await page.evaluate(() => window.openingAnimated), false)
-      }
-      if (mode === 'entry-error' || mode === 'watchdog') await page.locator('.page-load-feedback').waitFor({ timeout: 10000 })
-      await finished(page)
-      if (mode !== 'reduce') assert.equal(await page.evaluate(() => window.__siteOpening.status), 'complete')
-      if (!['entry-error', 'watchdog'].includes(mode)) await page.locator('.launch-intro-enter').waitFor()
-      assert.equal(await page.locator(':modal').count(), 0)
       assert.deepEqual(errors, [])
-      pass(`${mode}: cleanup releases the page without a stuck modal`)
+      pass(`${mode}: the opening observes asset and page readiness and motion preferences`)
     } finally { await context.close() }
   }
 
