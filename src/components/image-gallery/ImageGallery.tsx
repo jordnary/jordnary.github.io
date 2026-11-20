@@ -19,14 +19,14 @@ import 'yet-another-react-lightbox/styles.css'
 import 'yet-another-react-lightbox/plugins/thumbnails.css'
 import './ImageGallery.css'
 
-const GalleryStageContext = createContext<{ traversal: GalleryTraversal; edgePulling: boolean }>({ traversal: null, edgePulling: false })
+const GalleryStageContext = createContext<GalleryTraversal>(null)
 
 function GalleryStage({ children }: PropsWithChildren) {
   const { controller } = useLightboxProps()
   const { slides } = useLightboxState()
   const stageRef = useRef<HTMLDivElement>(null)
-  const { traversal, edgePulling } = useContext(GalleryStageContext)
-  useGalleryImages(traversal, stageRef, edgePulling)
+  const traversal = useContext(GalleryStageContext)
+  useGalleryImages(traversal)
   useThumbnailWheel(stageRef)
   useThumbnailTraversal(stageRef)
   useGalleryNavigationFeedback(stageRef)
@@ -176,7 +176,7 @@ export function ImageGallery({ images, activeIndex, onIndexChange, onClose }: Im
   const open = activeIndex !== null && Number.isInteger(activeIndex) && Boolean(images[activeIndex])
   // The thumbnail plugin shares this window with the carousel.
   const preload = Math.min(Math.max(6, traversal ? traversal.last - traversal.first : 0), Math.max(0, images.length - 1))
-  return <GalleryImagesContext.Provider value={resources}><GalleryStageContext.Provider value={{ traversal, edgePulling }}><GalleryEdgeContext.Provider value={setEdgePulling}><GalleryTraversalContext.Provider value={setTraversal}><Lightbox
+  return <GalleryImagesContext.Provider value={resources}><GalleryStageContext.Provider value={traversal}><GalleryEdgeContext.Provider value={setEdgePulling}><GalleryTraversalContext.Provider value={setTraversal}><Lightbox
     open={open}
     close={onClose}
     index={activeIndex ?? 0}

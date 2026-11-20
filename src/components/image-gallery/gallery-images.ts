@@ -1,13 +1,13 @@
-import { prepareImage } from '../../lib/page-images'
+import { preloadImage } from '../../lib/page-images'
 
 export type GalleryImageState = {
   status: 'loading' | 'ready' | 'error'
   width?: number
   height?: number
-  promote?: () => void
+  pendingImage?: HTMLImageElement
 }
 
-/** Only the viewer's current working set is owned here; bytes stay in HTTP cache. */
+/** Keep load status and dimensions for this gallery. The browser owns the image data. */
 export class GalleryImages {
   private entries = new Map<string, GalleryImageState>()
   private listeners = new Set<() => void>()
@@ -29,46 +29,37 @@ export class GalleryImages {
     if (this.selected && this.get(this.selected)?.status === 'ready') this.fallback = this.selected
     this.selected = src
   }
-  retain(sources: string[]) {
-    let changed = false
-    for (const src of this.entries.keys()) {
-      if (sources.includes(src)) continue
-      this.entries.delete(src)
-      changed = true
-    }
-    if (changed) this.emit()
-  }
-  clear() { this.selected = undefined; this.fallback = undefined; this.retain([]) }
   retry(src: string) {
+    // A stalled download continues until the visitor explicitly requests a new attempt.
+    this.entries.get(src)?.pendingImage?.removeAttribute('src')
     this.entries.delete(src)
     this.request(src, true)
   }
   request(src: string, required = false) {
     const existing = this.entries.get(src)
     if (existing) {
-      if (required) existing.promote?.()
+      if (required && existing.pendingImage) existing.pendingImage.fetchPriority = 'high'
       return
     }
-    // Keep the retry control available if a full-size original stalls.
-    const task = prepareImage({ src }, required ? 'high' : 'low', 8000)
-    const entry: GalleryImageState = { status: 'loading' }
+    const image = preloadImage({ src }, required ? 'high' : 'low')
+    const entry: GalleryImageState = { status: 'loading', pendingImage: image }
     this.entries.set(src, entry)
-    const current = () => this.entries.get(src) === entry && entry.status === 'loading'
-    const fail = () => {
-      if (!current()) return
+    const retryTimer = window.setTimeout(() => {
       entry.status = 'error'
-      delete entry.promote
+      this.emit()
+    }, 8000)
+    const finish = (status: 'ready' | 'error') => {
+      window.clearTimeout(retryTimer)
+      if (this.entries.get(src) !== entry) return
+      delete entry.pendingImage
+      entry.status = status
+      if (status === 'ready') {
+        entry.width = image.naturalWidth
+        entry.height = image.naturalHeight
+      }
       this.emit()
     }
-    entry.promote = task.promote
-    void task.promise.then(result => {
-      if (!current()) return
-      entry.status = 'ready'
-      entry.width = result.width
-      entry.height = result.height
-      delete entry.promote
-      this.emit()
-    }, fail)
+    void image.decode().then(() => finish('ready'), () => finish('error'))
     this.emit()
   }
 }

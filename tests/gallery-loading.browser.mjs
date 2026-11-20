@@ -176,7 +176,7 @@ async function checkDistanceBudget() {
 }
 
 async function checkRecovery() {
-  for (const failure of ['abort', '404', 'decode', 'timeout']) {
+  for (const failure of ['abort', '404', 'decode', 'timeout', 'slow']) {
     const context = await browser.newContext({ ...contextOptions, reducedMotion: 'reduce' })
     const pending = gate()
     let fail = true
@@ -198,9 +198,14 @@ async function checkRecovery() {
       assert.ok(before.width > 100 && before.height > 100, 'The target preview remains visible on failure')
       assert.ok(await page.getByRole('button', { name: '关闭图片预览' }).isEnabled())
       fail = false
-      await page.getByRole('button', { name: '重试原图' }).click()
+      if (failure !== 'slow') await page.getByRole('button', { name: '重试原图' }).click()
       pending.release()
       await settled(page, 6)
+      if (failure === 'slow') {
+        assert.equal(await page.getByRole('button', { name: '重试原图' }).count(), 0)
+        pass('A slow original finishes on its initial request even after retry becomes available')
+        continue
+      }
       assert.ok(await page.locator('.yarl__container').evaluate(element => document.activeElement === element), 'Retry returns focus to the viewer before removing its button')
       const after = await page.locator('.yarl__slide_current img').boundingBox()
       for (const dimension of ['x', 'y', 'width', 'height']) assert.ok(Math.abs(before[dimension] - after[dimension]) < 1, `No ${dimension} jump when preview becomes original`)

@@ -25,7 +25,7 @@ export function GallerySlide({ slide, offset, rect, fallback }: RenderSlideProps
   const image = slide as SlideImage
   const state = images.get(image.src)
   const current = offset === 0
-  const ready = state?.status === 'ready'
+  const ready = Math.abs(offset) <= 1 && state?.status === 'ready'
   const width = image.width ?? state?.width
   const height = image.height ?? state?.height
   const scale = width && height ? Math.min(1, rect.width / width, rect.height / height) : undefined
