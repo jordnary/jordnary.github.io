@@ -19,7 +19,7 @@ const checks = [
     'home-now', 'home-now-scroll-lock', 'home-now-focus-return', 'home-now-ornament', 'snapshots',
     'page-loading', 'project-page-transition', 'project-cursor-transition', 'search', 'navbar', 'site-mobile-viewport',
     'about-cover', 'about-decorations', 'homepage-hub', 'footer', 'learning-pointer', 'background-visibility',
-    'learning', 'learning-scroll', 'learning-toolkit', 'home-photo-gallery', 'home-gallery-motion', 'home-gallery-scroll',
+    'inpage-images', 'learning', 'learning-scroll', 'learning-toolkit', 'home-photo-gallery', 'home-gallery-motion', 'home-gallery-scroll',
     'site-opening', 'homepage-touch', 'homepage-transition', 'homepage-grid', 'homepage-performance', 'focus-feedback',
     'project-reader-scroll', 'project-reader-hover', 'project-menu-viewport', 'project-contents', 'project-studio',
     'image-gallery', 'image-gallery-navigation', 'image-gallery-traversal', 'image-gallery-boundary', 'image-gallery-scroll-lock']

@@ -127,8 +127,8 @@ export function ProjectStudioPage() {
               style={{ '--frame-ratio': artwork.width / artwork.height } as CSSProperties}>
               <img {...studioImage(artwork, import.meta.env.BASE_URL)}
                 width={artwork.width} height={artwork.height} alt={artwork.alt}
-                loading={index < 3 ? 'eager' : 'lazy'}
-                decoding="async" fetchPriority={index === 0 ? 'high' : 'auto'} draggable={false} />
+                loading="eager" decoding="async"
+                fetchPriority={index === 0 ? 'high' : 'low'} draggable={false} />
             </figure>
           ))}
         </div>

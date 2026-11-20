@@ -4,7 +4,6 @@ export type GalleryImageState = {
   status: 'loading' | 'ready' | 'error'
   width?: number
   height?: number
-  cancel?: () => void
   promote?: () => void
 }
 
@@ -32,17 +31,15 @@ export class GalleryImages {
   }
   retain(sources: string[]) {
     let changed = false
-    for (const [src, entry] of this.entries) {
+    for (const src of this.entries.keys()) {
       if (sources.includes(src)) continue
       this.entries.delete(src)
-      entry.cancel?.()
       changed = true
     }
     if (changed) this.emit()
   }
   clear() { this.selected = undefined; this.fallback = undefined; this.retain([]) }
   retry(src: string) {
-    this.entries.get(src)?.cancel?.()
     this.entries.delete(src)
     this.request(src, true)
   }
@@ -52,29 +49,24 @@ export class GalleryImages {
       if (required) existing.promote?.()
       return
     }
-    const task = prepareImage({ src }, required ? 'high' : 'low')
+    // Keep the retry control available if a full-size original stalls.
+    const task = prepareImage({ src }, required ? 'high' : 'low', 8000)
     const entry: GalleryImageState = { status: 'loading' }
     this.entries.set(src, entry)
     const current = () => this.entries.get(src) === entry && entry.status === 'loading'
-    const detach = () => {
-      task.release()
-      delete entry.cancel
-      delete entry.promote
-    }
     const fail = () => {
       if (!current()) return
       entry.status = 'error'
-      detach()
+      delete entry.promote
       this.emit()
     }
-    entry.cancel = detach
     entry.promote = task.promote
     void task.promise.then(result => {
       if (!current()) return
       entry.status = 'ready'
       entry.width = result.width
       entry.height = result.height
-      detach()
+      delete entry.promote
       this.emit()
     }, fail)
     this.emit()

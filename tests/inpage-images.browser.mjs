@@ -43,12 +43,15 @@ try {
     try {
       await page.goto(new URL('home/', base).href)
       await page.locator('.home-editorial').waitFor()
-      await page.waitForTimeout(200)
-      assert.equal(requests.some(path => /navigation|1920-/.test(path)), false, 'Closed menus do not discover photos')
+      const menuPhotos = '.nav-mega-panel .nav-photo-frame img'
+      await ready(page, menuPhotos)
+      const prepared = await page.locator(menuPhotos).evaluateAll(images => images.map(image => new URL(image.currentSrc).pathname))
+      assert.equal(new Set(prepared).size, 4)
+      await ready(page, '#selected .home-gallery img, #now .home-gallery img')
+      assert.equal(await page.locator('.home-gallery img').count(), 6)
       const mobileMenu = view.viewport.width < 720
       if (mobileMenu) {
         await page.locator('.nav-menu-button').click()
-        assert.equal(requests.some(path => /navigation|1920-/.test(path)), false, 'Mobile menu index does not fetch all submenu photos')
         await page.locator('#mobile-nav-toggle-projects').click()
       } else await page.locator('#nav-toggle-projects').click()
       const menuSelector = mobileMenu ? '.mobile-nav-dialog .nav-photo-frame img' : '#nav-panel-projects .nav-photo-frame img'
@@ -59,15 +62,15 @@ try {
       assert.equal(candidates.length, 3)
       for (const candidate of candidates) {
         assert.equal(requests.filter(path => path === candidate.path).length, 1)
+        assert.ok(prepared.includes(candidate.path), 'First open uses the already loaded candidate')
         assert.equal(candidate.priority, 'high')
         const metadata = await sharp(await readFile(`public${candidate.path}`)).metadata()
         assert.ok(metadata.width >= candidate.width * view.deviceScaleFactor, `${name}: ${metadata.width}px must cover ${Math.ceil(candidate.width * view.deviceScaleFactor)} rendered pixels (${candidate.path})`)
       }
-      assert.equal(requests.some(path => path.includes('alpine-lake')), false)
       await page.screenshot({ path: `${output}/${name}-menu.png` })
       await page.keyboard.press('Escape')
       if (mobileMenu) await page.keyboard.press('Escape')
-      pass(`${name}: only opened menu photos, matching candidates once, sufficient resolution and high priority`)
+      pass(`${name}: closed menu and both Home galleries load before interaction; first open reuses the prepared candidates`)
 
       if (mobileMenu) {
         await page.locator('.nav-menu-button').click()
@@ -90,7 +93,7 @@ try {
       await ready(page, '.home-now-reader-scene img')
       await page.waitForFunction(() => document.querySelector('.home-now-reader')?.dataset.phase === 'open')
       const frame = await page.locator('.home-now-reader-scene img').evaluate(image => new URL(image.currentSrc).pathname)
-      assert.equal(requests.filter(path => path === frame).length, 1, 'Near preparation and reader reuse the same frame')
+      assert.equal(requests.filter(path => path === frame).length, 1, 'Home and reader reuse the same frame')
       if (name === 'desktop') assert.equal(requests.includes('/images/home/now-building.webp'), false, 'Reader does not fall back to a second original cover')
       await page.screenshot({ path: `${output}/${name}-reader.png` })
       await closeReader(page)
@@ -98,7 +101,7 @@ try {
       await page.locator('#now .home-gallery-open').first().click()
       await ready(page, '.home-now-reader-scene img')
       await closeReader(page)
-      assert.equal(requests.filter(path => path === frame).length, 1, 'Reopening retains decoded candidate metadata')
+      assert.equal(requests.filter(path => path === frame).length, 1, 'Reopening reuses the frame')
       pass(`${name}: reader prewarm/open/reopen reuse, responsive cover, close and focus return`)
 
       await page.locator('#selected .home-gallery').scrollIntoViewIfNeeded()
@@ -116,47 +119,17 @@ try {
     } finally { await context.close() }
   }
 
-  for (const saveData of [false, true]) {
-    const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3,
-      isMobile: true, hasTouch: true, reducedMotion: 'reduce' })
-    await mobile.addInitScript(connectionState, { effectiveType: '4g', downlink: 1.6, rtt: 150, saveData })
-    try {
-      const page = await mobile.newPage()
-      await page.goto(new URL('home/', base).href)
-      await page.locator('.home-editorial').waitFor()
-      await page.evaluate(() => {
-        const scroller = document.getElementById('site-scroll')
-        const gallery = document.querySelector('#now .home-gallery')
-        scroller.scrollTo({ top: scroller.scrollTop + gallery.getBoundingClientRect().top - scroller.getBoundingClientRect().top - scroller.clientHeight - 400, behavior: 'instant' })
-      })
-      const distance = await page.locator('#now .home-gallery').evaluate(element => element.getBoundingClientRect().top - innerHeight)
-      assert.ok(distance > 300, 'The Now gallery is still outside the mobile viewport')
-      if (saveData) {
-        await page.waitForTimeout(200)
-        assert.equal(await page.locator('#now .home-gallery img[src]').count(), 0, 'Save-data keeps the offscreen gallery undiscovered')
-      } else await page.waitForFunction(() => [...document.querySelectorAll('#now .home-gallery img')].every(image => image.hasAttribute('src')))
-      pass(`Mobile inner scrolling ${saveData ? 'respects save-data' : 'prepares nearby photos before they enter the viewport'}`)
-    } finally { await mobile.close() }
-  }
-
-  const saved = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
-  await saved.addInitScript(connectionState, { effectiveType: '4g', downlink: 10, rtt: 20, saveData: true })
+  const saved = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: 'reduce' })
+  await saved.addInitScript(connectionState, { effectiveType: '3g', downlink: 1.6, rtt: 150, saveData: true })
   try {
     const page = await saved.newPage()
-    const requests = []
-    page.on('request', request => requests.push(new URL(request.url()).pathname))
     await page.goto(new URL('home/', base).href)
-    await page.waitForTimeout(500)
-    assert.equal(requests.some(path => /\/images\/(home|responsive)\//.test(path)), false)
-    await page.evaluate(() => window.scrollTo({ top: document.querySelector('#now .home-gallery').getBoundingClientRect().top + scrollY - innerHeight - 200, behavior: 'instant' }))
-    await page.waitForTimeout(300)
-    assert.equal(requests.some(path => /now-woodland|woodland-wenkai/.test(path)), false, 'Save-data does not warm unopened reader assets')
-    await page.locator('#now .home-gallery').scrollIntoViewIfNeeded()
-    await ready(page, '#now .home-gallery img')
-    await page.locator('#now .home-gallery-open').first().click()
-    await ready(page, '.home-now-reader-scene img')
-    await closeReader(page)
-    pass('Save-data avoids below-fold Home photos while explicit positioning/opening still works')
+    await ready(page, '.home-gallery img')
+    await page.locator('#selected a[href$="/learning/"]').click()
+    await ready(page, '.note-cover-photo')
+    assert.equal(await page.locator('.note-cover-photo').count(), 15)
+    assert.ok(await page.locator('.notes-gallery').evaluate(el => el.getBoundingClientRect().top >= innerHeight))
+    pass('Home and all Learning note covers load on constrained mobile before scrolling their galleries')
   } finally { await saved.close() }
 
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })

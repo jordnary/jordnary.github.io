@@ -2,7 +2,6 @@ import { createElement, type ComponentType } from 'react'
 import { getProjectFromUrl, type AppPage } from './routes'
 import { getPageResources, type PageModuleKey } from './page-resources'
 import { preparePageImages } from './page-images'
-import { pageNetworkPolicy } from './page-network'
 
 export type PageModule = { default: ComponentType<{ href: string }> }
 
@@ -50,7 +49,7 @@ export function loadPage(url: URL, intent = false, page?: AppPage): Promise<Page
   const key = page === '404' ? '404' : getPageResources(url, import.meta.env.BASE_URL)?.key
   if (!key) return Promise.reject(new Error('Unknown site route'))
   // Discover images alongside code without letting a large bitmap delay the shell.
-  if (!intent && pageNetworkPolicy().images) void preparePageImages(url, 'low')
+  if (!intent) void preparePageImages(url, 'high')
   let task = pages.get(key)
   if (!task) {
     const entry = { promise: imports[key](), failed: false }
@@ -58,6 +57,5 @@ export function loadPage(url: URL, intent = false, page?: AppPage): Promise<Page
     pages.set(key, entry)
     void entry.promise.catch(() => { entry.failed = true })
   }
-  if (!intent) void task.promise.then(() => preparePageImages(url, 'high'), () => {})
   return task.promise
 }

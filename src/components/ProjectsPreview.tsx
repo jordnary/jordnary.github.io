@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import type { ProjectCase } from '../data/projects'
+import { projects, type ProjectCase } from '../data/projects'
 import { projectDisplayImage } from '../lib/project-images'
+import { prepareImages } from '../lib/page-images'
 
 type PreviewController = { request: (project: ProjectCase | null) => void }
 type Clip = [number, number, number, number]
@@ -11,6 +12,11 @@ const topClip: Clip = [0, 0, 0, 0]
 const duration = 600
 const clipPath = ([tl, tr, br, bl]: Clip) => `polygon(0 ${tl}%, 100% ${tr}%, 100% ${br}%, 0 ${bl}%)`
 
+function previewImage(project: ProjectCase) {
+  const cover = project.image?.cover ?? project.image
+  return cover && projectDisplayImage(`${import.meta.env.BASE_URL}images/projects/${cover.file}`, 'preview')
+}
+
 export function ProjectsPreview({ project }: { project: ProjectCase | null }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<PreviewController | null>(null)
@@ -18,6 +24,9 @@ export function ProjectsPreview({ project }: { project: ProjectCase | null }) {
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+    if (getComputedStyle(container).display !== 'none') {
+      void prepareImages(projects.flatMap(item => previewImage(item) ?? []), 'low')
+    }
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
     const clips = new Map<HTMLElement, Animation>()
@@ -148,10 +157,9 @@ export function ProjectsPreview({ project }: { project: ProjectCase | null }) {
         return
       }
 
-      const cover = next.image?.cover ?? next.image
-      if (!cover) { request(null); return }
+      const display = previewImage(next)
+      if (!display) { request(null); return }
       const image = new Image()
-      const display = projectDisplayImage(`${import.meta.env.BASE_URL}images/projects/${cover.file}`, 'preview')
       if (display.sizes) image.sizes = display.sizes
       if (display.srcSet) image.srcset = display.srcSet
       image.src = display.src

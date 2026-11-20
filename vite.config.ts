@@ -5,6 +5,8 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { projects } from './src/data/projects'
 import { getPageResources, pageModuleFiles } from './src/lib/page-resources'
+import { navigationPhotos, type NavigationPhoto } from './src/data/navigation-photos'
+import { navigationImage } from './src/lib/inpage-images'
 import { bootstrapPageStartup } from './src/lib/pageStartup'
 import { bootstrapSiteOpening } from './src/lib/siteOpening'
 import { getProjectFromUrl, isHomepagePortalUrl } from './src/lib/routes'
@@ -46,13 +48,20 @@ function pageStartup(): Plugin {
 function pageResources(): Plugin {
   let base = '/'
   const escape = (value: string) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-  const imageTags = (url: URL) => (getPageResources(url, base)?.htmlImages ?? []).map(image => ({
-    tag: 'link',
-    attrs: { rel: 'preload', as: 'image', href: image.src,
-      fetchpriority: getPageResources(url, base)?.key === 'learning' ? 'high' : 'low', 'data-page-image': '',
-      ...(image.srcSet ? { imagesrcset: image.srcSet, imagesizes: image.sizes! } : {}) },
-    injectTo: 'head' as const,
-  }))
+  const imageTags = (url: URL) => {
+    const resources = getPageResources(url, base)
+    const hasNavbar = ['home', 'about', 'learning', 'contact', '404'].includes(resources?.key ?? '')
+    const covers = (resources?.htmlImages ?? []).map(image => ({ image, priority: resources?.key === 'learning' ? 'high' : 'low' }))
+    const menu = hasNavbar ? (Object.keys(navigationPhotos) as NavigationPhoto[]).map(photo => ({
+      image: navigationImage(photo, base), priority: 'high',
+    })) : []
+    return [...covers, ...menu].map(({ image, priority }) => ({
+      tag: 'link',
+      attrs: { rel: 'preload', as: 'image', href: image.src, fetchpriority: priority, 'data-page-image': '',
+        ...(image.srcSet ? { imagesrcset: image.srcSet, imagesizes: image.sizes! } : {}) },
+      injectTo: 'head' as const,
+    }))
+  }
   return {
     name: 'page-critical-resources',
     configResolved(config) { base = config.base },

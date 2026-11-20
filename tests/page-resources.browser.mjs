@@ -140,6 +140,7 @@ export async function runChecks(browser) {
 
   await run(async (page, requests, context) => {
     await home(page)
+    const initialHints = await page.locator('link[data-page-image]').count()
     const target = await link(page, '/contact/')
     await target.hover()
     await page.waitForTimeout(30)
@@ -169,7 +170,7 @@ export async function runChecks(browser) {
     }
     assert.equal(requests.filter(path => modulePattern('ContactPage').test(path)).length, 1)
     assert.equal(requests.filter(path => contactArt.test(path)).length, 1)
-    assert.equal(await page.locator('link[data-page-image]').count(), 0, 'SPA visits do not accumulate hint nodes')
+    assert.equal(await page.locator('link[data-page-image]').count(), initialHints, 'SPA visits do not accumulate hint nodes')
     assert.equal(new Set(lifecycle.map(sample => sample.domNodes)).size, 1, 'The same destination keeps a stable DOM across return cycles')
   })
   pass('Short hover cancels; stable hover/focus coalesce; click and 20 return cycles reuse code/images')

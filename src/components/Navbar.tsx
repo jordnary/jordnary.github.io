@@ -200,7 +200,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                         <span className="nav-column-label">{page === 'projects' ? '精选项目' : page === 'about' ? '关于我' : '探索内容'}</span>
                         <div className="nav-feature-list">
                           {section.links.map((link, index) => <a className={`nav-feature-link ${link.photo ? 'nav-feature-link--photo' : ''}`} href={link.href} key={link.href} onClick={closeMenu}>
-                            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} active={expanded} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+                            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
                             <span className="nav-feature-copy">
                               {link.category && <span className="nav-photo-category">{link.category}</span>}
                               <strong>{link.label}</strong><small>{link.description}</small>
@@ -211,7 +211,7 @@ export function Navbar({ activePage, onSearchOpen }: NavbarProps) {
                       </div>
                       <div className="nav-related-links">
                         {section.feature ? <a className="nav-story-link" href={section.feature.href} onClick={closeMenu}>
-                          <span className="nav-photo-frame"><NavigationImage photo={section.feature.photo} active={expanded} /></span>
+                          <span className="nav-photo-frame"><NavigationImage photo={section.feature.photo} /></span>
                           <span className="nav-story-copy"><strong>{section.feature.label}</strong><small>{section.feature.caption}</small></span>
                           <ArrowIcon />
                         </a> : <span className="nav-column-label">继续发现</span>}
@@ -342,7 +342,7 @@ function MobilePanel({ mobilePage, mobileSection, mobileSubmenuOpen, closeMenu, 
       </div>
       {mobileSection.feature && <div className="mobile-nav-section">
         <a className="mobile-nav-story" href={mobileSection.feature.href} onClick={closeMenu}>
-          <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} mobile active={mobileSubmenuOpen} /></span>
+          <span className="nav-photo-frame"><NavigationImage photo={mobileSection.feature.photo} /></span>
           <span className="nav-story-copy"><strong>{mobileSection.feature.label}</strong><small>{mobileSection.feature.caption}</small><span className="mobile-nav-story-action">了解更多 <ArrowIcon /></span></span>
         </a>
       </div>}
@@ -350,7 +350,7 @@ function MobilePanel({ mobilePage, mobileSection, mobileSubmenuOpen, closeMenu, 
         <h3>{mobilePage === 'projects' ? '精选项目' : mobilePage === 'about' ? '关于我' : '探索内容'}</h3>
         <div className="mobile-nav-features">
           {mobileSection.links.map((link, index) => <a className="mobile-nav-feature" href={link.href} key={link.href} onClick={closeMenu}>
-            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} mobile active={mobileSubmenuOpen} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
+            {link.photo ? <span className="nav-photo-frame"><NavigationImage photo={link.photo} /></span> : <span className={`nav-feature-icon nav-feature-icon--${index}`}><NavigationGlyph icon={link.icon} /></span>}
             <span className="mobile-nav-feature-copy">{link.category && <span className="nav-photo-category">{link.category}</span>}<strong>{link.label}</strong><small>{link.description}</small></span>
           </a>)}
         </div>
@@ -363,11 +363,11 @@ function MobilePanel({ mobilePage, mobileSection, mobileSubmenuOpen, closeMenu, 
   </>
 }
 
-function NavigationImage({ photo, mobile = false, active }: { photo: NavigationPhoto; mobile?: boolean; active: boolean }) {
+function NavigationImage({ photo }: { photo: NavigationPhoto }) {
   const image = navigationPhotos[photo]
   return <img
     alt={image.alt}
-    {...(active ? navigationImage(photo, mobile) : {})}
+    {...navigationImage(photo)}
     width={1920}
     height={1200}
     loading="eager"

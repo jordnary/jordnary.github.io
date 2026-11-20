@@ -15,19 +15,18 @@ export async function runResourceLoadingChecks(browser, baseURL, report = () => 
     report('The portal does not download unrelated page modules')
 
     await open('/projects/studio/')
-    await page.locator('.studio-gallery-frame img').first().evaluate(image => image.decode())
-    assert.ok(await page.locator('.studio-gallery-frame img').evaluateAll(images =>
-      images.some(image => !image.complete) && images.slice(0, 3).every(image => image.loading === 'eager')))
+    await page.locator('.studio-gallery-frame img').first().waitFor({ state: 'attached' })
+    await page.waitForFunction(() => [...document.querySelectorAll('.studio-gallery-frame img')].every(image => image.complete && image.naturalWidth))
     assert.ok(await page.locator('.studio-gallery-frame img').first().evaluate(image => image.currentSrc.includes('/images/responsive/')))
     await page.locator('.studio-gallery-frame').last().scrollIntoViewIfNeeded()
     await page.locator('.studio-gallery-frame img').last().evaluate(image => image.decode())
     assert.ok(await page.locator('.studio-gallery-frame img').last().evaluate(image => image.naturalWidth > 0))
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
-    report('The studio loads nearby display-sized images and loads the last artwork when reached')
+    report('The studio loads every display-sized artwork before scrolling')
 
     await open('/learning/')
     await page.locator('img.learning-cover-panorama').evaluate(image => image.decode())
-    const hints = await page.locator('link[rel="preload"][as="image"]').evaluateAll(links => links.map(link => ({
+    const hints = await page.locator('link[rel="preload"][as="image"][href*="hero-campus-"]').evaluateAll(links => links.map(link => ({
       srcset: link.imageSrcset, sizes: link.imageSizes,
     })))
     assert.equal(hints.length, 2)

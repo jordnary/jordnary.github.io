@@ -231,10 +231,10 @@ export function LearningHeroScene() {
               <motion.img className="learning-ink-outline" src={`${imageRoot}hero-tower-outline.svg`} alt="" width={1000} height={1200} style={{ opacity: staticScene ? 0 : outlineOpacity }} />
               <motion.div className="learning-ink-reveal" style={{ y: staticScene ? '0%' : revealY, '--ink-frame': staticScene ? 0 : erosionFrame } as MotionStyle}>
                 <motion.div className="learning-ink-composition" style={{ y: staticScene ? '0%' : compositionY }}>
-                  <img className="learning-ink-texture" src={`${imageRoot}hero-tower-sketch.webp`} {...responsiveImage(`${imageRoot}hero-tower-sketch.webp`, '(max-width: 899px) 100vw, 767px')} alt="" width={1000} height={1200} loading="lazy" decoding="async" />
+                  <img className="learning-ink-texture" src={`${imageRoot}hero-tower-sketch.webp`} {...responsiveImage(`${imageRoot}hero-tower-sketch.webp`, '(max-width: 899px) 100vw, 767px')} alt="" width={1000} height={1200} loading="eager" fetchPriority="low" decoding="async" />
                   <motion.div className="learning-ink-sun" style={{ opacity: staticScene ? 0.94 : sunOpacity }} aria-hidden="true" />
                   <div className="learning-ink-trees" aria-hidden="true">
-                    <img className="learning-ink-landscape" src={`${imageRoot}hero-tower-trees.webp`} {...responsiveImage(`${imageRoot}hero-tower-trees.webp`, '(max-width: 899px) 100vw, 767px')} alt="" width={1000} height={1200} loading="lazy" decoding="async" />
+                    <img className="learning-ink-landscape" src={`${imageRoot}hero-tower-trees.webp`} {...responsiveImage(`${imageRoot}hero-tower-trees.webp`, '(max-width: 899px) 100vw, 767px')} alt="" width={1000} height={1200} loading="eager" fetchPriority="low" decoding="async" />
                   </div>
                 </motion.div>
               </motion.div>

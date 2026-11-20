@@ -6,15 +6,15 @@ export const homeGalleryImage = (src: string): PageImage => ({
   src, ...responsiveImage(src, '(max-width: 600px) 84vw, (max-width: 900px) 63vw, 42vw'),
 })
 
-export function navigationImage(photo: NavigationPhoto, mobile = false): PageImage {
-  const src = `${import.meta.env.BASE_URL}images/navigation/${navigationPhotos[photo].file}-1920.webp`
+export function navigationImage(photo: NavigationPhoto, base = import.meta.env.BASE_URL): PageImage {
+  const src = `${base}images/navigation/${navigationPhotos[photo].file}-1920.webp`
   // Include the small hover zoom, with the same description at prepare/display.
   // The mobile landscape photo is cropped into a square: its 8:5 source needs
   // 1.6 times the frame width to retain the same pixel density.
-  const sizes = mobile ? (photo === 'landscape' ? '188px' : '92px')
-    : photo === 'landscape' ? '(max-width: 1023px) calc(52.25vw - 36px), (min-width: 1200px) 390px, 32vw'
-      : '(max-width: 1023px) calc(35vw - 30px), (min-width: 1200px) 272px, 23vw'
-  return { src, ...responsiveImage(src, sizes) }
+  const sizes = photo === 'landscape'
+    ? '(width < 720px) 188px, (max-width: 1023px) calc(52.25vw - 36px), (min-width: 1200px) 390px, 32vw'
+    : '(width < 720px) 92px, (max-width: 1023px) calc(35vw - 30px), (min-width: 1200px) 272px, 23vw'
+  return { src, ...responsiveImage(src, sizes, base) }
 }
 
 export function nowFrameImage(): PageImage {

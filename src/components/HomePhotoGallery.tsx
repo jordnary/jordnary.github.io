@@ -2,10 +2,6 @@ import { useEffect, useRef, type CSSProperties } from 'react'
 import { homeDirectory } from '../data/home-editorial'
 import { getRouteHref } from '../lib/routes'
 import { homeGalleryImage } from '../lib/inpage-images'
-import { prepareImages } from '../lib/page-images'
-import { useNearImages } from '../lib/useNearImages'
-import { pageConnection } from '../lib/page-network'
-import { getMobilePageScroller } from '../lib/pageScrollSource'
 import { SmartLink } from './SmartLink'
 import './HomePhotoGallery.css'
 
@@ -41,34 +37,6 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
   onExplore?: (index: number, trigger: HTMLButtonElement) => void
 }) {
   const railRef = useRef<HTMLDivElement>(null)
-  const near = useNearImages(railRef)
-  // Navigation is imperative so its image starts before the spring reaches it.
-  const preparing = useRef<ReturnType<typeof prepareImages> | null>(null)
-
-  useEffect(() => () => preparing.current?.release(), [])
-
-  useEffect(() => {
-    if (!near || !railRef.current) return
-    const tasks: ReturnType<typeof prepareImages>[] = []
-    // A touch rail initially exposes one card; warming its clipped neighbor
-    // competes with a jump to the next section on a constrained connection.
-    const initialCount = getMobilePageScroller() ? 1 : 2
-    if (!pageConnection()?.saveData) tasks.push(prepareImages(
-      photos.slice(0, initialCount).flatMap(photo => photo.src ? [homeGalleryImage(photo.src)] : []), 'low'))
-    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (!entry.isIntersecting || document.hidden) return
-      const image = entry.target as HTMLImageElement
-      image.fetchPriority = 'high'
-      image.loading = 'eager'
-      const index = Number(image.dataset.photoIndex)
-      const src = photos[index]?.src
-      if (src) tasks.push(prepareImages([homeGalleryImage(src)], 'high'))
-      observer.unobserve(image)
-    }))
-    railRef.current.querySelectorAll('img').forEach(image => observer.observe(image))
-    return () => { observer.disconnect(); tasks.forEach(task => task.release()) }
-  }, [near, photos])
-
   useEffect(() => {
     const rail = railRef.current
     if (!rail) return
@@ -173,12 +141,6 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
     const goTo = (index: number, instant = false) => {
       destination = clamp(index, 0, cards.length - 1)
       target = centerAt(destination)
-      const src = photos[destination]?.src
-      if (!instant && src) {
-        const next = prepareImages([homeGalleryImage(src)], 'high')
-        preparing.current?.release()
-        preparing.current = next
-      }
       if (instant) finish()
       else animate()
     }
@@ -452,7 +414,7 @@ export function HomePhotoGallery({ photos = directoryPhotos, label = '照片回�
     {photos.map((photo, index) => {
       const content = <>
         <span className={`home-gallery-window${photo.src ? '' : ' home-gallery-window--blank'}`}>
-          {photo.src && <img {...(near ? homeGalleryImage(photo.src) : {})} data-photo-index={index} style={!near ? { visibility: 'hidden' } : undefined} alt={photo.alt ?? ''} width="1536" height="1024" loading="lazy" decoding="async" fetchPriority="low" draggable={false} />}
+          {photo.src && <img {...homeGalleryImage(photo.src)} alt={photo.alt ?? ''} width="1536" height="1024" loading="eager" decoding="async" fetchPriority="low" draggable={false} />}
         </span>
         <span className="home-gallery-caption"><span lang="en">{photo.label}</span><span lang="zh-CN">{photo.chinese}</span></span>
         <span className="home-gallery-line" aria-hidden="true" />

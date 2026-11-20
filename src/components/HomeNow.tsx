@@ -4,10 +4,9 @@ import { homeNow } from '../data/home-editorial'
 import { HomePhotoGallery } from './HomePhotoGallery'
 import { LiveUpdates } from './LiveUpdates'
 import { useHomeNowReaderMotion, type ReadingVisit } from './useHomeNowReaderMotion'
-import { homeGalleryImage, nowFrameImage } from '../lib/inpage-images'
+import { homeGalleryImage, nowFrameImage, nowOrnamentImage } from '../lib/inpage-images'
 import { prepareImages } from '../lib/page-images'
 import { pageConnection } from '../lib/page-network'
-import { getMobilePageScroller } from '../lib/pageScrollSource'
 import { usePaintedContent } from '../lib/usePaintedContent'
 import { prepareReaderFonts, rememberReaderFonts } from '../lib/reader-fonts'
 import './HomeNow.css'
@@ -18,33 +17,18 @@ export function HomeNow() {
   const dismiss = useCallback(() => setVisit(null), [])
   useEffect(rememberReaderFonts, [])
   useEffect(() => {
-    let preparation: ReturnType<typeof prepareImages> | undefined
-    let prepared = false
-    const connection = pageConnection()
-    // Keep the measured lead-in with a small core and bounded recent slices.
+    void prepareImages([nowFrameImage(), nowOrnamentImage()], 'low')
+    if (pageConnection()?.saveData || !containerRef.current) return
     const observer = new IntersectionObserver(entries => {
-      if (document.hidden || connection?.saveData || !entries.some(entry => entry.isIntersecting)) return
-      prepared = true
-      preparation = prepareImages([nowFrameImage()], 'low')
-      prepareReaderFonts()
-      observer.disconnect()
-    }, { root: getMobilePageScroller(), rootMargin: '600px' })
-    const observe = () => {
-      observer.disconnect()
-      if (!prepared && !document.hidden && !connection?.saveData && containerRef.current) observer.observe(containerRef.current)
-    }
-    observe()
-    document.addEventListener('visibilitychange', observe)
-    connection?.addEventListener('change', observe)
-    return () => {
-      observer.disconnect()
-      preparation?.release()
-      document.removeEventListener('visibilitychange', observe)
-      connection?.removeEventListener('change', observe)
-    }
+      if (entries.some(entry => entry.isIntersecting)) {
+        prepareReaderFonts()
+        observer.disconnect()
+      }
+    }, { rootMargin: '600px' })
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
   }, [])
   const explore = (index: number, trigger: HTMLButtonElement) => {
-    void prepareImages([nowFrameImage()], 'high')
     const cover = trigger.querySelector<HTMLElement>('.home-gallery-window')!
     const style = getComputedStyle(cover.querySelector('img')!)
     setVisit({ index, trigger, coverSrc: cover.querySelector<HTMLImageElement>('img')!.currentSrc, origin: cover.getBoundingClientRect(), radius: getComputedStyle(cover).borderTopLeftRadius, imageTransform: style.transform, imageFilter: style.filter, imageOpacity: style.opacity })
