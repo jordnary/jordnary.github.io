@@ -1,11 +1,3 @@
-@font-face {
-  font-family: 'Opening Archivo Black';
-  src: url('__SITE_BASE__fonts/opening-archivo-black.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 400;
-  font-display: block;
-}
-
 .site-opening {
   position: fixed;
   inset: 0;
@@ -39,13 +31,8 @@
   height: var(--site-viewport-height, 100%);
   box-sizing: border-box;
   padding-bottom: min(4.5rem, 18vh);
-  font-family: 'Opening Archivo Black', sans-serif;
   /* Keep the full-size face until its animated silhouette needs the space. */
   font-size: min(var(--opening-full-size), calc((100vw - 16px) / 7.29), 35vh);
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.075em;
-  -webkit-font-smoothing: antialiased;
 }
 .site-opening-lockup {
   position: relative;
@@ -55,41 +42,13 @@
 }
 .site-opening-face,
 .site-opening-echo {
-  display: flex;
-  align-items: center;
-  width: max-content;
-  white-space: nowrap;
+  /* The SVG includes vertical space for the orbit around the original turn center. */
+  width: 6.8925em;
+  height: 1.4em;
+  background: url('__SITE_BASE__opening-wordmark.svg') center / 100% 100% no-repeat;
 }
 .site-opening-face { position: relative; }
 .site-opening-echo { position: absolute; inset: 0; opacity: 0; }
-.site-opening-symbol {
-  position: relative;
-  flex: none;
-  width: 1.06em;
-  height: 1em;
-}
-.site-opening-symbol::before {
-  content: '';
-  position: absolute;
-  /* The JT strokes span rows 213–373 of the 512px icon. Align those
-     strokes to the capitals and let the orbit overhang the letter slot. */
-  width: 2.1em;
-  height: 2.1em;
-  left: -0.35em;
-  top: -0.70em;
-  background: currentColor;
-  mask: url('__SITE_BASE__opening-symbol.png') center / contain no-repeat;
-}
-.site-opening-name { display: block; transform: scaleY(0.94); }
-.site-opening-trademark {
-  align-self: flex-start;
-  margin-top: 0.55em;
-  margin-left: 0.25em;
-  font-family: Arial, sans-serif;
-  font-size: 0.21em;
-  font-weight: 700;
-  letter-spacing: 0;
-}
 .site-opening-progress {
   position: absolute;
   bottom: max(6.6vh, env(safe-area-inset-bottom, 0px) + 24px);

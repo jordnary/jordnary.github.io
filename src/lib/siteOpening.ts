@@ -28,8 +28,6 @@ export function bootstrapSiteOpening() {
   overlay.className = 'site-opening'
   overlay.setAttribute('aria-label', '正在打开网站')
   overlay.setAttribute('aria-busy', 'true')
-  const wordmark = '<span class="site-opening-symbol"></span>'
-    + '<span class="site-opening-name">JORDNARY</span><span class="site-opening-trademark">™\uFE0E</span>'
   // Screen-space offsets from the face, measured in wordmark widths and ems.
   // Paint the faintest copy first so the nearer impressions overlap it.
   const projections = [
@@ -41,9 +39,9 @@ export function bootstrapSiteOpening() {
   ]
   overlay.innerHTML = '<div class="site-opening-logo" aria-hidden="true"><div class="site-opening-lockup">'
     + projections.map(({ x, y, angle, scale, alpha, delay }) =>
-      `<div class="site-opening-echo" style="--echo-x:${x}%;--echo-y:${y}em;--echo-angle:${angle}deg;--echo-scale:${scale};--echo-opacity:${alpha};--echo-delay:${delay}ms">${wordmark}</div>`
+      `<div class="site-opening-echo" style="--echo-x:${x}%;--echo-y:${y}em;--echo-angle:${angle}deg;--echo-scale:${scale};--echo-opacity:${alpha};--echo-delay:${delay}ms"></div>`
     ).join('')
-    + `<div class="site-opening-face">${wordmark}</div></div></div>`
+    + '<div class="site-opening-face"></div></div></div>'
     + '<div class="site-opening-progress" aria-hidden="true"><span></span></div>'
 
   const timelineDuration = 2500
@@ -157,7 +155,6 @@ export function bootstrapSiteOpening() {
     }
     for (const src of urls) {
       const image = new Image()
-      image.crossOrigin = 'anonymous'
       image.fetchPriority = 'high'
       image.src = src
       pending.push(image.decode())

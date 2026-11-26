@@ -34,18 +34,18 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
       await page.route(baseURL, async route => {
         const response = await route.fetch()
         const html = (await response.text()).replace(/(<style[^>]+data-site-opening[^>]*>)/,
-          '$1@keyframes extra-opening-layer { to { background-image: url("/extra-opening-art.png"); } }')
+          '$1@keyframes extra-opening-layer { to { background-image: url("/extra-opening-art.svg"); } }')
         await route.fulfill({ response, body: html })
       })
       let release
       const held = new Promise(resolve => { release = resolve })
-      await page.route('**/extra-opening-art.png', async route => {
+      await page.route('**/extra-opening-art.svg', async route => {
         if (fails) return route.abort()
         await held
-        const response = await page.request.get(new URL('opening-symbol.png', baseURL).href)
+        const response = await page.request.get(new URL('opening-wordmark.svg', baseURL).href)
         await route.fulfill({ response })
       })
-      const requested = page.waitForRequest('**/extra-opening-art.png')
+      const requested = page.waitForRequest('**/extra-opening-art.svg')
       await page.goto(baseURL, { waitUntil: 'commit' })
       await requested
       await page.locator('.homepage-portal').waitFor()
@@ -198,7 +198,7 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
             return box.top + box.height / 2
           }
           return {
-            offset: center('.site-opening-face .site-opening-name') - center('#launch-intro-title'),
+            offset: center('.site-opening-face') - center('#launch-intro-title'),
             opacity: getComputedStyle(document.querySelector('.launch-intro-content')).opacity,
           }
         }),
@@ -238,7 +238,7 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
   for (const mode of ['reduce', 'changed', 'asset-error', 'reduced-asset-error', 'entry-error', 'stylesheet-error', 'hidden']) {
     const { context, page, errors } = await setup(mode.startsWith('reduce') ? { reducedMotion: 'reduce' } : {})
     try {
-      if (mode.endsWith('asset-error')) await page.route('**/fonts/opening-archivo-black.woff2', route => route.abort())
+      if (mode.endsWith('asset-error')) await page.route('**/opening-wordmark.svg', route => route.abort())
       if (mode === 'entry-error') await page.route(/\/assets\/main-[^/]+\.js$/, route => route.abort())
       if (mode === 'stylesheet-error') await page.route(/\/assets\/main-[^/]+\.css$/, route => route.abort())
       if (mode === 'hidden') await page.addInitScript(() => Object.defineProperty(document, 'hidden', { configurable: true, value: true }))
@@ -267,21 +267,28 @@ export async function runSiteOpeningChecks(browser, baseURL, report = () => {}) 
 
   const { context, page, errors } = await setup()
   try {
+    const wordmarkURL = new URL('opening-wordmark.svg', baseURL).href
+    let wordmarkRequests = 0
+    page.on('request', request => {
+      if (request.url() === wordmarkURL) wordmarkRequests++
+    })
     await page.goto(new URL('home/', baseURL).href)
     await page.locator('.home-editorial').waitFor()
     assert.equal(await page.locator('[data-site-opening]').count(), 0)
     assert.equal(await page.locator('link[data-opening-styles]').count(), 0)
     await page.getByRole('link', { name: 'Jordnary', exact: true }).click()
     await page.locator(`${opening}[data-state="playing"]`).waitFor()
-    const icon = await page.locator('.site-opening-face .site-opening-symbol').evaluate(el => getComputedStyle(el, '::before').maskImage)
-    const maskURL = new URL('opening-symbol.png', baseURL).href
-    assert.ok(icon.includes(maskURL))
-    const response = await page.request.get(maskURL)
+    const layers = await page.locator('.site-opening-lockup > div').evaluateAll(elements =>
+      elements.map(el => [getComputedStyle(el).backgroundImage, el.childElementCount]))
+    assert.deepEqual(layers, Array.from({ length: 6 }, () => [`url("${wordmarkURL}")`, 0]))
+    assert.equal(wordmarkRequests, 1, 'The face and five echoes share one artwork request')
+    const response = await page.request.get(wordmarkURL)
     assert.ok(response.ok())
-    const { data, info } = await sharp(await response.body()).extractChannel('alpha').raw().toBuffer({ resolveWithObject: true })
-    // Follow both stems across the underside of the JT crossbar.
-    for (const x of [236, 302]) {
-      for (let y = 239; y <= 249; y++) {
+    const { data, info } = await sharp(await response.body(), { density: 288 })
+      .extractChannel('alpha').raw().toBuffer({ resolveWithObject: true })
+    // Sample both JT stems just under the crossbar at four pixels per SVG unit.
+    for (const x of [247, 355]) {
+      for (let y = 192; y <= 208; y++) {
         assert.ok(data[y * info.width + x] >= 248, `Gap at the crossbar joint (${x}, ${y})`)
       }
     }
