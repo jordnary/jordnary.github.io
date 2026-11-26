@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Launch Inter";
+  src: url("/fonts/launch-title-light.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
 .inline-mark { display: inline-block; flex: none; vertical-align: -0.1em; }
 
 :root {
@@ -3572,7 +3580,17 @@ a {
   .launch-intro-scroll i { display: inline-block; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: var(--color-primary-cyan); box-shadow: 0 0 12px var(--color-primary-cyan); }
   .launch-intro-scroll { display: inline-flex; align-items: center; gap: 0.5rem; }
   .launch-intro-kicker { margin: 0; color: rgb(165 243 252 / 0.6); font-size: clamp(0.58rem, 1.1vw, 0.72rem); font-weight: 600; letter-spacing: 0.38em; }
-  .launch-intro h1 { margin: 1.4rem 0 1.1rem; color: #f5f7f8; font-size: clamp(3.5rem, 11vw, 8.5rem); font-weight: 300; letter-spacing: -0.075em; line-height: 0.9; text-shadow: 0 0 1px #fff, 0 0 3px #fff, 0 0 7px #333, 0 0 14px #333; animation: launch-title-glow 1.5s ease-in-out infinite alternate; }
+  .launch-intro h1 {
+    margin: 1.4rem 0 1.1rem;
+    color: #f5f7f8;
+    font-family: "Launch Inter", system-ui, sans-serif;
+    font-size: clamp(3.5rem, 11vw, 8.5rem);
+    font-weight: 300;
+    letter-spacing: -0.075em;
+    line-height: 0.9;
+    text-shadow: 0 0 1px #fff, 0 0 3px #fff, 0 0 7px #333, 0 0 14px #333;
+    animation: launch-title-glow 1.5s ease-in-out infinite alternate;
+  }
   .launch-intro h1 span { color: var(--color-primary-cyan); padding-inline: 0.08em; text-shadow: 0 0 24px rgb(103 232 249 / 0.75); }
   .launch-intro-description { color: rgb(226 232 240 / 0.62); font-size: clamp(0.92rem, 1.8vw, 1.18rem); letter-spacing: 0.05em; line-height: 1.8; }
   .launch-intro-description span { display: inline-block; white-space: pre; text-shadow: 0 0 14px rgb(255 255 255 / 0.2); animation: letter-glow 0.7s ease both; }
@@ -3617,6 +3635,13 @@ a {
   @keyframes launch-enter-glow { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
   @keyframes launch-chevron { 0%, 100% { opacity: 0.25; transform: translateY(-0.14rem) rotate(45deg); } 50% { opacity: 0.95; transform: translateY(0.16rem) rotate(45deg); } }
   @keyframes launch-fluid-drift { from { transform: translate3d(-3%, 2%, 0) rotate(-18deg) scale(1); } to { transform: translate3d(5%, -4%, 0) rotate(14deg) scale(1.12); } }
+
+  @media (max-width: 640px), (pointer: coarse) and (orientation: landscape) and (max-height: 640px) {
+    .launch-intro h1 {
+      letter-spacing: -0.04em;
+      text-shadow: 0 0 0.08em rgb(255 255 255 / 0.28);
+    }
+  }
 
   @media (max-width: 640px) {
     .launch-intro-topline, .launch-intro-footer { font-size: 0.52rem; letter-spacing: 0.12em; }
